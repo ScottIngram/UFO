@@ -5,6 +5,7 @@
 local ADDON_NAME, Ufo = ...
 local debug = Ufo.DEBUG.newDebugger(Ufo.DEBUG.TRACE)
 local L10N = Ufo.L10N
+local handlers = {}
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
@@ -185,15 +186,15 @@ function Ufo:CreateGerm(btnSlotIndex, flyoutId, direction, actionButton, visible
     ]]
 
     -- TODO: find a way to eliminate the need for OnUpdate
-    germ:SetScript("OnUpdate", Germ_UpdateFlyout_OnUpdate)
-    germ:SetScript("OnEnter", Germ_UpdateFlyout)
-    germ:SetScript("OnLeave", Germ_UpdateFlyout)
+    germ:SetScript("OnUpdate", handlers.OnUpdate)
+    germ:SetScript("OnEnter", handlers.OnEnter)
+    germ:SetScript("OnLeave", handlers.OnLeave)
 
-    germ:SetScript("OnReceiveDrag", Germ_OnReceiveDrag)
-    germ:SetScript("OnMouseUp", Germ_OnReceiveDrag) -- Hmmm... needed?
-    germ:SetScript("OnDragStart", Germ_OnDragStart)
+    germ:SetScript("OnReceiveDrag", handlers.OnReceiveDrag)
+    germ:SetScript("OnMouseUp", handlers.OnReceiveDrag) -- Hmmm... needed?
+    germ:SetScript("OnDragStart", handlers.OnDragStart)
 
-    germ:SetScript("PreClick", Germ_PreClick)
+    germ:SetScript("PreClick", handlers.OnPreClick)
     germ:SetAttribute("_onclick", snippet_Germ_Click)
     germ:RegisterForClicks("AnyUp")
     germ:RegisterForDrag("LeftButton")
@@ -219,18 +220,22 @@ function Ufo:CreateGerm(btnSlotIndex, flyoutId, direction, actionButton, visible
     end
 end
 
-function Germ_OnReceiveDrag(self)
+-------------------------------------------------------------------------------
+-- Handlers
+-------------------------------------------------------------------------------
+
+function handlers.OnReceiveDrag(germ)
     if InCombatLockdown() then
         return
     end
 
     local cursor = GetCursorInfo()
     if cursor then
-        PlaceAction(self.actionId)
+        PlaceAction(germ.actionId)
     end
 end
 
-function Germ_OnDragStart(germ)
+function handlers.OnDragStart(germ)
     if not InCombatLockdown() and (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
         Ufo:PickupFlyout(germ.flyoutId)
         Ufo:ForgetPlacement(germ.actionId)
@@ -238,91 +243,95 @@ function Germ_OnDragStart(germ)
     end
 end
 
-function Germ_UpdateFlyout(self)
+function updateGerm(germ)
     -- print("========== Germ_UpdateFlyout()") this is being called continuously while a flyout exists on any bar
     -- Update border and determine arrow position
     local arrowDistance;
     -- Update border
-    local isMouseOverButton =  GetMouseFocus() == self;
-    local isFlyoutShown = UIUFO_FlyoutMenu and UIUFO_FlyoutMenu:IsShown() and UIUFO_FlyoutMenu:GetParent() == self;
+    local isMouseOverButton =  GetMouseFocus() == germ;
+    local isFlyoutShown = UIUFO_FlyoutMenu and UIUFO_FlyoutMenu:IsShown() and UIUFO_FlyoutMenu:GetParent() == germ;
     if isFlyoutShown or isMouseOverButton then
-        self.FlyoutBorderShadow:Show();
+        germ.FlyoutBorderShadow:Show();
         arrowDistance = 5;
     else
-        self.FlyoutBorderShadow:Hide();
+        germ.FlyoutBorderShadow:Hide();
         arrowDistance = 2;
     end
 
     -- Update arrow
-    local isButtonDown = self:GetButtonState() == "PUSHED"
-    local flyoutArrowTexture = self.FlyoutArrowContainer.FlyoutArrowNormal
+    local isButtonDown = germ:GetButtonState() == "PUSHED"
+    local flyoutArrowTexture = germ.FlyoutArrowContainer.FlyoutArrowNormal
 
     if isButtonDown then
-        flyoutArrowTexture = self.FlyoutArrowContainer.FlyoutArrowPushed;
+        flyoutArrowTexture = germ.FlyoutArrowContainer.FlyoutArrowPushed;
 
-        self.FlyoutArrowContainer.FlyoutArrowNormal:Hide();
-        self.FlyoutArrowContainer.FlyoutArrowHighlight:Hide();
+        germ.FlyoutArrowContainer.FlyoutArrowNormal:Hide();
+        germ.FlyoutArrowContainer.FlyoutArrowHighlight:Hide();
     elseif isMouseOverButton then
-        flyoutArrowTexture = self.FlyoutArrowContainer.FlyoutArrowHighlight;
+        flyoutArrowTexture = germ.FlyoutArrowContainer.FlyoutArrowHighlight;
 
-        self.FlyoutArrowContainer.FlyoutArrowNormal:Hide();
-        self.FlyoutArrowContainer.FlyoutArrowPushed:Hide();
+        germ.FlyoutArrowContainer.FlyoutArrowNormal:Hide();
+        germ.FlyoutArrowContainer.FlyoutArrowPushed:Hide();
     else
-        self.FlyoutArrowContainer.FlyoutArrowHighlight:Hide();
-        self.FlyoutArrowContainer.FlyoutArrowPushed:Hide();
+        germ.FlyoutArrowContainer.FlyoutArrowHighlight:Hide();
+        germ.FlyoutArrowContainer.FlyoutArrowPushed:Hide();
     end
 
-    self.FlyoutArrowContainer:Show();
+    germ.FlyoutArrowContainer:Show();
     flyoutArrowTexture:Show();
     flyoutArrowTexture:ClearAllPoints();
 
-    local direction = self:GetAttribute("flyoutDirection");
+    local direction = germ:GetAttribute("flyoutDirection");
     if (direction == "LEFT") then
-        flyoutArrowTexture:SetPoint("LEFT", self, "LEFT", -arrowDistance, 0);
+        flyoutArrowTexture:SetPoint("LEFT", germ, "LEFT", -arrowDistance, 0);
         SetClampedTextureRotation(flyoutArrowTexture, 270);
     elseif (direction == "RIGHT") then
-        flyoutArrowTexture:SetPoint("RIGHT", self, "RIGHT", arrowDistance, 0);
+        flyoutArrowTexture:SetPoint("RIGHT", germ, "RIGHT", arrowDistance, 0);
         SetClampedTextureRotation(flyoutArrowTexture, 90);
     elseif (direction == "DOWN") then
-        flyoutArrowTexture:SetPoint("BOTTOM", self, "BOTTOM", 0, -arrowDistance);
+        flyoutArrowTexture:SetPoint("BOTTOM", germ, "BOTTOM", 0, -arrowDistance);
         SetClampedTextureRotation(flyoutArrowTexture, 180);
     else
-        flyoutArrowTexture:SetPoint("TOP", self, "TOP", 0, arrowDistance);
+        flyoutArrowTexture:SetPoint("TOP", germ, "TOP", 0, arrowDistance);
         SetClampedTextureRotation(flyoutArrowTexture, 0);
     end
+end
+
+function handlers.OnEnter(germ)
+    updateGerm(germ)
+end
+
+function handlers.OnLeave(germ)
+    updateGerm(germ)
 end
 
 -- throttle OnUpdate because it fires as often as FPS and is very resource intensive
 local ON_UPDATE_TIMER_FREQUENCY = 1.5
 local onUpdateTimer = 0
-function Germ_UpdateFlyout_OnUpdate(self, elapsed)
+function handlers.OnUpdate(germ, elapsed)
     onUpdateTimer = onUpdateTimer + elapsed
     if onUpdateTimer < ON_UPDATE_TIMER_FREQUENCY then
         return
     end
     onUpdateTimer = 0
-    Germ_UpdateFlyout(self)
+    updateGerm(germ)
 end
 
-function pickSpellIdOrPetId(type, spellId, petId)
-    return ((type == "battlepet") and petId) or spellId
-end
+function handlers.OnPreClick(germ, button, down)
+    germ:SetChecked(not germ:GetChecked())
+    local direction = germ:GetAttribute("flyoutDirection");
 
-function Germ_PreClick(self, button, down)
-    self:SetChecked(not self:GetChecked())
-    local direction = self:GetAttribute("flyoutDirection");
-
-    local spellList = fknSplit(self:GetAttribute("spelllist"))
+    local spellList = fknSplit(germ:GetAttribute("spelllist"))
     --print("~~~~~~ /spellList/ =",self:GetAttribute("spellList"))
     --print("~~~~~~ spellList -->")
     --DevTools_Dump(spellList)
 
-    local typeList = fknSplit(self:GetAttribute("typelist"))
+    local typeList = fknSplit(germ:GetAttribute("typelist"))
     --print("~~~~~~ /typeList/ =",self:GetAttribute("typelist"))
     --print("~~~~~~ typeList -->")
     --DevTools_Dump(typeList)
 
-    local pets     = fknSplit(self:GetAttribute("petlist"))
+    local pets     = fknSplit(germ:GetAttribute("petlist"))
     --print("~~~~~~ /pets/ =",self:GetAttribute("petlist"))
     --print("~~~~~~ pets -->")
     --DevTools_Dump(pets)
@@ -402,5 +411,3 @@ function Germ_PreClick(self, button, down)
     UIUFO_FlyoutMenu:SetBorderColor(0.7, 0.7, 0.7)
     UIUFO_FlyoutMenu:SetBorderSize(47);
 end
-
-
