@@ -129,7 +129,7 @@ function createGerm(btnSlotIndex, flyoutId, direction, actionButton, visibleIf, 
     local germ = getGerm(name) or CreateFrame("CheckButton", name, actionButton, "ActionButtonTemplate, SecureHandlerClickTemplate")
     setGerm(name, germ)
     germ.flyoutId = flyoutId
-    germ.actionId = btnSlotIndex -- TODO: rename actionId -> btnSlotIndex
+    germ.btnSlotIndex = btnSlotIndex
 
     if actionButton then
         if actionButton:GetSize() and actionButton:IsRectValid() then
@@ -242,14 +242,14 @@ function handlers.OnReceiveDrag(germ)
 
     local cursor = GetCursorInfo()
     if cursor then
-        PlaceAction(germ.actionId)
+        PlaceAction(germ.btnSlotIndex)
     end
 end
 
 function handlers.OnDragStart(germ)
     if not InCombatLockdown() and (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
         pickupFlyout(germ.flyoutId)
-        forgetPlacement(germ.actionId)
+        forgetPlacement(germ.btnSlotIndex)
         applyAllGerms()
     end
 end
