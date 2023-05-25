@@ -1,0 +1,28 @@
+## Interface: 100100
+## Title: UFO
+## Author: Scott Ingram
+## Version: v10.1.0a
+## AddonCompartmentFunc: GLOBAL_UIUFO_BlizCompartment_OnClick
+## IconTexture: Interface\Icons\Ability_racial_rocketbarrage
+## SavedVariables: UFO_SV_FLYOUTS
+## SavedVariablesPerCharacter: UFO_SV_PLACEMENT
+## Notes: custom actionbar flyout menus
+
+utils\Wormhole.lua
+utils\Debug.lua
+constants.lua
+locales\index.xml
+FlyoutMenuConfig.lua
+Germ.lua
+GermCommander.lua
+UFO.lua
+ui\FlyoutMenu.lua
+ui\FlyoutBtn.lua
+ui\Catalog.lua
+ui\DetailerPopup.lua
+
+# export Ufo functions defined by the above into the Global _G namespace so they are visible for XML callbacks
+utils\ExportToGlobal.lua
+
+# must follow GlobalExport
+ui\ui.xml
