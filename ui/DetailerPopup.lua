@@ -1,11 +1,18 @@
 -- DetailerPopup
 -- Opened by the "Change Name/Icon" button in catalog to let the user pick an icon for a flyoutmenu.
 
-local ADDON_NAME, Ufo = ...
-local debug = Ufo.DEBUG.newDebugger(Ufo.DEBUG.TRACE)
-local L10N = Ufo.L10N
+-------------------------------------------------------------------------------
+-- Module Loading
+-------------------------------------------------------------------------------
 
+local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+--@type Debug -- OO annotation for IntelliJ-EmmyLua
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
+
+-------------------------------------------------------------------------------
+-- Constants
+-------------------------------------------------------------------------------
 
 local NUM_FLYOUT_ICONS_SHOWN = 15
 local NUM_FLYOUT_ICONS_PER_ROW = 5

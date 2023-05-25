@@ -1,11 +1,15 @@
 -- FlyoutBtn - a button on a flyout menu
 -- methods and functions for custom buttons put into our custom flyout menus
 
-local ADDON_NAME, Ufo = ...
-local debug = Ufo.DEBUG.newDebugger(Ufo.DEBUG.TRACE)
-local L10N = Ufo.L10N
+-------------------------------------------------------------------------------
+-- Module Loading
+-------------------------------------------------------------------------------
 
+local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+--@type Debug -- OO annotation for IntelliJ-EmmyLua
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
+
 
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutBtn XML Callbacks

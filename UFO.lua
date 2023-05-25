@@ -16,14 +16,16 @@ TODO
 ]]
 
 -------------------------------------------------------------------------------
--- UFO Module Loading
+-- Module Loading
 -------------------------------------------------------------------------------
 
 local ADDON_NAME, Ufo = ...
-local debug = Ufo.DEBUG.newDebugger(Ufo.DEBUG.TRACE)
 local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+
+--@type Debug -- OO annotation for IntelliJ-EmmyLua
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
 -------------------------------------------------------------------------------
 -- Event Handlers
@@ -33,28 +35,28 @@ local EventHandlers = { }
 
 function EventHandlers:ADDON_LOADED(addonName)
     if addonName == ADDON_NAME then
-        debug.trace:print("ADDON_LOADED", addonName)
+        debugTrace:print("ADDON_LOADED", addonName)
     end
 end
 
 function EventHandlers:PLAYER_LOGIN()
-    debug.trace:print("PLAYER_LOGIN")
+    debugTrace:print("PLAYER_LOGIN")
     DEFAULT_CHAT_FRAME:AddMessage( "|cffd78900"..ADDON_NAME.." v"..VERSION.."|r loaded." )
     initalizeAddonStuff()
     applyAllGerms()
 end
 
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
-    debug.trace:out("",1,"PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
+    debugTrace:out("",1,"PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
-    debug.trace:out("",1,"ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
+    debugTrace:out("",1,"ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
     handleActionBarSlotChanged(actionBarSlotId)
 end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
-    debug.trace:print("PLAYER_SPECIALIZATION_CHANGED")
+    debugTrace:print("PLAYER_SPECIALIZATION_CHANGED")
     applyAllGerms()
 end
 
@@ -63,7 +65,7 @@ end
 -------------------------------------------------------------------------------
 
 function createEventListener(targetSelfAsProxy, eventHandlers)
-    debug.info:print(ADDON_NAME .. " EventListener:Activate() ...")
+    debugInfo:print(ADDON_NAME .. " EventListener:Activate() ...")
 
     local dispatcher = function(listenerFrame, eventName, ...)
         -- ignore the listenerFrame and instead
@@ -74,7 +76,7 @@ function createEventListener(targetSelfAsProxy, eventHandlers)
     eventListenerFrame:SetScript("OnEvent", dispatcher)
 
     for eventName, _ in pairs(eventHandlers) do
-        debug.info:print("EventListener:activate() - registering " .. eventName)
+        debugInfo:print("EventListener:activate() - registering " .. eventName)
         eventListenerFrame:RegisterEvent(eventName)
     end
 end

@@ -4,11 +4,14 @@
 -- is currently a collection if parallel lists, each containing one param for each button in the menu
 -- instead, should be one collection/list of button objects, each containing all params for each button.  ENCAPSULATION FTW!
 
-local ADDON_NAME, Ufo = ...
-local debug = Ufo.DEBUG.newDebugger(Ufo.DEBUG.TRACE)
-local L10N = Ufo.L10N
+-------------------------------------------------------------------------------
+-- Module Loading
+-------------------------------------------------------------------------------
 
+local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+--@type Debug -- OO annotation for IntelliJ-EmmyLua
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
 --[[
 --TODO: implement as OO
@@ -89,7 +92,7 @@ function isConfigOlderThan(major, minor, patch, ufo)
 end
 
 function initializeFlyoutConfigIfEmpty(mayUseLegacyData)
-    debug.info:out("*",3,"InitializeFlyoutConfigIfEmpty()")
+    debugInfo:out("*",3,"InitializeFlyoutConfigIfEmpty()")
     if getFlyoutsConfigs() then
         return
     end

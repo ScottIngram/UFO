@@ -2,12 +2,24 @@
 -- a button on the actionbars that opens & closes an instance of a flyout menu
 -- a.k.a launchpad, egg, exploder, torpedo, detonator, originator, impetus, genesis, bigBang, singularity...
 
+-------------------------------------------------------------------------------
+-- Module Loading
+-------------------------------------------------------------------------------
+
 local ADDON_NAME, Ufo = ...
-local debug = Ufo.DEBUG.newDebugger(Ufo.DEBUG.TRACE)
-local L10N = Ufo.L10N
+Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+--@type Debug -- OO annotation for IntelliJ-EmmyLua
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
+
+-------------------------------------------------------------------------------
+-- Data
+-------------------------------------------------------------------------------
+
 local handlers = {}
 
-Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+-------------------------------------------------------------------------------
+-- Constants
+-------------------------------------------------------------------------------
 
 local snippet_Germ_Click = [=[
 	local DELIMITER = "]=]..DELIMITER..[=["

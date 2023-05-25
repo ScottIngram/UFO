@@ -2,12 +2,17 @@
 -- config options at ESC -> Blizzard Options -> Addons -> UFO
 -- NOT IN USE
 
+-------------------------------------------------------------------------------
+-- Module Loading
+-------------------------------------------------------------------------------
+
 local ADDON_NAME, Ufo = ...
-local debug = Ufo.DEBUG.newDebugger(Ufo.DEBUG.TRACE)
-local L10N = Ufo.L10N
+Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+--@type Debug -- OO annotation for IntelliJ-EmmyLua
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
 -------------------------------------------------------------------------------
--- Ace -> Bliz Config UI definition
+-- Constants: Ace -> Bliz Config UI definition
 -------------------------------------------------------------------------------
 
 local escMenuConfigDef = {

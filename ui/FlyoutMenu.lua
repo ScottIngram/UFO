@@ -1,11 +1,14 @@
 -- FlyoutMenu
 -- methods and functions for flyout creation, behavior, etc
 
-local ADDON_NAME, Ufo = ...
-local debug = Ufo.DEBUG.newDebugger(Ufo.DEBUG.TRACE)
-local L10N = Ufo.L10N
+-------------------------------------------------------------------------------
+-- Module Loading
+-------------------------------------------------------------------------------
 
+local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+--@type Debug -- OO annotation for IntelliJ-EmmyLua
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutMenu XML Callbacks

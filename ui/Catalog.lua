@@ -1,11 +1,17 @@
 -- Catalog
 -- The catalog UI collecting the existing flyout menus letting the user create, edit, and delete them.
 
+-------------------------------------------------------------------------------
+-- Module Loading
+-------------------------------------------------------------------------------
+
 local ADDON_NAME, Ufo = ...
-local debug = Ufo.DEBUG.newDebugger(Ufo.DEBUG.TRACE)
 local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+
+--@type Debug -- OO annotation for IntelliJ-EmmyLua
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
 -------------------------------------------------------------------------------
 -- CATALOG Functions Supporting Catalog UI
@@ -28,7 +34,7 @@ function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
 end
 
 function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
-    debug.info:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton)
+    debugInfo:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton)
     if not SpellBookFrame:IsShown() then
         ToggleSpellBook("spell")
         --SpellBookFrame:Show()

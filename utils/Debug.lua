@@ -1,41 +1,59 @@
 local ADDON_NAME, ADDON_VARS = ...
 
-local ERR_MSG = "DEBUGGER SYNTAX ERROR: invoke as debug.info:func() not debug.info.func()"
-local CONSTANTS = {
-    ALL_MSGS = 0,
-    ALL = 0,
-    TRACE = 2,
-    INFO = 4,
-    WARN = 6,
-    ERROR = 8,
-    NONE = 10,
-}
-ADDON_VARS.DEBUG = CONSTANTS
+-------------------------------------------------------------------------------
+-- Module Loading / Exporting
+-------------------------------------------------------------------------------
+
+--@class Debug -- OO annotation for IntelliJ-EmmyLua
 local Debug = {}
+ADDON_VARS.Debug = Debug
+
+-------------------------------------------------------------------------------
+-- Constants
+-------------------------------------------------------------------------------
+
+Debug.ALL_MSGS = 0
+Debug.ALL = 0
+Debug.TRACE = 2
+Debug.INFO = 4
+Debug.WARN = 6
+Debug.ERROR = 8
+Debug.NONE = 10
+
+local ERR_MSG = "DEBUGGER SYNTAX ERROR: invoke as debugInfo:func() not debugInfo.func()"
+
+-------------------------------------------------------------------------------
+-- Functions / Methods
+-------------------------------------------------------------------------------
 
 local function isDebuggerObj(zelf)
-    return zelf and zelf.isDEBUGGER
+    return zelf and zelf.isDebug
 end
 
 local function newInstance(isSilent)
     local newInstance = {
         isSilent = isSilent,
-        isDEBUGGER = true
+        isDebug = true
     }
     setmetatable(newInstance, { __index = Debug })
     return newInstance
 end
 
-function CONSTANTS.newDebugger(showOnlyMessagesAtOrAbove)
+function Debug:newDebugger(showOnlyMessagesAtOrAbove)
     local isValidNoiseLevel = type(showOnlyMessagesAtOrAbove) == "number"
     assert(isValidNoiseLevel, "Debugger:newDebugger() Invalid Noise Level: '".. tostring(showOnlyMessagesAtOrAbove) .."'")
 
     local debugger = { }
-    debugger.error = newInstance(showOnlyMessagesAtOrAbove > CONSTANTS.ERROR)
-    debugger.warn = newInstance(showOnlyMessagesAtOrAbove  > CONSTANTS.WARN)
-    debugger.info = newInstance(showOnlyMessagesAtOrAbove  > CONSTANTS.INFO)
-    debugger.trace = newInstance(showOnlyMessagesAtOrAbove > CONSTANTS.TRACE)
+    debugger.error = newInstance(showOnlyMessagesAtOrAbove > Debug.ERROR)
+    debugger.warn = newInstance(showOnlyMessagesAtOrAbove  > Debug.WARN)
+    debugger.info = newInstance(showOnlyMessagesAtOrAbove  > Debug.INFO)
+    debugger.trace = newInstance(showOnlyMessagesAtOrAbove > Debug.TRACE)
     return debugger
+end
+
+function Debug:new(...)
+    local d = self:newDebugger(...)
+    return d.trace, d.info, d.warn, d.error
 end
 
 function Debug:isMute()
