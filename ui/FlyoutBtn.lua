@@ -86,43 +86,43 @@ function GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag(btn)
     end
 end
 
-function GLOBAL_UIUFO_FlyoutBtn_SetTooltip(self)
-    local thingyId = self.spellID
+function GLOBAL_UIUFO_FlyoutBtn_SetTooltip(flyoutBtn)
+    local thingyId = flyoutBtn.spellID
     if GetCVar("UberTooltips") == "1" then
-        GameTooltip_SetDefaultAnchor(GameTooltip, self)
+        GameTooltip_SetDefaultAnchor(GameTooltip, flyoutBtn)
 
         local tooltipSetter
-        if self.actionType == "spell" then
+        if flyoutBtn.actionType == "spell" then
             tooltipSetter = GameTooltip.SetSpellByID
-        elseif self.actionType == "item" then
+        elseif flyoutBtn.actionType == "item" then
             tooltipSetter = GameTooltip.SetItemByID
-        elseif self.actionType == "macro" then
+        elseif flyoutBtn.actionType == "macro" then
             tooltipSetter = function(zelf, macroId)
                 local name, _, _ = GetMacroInfo(macroId)
                 if not macroId then macroId = "NiL" end
                 return GameTooltip:SetText("Macro: ".. macroId .." " .. (name or "UNKNOWN"))
             end
-        elseif self.actionType == "battlepet" then
-            thingyId = self.battlepet
+        elseif flyoutBtn.actionType == "battlepet" then
+            thingyId = flyoutBtn.battlepet
             tooltipSetter = GameTooltip.SetCompanionPet
             -- print("))))) GLOBAL_UIUFO_FlyoutBtn_SetTooltip(): actionType = battlepet | thingyId =", thingyId)
         end
 
         if tooltipSetter and thingyId and tooltipSetter(GameTooltip, thingyId) then
-            self.UpdateTooltip = GLOBAL_UIUFO_FlyoutBtn_SetTooltip
+            flyoutBtn.UpdateTooltip = GLOBAL_UIUFO_FlyoutBtn_SetTooltip
         else
-            self.UpdateTooltip = nil
+            flyoutBtn.UpdateTooltip = nil
         end
     else
-        local parent = self:GetParent():GetParent():GetParent():GetParent()
+        local parent = flyoutBtn:GetParent():GetParent():GetParent():GetParent()
         if parent == MultiBarBottomRight or parent == MultiBarRight or parent == MultiBarLeft then
-            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+            GameTooltip:SetOwner(flyoutBtn, "ANCHOR_LEFT")
         else
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetOwner(flyoutBtn, "ANCHOR_RIGHT")
         end
-        local spellName = getThingyNameById(self.actionType, thingyId)
+        local spellName = getThingyNameById(flyoutBtn.actionType, thingyId)
         GameTooltip:SetText(spellName, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
-        self.UpdateTooltip = nil
+        flyoutBtn.UpdateTooltip = nil
     end
 end
 

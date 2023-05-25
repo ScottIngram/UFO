@@ -23,51 +23,45 @@ function GLOBAL_UIUFO_FlyoutMenu_OnHide(...)
     SpellFlyout_OnHide(...) -- call Blizzard handler
 end
 
-function GLOBAL_UIUFO_FlyoutMenu_OnEvent(self, event, ...)
+local function getButtonFor(parent, i)
+    return _G[ parent:GetName().."Button"..i ]
+end
+
+local function updateAllButtonStatusesFor(flyoutMenu, handler)
+    local i = 1
+    local button = getButtonFor(flyoutMenu, i)
+    while (button and button:IsShown() and not exists(button.spellID)) do
+        handler(button)
+        i = i+1
+        button = getButtonFor(flyoutMenu, i)
+    end
+end
+
+function GLOBAL_UIUFO_FlyoutMenu_OnEvent(flyoutMenu, event, ...)
     if event == "SPELL_UPDATE_COOLDOWN" or event == "ACTIONBAR_UPDATE_COOLDOWN" then
-        local i = 1
-        local button = _G[self:GetName().."Button"..i]
-        while (button and button:IsShown() and not isEmpty(button.spellID)) do
+        updateAllButtonStatusesFor(flyoutMenu, function(button)
             SpellFlyoutButton_UpdateCooldown(button)
-            i = i+1
-            button = _G[self:GetName().."Button"..i]
-        end
+        end)
     elseif event == "CURRENT_SPELL_CAST_CHANGED" then
-        local i = 1
-        local button = _G[self:GetName().."Button"..i]
-        while (button and button:IsShown() and button.spellID) do
+        updateAllButtonStatusesFor(flyoutMenu, function(button)
             SpellFlyoutButton_UpdateState(button)
-            i = i+1
-            button = _G[self:GetName().."Button"..i]
-        end
+        end)
     elseif event == "SPELL_UPDATE_USABLE" then
-        local i = 1
-        local button = _G[self:GetName().."Button"..i]
-        while (button and button:IsShown() and button.spellID) do
+        updateAllButtonStatusesFor(flyoutMenu, function(button)
             SpellFlyoutButton_UpdateUsable(button)
-            i = i+1
-            button = _G[self:GetName().."Button"..i]
-        end
+        end)
     elseif event == "BAG_UPDATE" then
-        local i = 1
-        local button = _G[self:GetName().."Button"..i]
-        while (button and button:IsShown() and button.spellID) do
+        updateAllButtonStatusesFor(flyoutMenu, function(button)
             SpellFlyoutButton_UpdateCount(button)
             SpellFlyoutButton_UpdateUsable(button)
-            i = i+1
-            button = _G[self:GetName().."Button"..i]
-        end
+        end)
     elseif event == "SPELL_FLYOUT_UPDATE" then
-        local i = 1
-        local button = _G[self:GetName().."Button"..i]
-        while (button and button:IsShown() and not isEmpty(button.spellID)) do
+        updateAllButtonStatusesFor(flyoutMenu, function(button)
             SpellFlyoutButton_UpdateCooldown(button)
             SpellFlyoutButton_UpdateState(button)
             SpellFlyoutButton_UpdateUsable(button)
             SpellFlyoutButton_UpdateCount(button)
-            i = i+1
-            button = _G[self:GetName().."Button"..i]
-        end
+        end)
     end
 end
 

@@ -8,7 +8,7 @@ TODO
 * encapsulate as FlyoutConfigData
 * encapsulate as PlacementConfigData
 * NUKE all OO syntax that's not actual OO.  Foo:Bar() doesn't need "self" if there is never an instance foo:Bar()
-* NUKE all function paramsNamed(self) and rename them with actual NAMES
+* DONE: NUKE all function paramsNamed(self) and rename them with actual NAMES
 * identify which Ufo:Foo() methods actually need to be global
 * eliminate as many Ufo:Foo() -> foo()
 * eliminate all "legacy data" fixes
@@ -83,8 +83,6 @@ end
 -- Random stuff - TODO: tidy up
 -------------------------------------------------------------------------------
 
-
-
 function getIdForCurrentToon()
     local name, realm = UnitFullName("player") -- FU Bliz, realm is arbitrarily nil sometimes but not always
     realm = GetRealmName()
@@ -94,7 +92,6 @@ end
 function Ufo:GetSpecSlotId()
     return GetSpecialization() or NON_SPEC_SLOT
 end
-
 
 function getPetNameAndIcon(petGuid)
     --print("getPetNameAndIcon(): petGuid =",petGuid)
@@ -117,6 +114,10 @@ function getTexture(actionType, spellId, petId)
         local _, icon = getPetNameAndIcon(id)
         return icon
     end
+end
+
+function pickSpellIdOrPetId(type, spellId, petId)
+    return ((type == "battlepet") and petId) or spellId
 end
 
 function getThingyNameById(actionType, id)
@@ -150,8 +151,6 @@ end
 function isMacroGlobal(macroId)
     return macroId <= MAX_GLOBAL_MACRO_ID
 end
-
-
 
 -- I had to create this function to replace lua's strjoin() because
 -- lua poops the bed in the strsplit(strjoin(array)) roundtrip whenever the "array" is actually a table because an element was set to nil
@@ -197,17 +196,11 @@ function stripEmptyElements(table)
     return table
 end
 
-
-
-
-
 -- TODO: fix this
 Ufo.mountIndex = nil;
 function saveMountJournalSelection(index)
     Ufo.mountIndex = index;
 end
-
-
 
 -------------------------------------------------------------------------------
 -- Utility Functions
@@ -230,6 +223,10 @@ end
 
 function isEmpty(s)
     return s == nil or s == ''
+end
+
+function exists(s)
+    return not isEmpty(s)
 end
 
 function serialize(val, name, skipnewlines, depth)
@@ -297,7 +294,6 @@ function serializeAsAssignments(name, val, isRecurse)
 
     return tmp
 end
-
 
 -------------------------------------------------------------------------------
 -- Addon Lifecycle

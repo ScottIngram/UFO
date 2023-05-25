@@ -445,7 +445,7 @@
                     </OnVerticalScroll>
                 </Scripts>
             </ScrollFrame>
-            <Button name="$parentCancel" inherits="UIPanelButtonTemplate" text="CANCEL">
+            <Button name="$parentCancelBtn" inherits="UIPanelButtonTemplate" text="CANCEL">
                 <Size x="78" y="22"/>
                 <Anchors>
                     <Anchor point="BOTTOMRIGHT">
@@ -454,21 +454,21 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        GLOBAL_UIUFO_DetailerPopupCancel_OnClick(self, button, pushed);
+                        self:GetParent():Hide();
                         PlaySound(SOUNDKIT.GS_TITLE_OPTION_OK);
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="$parentOkay" inherits="UIPanelButtonTemplate" text="OKAY">
+            <Button name="$parentOkayBtn" inherits="UIPanelButtonTemplate" text="OKAY">
                 <Size x="78" y="22"/>
                 <Anchors>
-                    <Anchor point="BOTTOMRIGHT" relativeTo="$parentCancel" relativePoint="BOTTOMLEFT">
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parentCancelBtn" relativePoint="BOTTOMLEFT">
                         <Offset x="-2" y="0"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        GLOBAL_UIUFO_DetailerPopupOkay_OnClick(self, button, pushed);
+                        GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(self, button, pushed);
                         PlaySound(SOUNDKIT.GS_TITLE_OPTION_OK);
                     </OnClick>
                 </Scripts>

@@ -11,18 +11,18 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 -- CATALOG Functions Supporting Catalog UI
 -------------------------------------------------------------------------------
 
-function GLOBAL_UIUFO_CatalogScrollPane_OnLoad(self)
-    HybridScrollFrame_OnLoad(self)
-    self.update = updateCatalog
-    HybridScrollFrame_CreateButtons(self, "UIUFO_CatalogFlyoutOptionsMouseOver")
+function GLOBAL_UIUFO_CatalogScrollPane_OnLoad(scrollPane)
+    HybridScrollFrame_OnLoad(scrollPane)
+    scrollPane.update = updateCatalog
+    HybridScrollFrame_CreateButtons(scrollPane, "UIUFO_CatalogFlyoutOptionsMouseOver")
 end
 
-function GLOBAL_UIUFO_CatalogScrollPane_OnShow(self)
-    HybridScrollFrame_CreateButtons(self, "UIUFO_CatalogFlyoutOptionsMouseOver")
+function GLOBAL_UIUFO_CatalogScrollPane_OnShow(scrollPane)
+    HybridScrollFrame_CreateButtons(scrollPane, "UIUFO_CatalogFlyoutOptionsMouseOver")
     updateCatalog()
 end
 
-function GLOBAL_UIUFO_CatalogScrollPane_OnHide(self)
+function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
     UIUFO_DetailerPopup:Hide()
     UIUFO_FlyoutMenuForCatalog:Hide()
 end
@@ -55,23 +55,23 @@ end
 local C_UI_ON_UPDATE_TIMER_FREQUENCY = 0.25
 local onUpdateTimerForConfigUi = 0
 
-function GLOBAL_UIUFO_CatalogScrollPane_OnUpdate(self, elapsed)
+function GLOBAL_UIUFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
     onUpdateTimerForConfigUi = onUpdateTimerForConfigUi + elapsed
     if onUpdateTimerForConfigUi < C_UI_ON_UPDATE_TIMER_FREQUENCY then
         return
     end
     --print("GLOBAL_UIUFO_CatalogScrollPane_OnUpdate() UFO_CatalogScrollPane_onUpdateTimer =", onUpdateTimerForConfigUi)
     onUpdateTimerForConfigUi = 0
-    UFO_CatalogScrollPane_DoUpdate(self)
+    UFO_CatalogScrollPane_DoUpdate(scrollPane)
 end
 
-function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(self, button, down)
-    if self.name and self.name ~= "" then
-        if UIUFO_CatalogScrollPane.selectedIdx == self.name then
+function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(scrollPane, button, down)
+    if scrollPane.name and scrollPane.name ~= "" then
+        if UIUFO_CatalogScrollPane.selectedIdx == scrollPane.name then
             UIUFO_CatalogScrollPane.selectedIdx = nil
         else
             PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)		-- inappropriately named, but a good sound.
-            UIUFO_CatalogScrollPane.selectedIdx = self.name
+            UIUFO_CatalogScrollPane.selectedIdx = scrollPane.name
         end
         updateCatalog()
         UIUFO_DetailerPopup:Hide()
@@ -83,19 +83,13 @@ function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(self, button, down
     end
 end
 
-function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(self)
-    if self.name and self.name ~= "" then
-        Ufo:PickupFlyout(self.name)
-    end
-end
-
 -------------------------------------------------------------------------------
 -- CATALOG Functions Supporting Catalog UI
 -------------------------------------------------------------------------------
 
-function UFO_CatalogScrollPane_DoUpdate(self)--
-    for i = 1, #self.buttons do
-        local button = self.buttons[i]
+function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
+    for i = 1, #scrollPane.buttons do
+        local button = scrollPane.buttons[i]
         if button:IsMouseOver() then
             if button.name then
                 button.DeleteButton:Show()
@@ -212,8 +206,8 @@ function defineCatalogPopupDialogs()
         text = L10N["CONFIRM_DELETE"],
         button1 = YES,
         button2 = NO,
-        OnAccept = function (self) Ufo:RemoveFlyout(self.flyoutId); updateCatalog(); Ufo:ApplyConfig(); end,
-        OnCancel = function (self) end,
+        OnAccept = function (dialog) Ufo:RemoveFlyout(dialog.flyoutId); updateCatalog(); Ufo:ApplyConfig(); end,
+        OnCancel = function (dialog) end,
         hideOnEscape = 1,
         timeout = 0,
         exclusive = 1,

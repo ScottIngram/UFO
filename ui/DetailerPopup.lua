@@ -56,13 +56,13 @@ function GLOBAL_UIUFO_DetailerPopup_Update()
     FauxScrollFrame_Update(UIUFO_DetailerPopupScrollFrame, ceil(#FC_ICON_FILENAMES / NUM_FLYOUT_ICONS_PER_ROW), NUM_FLYOUT_ICON_ROWS, FLYOUT_ICON_ROW_HEIGHT)
 end
 
-function GLOBAL_UIUFO_DetailerPopup_OnLoad (self)
-    self.buttons = {}
+function GLOBAL_UIUFO_DetailerPopup_OnLoad (detailerPopup)
+    detailerPopup.buttons = {}
 
     local button = CreateFrame("CheckButton", "UIUFO_DetailerPopupButton1", UIUFO_DetailerPopup, "UIUFO_CatalogPopupBtnTemplate")
     button:SetPoint("TOPLEFT", 24, -37)
     button:SetID(1)
-    tinsert(self.buttons, button)
+    tinsert(detailerPopup.buttons, button)
 
     local lastPos
     for i = 2, NUM_FLYOUT_ICONS_SHOWN do
@@ -71,32 +71,32 @@ function GLOBAL_UIUFO_DetailerPopup_OnLoad (self)
 
         lastPos = (i - 1) / NUM_FLYOUT_ICONS_PER_ROW
         if lastPos == math.floor(lastPos) then
-            button:SetPoint("TOPLEFT", self.buttons[i-NUM_FLYOUT_ICONS_PER_ROW], "BOTTOMLEFT", 0, -8)
+            button:SetPoint("TOPLEFT", detailerPopup.buttons[i-NUM_FLYOUT_ICONS_PER_ROW], "BOTTOMLEFT", 0, -8)
         else
-            button:SetPoint("TOPLEFT", self.buttons[i-1], "TOPRIGHT", 10, 0)
+            button:SetPoint("TOPLEFT", detailerPopup.buttons[i-1], "TOPRIGHT", 10, 0)
         end
-        tinsert(self.buttons, button)
+        tinsert(detailerPopup.buttons, button)
     end
 
-    self.SetSelection = function(self, fTexture, Value)
-        if fTexture then
-            self.selectedTexture = Value
-            self.selectedIcon = nil
+    detailerPopup.SetSelection = function(detailerPopup, isTexture, texture)
+        if isTexture then
+            detailerPopup.selectedTexture = texture
+            detailerPopup.selectedIcon = nil
         else
-            self.selectedTexture = nil
-            self.selectedIcon = Value
+            detailerPopup.selectedTexture = nil
+            detailerPopup.selectedIcon = texture
         end
     end
 end
 
-function GLOBAL_UIUFO_DetailerPopup_OnShow(self)
+function GLOBAL_UIUFO_DetailerPopup_OnShow(detailerPopup)
     PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN)
-    self.name = nil
-    self.isEdit = false
+    detailerPopup.name = nil
+    detailerPopup.isEdit = false
     GLOBAL_UIUFO_RecalculateDetailerPopup()
 end
 
-function GLOBAL_UIUFO_DetailerPopup_OnHide(self)
+function GLOBAL_UIUFO_DetailerPopup_OnHide(detailerPopup)
     UIUFO_DetailerPopup.name = nil
     UIUFO_DetailerPopup:SetSelection(true, nil)
     --UIUFO_DetailerPopupEditBox:SetText("")
@@ -104,8 +104,8 @@ function GLOBAL_UIUFO_DetailerPopup_OnHide(self)
     collectgarbage()
 end
 
-function GLOBAL_UIUFO_DetailerPopupOkay_OnClick(self, button, pushed)
-    local popup = UIUFO_DetailerPopup
+function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, button, pushed)
+    local popup = okayBtn:GetParent()
     local iconTexture
     if popup.selectedIcon ~= 1 then
         iconTexture = getFlyoutIconInfo(popup.selectedIcon)
@@ -125,22 +125,23 @@ function GLOBAL_UIUFO_DetailerPopupOkay_OnClick(self, button, pushed)
     Ufo:ApplyConfig()
 end
 
-function GLOBAL_UIUFO_DetailerPopupCancel_OnClick (self, button, pushed)
-    -- isn't this essentially parent:Hide() ?  If so, replace it in ui.xml
-    UIUFO_DetailerPopup:Hide()
+function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(btn)
+    if btn.name and btn.name ~= "" then
+        Ufo:PickupFlyout(btn.name)
+    end
 end
 
-function GLOBAL_UIUFO_CatalogPopupBtn_OnClick(popupBtn, button, down)
-    local popup = UIUFO_DetailerPopup
+function GLOBAL_UIUFO_CatalogPopupBtn_OnClick(btn, button, down)
+    local popup = btn:GetParent()
     local offset = FauxScrollFrame_GetOffset(UIUFO_DetailerPopupScrollFrame) or 0
-    popup.selectedIcon = (offset * NUM_FLYOUT_ICONS_PER_ROW) + popupBtn:GetID()
+    popup.selectedIcon = (offset * NUM_FLYOUT_ICONS_PER_ROW) + btn:GetID()
     popup.selectedTexture = nil
     GLOBAL_UIUFO_DetailerPopup_Update()
 
     if popup.selectedIcon --[[and popup.name]] then
-        UIUFO_DetailerPopupOkay:Enable()
+        UIUFO_DetailerPopupOkayBtn:Enable()
     else
-        UIUFO_DetailerPopupOkay:Disable()
+        UIUFO_DetailerPopupOkayBtn:Disable()
     end
 end
 
@@ -189,9 +190,8 @@ function GLOBAL_UIUFO_RecalculateDetailerPopup(iconTexture)
     GLOBAL_UIUFO_DetailerPopup_Update()
 end
 
-
 -------------------------------------------------------------------------------
--- catalogFunctions Supporting DetailerPopup UI
+-- Functions Supporting DetailerPopup UI
 -------------------------------------------------------------------------------
 
 --[[
@@ -231,6 +231,3 @@ end
 function getFlyoutIconInfo(index)
     return FC_ICON_FILENAMES[index]
 end
-
-
-
