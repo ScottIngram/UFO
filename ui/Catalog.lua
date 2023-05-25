@@ -108,7 +108,7 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
 end
 
 function updateCatalog()
-    local flyouts = Ufo:GetFlyoutsConfig()
+    local flyouts = getFlyoutsConfigs()
     local flyoutsCount = #flyouts + 1
     HybridScrollFrame_Update(UIUFO_CatalogScrollPane, flyoutsCount * EQUIPMENTSET_BUTTON_HEIGHT + 20, UIUFO_CatalogScrollPane:GetHeight()) -- TODO: is this the source of the too-tall bug
 
@@ -129,7 +129,7 @@ function updateCatalog()
                 button.name = pos
                 button.text:SetText(button.name);
                 button.text:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
-                flyout = Ufo:GetFlyoutConfig(pos)
+                flyout = getFlyoutConfig(pos)
                 texture = flyout.icon
 
                 if not texture and flyout.actionTypes[1] then
@@ -206,7 +206,7 @@ function defineCatalogPopupDialogs()
         text = L10N["CONFIRM_DELETE"],
         button1 = YES,
         button2 = NO,
-        OnAccept = function (dialog) Ufo:RemoveFlyout(dialog.flyoutId); updateCatalog(); Ufo:ApplyConfig(); end,
+        OnAccept = function (dialog) removeFlyout(dialog.flyoutId); updateCatalog(); applyAllGerms(); end,
         OnCancel = function (dialog) end,
         hideOnEscape = 1,
         timeout = 0,

@@ -74,7 +74,7 @@ function updateFlyoutMenuForCatalog(flyoutMenu, flyoutId)
     -- Update all spell buttons for this flyout
     local prevButton = nil;
     local numButtons = 0;
-    local flyoutConfig = Ufo:GetFlyoutConfig(flyoutId)
+    local flyoutConfig = getFlyoutConfig(flyoutId)
     local spells = flyoutConfig and flyoutConfig.spells
     local actionTypes = flyoutConfig and flyoutConfig.actionTypes
     local mountIndexes = flyoutConfig and flyoutConfig.mountIndex

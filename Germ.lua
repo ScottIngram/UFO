@@ -110,13 +110,12 @@ local snippet_Germ_Click = [=[
 	end
 ]=]
 
-function Ufo:CreateGerm(btnSlotIndex, flyoutId, direction, actionButton, visibleIf, typeActionButton)
-
-    local flyoutConf = self:GetFlyoutConfig(flyoutId)
+function createGerm(btnSlotIndex, flyoutId, direction, actionButton, visibleIf, typeActionButton)
+    local flyoutConf = getFlyoutConfig(flyoutId)
     if not flyoutId then return end -- because one toon can delete a flyout while other toons still have it on their bars
     local name = "UIUfo_FlyoutGerm" .. btnSlotIndex
-    local germ = self.germs[name] or CreateFrame("CheckButton", name, actionButton, "ActionButtonTemplate, SecureHandlerClickTemplate")
-    self.germs[name] = germ
+    local germ = getGerm(name) or CreateFrame("CheckButton", name, actionButton, "ActionButtonTemplate, SecureHandlerClickTemplate")
+    setGerm(name, germ)
     germ.flyoutId = flyoutId
     germ.actionId = btnSlotIndex -- TODO: rename actionId -> btnSlotIndex
 
@@ -237,9 +236,9 @@ end
 
 function handlers.OnDragStart(germ)
     if not InCombatLockdown() and (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
-        Ufo:PickupFlyout(germ.flyoutId)
-        Ufo:ForgetPlacement(germ.actionId)
-        Ufo:ApplyConfig()
+        pickupFlyout(germ.flyoutId)
+        forgetPlacement(germ.actionId)
+        applyAllGerms()
     end
 end
 

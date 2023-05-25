@@ -10,6 +10,19 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
+--[[
+--TODO: implement as OO
+
+Ufo.FlyoutMenuConfig = {}
+Ufo.Wormhole(Ufo.FlyoutMenuConfig, Ufo) -- now it's FlyoutMenuConfig inheriting from Ufo
+
+local flyoutsConfigurator = Ufo.getFlyoutMenusConfigurator()
+local flyoutConfig = flyoutsConfigurator:get(flyoutId) -- also :new() :add(flyout); :delete(flyoutId);
+local flyoutBtns = flyoutConfig:getButtons()
+local flyoutBtn1 = flyoutConfig:getButton(1)
+flyoutConfig:addButton(myNewBtn) -- or smarter DWIM behavior that takes a macro or pet or mount etc.  Or the AceBtn ? no.
+]]
+
 -------------------------------------------------------------------------------
 -- Constants
 -------------------------------------------------------------------------------
@@ -46,7 +59,7 @@ local DEFAULT_UFO_SV_FLYOUT_DEF = {
 -- Flyout Menu Functions - SavedVariables, config CRUD
 -------------------------------------------------------------------------------
 
-function Ufo:UpdateVersionId()
+function updateVersionId()
     UFO_SV_FLYOUTS.v = VERSION
     UFO_SV_FLYOUTS.V_MAJOR = V_MAJOR
     UFO_SV_FLYOUTS.V_MINOR = V_MINOR
@@ -75,9 +88,9 @@ function isConfigOlderThan(major, minor, patch, ufo)
     end
 end
 
-function Ufo:InitializeFlyoutConfigIfEmpty(mayUseLegacyData)
+function initializeFlyoutConfigIfEmpty(mayUseLegacyData)
     debug.info:out("*",3,"InitializeFlyoutConfigIfEmpty()")
-    if self:GetFlyoutsConfig() then
+    if getFlyoutsConfigs() then
         return
     end
 
@@ -93,28 +106,28 @@ function Ufo:InitializeFlyoutConfigIfEmpty(mayUseLegacyData)
         flyouts = deepcopy(DEFAULT_UFO_SV_FLYOUT_DEF)
     end
 
-    self:PutFlyoutConfig(flyouts)
+    putFlyoutConfig(flyouts)
 end
 
 
 -- the flyout definitions are stored account-wide and thus shared between all toons
-function Ufo:PutFlyoutConfig(flyouts)
+function putFlyoutConfig(flyouts)
     if not UFO_SV_FLYOUTS then
         UFO_SV_FLYOUTS = {}
     end
     UFO_SV_FLYOUTS.flyouts = flyouts
 end
 
-function Ufo:GetFlyoutsConfig()
+function getFlyoutsConfigs()
     return UFO_SV_FLYOUTS and UFO_SV_FLYOUTS.flyouts
     --return Db.profile.flyouts
 end
 
-local doneChecked = {} -- flag for the GetFlyoutConfig() method
+local doneChecked = {}
 
 -- get and validate the requested flyout config
-function Ufo:GetFlyoutConfig(flyoutId)
-    local config = self:GetFlyoutsConfig()
+function getFlyoutConfig(flyoutId)
+    local config = getFlyoutsConfigs()
     local flyoutConfig = config and (config[flyoutId])
 
     -- check that the data structure is complete
@@ -163,18 +176,18 @@ function getNewFlyoutDef()
     return deepcopy(STRUCT_FLYOUT_DEF)
 end
 
-function Ufo:AddFlyout()
+function addFlyout()
     local newFlyoutDef = getNewFlyoutDef()
-    local flyoutsConfig = self:GetFlyoutsConfig()
+    local flyoutsConfig = getFlyoutsConfigs()
     table.insert(flyoutsConfig, newFlyoutDef)
     return newFlyoutDef
 end
 
-function Ufo:RemoveFlyout(flyoutId)
+function removeFlyout(flyoutId)
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
-    table.remove(self:GetFlyoutsConfig(), flyoutId)
+    table.remove(getFlyoutsConfigs(), flyoutId)
     -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
-    local placementsForEachSpec = self:GetFlyoutPlacementsForToon()
+    local placementsForEachSpec = getFlyoutPlacementsForToon()
     for i = 1, #placementsForEachSpec do
         local placements = placementsForEachSpec[i]
         for slotId, fId in pairs(placements) do
@@ -191,10 +204,10 @@ end
 -- Flyout Button Functions
 -------------------------------------------------------------------------------
 
-function Ufo:RemoveSpell(flyoutId, spellPos)
+function removeSpell(flyoutId, spellPos)
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
     if type(spellPos) == "string" then spellPos = tonumber(spellPos) end
-    local flyoutConf = self:GetFlyoutConfig(flyoutId)
+    local flyoutConf = getFlyoutConfig(flyoutId)
     table.remove(flyoutConf.spells, spellPos)
     table.remove(flyoutConf.actionTypes, spellPos)
     table.remove(flyoutConf.mountIndex, spellPos)

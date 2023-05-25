@@ -114,20 +114,20 @@ function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pu
     local config
     if popup.isEdit then
         -- Modifying a flyout
-        config = Ufo:GetFlyoutConfig(popup.name)
+        config = getFlyoutConfig(popup.name)
     else
         -- Saving a new flyout
-        config = Ufo:AddFlyout()
+        config = addFlyout()
     end
     config.icon = iconTexture
     popup:Hide()
     updateCatalog()
-    Ufo:ApplyConfig()
+    applyAllGerms()
 end
 
 function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(btn)
     if btn.name and btn.name ~= "" then
-        Ufo:PickupFlyout(btn.name)
+        pickupFlyout(btn.name)
     end
 end
 
@@ -204,9 +204,9 @@ function refreshFlyoutIconInfo()
 
     local popup = UIUFO_DetailerPopup
     if popup.name then
-        local spells = Ufo:GetFlyoutsConfig()[popup.name].spells
-        local actionTypes = Ufo:GetFlyoutsConfig()[popup.name].actionTypes
-        local pets = Ufo:GetFlyoutsConfig()[popup.name].pets
+        local spells = getFlyoutsConfigs()[popup.name].spells
+        local actionTypes = getFlyoutsConfigs()[popup.name].actionTypes
+        local pets = getFlyoutsConfigs()[popup.name].pets
         for i = 1, #actionTypes do
             local itemTexture = getTexture(actionTypes[i], spells[i], pets[i])
             if itemTexture then

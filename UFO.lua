@@ -9,8 +9,8 @@ TODO
 * encapsulate as PlacementConfigData
 * NUKE all OO syntax that's not actual OO.  Foo:Bar() doesn't need "self" if there is never an instance foo:Bar()
 * DONE: NUKE all function paramsNamed(self) and rename them with actual NAMES
-* identify which Ufo:Foo() methods actually need to be global
-* eliminate as many Ufo:Foo() -> foo()
+* DONE: identify which Ufo:Foo() methods actually need to be global
+* DONE: eliminate as many Ufo:Foo() -> foo()
 * eliminate all "legacy data" fixes
 * eliminate any support for classic
 ]]
@@ -41,7 +41,7 @@ function EventHandlers:PLAYER_LOGIN()
     debug.trace:print("PLAYER_LOGIN")
     DEFAULT_CHAT_FRAME:AddMessage( "|cffd78900"..ADDON_NAME.." v"..VERSION.."|r loaded." )
     initalizeAddonStuff()
-    Ufo:ApplyConfig()
+    applyAllGerms()
 end
 
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
@@ -55,7 +55,7 @@ end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
     debug.trace:print("PLAYER_SPECIALIZATION_CHANGED")
-    Ufo:ApplyConfig()
+    applyAllGerms()
 end
 
 -------------------------------------------------------------------------------
@@ -89,7 +89,7 @@ function getIdForCurrentToon()
     return name.." - "..realm
 end
 
-function Ufo:GetSpecSlotId()
+function getPlacementIdForToonSpecialization()
     return GetSpecialization() or NON_SPEC_SLOT
 end
 
@@ -301,8 +301,8 @@ end
 
 function initalizeAddonStuff()
     defineCatalogPopupDialogs()
-    Ufo:InitializeFlyoutConfigIfEmpty(true)
-    Ufo:InitializePlacementConfigIfEmpty(true)
+    initializeFlyoutConfigIfEmpty(true)
+    initializePlacementConfigIfEmpty(true)
     initializeOnClickHandlersForFlyouts()
     hooksecurefunc(C_MountJournal, "Pickup", saveMountJournalSelection);
 end

@@ -45,7 +45,7 @@ function GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag(btn)
     end
 
     if actionType then
-        local flyoutConf = Ufo:GetFlyoutConfig(flyoutId)
+        local flyoutConf = getFlyoutConfig(flyoutId)
         local btnIndex = btn:GetID()
 
         local oldThingyId   = flyoutConf.spells[btnIndex]
@@ -64,7 +64,7 @@ function GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag(btn)
 
         -- drop the dragged spell/item/etc
         ClearCursor()
-        Ufo:ApplyConfig()
+        applyAllGerms()
         updateFlyoutMenuForCatalog(flyoutMenu, flyoutId)
 
         -- update the cursor to show the existing spell/item/etc (if any)
@@ -154,8 +154,8 @@ function GLOBAL_UIUFO_FlyoutBtn_OnDragStart(flyoutBtn)
 
     local flyoutFrame = flyoutBtn:GetParent()
     if flyoutFrame.IsConfig then
-        Ufo:RemoveSpell(flyoutFrame.idFlyout, flyoutBtn:GetID())
-        Ufo:ApplyConfig()
+        removeSpell(flyoutFrame.idFlyout, flyoutBtn:GetID())
+        applyAllGerms()
         updateFlyoutMenuForCatalog(flyoutFrame, flyoutFrame.idFlyout)
     end
 end

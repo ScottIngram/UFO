@@ -4,27 +4,29 @@
 local ADDON_NAME, Ufo = ...
 local debug = Ufo.DEBUG.newDebugger(Ufo.DEBUG.TRACE)
 local L10N = Ufo.L10N
-local GermCommander = Ufo
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-GermCommander.germs = {} -- copies of flyouts that sit on the action bars
+-------------------------------------------------------------------------------
+-- Data
+-------------------------------------------------------------------------------
+
+local germs = {} -- copies of flyouts that sit on the action bars
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
-function GermCommander:ApplyConfig()
+function applyAllGerms()
     if InCombatLockdown() then
         return
     end
-    self:ClearGerms()
-    local placements = self:GetSpecificConditionalFlyoutPlacements()
+    clearGerms()
+    local placements = getSpecificConditionalFlyoutPlacements()
     for btnSlotIndex, flyoutId in pairs(placements) do
-        self:BindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
+        bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
     end
 end
-
 
 function isGermProxy(type, macroId)
     local flyoutId
@@ -41,7 +43,7 @@ end
 -- The targeted slot could: be empty; already have a different germ (or the same one); anything else.
 function handleActionBarSlotChanged(actionBarSlotId)
     local configChanged
-    local existingFlyoutId = GermCommander:GetSpecificConditionalFlyoutPlacements()[actionBarSlotId]
+    local existingFlyoutId = getSpecificConditionalFlyoutPlacements()[actionBarSlotId]
 
     local type, macroId = GetActionInfo(actionBarSlotId)
     if not type then
@@ -50,32 +52,32 @@ function handleActionBarSlotChanged(actionBarSlotId)
 
     local flyoutId = isGermProxy(type, macroId)
     if flyoutId then
-        GermCommander:SavePlacement(actionBarSlotId, flyoutId)
+        savePlacement(actionBarSlotId, flyoutId)
         DeleteMacro(PROXY_MACRO_NAME)
         configChanged = true
     end
 
     -- after dropping the flyout on the cursor, pickup the one we just replaced
     if existingFlyoutId then
-        GermCommander:PickupFlyout(existingFlyoutId)
+        pickupFlyout(existingFlyoutId)
         if not configChanged then
-            GermCommander:ForgetPlacement(actionBarSlotId)
+            forgetPlacement(actionBarSlotId)
             configChanged = true
         end
     end
 
     if configChanged then
-        GermCommander:ApplyConfig()
+        applyAllGerms()
     end
 end
 
 
-function GermCommander:ApplyOperationToAllGermInstancesUnlessInCombat(callback)
+function applyOperationToAllGermInstancesUnlessInCombat(callback)
     if InCombatLockdown() then return end
-    self:ApplyOperationToAllGermInstances(callback)
+    applyOperationToAllGermInstances(callback)
 end
 
-function GermCommander:BindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
+function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
     -- examine the action/bonus/multi bar
     local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
     local blizBarDef = BLIZ_BAR_METADATA[barNum]
@@ -97,14 +99,22 @@ function GermCommander:BindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
     --local foo = btnObj and "FOUND" or "NiL"
     --print ("###--->>> ffUniqueId =", ffUniqueId, "barNum =",barNum, "slotId = ", btnSlotIndex, "btnObj =",foo, "blizBarName = ",blizBarName,  "btnName =",btnName,  "btnNum =",btnNum, "direction =",direction, "visibleIf =", visibleIf)
 
-    Ufo:CreateGerm(btnSlotIndex, flyoutId, direction, btnObj, visibleIf, typeActionButton)
+    createGerm(btnSlotIndex, flyoutId, direction, btnObj, visibleIf, typeActionButton)
 end
 
-function GermCommander:ClearGerms()
+function clearGerms()
     for name, germ in pairs(germs) do
         germ:Hide()
         UnregisterStateDriver(germ, "visibility")
     end
+end
+
+function getGerm(name)
+    return germs[name]
+end
+
+function setGerm(name, germ)
+    germs[name] = germ
 end
 
 -------------------------------------------------------------------------------
@@ -133,8 +143,8 @@ local DEFAULT_PLACEMENTS_CONFIG = {
     },
 }
 
-function GermCommander:InitializePlacementConfigIfEmpty(mayUseLegacyData)
-    if self:GetFlyoutPlacementsForToon() then
+function initializePlacementConfigIfEmpty(mayUseLegacyData)
+    if getFlyoutPlacementsForToon() then
         return
     end
 
@@ -148,7 +158,7 @@ function GermCommander:InitializePlacementConfigIfEmpty(mayUseLegacyData)
         placementsForAllSpecs = deepcopy(DEFAULT_PLACEMENTS_CONFIG)
     end
 
-    self:PutFlyoutPlacementsForToon(placementsForAllSpecs)
+    putFlyoutPlacementsForToon(placementsForAllSpecs)
 end
 
 function fixLegacyActionsNils(actions)
@@ -159,24 +169,24 @@ function fixLegacyActionsNils(actions)
     end
 end
 
-function GermCommander:SavePlacement(slotId, flyoutId)
+function savePlacement(slotId, flyoutId)
     if type(slotId) == "string" then slotId = tonumber(slotId) end
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
-    self:GetSpecificConditionalFlyoutPlacements()[slotId] = flyoutId
+    getSpecificConditionalFlyoutPlacements()[slotId] = flyoutId
 end
 
-function GermCommander:ForgetPlacement(slotId)
+function forgetPlacement(slotId)
     if type(slotId) == "string" then slotId = tonumber(slotId) end
-    self:GetSpecificConditionalFlyoutPlacements()[slotId] = nil
+    getSpecificConditionalFlyoutPlacements()[slotId] = nil
 end
 
 -- when the user picks up a flyout, we need a draggable UI element, so create a dummy macro with the same icon as the flyout
-function GermCommander:PickupFlyout(flyoutId)
+function pickupFlyout(flyoutId)
     if InCombatLockdown() then
         return;
     end
 
-    local flyoutConf = self:GetFlyoutConfig(flyoutId)
+    local flyoutConf = getFlyoutConfig(flyoutId)
     local texture = flyoutConf.icon
 
     if not texture and flyoutConf.actionTypes[1] then
@@ -195,19 +205,19 @@ function newGermProxy(flyoutId, texture)
     return CreateMacro(PROXY_MACRO_NAME, texture, flyoutId, nil, nil)
 end
 
-function GermCommander:GetSpecificConditionalFlyoutPlacement(actionBarSlotId)
-    local placements = self:GetSpecificConditionalFlyoutPlacements()
+function getSpecificConditionalFlyoutPlacement(actionBarSlotId)
+    local placements = getSpecificConditionalFlyoutPlacements()
     return placements[actionBarSlotId]
 end
 
-function GermCommander:GetSpecificConditionalFlyoutPlacements()
-    local placements = self:GetFlyoutPlacementsForToon()
-    local spec = self:GetSpecSlotId()
+function getSpecificConditionalFlyoutPlacements()
+    local placements = getFlyoutPlacementsForToon()
+    local spec = getPlacementIdForToonSpecialization()
     return placements and placements[spec]
 end
 
 -- the placement of flyouts on the action bars is stored separately for each toon
-function GermCommander:PutFlyoutPlacementsForToon(flyoutPlacements)
+function putFlyoutPlacementsForToon(flyoutPlacements)
     if not UFO_SV_PLACEMENT then
         UFO_SV_PLACEMENT = {}
     end
@@ -222,7 +232,7 @@ function GermCommander:PutFlyoutPlacementsForToon(flyoutPlacements)
     --Db.profile.placementsPerToonAndSpec[playerId] = flyoutPlacements
 end
 
-function GermCommander:GetFlyoutPlacementsForToon()
+function getFlyoutPlacementsForToon()
     return UFO_SV_PLACEMENT and UFO_SV_PLACEMENT.flyoutPlacements
     --local playerId = getIdForCurrentToon()
     --local ppts = Db.profile.placementsPerToonAndSpec
