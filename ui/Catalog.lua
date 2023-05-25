@@ -65,7 +65,7 @@ function GLOBAL_UIUFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
     UFO_CatalogScrollPane_DoUpdate(scrollPane)
 end
 
-function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(scrollPane, button, down)
+function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(scrollPane, whichMouseButton, down)
     if scrollPane.name and scrollPane.name ~= "" then
         if UIUFO_CatalogScrollPane.selectedIdx == scrollPane.name then
             UIUFO_CatalogScrollPane.selectedIdx = nil

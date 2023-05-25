@@ -104,7 +104,7 @@ function GLOBAL_UIUFO_DetailerPopup_OnHide(detailerPopup)
     collectgarbage()
 end
 
-function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, button, pushed)
+function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pushed)
     local popup = okayBtn:GetParent()
     local iconTexture
     if popup.selectedIcon ~= 1 then
@@ -131,7 +131,7 @@ function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(btn)
     end
 end
 
-function GLOBAL_UIUFO_CatalogPopupBtn_OnClick(btn, button, down)
+function GLOBAL_UIUFO_CatalogPopupBtn_OnClick(btn, whichMouseButton, down)
     local popup = btn:GetParent()
     local offset = FauxScrollFrame_GetOffset(UIUFO_DetailerPopupScrollFrame) or 0
     popup.selectedIcon = (offset * NUM_FLYOUT_ICONS_PER_ROW) + btn:GetID()

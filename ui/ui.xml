@@ -254,9 +254,7 @@
                 self.icon = _G[name .. "Icon"];
                 self.name = _G[name .. "Name"];
             </OnLoad>
-            <OnClick>
-                GLOBAL_UIUFO_CatalogPopupBtn_OnClick(self, button, down);
-            </OnClick>
+            <OnClick function="GLOBAL_UIUFO_CatalogPopupBtn_OnClick" />
         </Scripts>
         <NormalTexture name="$parentIcon" nonBlocking="true">
             <Size>

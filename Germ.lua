@@ -317,7 +317,7 @@ function handlers.OnUpdate(germ, elapsed)
     updateGerm(germ)
 end
 
-function handlers.OnPreClick(germ, button, down)
+function handlers.OnPreClick(germ, whichMouseButton, down)
     germ:SetChecked(not germ:GetChecked())
     local direction = germ:GetAttribute("flyoutDirection");
 
