@@ -11,6 +11,13 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 ---@type Debug -- IntelliJ-EmmyLua annotation
 local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
+---@class Germ -- IntelliJ-EmmyLua annotation
+local Germ = {
+    flyoutId = false,
+    isGerm = true,
+}
+Ufo.Germ = Germ
+
 -------------------------------------------------------------------------------
 -- Data
 -------------------------------------------------------------------------------
