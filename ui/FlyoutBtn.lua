@@ -68,7 +68,7 @@ function GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag(btn)
 
         -- drop the dragged spell/item/etc
         ClearCursor()
-        applyAllGerms()
+        updateAllGerms()
         updateFlyoutMenuForCatalog(flyoutMenu, flyoutId)
 
         -- update the cursor to show the existing spell/item/etc (if any)
@@ -159,7 +159,7 @@ function GLOBAL_UIUFO_FlyoutBtn_OnDragStart(flyoutBtn)
     local flyoutFrame = flyoutBtn:GetParent()
     if flyoutFrame.IsConfig then
         removeSpell(flyoutFrame.idFlyout, flyoutBtn:GetID())
-        applyAllGerms()
+        updateAllGerms()
         updateFlyoutMenuForCatalog(flyoutFrame, flyoutFrame.idFlyout)
     end
 end

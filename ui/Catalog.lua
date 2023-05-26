@@ -212,7 +212,7 @@ function defineCatalogPopupDialogs()
         text = L10N["CONFIRM_DELETE"],
         button1 = YES,
         button2 = NO,
-        OnAccept = function (dialog) removeFlyout(dialog.flyoutId); updateCatalog(); applyAllGerms(); end,
+        OnAccept = function (dialog) deleteFlyout(dialog.flyoutId); updateCatalog(); updateAllGerms(); end,
         OnCancel = function (dialog) end,
         hideOnEscape = 1,
         timeout = 0,

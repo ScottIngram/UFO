@@ -11,8 +11,12 @@ TODO
 * DONE: NUKE all function paramsNamed(self) and rename them with actual NAMES
 * DONE: identify which Ufo:Foo() methods actually need to be global
 * DONE: eliminate as many Ufo:Foo() -> foo()
+* make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
+* optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
 * eliminate all "legacy data" fixes
 * eliminate any support for classic
+* BUG: OnDragStart needs to accomodate when there is already something on the cursor
+* - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
 ]]
 
 -------------------------------------------------------------------------------
@@ -43,7 +47,7 @@ function EventHandlers:PLAYER_LOGIN()
     debugTrace:print("PLAYER_LOGIN")
     DEFAULT_CHAT_FRAME:AddMessage( "|cffd78900"..ADDON_NAME.." v"..VERSION.."|r loaded." )
     initalizeAddonStuff()
-    applyAllGerms()
+    updateAllGerms()
 end
 
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
@@ -57,7 +61,7 @@ end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
     debugTrace:print("PLAYER_SPECIALIZATION_CHANGED")
-    applyAllGerms()
+    updateAllGerms()
 end
 
 -------------------------------------------------------------------------------
@@ -208,17 +212,17 @@ end
 -- Utility Functions
 -------------------------------------------------------------------------------
 
-function deepcopy(orig)
-    local orig_type = type(orig)
+function deepcopy(src, target)
+    local orig_type = type(src)
     local copy
     if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in next, orig, nil do
+        copy = target or {}
+        for orig_key, orig_value in next, src, nil do
             copy[deepcopy(orig_key)] = deepcopy(orig_value)
         end
-        setmetatable(copy, deepcopy(getmetatable(orig)))
+        --setmetatable(copy, deepcopy(getmetatable(src)))
     else -- number, string, boolean, etc
-        copy = orig
+        copy = src
     end
     return copy
 end

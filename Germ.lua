@@ -1,5 +1,7 @@
 -- Germ
--- a button on the actionbars that opens & closes an instance of a flyout menu
+-- is a button on the actionbars that opens & closes an instance of a flyout menu.
+-- is a standard bliz CheckButton frame but with extra attributes attached.
+-- Once created it always exists at its original actionbar slot, but, may be assigned a different flyout menu or none at all.
 -- a.k.a launchpad, egg, exploder, torpedo, detonator, originator, impetus, genesis, bigBang, singularity...
 
 -------------------------------------------------------------------------------
@@ -28,6 +30,7 @@ local handlers = {}
 -- Constants
 -------------------------------------------------------------------------------
 
+local GERM_UI_NAME_PREFIX = "UfoGerm"
 local snippet_Germ_Click = [=[
 	local DELIMITER = "]=]..DELIMITER..[=["
 	local EMPTY_ELEMENT = "]=]..EMPTY_ELEMENT..[=["
@@ -129,21 +132,56 @@ local snippet_Germ_Click = [=[
 	end
 ]=]
 
-function createGerm(btnSlotIndex, flyoutId, direction, actionButton, visibleIf, typeActionButton)
+-------------------------------------------------------------------------------
+-- Functions / Methods
+-------------------------------------------------------------------------------
+
+local function isGermMethod(firstArg)
+    return (firstArg and type(firstArg) == "table" and firstArg.isGerm)
+end
+
+local function assertIsGermFunction(firstArg)
+    assert(not isGermMethod(firstArg), "Um... it's var.foo() not var:foo()")
+end
+
+local function assertIsGermMethod(firstArg)
+    assert(isGermMethod(firstArg), "Um... it's var:foo() not var.foo()")
+end
+
+function Germ.new(flyoutId, actionBarBtn)
+    assertIsGermFunction(flyoutId)
     local flyoutConf = getFlyoutConfig(flyoutId)
-    if not flyoutId then return end -- because one toon can delete a flyout while other toons still have it on their bars
-    local name = "UIUfo_FlyoutGerm" .. btnSlotIndex
-    local germ = getGerm(name) or CreateFrame("CheckButton", name, actionButton, "ActionButtonTemplate, SecureHandlerClickTemplate")
-    setGerm(name, germ)
+    if not flyoutConf then return end -- because one toon can delete a flyout while other toons still have it on their bars
+    local name = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
+    local btn = CreateFrame("CheckButton", name, actionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
+    deepcopy(Germ, btn) -- copy Germ's methods, functions, etc to the UI btn
+    btn.flyoutId = flyoutId
+    return btn
+end
+
+function Germ:GetBtnSlotIndex()
+    local whateverIsActionBarBtnParent = self:GetParent()
+    assert(whateverIsActionBarBtnParent, "Um, this germ has no parent?!")
+    return whateverIsActionBarBtnParent.action
+end
+
+function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
+    assertIsGermMethod(self)
+    local germ = self
+
     germ.flyoutId = flyoutId
+    local flyoutConf = getFlyoutConfig(germ.flyoutId)
+    if not flyoutConf then return end -- because one toon can delete a flyout while other toons still have it on their bars
+
     germ.btnSlotIndex = btnSlotIndex
 
-    if actionButton then
-        if actionButton:GetSize() and actionButton:IsRectValid() then
-            germ:SetAllPoints(actionButton)
+    local actionBarBtn = germ:GetParent()
+    if actionBarBtn then
+        if actionBarBtn:GetSize() and actionBarBtn:IsRectValid() then
+            germ:SetAllPoints(actionBarBtn)
         else
-            local spacerName = "UIUfo_ActionBarButtonSpacer"..tostring(actionButton.index)
-            local children = {actionButton:GetParent():GetChildren()}
+            local spacerName = "UIUfo_ActionBarButtonSpacer"..tostring(actionBarBtn.index)
+            local children = { actionBarBtn:GetParent():GetChildren()}
             for _, child in ipairs(children) do
                 if child:GetName() == spacerName then
                     germ:SetAllPoints(child)
@@ -203,22 +241,21 @@ function createGerm(btnSlotIndex, flyoutId, direction, actionButton, visibleIf, 
         germ:SetAttribute("typelist", strjoin(",", unpack(flyoutConf.actionTypes)))
     ]]
 
+    -- TODO: these only need to be set when the germ is first created.
     -- TODO: find a way to eliminate the need for OnUpdate
     germ:SetScript("OnUpdate", handlers.OnUpdate)
     germ:SetScript("OnEnter", handlers.OnEnter)
     germ:SetScript("OnLeave", handlers.OnLeave)
-
     germ:SetScript("OnReceiveDrag", handlers.OnReceiveDrag)
-    germ:SetScript("OnMouseUp", handlers.OnReceiveDrag) -- Hmmm... needed?
-    germ:SetScript("OnDragStart", handlers.OnDragStart)
-
+    germ:SetScript("OnMouseUp", handlers.OnMouseUp)
+    germ:SetScript("OnDragStart", handlers.PickupAndDrag)
     germ:SetScript("PreClick", handlers.OnPreClick)
     germ:SetAttribute("_onclick", snippet_Germ_Click)
     germ:RegisterForClicks("AnyUp")
     germ:RegisterForDrag("LeftButton")
 
     -- TODO: calculate the icon on the fly - consider if a toon knows the spell before choosing its icon
-    local icon = _G[germ:GetName().."Icon"]
+    local icon = _G[germ:GetName().."Icon"] -- TODO: SURELY there is an API to do this
     if flyoutConf.icon then
         if type(flyoutConf.icon) == "number" then
             icon:SetTexture(flyoutConf.icon)
@@ -238,30 +275,8 @@ function createGerm(btnSlotIndex, flyoutId, direction, actionButton, visibleIf, 
     end
 end
 
--------------------------------------------------------------------------------
--- Handlers
--------------------------------------------------------------------------------
-
-function handlers.OnReceiveDrag(germ)
-    if InCombatLockdown() then
-        return
-    end
-
-    local cursor = GetCursorInfo()
-    if cursor then
-        PlaceAction(germ.btnSlotIndex)
-    end
-end
-
-function handlers.OnDragStart(germ)
-    if not InCombatLockdown() and (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
-        pickupFlyout(germ.flyoutId)
-        forgetPlacement(germ.btnSlotIndex)
-        applyAllGerms()
-    end
-end
-
-function updateGerm(germ)
+---@param germ Germ -- IntelliJ-EmmyLua annotation
+local function updateGerm(germ)
     -- print("========== Germ_UpdateFlyout()") this is being called continuously while a flyout exists on any bar
     -- Update border and determine arrow position
     local arrowDistance;
@@ -315,10 +330,48 @@ function updateGerm(germ)
     end
 end
 
+-------------------------------------------------------------------------------
+-- Handlers
+--
+-- Note: ACTIONBAR_SLOT_CHANGED will happen as a result of
+-- some of the actions below which will in turn trigger other handlers elsewhere
+-------------------------------------------------------------------------------
+
+---@param germ Germ -- IntelliJ-EmmyLua annotation
+function handlers.OnMouseUp(germ)
+    debugInfo:out("^",5,"OnMouseUp()","name",germ:GetName())
+    handlers.OnReceiveDrag(germ)
+end
+
+---@param germ Germ -- IntelliJ-EmmyLua annotation
+function handlers.OnReceiveDrag(germ)
+    debugInfo:out("^",5,"OnReceiveDrag()","name",germ:GetName())
+    if InCombatLockdown() then
+        return
+    end
+
+    local cursor = GetCursorInfo()
+    if cursor then
+        PlaceAction(germ:GetBtnSlotIndex())
+    end
+end
+
+---@param germ Germ -- IntelliJ-EmmyLua annotation
+function handlers.PickupAndDrag(germ)
+    if not InCombatLockdown() and (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
+        debugInfo:out("^",5,"OnDragStart()","name",germ:GetName())
+        pickupFlyout(germ.flyoutId)
+        forgetPlacement(germ:GetBtnSlotIndex())
+        updateAllGerms()
+    end
+end
+
+---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnEnter(germ)
     updateGerm(germ)
 end
 
+---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnLeave(germ)
     updateGerm(germ)
 end
@@ -326,6 +379,7 @@ end
 -- throttle OnUpdate because it fires as often as FPS and is very resource intensive
 local ON_UPDATE_TIMER_FREQUENCY = 1.5
 local onUpdateTimer = 0
+
 function handlers.OnUpdate(germ, elapsed)
     onUpdateTimer = onUpdateTimer + elapsed
     if onUpdateTimer < ON_UPDATE_TIMER_FREQUENCY then

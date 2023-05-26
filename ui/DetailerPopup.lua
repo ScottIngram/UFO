@@ -129,7 +129,7 @@ function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pu
     config.icon = iconTexture
     popup:Hide()
     updateCatalog()
-    applyAllGerms()
+    updateAllGerms()
 end
 
 function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(btn)

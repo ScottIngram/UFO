@@ -186,18 +186,18 @@ function addFlyout()
     return newFlyoutDef
 end
 
-function removeFlyout(flyoutId)
+function deleteFlyout(flyoutId)
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
     table.remove(getFlyoutsConfigs(), flyoutId)
     -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
     local placementsForEachSpec = getFlyoutPlacementsForToon()
     for i = 1, #placementsForEachSpec do
         local placements = placementsForEachSpec[i]
-        for slotId, fId in pairs(placements) do
+        for btnSlotIndex, fId in pairs(placements) do
             if fId == flyoutId then
-                placements[slotId] = nil
+                placements[btnSlotIndex] = nil
             elseif fId > flyoutId then
-                placements[slotId] = fId - 1
+                placements[btnSlotIndex] = fId - 1
             end
         end
     end

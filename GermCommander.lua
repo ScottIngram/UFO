@@ -23,7 +23,56 @@ local germs = {} -- copies of flyouts that sit on the action bars
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
-function applyAllGerms()
+local function getGerm(btnSlotIndex)
+    return germs[btnSlotIndex]
+end
+
+---@param germ Germ -- IntelliJ-EmmyLua annotation
+local function rememberGerm(germ)
+    local btnSlotIndex = germ:GetBtnSlotIndex()
+    germs[btnSlotIndex] = germ
+end
+
+local function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
+    -- examine the action/bonus/multi bar
+    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
+    local actionBarDef = BLIZ_BAR_METADATA[barNum]
+    assert(actionBarDef, "No ".. ADDON_NAME .." config defined for button bar #"..barNum) -- in case Blizzard adds more bars, complain here clearly.
+    local actionBarName = actionBarDef.name
+    local visibleIf = actionBarDef.visibleIf
+
+    -- examine the button
+    local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
+    if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
+    local actionBarBtnName = actionBarName .. "Button" .. btnNum
+    local actionBarBtn = _G[actionBarBtnName] -- grab the button object from Blizzard's GLOBAL dumping ground
+
+    -- ask the bar instance what direction to fly
+    local barObj = actionBarBtn and actionBarBtn.bar
+    local direction = barObj and barObj:GetSpellFlyoutDirection() or "UP" -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
+
+    --local foo = btnObj and "FOUND" or "NiL"
+    --print ("###--->>> ffUniqueId =", ffUniqueId, "barNum =",barNum, "btnSlotIndex = ", btnSlotIndex, "btnObj =",foo, "blizBarName = ",blizBarName,  "btnName =",btnName,  "btnNum =",btnNum, "direction =",direction, "visibleIf =", visibleIf)
+
+    ---@type Germ
+    local germ = getGerm(btnSlotIndex)
+    if not germ then
+        germ = Germ.new(flyoutId, actionBarBtn)
+        rememberGerm(germ)
+    end
+    debugInfo:out("*",3,"bindFlyoutToActionBarSlot()","germ...",germ)
+    germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
+end
+
+local function clearGerms()
+    for name, germ in pairs(germs) do
+        germ:Hide()
+        UnregisterStateDriver(germ, "visibility")
+    end
+end
+
+-- public
+function updateAllGerms()
     if InCombatLockdown() then
         return
     end
@@ -34,7 +83,7 @@ function applyAllGerms()
     end
 end
 
-function isGermProxy(type, macroId)
+local function isGermProxy(type, macroId)
     local flyoutId
     if type == "macro" then
         local name, texture, body = GetMacroInfo(macroId)
@@ -45,20 +94,22 @@ function isGermProxy(type, macroId)
     return flyoutId
 end
 
+-- public
+-- Responds to event: ACTIONBAR_SLOT_CHANGED
 -- Check if this event was caused by dragging a flyout out of the Catalog and dropping it onto an actionbar.
 -- The targeted slot could: be empty; already have a different germ (or the same one); anything else.
-function handleActionBarSlotChanged(actionBarSlotId)
+function handleActionBarSlotChanged(btnSlotIndex)
     local configChanged
-    local existingFlyoutId = getSpecificConditionalFlyoutPlacements()[actionBarSlotId]
+    local existingFlyoutId = getSpecificConditionalFlyoutPlacements()[btnSlotIndex] -- TODO: can I change this to pull from getGerm(btnSlotIndex) instead?
 
-    local type, macroId = GetActionInfo(actionBarSlotId)
+    local type, macroId = GetActionInfo(btnSlotIndex)
     if not type then
         return
     end
 
     local flyoutId = isGermProxy(type, macroId)
     if flyoutId then
-        savePlacement(actionBarSlotId, flyoutId)
+        savePlacement(btnSlotIndex, flyoutId)
         DeleteMacro(PROXY_MACRO_NAME)
         configChanged = true
     end
@@ -67,60 +118,20 @@ function handleActionBarSlotChanged(actionBarSlotId)
     if existingFlyoutId then
         pickupFlyout(existingFlyoutId)
         if not configChanged then
-            forgetPlacement(actionBarSlotId)
+            forgetPlacement(btnSlotIndex)
             configChanged = true
         end
     end
 
     if configChanged then
-        applyAllGerms()
+        updateAllGerms()
     end
 end
 
-
+-- unused
 function applyOperationToAllGermInstancesUnlessInCombat(callback)
     if InCombatLockdown() then return end
     applyOperationToAllGermInstances(callback)
-end
-
-function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
-    -- examine the action/bonus/multi bar
-    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
-    local blizBarDef = BLIZ_BAR_METADATA[barNum]
-    assert(blizBarDef, "No ".. ADDON_NAME .." config defined for button bar #"..barNum) -- in case Blizzard adds more bars, complain here clearly.
-    local blizBarName = blizBarDef.name
-    local visibleIf = blizBarDef.visibleIf
-    local typeActionButton = blizBarDef.classicType -- for WoW classic
-
-    -- examine the button
-    local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
-    if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
-    local btnName = blizBarName .. "Button" .. btnNum
-    local btnObj = _G[btnName] -- grab the button object from Blizzard's GLOBAL dumping ground
-
-    -- ask the bar instance what direction to fly
-    local barObj = btnObj and btnObj.bar
-    local direction = barObj and barObj:GetSpellFlyoutDirection() or "UP" -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
-
-    --local foo = btnObj and "FOUND" or "NiL"
-    --print ("###--->>> ffUniqueId =", ffUniqueId, "barNum =",barNum, "slotId = ", btnSlotIndex, "btnObj =",foo, "blizBarName = ",blizBarName,  "btnName =",btnName,  "btnNum =",btnNum, "direction =",direction, "visibleIf =", visibleIf)
-
-    createGerm(btnSlotIndex, flyoutId, direction, btnObj, visibleIf, typeActionButton)
-end
-
-function clearGerms()
-    for name, germ in pairs(germs) do
-        germ:Hide()
-        UnregisterStateDriver(germ, "visibility")
-    end
-end
-
-function getGerm(name)
-    return germs[name]
-end
-
-function setGerm(name, germ)
-    germs[name] = germ
 end
 
 -------------------------------------------------------------------------------
@@ -175,15 +186,15 @@ function fixLegacyActionsNils(actions)
     end
 end
 
-function savePlacement(slotId, flyoutId)
-    if type(slotId) == "string" then slotId = tonumber(slotId) end
+function savePlacement(btnSlotIndex, flyoutId)
+    if type(btnSlotIndex) == "string" then btnSlotIndex = tonumber(btnSlotIndex) end
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
-    getSpecificConditionalFlyoutPlacements()[slotId] = flyoutId
+    getSpecificConditionalFlyoutPlacements()[btnSlotIndex] = flyoutId
 end
 
-function forgetPlacement(slotId)
-    if type(slotId) == "string" then slotId = tonumber(slotId) end
-    getSpecificConditionalFlyoutPlacements()[slotId] = nil
+function forgetPlacement(btnSlotIndex)
+    if type(btnSlotIndex) == "string" then btnSlotIndex = tonumber(btnSlotIndex) end
+    getSpecificConditionalFlyoutPlacements()[btnSlotIndex] = nil
 end
 
 -- when the user picks up a flyout, we need a draggable UI element, so create a dummy macro with the same icon as the flyout
