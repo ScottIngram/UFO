@@ -24,7 +24,7 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
---@type Debug -- OO annotation for IntelliJ-EmmyLua
+---@type Debug -- IntelliJ-EmmyLua annotation
 local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
 -------------------------------------------------------------------------------

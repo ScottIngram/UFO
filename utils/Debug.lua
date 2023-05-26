@@ -4,7 +4,7 @@ local ADDON_NAME, ADDON_VARS = ...
 -- Module Loading / Exporting
 -------------------------------------------------------------------------------
 
---@class Debug -- OO annotation for IntelliJ-EmmyLua
+---@class Debug -- IntelliJ-EmmyLua annotation
 local Debug = {}
 ADDON_VARS.Debug = Debug
 
