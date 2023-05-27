@@ -3,7 +3,7 @@
    - You can obtain one at http://mozilla.org/MPL/2.0/.  -->
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
 
-    <CheckButton name="UIUFO_FlyoutBtnTemplate" virtual="TRUE" inherits="SmallActionButtonTemplate, SecureActionButtonTemplate">
+    <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate" virtual="TRUE" inherits="SmallActionButtonTemplate, SecureActionButtonTemplate">
         <Scripts>
             <OnLoad>
                 self:SmallActionButtonMixin_OnLoad()
@@ -13,13 +13,13 @@
                 self.maxDisplayCount = 99
                 self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
             </OnLoad>
-            <OnEnter function="GLOBAL_UIUFO_FlyoutBtn_SetTooltip" />
+            <OnEnter function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip" />
             <OnLeave>
                 GameTooltip:Hide()
             </OnLeave>
-            <OnDragStart function="GLOBAL_UIUFO_FlyoutBtn_OnDragStart" />
-            <OnReceiveDrag function="GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag" />
-            <OnMouseUp function="GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag" />
+            <OnDragStart function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart" />
+            <OnReceiveDrag function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag" />
+            <OnMouseUp function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag" />
             <PreClick>
                 self:SetChecked(false)
             </PreClick>
@@ -45,26 +45,26 @@
                     <KeyValue key="ignoreInlayout" value="true" type="boolean"/>
                 </KeyValues>
             </Frame>
-            <CheckButton name="$parentButton1" inherits="UIUFO_FlyoutBtnTemplate" id="1" />
-            <CheckButton name="$parentButton2" inherits="UIUFO_FlyoutBtnTemplate" id="2" />
-            <CheckButton name="$parentButton3" inherits="UIUFO_FlyoutBtnTemplate" id="3" />
-            <CheckButton name="$parentButton4" inherits="UIUFO_FlyoutBtnTemplate" id="4" />
-            <CheckButton name="$parentButton5" inherits="UIUFO_FlyoutBtnTemplate" id="5" />
-            <CheckButton name="$parentButton6" inherits="UIUFO_FlyoutBtnTemplate" id="6" />
-            <CheckButton name="$parentButton7" inherits="UIUFO_FlyoutBtnTemplate" id="7" />
-            <CheckButton name="$parentButton8" inherits="UIUFO_FlyoutBtnTemplate" id="8" />
-            <CheckButton name="$parentButton9" inherits="UIUFO_FlyoutBtnTemplate" id="9" />
-            <CheckButton name="$parentButton10" inherits="UIUFO_FlyoutBtnTemplate" id="10" />
-            <CheckButton name="$parentButton11" inherits="UIUFO_FlyoutBtnTemplate" id="11" />
-            <CheckButton name="$parentButton12" inherits="UIUFO_FlyoutBtnTemplate" id="12" />
-            <CheckButton name="$parentButton13" inherits="UIUFO_FlyoutBtnTemplate" id="13" />
-            <CheckButton name="$parentButton14" inherits="UIUFO_FlyoutBtnTemplate" id="14" />
-            <CheckButton name="$parentButton15" inherits="UIUFO_FlyoutBtnTemplate" id="15" />
-            <CheckButton name="$parentButton16" inherits="UIUFO_FlyoutBtnTemplate" id="16" />
-            <CheckButton name="$parentButton17" inherits="UIUFO_FlyoutBtnTemplate" id="17" />
-            <CheckButton name="$parentButton18" inherits="UIUFO_FlyoutBtnTemplate" id="18" />
-            <CheckButton name="$parentButton19" inherits="UIUFO_FlyoutBtnTemplate" id="19" />
-            <CheckButton name="$parentButton20" inherits="UIUFO_FlyoutBtnTemplate" id="20" />
+            <CheckButton name="$parentButton1" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="1" />
+            <CheckButton name="$parentButton2" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="2" />
+            <CheckButton name="$parentButton3" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="3" />
+            <CheckButton name="$parentButton4" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="4" />
+            <CheckButton name="$parentButton5" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="5" />
+            <CheckButton name="$parentButton6" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="6" />
+            <CheckButton name="$parentButton7" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="7" />
+            <CheckButton name="$parentButton8" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="8" />
+            <CheckButton name="$parentButton9" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="9" />
+            <CheckButton name="$parentButton10" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="10" />
+            <CheckButton name="$parentButton11" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="11" />
+            <CheckButton name="$parentButton12" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="12" />
+            <CheckButton name="$parentButton13" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="13" />
+            <CheckButton name="$parentButton14" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="14" />
+            <CheckButton name="$parentButton15" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="15" />
+            <CheckButton name="$parentButton16" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="16" />
+            <CheckButton name="$parentButton17" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="17" />
+            <CheckButton name="$parentButton18" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="18" />
+            <CheckButton name="$parentButton19" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="19" />
+            <CheckButton name="$parentButton20" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="20" />
         </Frames>
         <Scripts>
             <OnLoad function="GLOBAL_UIUFO_FlyoutMenu_OnLoad"/>

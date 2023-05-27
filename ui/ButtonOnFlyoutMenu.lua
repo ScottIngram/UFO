@@ -10,16 +10,15 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 ---@type Debug -- IntelliJ-EmmyLua annotation
 local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
-
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutBtn XML Callbacks
 -------------------------------------------------------------------------------
 
 -- add a spell/item/etc to a flyout
-function GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag(btn)
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
     local thingyId, mountIndex, macroOwner, pet
 
-    local flyoutMenu = btn:GetParent()
+    local flyoutMenu = btnOnFlyout:GetParent()
     if not flyoutMenu.IsConfig then return end
 
     local flyoutId = flyoutMenu.idFlyout
@@ -28,7 +27,7 @@ function GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag(btn)
     local actionType = kind
 
     -- TODO: distinguish between toys and spells
-    --print("@@@@ GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag-->  kind =",kind, " --  info1 =",info1, " --  info2 =",info2, " --  info3 =",info3)
+    --print("@@@@ GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag-->  kind =",kind, " --  info1 =",info1, " --  info2 =",info2, " --  info3 =",info3)
     if kind == "spell" then
         thingyId = info3
     elseif kind == "mount" then
@@ -50,7 +49,7 @@ function GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag(btn)
 
     if actionType then
         local flyoutConf = getFlyoutConfig(flyoutId)
-        local btnIndex = btn:GetID()
+        local btnIndex = btnOnFlyout:GetID()
 
         local oldThingyId   = flyoutConf.spells[btnIndex]
         local oldActionType = flyoutConf.actionTypes[btnIndex]
@@ -64,7 +63,7 @@ function GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag(btn)
         flyoutConf.macroOwners[btnIndex] = macroOwner
         flyoutConf.pets[btnIndex] = pet
 
-        --print("@#$* GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag-->  btnIndex =",btnIndex, "| kind =",kind, "| thingyId =",thingyId, "| petId =", pet)
+        --print("@#$* GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag-->  btnIndex =",btnIndex, "| kind =",kind, "| thingyId =",thingyId, "| petId =", pet)
 
         -- drop the dragged spell/item/etc
         ClearCursor()
@@ -90,54 +89,54 @@ function GLOBAL_UIUFO_FlyoutBtn_OnReceiveDrag(btn)
     end
 end
 
-function GLOBAL_UIUFO_FlyoutBtn_SetTooltip(flyoutBtn)
-    local thingyId = flyoutBtn.spellID
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip(btnOnFlyout)
+    local thingyId = btnOnFlyout.spellID
     if GetCVar("UberTooltips") == "1" then
-        GameTooltip_SetDefaultAnchor(GameTooltip, flyoutBtn)
+        GameTooltip_SetDefaultAnchor(GameTooltip, btnOnFlyout)
 
         local tooltipSetter
-        if flyoutBtn.actionType == "spell" then
+        if btnOnFlyout.actionType == "spell" then
             tooltipSetter = GameTooltip.SetSpellByID
-        elseif flyoutBtn.actionType == "item" then
+        elseif btnOnFlyout.actionType == "item" then
             tooltipSetter = GameTooltip.SetItemByID
-        elseif flyoutBtn.actionType == "macro" then
+        elseif btnOnFlyout.actionType == "macro" then
             tooltipSetter = function(zelf, macroId)
                 local name, _, _ = GetMacroInfo(macroId)
                 if not macroId then macroId = "NiL" end
                 return GameTooltip:SetText("Macro: ".. macroId .." " .. (name or "UNKNOWN"))
             end
-        elseif flyoutBtn.actionType == "battlepet" then
-            thingyId = flyoutBtn.battlepet
+        elseif btnOnFlyout.actionType == "battlepet" then
+            thingyId = btnOnFlyout.battlepet
             tooltipSetter = GameTooltip.SetCompanionPet
-            -- print("))))) GLOBAL_UIUFO_FlyoutBtn_SetTooltip(): actionType = battlepet | thingyId =", thingyId)
+            -- print("))))) GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip(): actionType = battlepet | thingyId =", thingyId)
         end
 
         if tooltipSetter and thingyId and tooltipSetter(GameTooltip, thingyId) then
-            flyoutBtn.UpdateTooltip = GLOBAL_UIUFO_FlyoutBtn_SetTooltip
+            btnOnFlyout.UpdateTooltip = GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip
         else
-            flyoutBtn.UpdateTooltip = nil
+            btnOnFlyout.UpdateTooltip = nil
         end
     else
-        local parent = flyoutBtn:GetParent():GetParent():GetParent():GetParent()
+        local parent = btnOnFlyout:GetParent():GetParent():GetParent():GetParent()
         if parent == MultiBarBottomRight or parent == MultiBarRight or parent == MultiBarLeft then
-            GameTooltip:SetOwner(flyoutBtn, "ANCHOR_LEFT")
+            GameTooltip:SetOwner(btnOnFlyout, "ANCHOR_LEFT")
         else
-            GameTooltip:SetOwner(flyoutBtn, "ANCHOR_RIGHT")
+            GameTooltip:SetOwner(btnOnFlyout, "ANCHOR_RIGHT")
         end
-        local spellName = getThingyNameById(flyoutBtn.actionType, thingyId)
+        local spellName = getThingyNameById(btnOnFlyout.actionType, thingyId)
         GameTooltip:SetText(spellName, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
-        flyoutBtn.UpdateTooltip = nil
+        btnOnFlyout.UpdateTooltip = nil
     end
 end
 
 -- pickup an existing button from an existing flyout
-function GLOBAL_UIUFO_FlyoutBtn_OnDragStart(flyoutBtn)
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(btnOnFlyout)
     if InCombatLockdown() then return end
 
-    local actionType = flyoutBtn.actionType
-    local spell = flyoutBtn.spellID
-    local mountIndex = flyoutBtn.mountIndex
-    local pet = flyoutBtn.battlepet
+    local actionType = btnOnFlyout.actionType
+    local spell = btnOnFlyout.spellID
+    local mountIndex = btnOnFlyout.mountIndex
+    local pet = btnOnFlyout.battlepet
 
     if actionType == "spell" then
         if mountIndex then
@@ -154,11 +153,11 @@ function GLOBAL_UIUFO_FlyoutBtn_OnDragStart(flyoutBtn)
         C_PetJournal.PickupPet(pet)
     end
 
-    --print("#### GLOBAL_UIUFO_FlyoutBtn_OnDragStart-->  actionType =",actionType, " spellID =", spell, " mountIndex =", mountIndex, "petId =", pet)
+    --print("#### GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart-->  actionType =",actionType, " spellID =", spell, " mountIndex =", mountIndex, "petId =", pet)
 
-    local flyoutFrame = flyoutBtn:GetParent()
+    local flyoutFrame = btnOnFlyout:GetParent()
     if flyoutFrame.IsConfig then
-        removeSpell(flyoutFrame.idFlyout, flyoutBtn:GetID())
+        removeSpell(flyoutFrame.idFlyout, btnOnFlyout:GetID())
         updateAllGerms()
         updateFlyoutMenuForCatalog(flyoutFrame, flyoutFrame.idFlyout)
     end

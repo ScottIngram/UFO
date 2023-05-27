@@ -17,7 +17,7 @@ Germ.lua
 GermCommander.lua
 UFO.lua
 ui\FlyoutMenu.lua
-ui\FlyoutBtn.lua
+ui\ButtonOnFlyoutMenu.lua
 ui\Catalog.lua
 ui\DetailerPopup.lua
 
