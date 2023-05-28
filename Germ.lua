@@ -1,5 +1,7 @@
 -- Germ
--- is a button on the actionbars that opens & closes an instance of a flyout menu.
+-- is a button on the actionbars that opens & closes a copy of a flyout menu from the catalog.
+-- One flyout menu can be duplicated across numerous actionbar buttons, each being a seperate germ.
+
 -- is a standard bliz CheckButton frame but with extra attributes attached.
 -- Once created it always exists at its original actionbar slot, but, may be assigned a different flyout menu or none at all.
 -- a.k.a launchpad, egg, exploder, torpedo, detonator, originator, impetus, genesis, bigBang, singularity...

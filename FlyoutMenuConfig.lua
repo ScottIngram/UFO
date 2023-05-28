@@ -1,6 +1,8 @@
 -- FlyoutMenuConfig
+-- unique flyout definitions shown in the config panel
 -- data for a single flyout object, its spells/pets/macros/items/etc.  and methods for manipulating that data
 -- TODO: invert the FlyoutMenu data structure
+-- TODO: * implement as array of self-contained button objects rather than each button spread across multiple parallel arrays
 -- is currently a collection if parallel lists, each containing one param for each button in the menu
 -- instead, should be one collection/list of button objects, each containing all params for each button.  ENCAPSULATION FTW!
 
@@ -30,33 +32,10 @@ flyoutConfig:addButton(myNewBtn) -- or smarter DWIM behavior that takes a macro 
 -- Constants
 -------------------------------------------------------------------------------
 
--- unique flyout definitions shown in the config panel
--- TODO: eliminate inner "flyout"
--- TODO: * implement as array of self-contained button objects rather than each button spread across multiple parallel arrays
-
-local DEFAULT_UFO_SV_FLYOUT_DEF = {
-    flyouts = {
-        --[[ Sample config : each flyout can have a list of actions and an icon
-        [1] = {
-            actionTypes = {
-                [1] = "spell",
-                [2] = "item",
-                [3] = "macro",
-                [4] = "battlepet"
-            },
-            spells = {
-                [1] = 8024, -- Flametongue
-                [2] = 8033, -- Frostbite
-                [3] = 8232, -- Windfury
-                [4] = 8017, -- RockBite
-                [5] = 51730, -- earthliving
-            },
-            icon = ""
-        },
-        [2] = { ... etc ... }, etc...
-        ]]
-    },
-}
+-- "spell" can mean also item, mount, macro, etc.
+STRUCT_FLYOUT_DEF = { spells={}, actionTypes={}, mountIndex={}, spellNames={}, macroOwners={}, pets={} }
+NEW_STRUCT_FLYOUT_DEF = { id=false, name="", icon="", btns={} }
+NEW_STRUCT_FLYOUT_BTN_DEF = { type="", spellId="", mountIndex="", spellName="", macroOwner="", pet="", }
 
 -------------------------------------------------------------------------------
 -- Flyout Menu Functions - SavedVariables, config CRUD
@@ -91,68 +70,20 @@ function isConfigOlderThan(major, minor, patch, ufo)
     end
 end
 
--- the flyout definitions are stored account-wide and thus shared between all toons
-function putFlyoutConfig(flyouts)
-    if not UFO_SV_FLYOUTS then
-        UFO_SV_FLYOUTS = {}
-    end
-    UFO_SV_FLYOUTS.flyouts = flyouts
-end
-
 function getFlyoutsConfigs()
     return UFO_SV_ACCOUNT and UFO_SV_ACCOUNT.flyouts
 end
 
-local doneChecked = {}
-
--- get and validate the requested flyout config
 function getFlyoutConfig(flyoutId)
+    assert(flyoutId and type(flyoutId)=="number", "Bad flyoutId arg.")
     local config = getFlyoutsConfigs()
-    local flyoutConfig = config and (config[flyoutId])
-
-    -- check that the data structure is complete
-    -- because old versions of the addon may have saved less data than now needed
-    -- but check each specific flyoutId only once
-    if doneChecked[flyoutId] then return flyoutConfig end
-    doneChecked[flyoutId] = true
-    if not flyoutConfig then return nil end
-
-    -- init any missing parts
-    for k,_ in pairs(STRUCT_FLYOUT_DEF) do
-        if not flyoutConfig[k] then
-
-            flyoutConfig[k] = {}
-        end
-    end
-
+    assert(config, "Flyouts config structure is abnormal.")
+    local flyoutConfig = config[flyoutId]
+    assert(flyoutConfig, "No config found for #"..flyoutId)
     return flyoutConfig
 end
 
-function fixLegacyFlyoutsNils(flyouts)
-    for _, flyout in ipairs(flyouts) do
-        if flyout.actionTypes == nil then
-            flyout.actionTypes = {}
-            for i, _ in ipairs(flyout.spells) do
-                flyout.actionTypes[i] = "spell"
-            end
-        end
-        if flyout.mountIndex == nil then
-            flyout.mountIndex = {}
-        end
-        if flyout.spellNames == nil then
-            flyout.spellNames = {}
-        end
-    end
-end
-
-
--- "spell" can mean also item, mount, macro, etc.
-STRUCT_FLYOUT_DEF = { spells={}, actionTypes={}, mountIndex={}, spellNames={}, macroOwners={}, pets={} }
-NEW_STRUCT_FLYOUT_DEF = { id=false, name="", icon="", btns={} }
-NEW_STRUCT_FLYOUT_BTN_DEF = { type="", spellId="", mountIndex="", spellName="", macroOwner="", pet="", }
-
-
-function getNewFlyoutDef()
+local function getNewFlyoutDef()
     return deepcopy(STRUCT_FLYOUT_DEF)
 end
 

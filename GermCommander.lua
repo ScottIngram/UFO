@@ -7,8 +7,9 @@
 
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+
 ---@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
 
 ---@type Germ -- IntelliJ-EmmyLua annotation
 local Germ = Ufo.Germ
@@ -18,6 +19,8 @@ local Germ = Ufo.Germ
 -------------------------------------------------------------------------------
 
 local germs = {} -- copies of flyouts that sit on the action bars
+local previousSpec
+local currentSpec
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -71,16 +74,20 @@ local function clearGerms()
     end
 end
 
--- public
 function updateAllGerms()
     if InCombatLockdown() then
         return
     end
     clearGerms()
-    local placements = getSpecificConditionalFlyoutPlacements()
+    local placements = getConfigForCurrentSpec()
     for btnSlotIndex, flyoutId in pairs(placements) do
         bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
     end
+end
+
+local function newGermProxy(flyoutId, texture)
+    DeleteMacro(PROXY_MACRO_NAME)
+    return CreateMacro(PROXY_MACRO_NAME, texture, flyoutId, nil, nil)
 end
 
 local function isGermProxy(type, macroId)
@@ -94,13 +101,16 @@ local function isGermProxy(type, macroId)
     return flyoutId
 end
 
--- public
+local function getFlyoutIdForSlot(btnSlotIndex)
+    return getConfigForCurrentSpec()[btnSlotIndex]
+end
+
 -- Responds to event: ACTIONBAR_SLOT_CHANGED
 -- Check if this event was caused by dragging a flyout out of the Catalog and dropping it onto an actionbar.
 -- The targeted slot could: be empty; already have a different germ (or the same one); anything else.
 function handleActionBarSlotChanged(btnSlotIndex)
     local configChanged
-    local existingFlyoutId = getSpecificConditionalFlyoutPlacements()[btnSlotIndex] -- TODO: can I change this to pull from getGerm(btnSlotIndex) instead?
+    local existingFlyoutId = getFlyoutIdForSlot(btnSlotIndex)
 
     local type, macroId = GetActionInfo(btnSlotIndex)
     if not type then
@@ -128,76 +138,19 @@ function handleActionBarSlotChanged(btnSlotIndex)
     end
 end
 
--- unused
-function applyOperationToAllGermInstancesUnlessInCombat(callback)
-    if InCombatLockdown() then return end
-    applyOperationToAllGermInstances(callback)
-end
-
--------------------------------------------------------------------------------
--- Placement Functions
--------------------------------------------------------------------------------
--- assigned action bar button slots
--- TODO: move into FlyoutConfigData
-local DEFAULT_PLACEMENTS_CONFIG = {
-    -- each class spec has its own set of placements
-    [1] = {
-        -- config format:
-        -- [action bar slot] = flyout Id
-        -- each button on the bliz action bars has a slot ID which is which we place a flyout ID (see above)
-        -- [13] = 1, -- button #13 holds flyout #1
-        -- [49] = 3, -- button #49 holds flyout #3
-        -- [125] = 2, -- button #125 holds flyout #2
-    },
-    [2] = {
-    },
-    [3] = {
-    },
-    [4] = {
-    },
-    -- spec-agnostic slot
-    [5] = {
-    },
-}
-
-function OLDinitializePlacementConfigIfEmpty(mayUseLegacyData)
-    if getGermPlacementsConfig() then
-        return
-    end
-
-    local placementsForAllSpecs
-    local legacyData = mayUseLegacyData and UFO_SV_PLACEMENT and UFO_SV_PLACEMENT.actions
-    if legacyData then
-        placementsForAllSpecs = deepcopy(legacyData)
-        fixLegacyActionsNils(placementsForAllSpecs)
-        UFO_SV_PLACEMENT.actions_note = "the actions field is old and no longer used by the current version of this addon"
-    else
-        placementsForAllSpecs = deepcopy(DEFAULT_PLACEMENTS_CONFIG)
-    end
-
-    putFlyoutPlacementsForToon(placementsForAllSpecs)
-end
-
-function fixLegacyActionsNils(actions)
-    for i=3,5 do
-        if actions[i] == nil then
-            actions[i] = {}
-        end
-    end
-end
-
 function savePlacement(btnSlotIndex, flyoutId)
     if type(btnSlotIndex) == "string" then btnSlotIndex = tonumber(btnSlotIndex) end
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
-    getSpecificConditionalFlyoutPlacements()[btnSlotIndex] = flyoutId
+    getConfigForCurrentSpec()[btnSlotIndex] = flyoutId
 end
 
 function forgetPlacement(btnSlotIndex)
     if type(btnSlotIndex) == "string" then btnSlotIndex = tonumber(btnSlotIndex) end
-    getSpecificConditionalFlyoutPlacements()[btnSlotIndex] = nil
+    getConfigForCurrentSpec()[btnSlotIndex] = nil
 end
 
--- when the user picks up a flyout, we need a draggable UI element, so create a dummy macro with the same icon as the flyout
+-- when the user picks up a flyout from the catalog (or a germ from the actionbars?)
+-- we need a draggable UI element, so create a dummy macro with the same icon as the flyout
 function pickupFlyout(flyoutId)
     if InCombatLockdown() then
         return;
@@ -217,25 +170,61 @@ function pickupFlyout(flyoutId)
     PickupMacro(proxy)
 end
 
-function newGermProxy(flyoutId, texture)
-    DeleteMacro(PROXY_MACRO_NAME)
-    return CreateMacro(PROXY_MACRO_NAME, texture, flyoutId, nil, nil)
+local function getSpecId()
+    return GetSpecialization() or NON_SPEC_SLOT
 end
 
-function getSpecificConditionalFlyoutPlacement(actionBarSlotId)
-    local placements = getSpecificConditionalFlyoutPlacements()
-    return placements[actionBarSlotId]
-end
-
-function getSpecificConditionalFlyoutPlacements()
-    local placementsForToon = getGermPlacementsConfig()
-    assert(placementsForToon,"placementsForToon is nil")
-    local spec = getPlacementIdForToonSpecialization()
-    if not placementsForToon[spec] then
-        placementsForToon[spec] = {}
+-- keep track of spec changes so getConfigForSpec() can initialize a brand new config based on the old one
+function recordCurrentSpec()
+    local newSpec = getSpecId()
+    --[[DEBUG]] debugTrace:out("+",5,"recordCurrentSpec()", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+    if currentSpec ~= newSpec then
+        previousSpec = currentSpec
+        currentSpec = newSpec
+        --[[DEBUG]] debugTrace:out("+",5,"REASSIGNED->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+        return true
+    else
+        --[[DEBUG]] debugTrace:out("+",5,"unchanged ->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+        return false
     end
-    local placementsForSpec = placementsForToon[spec]
-    return placementsForSpec
+end
+
+-- I originally created this method to handle the PLAYER_SPECIALIZATION_CHANGED event
+-- but, in consitent bliz inconsistency, it's unreliable whether that event
+-- will shoot off before, during, or after the ACTIONBAR_SLOT_CHANGED event which also will trigger updateAllGerms()
+-- so, I had to move recordCurrentSpec() directly into getConfigForCurrentSpec() and am leaving this here as a monument.
+function changePlacementsBecauseSpecChanged()
+    -- recordCurrentSpec() -- nope, nevermind.  moved below
+    updateAllGerms()
+end
+
+function getConfigForCurrentSpec()
+    recordCurrentSpec() --
+    local specId = getSpecId()
+    return getConfigForSpec(specId)
+end
+
+function getConfigForSpec(specId)
+    -- the placement of flyouts on the action bars changes from spec to spec
+    local placementsForAllSpecs = getGermPlacementsConfig()
+    assert(placementsForAllSpecs,"Oops!  placements config is nil")
+
+    -- is this a never-before-encountered spec? - if so, initialze its config
+    --[[DEBUG]] debugTrace:out("+",5,"getConfigForSpec().....", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "placementsForAllSpecs[specId]",placementsForAllSpecs[specId])
+    if not placementsForAllSpecs[specId] then -- TODO: identify empty OR nil
+        local initialConfig
+        if not previousSpec or specId == previousSpec then
+            --[[DEBUG]] debugTrace:out("+",7,"getConfigForSpec() blanking", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
+            initialConfig = {}
+        else
+            -- initialize the new config based on the old one
+            --[[DEBUG]] debugTrace:out("+",7,"getConfigForSpec() COPYING", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
+            initialConfig = deepcopy(getConfigForSpec(previousSpec))
+            --[[DEBUG]] debugTrace:dump(initialConfig)
+        end
+        placementsForAllSpecs[specId] = initialConfig
+    end
+    return placementsForAllSpecs[specId]
 end
 
 -- the placement of flyouts on the action bars is stored separately for each toon

@@ -13,7 +13,7 @@ TODO
 * DONE: eliminate as many Ufo:Foo() -> foo()
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
-* eliminate all "legacy data" fixes
+* DONE: eliminate all "legacy data" fixes
 * eliminate any support for classic
 * BUG: OnDragStart needs to accomodate when there is already something on the cursor
 * - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
@@ -101,10 +101,6 @@ function getIdForCurrentToon()
     local name, realm = UnitFullName("player") -- FU Bliz, realm is arbitrarily nil sometimes but not always
     realm = GetRealmName()
     return name.." - "..realm
-end
-
-function getPlacementIdForToonSpecialization()
-    return GetSpecialization() or NON_SPEC_SLOT
 end
 
 function getPetNameAndIcon(petGuid)
