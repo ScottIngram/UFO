@@ -142,6 +142,11 @@ end
 function Debug:dumpKeys(object)
     assert(isDebuggerObj(self), ERR_MSG)
     if self.isSilent then return end
+    if not object then
+        self:print("NiL")
+        return
+    end
+
     local isNumeric = true
     for k,v in pairs(object) do
         if (type(k) ~= "number") then isNumeric = false end
