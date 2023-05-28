@@ -32,6 +32,12 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
 -------------------------------------------------------------------------------
+-- Data
+-------------------------------------------------------------------------------
+
+local isUfoInitialized = false
+
+-------------------------------------------------------------------------------
 -- Event Handlers
 -------------------------------------------------------------------------------
 
@@ -55,11 +61,13 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
+    if not isUfoInitialized then return end
     debugTrace:out("",1,"ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
     handleActionBarSlotChanged(actionBarSlotId)
 end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
+    if not isUfoInitialized then return end
     debugTrace:print("PLAYER_SPECIALIZATION_CHANGED")
     updateAllGerms()
 end
@@ -307,10 +315,11 @@ end
 
 function initalizeAddonStuff()
     defineCatalogPopupDialogs()
-    initializeFlyoutConfigIfEmpty(true)
-    initializePlacementConfigIfEmpty(true)
+    Config:initializeFlyouts()
+    Config:initializePlacements()
     initializeOnClickHandlersForFlyouts()
     hooksecurefunc(C_MountJournal, "Pickup", saveMountJournalSelection);
+    isUfoInitialized = true
 end
 
 -------------------------------------------------------------------------------

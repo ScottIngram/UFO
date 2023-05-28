@@ -160,8 +160,8 @@ local DEFAULT_PLACEMENTS_CONFIG = {
     },
 }
 
-function initializePlacementConfigIfEmpty(mayUseLegacyData)
-    if getFlyoutPlacementsForToon() then
+function OLDinitializePlacementConfigIfEmpty(mayUseLegacyData)
+    if getGermPlacementsConfig() then
         return
     end
 
@@ -228,30 +228,17 @@ function getSpecificConditionalFlyoutPlacement(actionBarSlotId)
 end
 
 function getSpecificConditionalFlyoutPlacements()
-    local placements = getFlyoutPlacementsForToon()
+    local placementsForToon = getGermPlacementsConfig()
+    assert(placementsForToon,"placementsForToon is nil")
     local spec = getPlacementIdForToonSpecialization()
-    return placements and placements[spec]
+    if not placementsForToon[spec] then
+        placementsForToon[spec] = {}
+    end
+    local placementsForSpec = placementsForToon[spec]
+    return placementsForSpec
 end
 
 -- the placement of flyouts on the action bars is stored separately for each toon
-function putFlyoutPlacementsForToon(flyoutPlacements)
-    if not UFO_SV_PLACEMENT then
-        UFO_SV_PLACEMENT = {}
-    end
-
-    UFO_SV_PLACEMENT.flyoutPlacements = flyoutPlacements
-
-    --if not Db.profile.placementsPerToonAndSpec then
-    --	Db.profile.placementsPerToonAndSpec = {}
-    --end
-
-    --local playerId = getIdForCurrentToon()
-    --Db.profile.placementsPerToonAndSpec[playerId] = flyoutPlacements
-end
-
-function getFlyoutPlacementsForToon()
-    return UFO_SV_PLACEMENT and UFO_SV_PLACEMENT.flyoutPlacements
-    --local playerId = getIdForCurrentToon()
-    --local ppts = Db.profile.placementsPerToonAndSpec
-    --return ppts and ppts[playerId]
+function getGermPlacementsConfig()
+    return UFO_SV_TOON and UFO_SV_TOON.placementsForAllSpecs
 end

@@ -91,28 +91,6 @@ function isConfigOlderThan(major, minor, patch, ufo)
     end
 end
 
-function initializeFlyoutConfigIfEmpty(mayUseLegacyData)
-    debugInfo:out("*",3,"InitializeFlyoutConfigIfEmpty()")
-    if getFlyoutsConfigs() then
-        return
-    end
-
-    local flyouts
-
-    -- support older versions of the addon
-    local legacyData = mayUseLegacyData and UFO_SV_PLACEMENT and UFO_SV_PLACEMENT.flyouts
-    if legacyData then
-        flyouts = deepcopy(legacyData)
-        fixLegacyFlyoutsNils(flyouts)
-        UFO_SV_PLACEMENT.flyouts_note = "the flyouts field is old and no longer used by the current version of this addon"
-    else
-        flyouts = deepcopy(DEFAULT_UFO_SV_FLYOUT_DEF)
-    end
-
-    putFlyoutConfig(flyouts)
-end
-
-
 -- the flyout definitions are stored account-wide and thus shared between all toons
 function putFlyoutConfig(flyouts)
     if not UFO_SV_FLYOUTS then
@@ -122,8 +100,7 @@ function putFlyoutConfig(flyouts)
 end
 
 function getFlyoutsConfigs()
-    return UFO_SV_FLYOUTS and UFO_SV_FLYOUTS.flyouts
-    --return Db.profile.flyouts
+    return UFO_SV_ACCOUNT and UFO_SV_ACCOUNT.flyouts
 end
 
 local doneChecked = {}
@@ -190,7 +167,7 @@ function deleteFlyout(flyoutId)
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
     table.remove(getFlyoutsConfigs(), flyoutId)
     -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
-    local placementsForEachSpec = getFlyoutPlacementsForToon()
+    local placementsForEachSpec = getGermPlacementsConfig()
     for i = 1, #placementsForEachSpec do
         local placements = placementsForEachSpec[i]
         for btnSlotIndex, fId in pairs(placements) do

@@ -4,12 +4,13 @@
 ## Version: v10.1.0a
 ## AddonCompartmentFunc: GLOBAL_UIUFO_BlizCompartment_OnClick
 ## IconTexture: Interface\Icons\Ability_racial_rocketbarrage
-## SavedVariables: UFO_SV_FLYOUTS
-## SavedVariablesPerCharacter: UFO_SV_PLACEMENT
+## SavedVariables: UFO_SV_ACCOUNT
+## SavedVariablesPerCharacter: UFO_SV_TOON
 ## Notes: custom actionbar flyout menus
 
 utils\Wormhole.lua
 utils\Debug.lua
+utils\Config.lua
 constants.lua
 locales\index.xml
 FlyoutMenuConfig.lua
