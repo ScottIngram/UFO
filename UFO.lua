@@ -14,7 +14,7 @@ TODO
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
 * DONE: eliminate all "legacy data" fixes
-* eliminate any support for classic
+* DONE: eliminate any support for classic
 * BUG: OnDragStart needs to accomodate when there is already something on the cursor
 * - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
 ]]

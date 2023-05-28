@@ -6,10 +6,10 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 BLIZ_BAR_METADATA = {
     [1]  = {name="Action",              visibleIf="bar:1,nobonusbar:1,nobonusbar:2,nobonusbar:3,nobonusbar:4"}, -- primary "ActionBar" - page #1 - no stance/shapeshift --- ff: actionBarPage = 1
     [2]  = {name="Action",              visibleIf="bar:2"}, -- primary "ActionBar" - page #2 (regardless of stance/shapeshift) --- ff: actionBarPage = 2
-    [3]  = {name="MultiBarRight",       classicType=2}, -- config UI -> Action Bars -> checkbox #4
-    [4]  = {name="MultiBarLeft",        classicType=2}, -- config UI -> Action Bars -> checkbox #5
-    [5]  = {name="MultiBarBottomRight", classicType=1}, -- config UI -> Action Bars -> checkbox #3
-    [6]  = {name="MultiBarBottomLeft",  classicType=1}, -- config UI -> Action Bars -> checkbox #2
+    [3]  = {name="MultiBarRight",       }, -- config UI -> Action Bars -> checkbox #4
+    [4]  = {name="MultiBarLeft",        }, -- config UI -> Action Bars -> checkbox #5
+    [5]  = {name="MultiBarBottomRight", }, -- config UI -> Action Bars -> checkbox #3
+    [6]  = {name="MultiBarBottomLeft",  }, -- config UI -> Action Bars -> checkbox #2
     [7]  = {name="Action",              visibleIf="bar:1,bonusbar:1"}, -- primary "ActionBar" - page #1 - bonusbar 1 - druid CAT
     [8]  = {name="Action",              visibleIf="bar:1,bonusbar:2"}, -- primary "ActionBar" - page #1 - bonusbar 2 - unknown?
     [9]  = {name="Action",              visibleIf="bar:1,bonusbar:3"}, -- primary "ActionBar" - page #1 - bonusbar 3 - druid BEAR
