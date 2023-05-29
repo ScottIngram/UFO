@@ -257,16 +257,16 @@ function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
     germ:RegisterForDrag("LeftButton")
 
     -- TODO: calculate the icon on the fly - consider if a toon knows the spell before choosing its icon
-    local icon = _G[germ:GetName().."Icon"] -- TODO: SURELY there is an API to do this
+    local iconFrame = _G[germ:GetName().."Icon"] -- TODO: SURELY there is an API to do this
     if flyoutConf.icon then
         if type(flyoutConf.icon) == "number" then
-            icon:SetTexture(flyoutConf.icon)
+            iconFrame:SetTexture(flyoutConf.icon)
         else
-            icon:SetTexture("INTERFACE\\ICONS\\"..flyoutConf.icon)
+            iconFrame:SetTexture("INTERFACE\\ICONS\\"..flyoutConf.icon)
         end
     elseif actionTypes[1] then
         local texture = getTexture(actionTypes[1], spells[1], pets[1])
-        icon:SetTexture(texture)
+        iconFrame:SetTexture(texture)
     end
 
     if visibleIf then
