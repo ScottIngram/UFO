@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 ---@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
 
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutMenu XML Callbacks
@@ -33,14 +33,19 @@ end
 local function updateAllButtonStatusesFor(flyoutMenu, handler)
     local i = 1
     local button = getButtonFor(flyoutMenu, i)
-    while (button and button:IsShown() and not exists(button.spellID)) do
-        handler(button)
+    while (button and button:IsShown()) do
+        if exists(button.spellID or button.action) then
+            handler(button)
+        end
         i = i+1
         button = getButtonFor(flyoutMenu, i)
     end
 end
 
+local callCount = 0
 function GLOBAL_UIUFO_FlyoutMenu_OnEvent(flyoutMenu, event, ...)
+    debugTrace:out("-",3,"GLOBAL_UIUFO_FlyoutMenu_OnEvent", "event",event,"callCount",callCount)
+    callCount = callCount + 1
     if event == "SPELL_UPDATE_COOLDOWN" or event == "ACTIONBAR_UPDATE_COOLDOWN" then
         updateAllButtonStatusesFor(flyoutMenu, function(button)
             SpellFlyoutButton_UpdateCooldown(button)
