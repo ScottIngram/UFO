@@ -86,10 +86,10 @@ end
 function Debug:out(indentChar, indentWidth, label, ...)
     assert(isDebuggerObj(self), ERR_MSG)
     if self.isSilent then return end
-    local indent = string.rep(indentChar,indentWidth)
+    local indent = string.rep(indentChar or "#", indentWidth or 40)
     --local args = { ... } -- this may be where the nils are getting shortchanged
     local args = table.pack(...)
-    local out = { indent, " ", label, " " }
+    local out = { indent, " ", label or "", " " }
     --for i,v in ipairs(args) do
     for i=1,args.n do
         local v = args[i]
