@@ -490,10 +490,16 @@ function handlers.OnPreClick(germ, whichMouseButton, down)
     UIUFO_FlyoutMenu:SetBorderSize(47);
 end
 
+-- this is needed for the edge case of clicking on a different germ while the current one is still opens
+-- in which case there is no OnShow event which is where the below usually happens
 function handlers.OnPostClick(germ, whichMouseButton, down)
     debugInfo:print("=== handlers.OnPostClick !!!!!")
-    updateAllButtonStatusesFor(germ, function(button)
+    updateAllButtonStatusesFor(UIUFO_FlyoutMenu, function(button)
+        -- TODO move this into ButtonOnFlyoutMenu
         debugInfo:out("~",40)
-        Ufo_UpdateCooldown(button)
+        Ufo_UpdateItemOrSpellCooldown(button)
+        SpellFlyoutButton_UpdateState(button)
+        SpellFlyoutButton_UpdateUsable(button)
+        UFO_UpdateItemOrSpellCount(button)
     end)
 end

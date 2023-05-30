@@ -39,3 +39,4 @@ PROXY_MACRO_NAME = "_ufo_proxy"
 MAX_GLOBAL_MACRO_ID = 120
 DELIMITER = "\a"
 EMPTY_ELEMENT = "\t" -- strjoin skips "" as if they were nil, but "" isn't treated as nil. omfg Lua, get it together.
+CONSUMABLE = "Consumable"

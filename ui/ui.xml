@@ -5,14 +5,7 @@
 
     <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate" virtual="TRUE" inherits="SmallActionButtonTemplate, SecureActionButtonTemplate">
         <Scripts>
-            <OnLoad>
-                self:SmallActionButtonMixin_OnLoad()
-                self.PushedTexture:SetSize(31.6, 30.9)
-                self:RegisterForDrag("LeftButton")
-                _G[self:GetName().."Count"]:SetPoint("BOTTOMRIGHT", 0, 0)
-                self.maxDisplayCount = 99
-                self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
-            </OnLoad>
+            <OnLoad function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad" />
             <OnEnter function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip" />
             <OnLeave>
                 GameTooltip:Hide()
@@ -70,7 +63,6 @@
             <OnLoad function="GLOBAL_UIUFO_FlyoutMenu_OnLoad"/>
             <OnShow function="GLOBAL_UIUFO_FlyoutMenu_OnShow"/>
             <OnHide function="GLOBAL_UIUFO_FlyoutMenu_OnHide"/>
-            <OnEvent function="GLOBAL_UIUFO_FlyoutMenu_OnEvent"/>
         </Scripts>
     </Frame>
 

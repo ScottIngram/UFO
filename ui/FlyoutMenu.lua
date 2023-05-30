@@ -19,34 +19,23 @@ function GLOBAL_UIUFO_FlyoutMenu_OnLoad(...)
 end
 
 function GLOBAL_UIUFO_FlyoutMenu_OnShow(self)
+    debugInfo:out("/",20,"GLOBAL_UIUFO_FlyoutMenu_OnShow")
     SpellFlyout_OnShow(self) -- call Blizzard handler
+
+    -- TODO: the below probably aren't needed anymore
     self:RegisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
     self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
 
     updateAllButtonStatusesFor(self, function(button)
-        debugInfo:out("/",40)
-        Ufo_UpdateCooldown(button)
+        -- TODO move this into ButtonOnFlyoutMenu
+        debugInfo:out("/",30,"GLOBAL_UIUFO_FlyoutMenu_OnShow 2","")
+        Ufo_UpdateItemOrSpellCooldown(button)
         SpellFlyoutButton_UpdateState(button)
         SpellFlyoutButton_UpdateUsable(button)
-        SpellFlyoutButton_UpdateCount(button)
+        UFO_UpdateItemOrSpellCount(button)
     end)
 
 end
-
-function SpellFlyoutButton_UpdateCount (self)
-    local text = _G[self:GetName().."Count"];
-    if ( IsConsumableSpell(self.spellID)) then
-        local count = GetSpellCount(self.spellID);
-        if ( count > (self.maxDisplayCount or 9999 ) ) then
-            text:SetText("*");
-        else
-            text:SetText(count);
-        end
-    else
-        text:SetText("");
-    end
-end
-
 
 function GLOBAL_UIUFO_FlyoutMenu_OnHide(self)
     SpellFlyout_OnHide(self) -- call Blizzard handler
@@ -58,28 +47,6 @@ end
 
 local function getButtonFor(parent, i)
     return _G[ parent:GetName().."Button"..i ]
-end
-
-local callCount2
-function GLOBAL_UIUFO_ButtonOnFlyoutMenuTemplate_OnEvent(button, event, ...)
-    debugInfo:out("O",3,"GLOBAL_UIUFO_ButtonOnFlyoutMenuTemplate_OnEvent", "event",event, "callCount2",callCount2)
-    callCount2 = callCount2 + 1
-    if (event == "SPELL_UPDATE_COOLDOWN") or (event == "ACTIONBAR_UPDATE_COOLDOWN") or (event == "BAG_UPDATE_COOLDOWN") then
-            debugInfo:print("EVENT O:", event)
-            Ufo_UpdateCooldown(button)
-    elseif event == "CURRENT_SPELL_CAST_CHANGED" then
-            SpellFlyoutButton_UpdateState(button)
-    elseif event == "SPELL_UPDATE_USABLE" then
-            SpellFlyoutButton_UpdateUsable(button)
-    elseif event == "BAG_UPDATE" then
-            SpellFlyoutButton_UpdateCount(button)
-            SpellFlyoutButton_UpdateUsable(button)
-    elseif event == "SPELL_FLYOUT_UPDATE" then
-            Ufo_UpdateCooldown(button)
-            SpellFlyoutButton_UpdateState(button)
-            SpellFlyoutButton_UpdateUsable(button)
-            SpellFlyoutButton_UpdateCount(button)
-    end
 end
 
 function updateAllButtonStatusesFor(flyoutMenu, handler)
@@ -94,145 +61,60 @@ function updateAllButtonStatusesFor(flyoutMenu, handler)
     end
 end
 
--- THIS FUNCTION MAY HAVE NO EFFECT
-local callCount = 0
-function GLOBAL_UIUFO_FlyoutMenu_OnEvent(flyoutMenu, event, ...)
-    --if true then return end
-    debugInfo:out("-",3,"GLOBAL_UIUFO_FlyoutMenu_OnEvent", "event",event, "callCount",callCount)
-    callCount = callCount + 1
-    if (event == "SPELL_UPDATE_COOLDOWN") or (event == "ACTIONBAR_UPDATE_COOLDOWN") or (event == "BAG_UPDATE_COOLDOWN") then
-        updateAllButtonStatusesFor(flyoutMenu, function(button)
-            debugInfo:out("=",40)
-            --debugInfo:dumpKeys(button)
-            --debugInfo:out("=",40)
-            Ufo_UpdateCooldown(button)
-        end)
-    elseif event == "CURRENT_SPELL_CAST_CHANGED" then
-        updateAllButtonStatusesFor(flyoutMenu, function(button)
-            SpellFlyoutButton_UpdateState(button)
-        end)
-    elseif event == "SPELL_UPDATE_USABLE" then
-        updateAllButtonStatusesFor(flyoutMenu, function(button)
-            SpellFlyoutButton_UpdateUsable(button)
-        end)
-    elseif event == "BAG_UPDATE" then
-        updateAllButtonStatusesFor(flyoutMenu, function(button)
-            SpellFlyoutButton_UpdateCount(button)
-            SpellFlyoutButton_UpdateUsable(button)
-        end)
-    elseif event == "SPELL_FLYOUT_UPDATE" then
-        updateAllButtonStatusesFor(flyoutMenu, function(button)
-            Ufo_UpdateCooldown(button)
-            SpellFlyoutButton_UpdateState(button)
-            SpellFlyoutButton_UpdateUsable(button)
-            SpellFlyoutButton_UpdateCount(button)
-        end)
+function Ufo_UpdateItemOrSpellCooldown(btn)
+    -- use Bliz's built-in handler for the stuff it understands, ie, not items
+    if not btn.itemID then
+        SpellFlyoutButton_UpdateCooldown(btn)
+        return
     end
-end
 
-function Ufo_UpdateCooldown(btn)
-    -- copied from Bliz's ActionButton_UpdateCooldown and updated to understand items (TODO: maybe macros?)
-    local locStart, locDuration;
-    local start, duration, enable, charges, maxCharges, chargeStart, chargeDuration;
+    -- for items, I copied and hacked Bliz's ActionButton_UpdateCooldown
     local modRate = 1.0;
     local chargeModRate = 1.0;
-    local actionType, actionID = nil;
-    if (btn.action) then
-        actionType, actionID = GetActionInfo(btn.action);
-    end
-    local auraData = nil;
-    local passiveCooldownSpellID = nil;
-    local onEquipPassiveSpellID = nil;
+    local locStart, locDuration = GetSpellLossOfControlCooldown(btn.itemID);
+    local start, duration, enable = GetItemCooldown(btn.itemID);
+    debugInfo:out("X",5,"Ufo_UpdateCooldown 2 ITEM","actionType",actionType, "start",start, "duration",duration, "enable",enable )
 
-    if(actionID) then
-        onEquipPassiveSpellID = C_ActionBar.GetItemActionOnEquipSpellID(btn.action or btn.itemID);
-    end
-
-    debugInfo:out("X",3,"Ufo_UpdateCooldown 1", "self.action", btn.action, "actionType",actionType,  "actionID",actionID,  "self.booger", btn.booger, "onEquipPassiveSpellID",onEquipPassiveSpellID )
-
-    if (onEquipPassiveSpellID) then
-        passiveCooldownSpellID = C_UnitAuras.GetCooldownAuraBySpellID(onEquipPassiveSpellID);
-    elseif ((actionType and actionType == "spell") and actionID ) then
-        passiveCooldownSpellID = C_UnitAuras.GetCooldownAuraBySpellID(actionID);
-    elseif(btn.spellID) then
-        passiveCooldownSpellID = C_UnitAuras.GetCooldownAuraBySpellID(btn.spellID);
+    if ( btn.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL ) then
+        btn.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
+        btn.cooldown:SetSwipeColor(0, 0, 0);
+        btn.cooldown:SetHideCountdownNumbers(false);
+        btn.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL;
     end
 
-    if(passiveCooldownSpellID and passiveCooldownSpellID ~= 0) then
-        auraData = C_UnitAuras.GetPlayerAuraBySpellID(passiveCooldownSpellID);
+    CooldownFrame_Set(btn.cooldown, start, duration, enable, false, modRate);
+end
+
+function UFO_UpdateItemOrSpellCount(btn)
+    local itemId = btn.itemID
+    -- use Bliz's built-in handler for the stuff it understands, ie, not items
+    if not itemId then
+        SpellFlyoutButton_UpdateCount(btn)
+        return
     end
 
-    if(auraData) then
-        local currentTime = GetTime();
-        local timeUntilExpire = auraData.expirationTime - currentTime;
-        local howMuchTimeHasPassed = auraData.duration - timeUntilExpire;
+    -- for items, I copied and hacked Bliz's SpellFlyoutButton_UpdateCount
+    local textFrame = _G[btn:GetName().."Count"];
+    local nomnom = IsConsumableItem(itemId) -- returns false for potions. fuck you Blizzard.  hard.
+    local _, _, _, _, _, itemType = GetItemInfo(itemId)
+    local count = GetItemCount(itemId, includeBank, includeCharges)
+    debugInfo:out("X",5,"UFO_UpdateCount 1", "itemId",itemId, "NOMNOM",nomnom,"count",count)
+    debugInfo:print(GetItemInfo(itemId))
+    debugInfo:print(itemType)
 
-        locStart =  currentTime - howMuchTimeHasPassed;
-        locDuration = auraData.expirationTime - currentTime;
-        start = currentTime - howMuchTimeHasPassed;
-        duration =  auraData.duration
-        modRate = auraData.timeMod;
-        charges = auraData.charges;
-        maxCharges = auraData.maxCharges;
-        chargeStart = currentTime * 0.001;
-        chargeDuration = duration * 0.001;
-        chargeModRate = modRate;
-        enable = 1;
-    elseif (btn.itemID) then -- added for UFO
-        locStart, locDuration = GetSpellLossOfControlCooldown(btn.itemID);
-        start, duration, enable = GetItemCooldown(btn.itemID);
+    if (CONSUMABLE == itemType) then
         local includeBank = false
         local includeCharges = true
         local count = GetItemCount(btn.itemID, includeBank, includeCharges)
-        -- charges, maxCharges, chargeStart, chargeDuration = count, count, 1, 1
-        charges = count
-        debugInfo:out("X",5,"Ufo_UpdateCooldown 2 ITEM","actionType",actionType, "start",start, "duration",duration, "enable",enable )
-    elseif (btn.spellID) then
-        locStart, locDuration = GetSpellLossOfControlCooldown(btn.spellID);
-        start, duration, enable, modRate = GetSpellCooldown(btn.spellID);
-        charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetSpellCharges(btn.spellID);
-        debugInfo:out("X",5,"Ufo_UpdateCooldown 2 SPELL","actionType",actionType, "start",start, "duration",duration, "enable",enable )
-    else
-        locStart, locDuration = GetActionLossOfControlCooldown(btn.action);
-        start, duration, enable, modRate = GetActionCooldown(btn.action);
-        charges, maxCharges, chargeStart, chargeDuration, chargeModRate = GetActionCharges(btn.action);
-        debugInfo:out("X",5,"Ufo_UpdateCooldown 2 FALLTHRU","actionType",actionType, "start",start, "duration",duration, "enable",enable )
-    end
-
-    if ( (locStart + locDuration) > (start + duration) ) then
-        debugInfo:out("X",5,"Ufo_UpdateCooldown 3 LOC")
-        if ( btn.cooldown.currentCooldownType ~= COOLDOWN_TYPE_LOSS_OF_CONTROL ) then
-            btn.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge-LoC");
-            btn.cooldown:SetSwipeColor(0.17, 0, 0);
-            btn.cooldown:SetHideCountdownNumbers(true);
-            btn.cooldown.currentCooldownType = COOLDOWN_TYPE_LOSS_OF_CONTROL;
-        end
-
-        CooldownFrame_Set(btn.cooldown, locStart, locDuration, true, true, modRate);
-        ClearChargeCooldown(btn);
-    else
-        debugInfo:out("X",5,"Ufo_UpdateCooldown 3","self.cooldown.currentCooldownType", btn.cooldown.currentCooldownType)
-        if ( btn.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL ) then
-            btn.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
-            btn.cooldown:SetSwipeColor(0, 0, 0);
-            btn.cooldown:SetHideCountdownNumbers(false);
-            btn.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL;
-        end
-
-        if( locStart > 0 ) then
-            btn.cooldown:SetScript("OnCooldownDone", ActionButtonCooldown_OnCooldownDone);
-        end
-
-        if ( charges and maxCharges and maxCharges > 1 and charges < maxCharges ) then
-            StartChargeCooldown(btn, chargeStart, chargeDuration, chargeModRate);
+        if ( count > (btn.maxDisplayCount or 9999 ) ) then
+            textFrame:SetText("*");
         else
-            ClearChargeCooldown(btn);
+            textFrame:SetText(count);
         end
-
-        CooldownFrame_Set(btn.cooldown, start, duration, enable, false, modRate);
+    else
+        textFrame:SetText("");
     end
 end
-
 
 function updateFlyoutMenuForCatalog(flyoutMenu, flyoutId)
     local direction = "RIGHT"

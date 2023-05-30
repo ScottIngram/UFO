@@ -1,4 +1,4 @@
--- FlyoutBtn - a button on a flyout menu
+-- ButtonOnFlyoutMenu - a button on a flyout menu
 -- methods and functions for custom buttons put into our custom flyout menus
 
 -------------------------------------------------------------------------------
@@ -10,9 +10,38 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 ---@type Debug -- IntelliJ-EmmyLua annotation
 local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
+-- TODO add @class and fields like name and methods like registerHandlers
+---@class ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+local ButtonOnFlyoutMenu = {
+    flyoutId = false,
+    isOnGerm = false,
+    isInCatalog = false,
+}
+Ufo.ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
+
+-------------------------------------------------------------------------------
+-- Methods
+-------------------------------------------------------------------------------
+
+function ButtonOnFlyoutMenu:registerHandlers()
+
+end
+
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutBtn XML Callbacks
 -------------------------------------------------------------------------------
+
+-- initialize and coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(btnOnFlyout)
+    btnOnFlyout:SmallActionButtonMixin_OnLoad()
+    btnOnFlyout.PushedTexture:SetSize(31.6, 30.9)
+    btnOnFlyout:RegisterForDrag("LeftButton")
+    _G[btnOnFlyout:GetName().."Count"]:SetPoint("BOTTOMRIGHT", 0, 0)
+    btnOnFlyout.maxDisplayCount = 99
+    btnOnFlyout:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
+
+    -- TODO: copy ButtonOnFlyoutMenu fields and methods onto the btnOnFlyout object
+end
 
 -- add a spell/item/etc to a flyout
 function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
