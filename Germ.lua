@@ -95,8 +95,7 @@ local snippet_Germ_Click = [=[
 				-- It appears that SecureActionButtonTemplate
 				-- provides no support for summoning battlepets
 				-- because summoning a battlepet is not a protected action.
-				-- But, here we are, in FloFlyout's SecureActionButtonTemplate code,
-				-- so, fake it with an adhoc macro!
+				-- So, fake it with an adhoc macro!
 				if (type == "battlepet") then
 					-- here I was fumbling around guessing at a solution:
 					-- buttonRef:SetAttribute("pet", thisId)
@@ -252,6 +251,7 @@ function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
     germ:SetScript("OnMouseUp", handlers.OnMouseUp)
     germ:SetScript("OnDragStart", handlers.PickupAndDrag)
     germ:SetScript("PreClick", handlers.OnPreClick)
+    germ:SetScript("PostClick", handlers.OnPostClick)
     germ:SetAttribute("_onclick", snippet_Germ_Click)
     germ:RegisterForClicks("AnyUp")
     germ:RegisterForDrag("LeftButton")
@@ -278,7 +278,7 @@ function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
 end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
-local function updateGerm(germ)
+local function handleGermUpdateEvent(germ)
     -- print("========== Germ_UpdateFlyout()") this is being called continuously while a flyout exists on any bar
     -- Update border and determine arrow position
     local arrowDistance;
@@ -370,12 +370,12 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnEnter(germ)
-    updateGerm(germ)
+    handleGermUpdateEvent(germ)
 end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnLeave(germ)
-    updateGerm(germ)
+    handleGermUpdateEvent(germ)
 end
 
 -- throttle OnUpdate because it fires as often as FPS and is very resource intensive
@@ -388,7 +388,7 @@ function handlers.OnUpdate(germ, elapsed)
         return
     end
     onUpdateTimer = 0
-    updateGerm(germ)
+    handleGermUpdateEvent(germ)
 end
 
 function handlers.OnPreClick(germ, whichMouseButton, down)
@@ -416,10 +416,14 @@ function handlers.OnPreClick(germ, whichMouseButton, down)
         local type = typeList[i]
         if not isEmpty(type) then
             local spellId = spellList[i]
+            local itemId = (type == "item") and spellId
             local pet = pets[i]
             --print("Germ_PreClick(): i =",i, "| spellID =",spellId,  "| type =",type, "| pet =", pet)
 
+            -- fields recognized by Bliz internal UI code
             buttonFrame.spellID = spellId
+            buttonFrame.itemID = itemId
+            buttonFrame.actionID = spellId
             buttonFrame.actionType = type
             buttonFrame.battlepet = pet
 
@@ -484,4 +488,12 @@ function handlers.OnPreClick(germ, whichMouseButton, down)
     end
     UIUFO_FlyoutMenu:SetBorderColor(0.7, 0.7, 0.7)
     UIUFO_FlyoutMenu:SetBorderSize(47);
+end
+
+function handlers.OnPostClick(germ, whichMouseButton, down)
+    debugInfo:print("=== handlers.OnPostClick !!!!!")
+    updateAllButtonStatusesFor(germ, function(button)
+        debugInfo:out("~",40)
+        Ufo_UpdateCooldown(button)
+    end)
 end

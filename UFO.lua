@@ -7,7 +7,7 @@ TODO
 * implement UFO_SV_FLYOUTS as array of self-contained button objects rather than each button spread across multiple parallel arrays
 * encapsulate as FlyoutConfigData
 * encapsulate as PlacementConfigData
-* BUG: cooldown display only works for spells, not inventory items (hearthstone, trinkets, potions, etc)
+* replace existing icon picker with something closer to MacroManager / Weak Auras
 * BUG: germs that extend horizontally (as the ones on the vertical action bars) sometimes have weirdly wide borders
 * BUG: OnDragStart needs to accommodate when there is already something on the cursor
 * - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
@@ -15,6 +15,7 @@ TODO
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
 * NUKE all OO syntax that's not actual OO.  Foo:Bar() doesn't need "self" if there is never an instance foo:Bar()
 *
+* DONE: BUG: cooldown display only works for spells, not inventory items (hearthstone, trinkets, potions, etc)
 * DONE: NUKE all function paramsNamed(self) and rename them with actual NAMES
 * DONE: identify which Ufo:Foo() methods actually need to be global
 * DONE: eliminate as many Ufo:Foo() -> foo()

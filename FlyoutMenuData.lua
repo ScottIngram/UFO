@@ -1,4 +1,4 @@
--- FlyoutMenuConfig
+-- FlyoutMenuData
 -- unique flyout definitions shown in the config panel
 -- data for a single flyout object, its spells/pets/macros/items/etc.  and methods for manipulating that data
 -- TODO: invert the FlyoutMenu data structure
@@ -15,11 +15,15 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 ---@type Debug -- IntelliJ-EmmyLua annotation
 local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
 
+---@class FlyoutMenuData -- IntelliJ-EmmyLua annotation
+local FlyoutMenuData = {}
+Ufo.FlyoutMenuData = FlyoutMenuData
+
 --[[
 --TODO: implement as OO
 
-Ufo.FlyoutMenuConfig = {}
-Ufo.Wormhole(Ufo.FlyoutMenuConfig, Ufo) -- now it's FlyoutMenuConfig inheriting from Ufo
+Ufo.FlyoutMenuData = {}
+Ufo.Wormhole(Ufo.FlyoutMenuData, Ufo) -- now it's FlyoutMenuData inheriting from Ufo
 
 local flyoutsConfigurator = Ufo.getFlyoutMenusConfigurator()
 local flyoutConfig = flyoutsConfigurator:get(flyoutId) -- also :new() :add(flyout); :delete(flyoutId);
@@ -34,6 +38,7 @@ flyoutConfig:addButton(myNewBtn) -- or smarter DWIM behavior that takes a macro 
 
 -- "spell" can mean also item, mount, macro, etc.
 STRUCT_FLYOUT_DEF = { spells={}, actionTypes={}, mountIndex={}, spellNames={}, macroOwners={}, pets={} }
+
 NEW_STRUCT_FLYOUT_DEF = { id=false, name="", icon="", btns={} }
 NEW_STRUCT_FLYOUT_BTN_DEF = { type="", spellId="", mountIndex="", spellName="", macroOwner="", pet="", }
 

@@ -1,7 +1,7 @@
 ## Interface: 100100
-## Title: UFO
+## Title: UFO - Universal FlyOuts
 ## Author: Scott Ingram
-## Version: v10.1.0a
+## Version: v10.1.0.a
 ## AddonCompartmentFunc: GLOBAL_UIUFO_BlizCompartment_OnClick
 ## IconTexture: Interface\Icons\Ability_racial_rocketbarrage
 ## SavedVariables: UFO_SV_ACCOUNT
@@ -13,7 +13,7 @@ utils\Debug.lua
 utils\Config.lua
 constants.lua
 locales\index.xml
-FlyoutMenuConfig.lua
+FlyoutMenuData.lua
 Germ.lua
 GermCommander.lua
 UFO.lua
