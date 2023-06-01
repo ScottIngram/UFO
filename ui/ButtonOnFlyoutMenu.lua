@@ -8,31 +8,101 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 ---@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
 
--- TODO add @class and fields like name and methods like registerHandlers
 ---@class ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+---@field ufoType string The classname
 local ButtonOnFlyoutMenu = {
-    flyoutId = false,
-    isOnGerm = false,
-    isInCatalog = false,
+    ufoType = "ButtonOnFlyoutMenu",
 }
 Ufo.ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 
 -------------------------------------------------------------------------------
--- Methods
+-- Functions / Methods
 -------------------------------------------------------------------------------
 
-function ButtonOnFlyoutMenu:registerHandlers()
-
+function ButtonOnFlyoutMenu.oneOfUs(btnOnFlyout)
+    -- merge the Bliz ActionButton object
+    -- with this class's methods, functions, etc
+    deepcopy(ButtonOnFlyoutMenu, btnOnFlyout)
 end
+
+function ButtonOnFlyoutMenu:setIconTexture(texture)
+    _G[ self:GetName().."Icon" ]:SetTexture(texture)
+end
+
+
+function ButtonOnFlyoutMenu:updateCooldownsAndCountsAndStatesEtc()
+    if (self.spellID) then
+        self:UpdateCooldown()
+        SpellFlyoutButton_UpdateState(self)
+        SpellFlyoutButton_UpdateUsable(self)
+        self:UpdateCount()
+    end
+end
+
+function ButtonOnFlyoutMenu:UpdateCooldown()
+    local itemId = self.itemID
+    debugTrace:out("X",40,"Ufo_UpdateCooldown 1 ITEM","self.itemID",self.itemID, "self.spellID",self.spellID)
+
+    if (not itemId) and self.spellID then
+        -- use Bliz's built-in handler for the stuff it understands, ie, not items
+        SpellFlyoutButton_UpdateCooldown(self)
+        return
+    end
+
+    -- for items, I copied and hacked Bliz's ActionButton_UpdateCooldown
+    local modRate = 1.0;
+    local start, duration, enable = GetItemCooldown(itemId);
+    debugTrace:out("X",5,"Ufo_UpdateCooldown 2 ITEM","actionType",actionType, "start",start, "duration",duration, "enable",enable )
+
+    if ( self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL ) then
+        self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
+        self.cooldown:SetSwipeColor(0, 0, 0);
+        self.cooldown:SetHideCountdownNumbers(false);
+        self.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL;
+    end
+
+    CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
+end
+
+function ButtonOnFlyoutMenu:UpdateCount()
+    local itemId = self.itemID
+
+    if not itemId then
+        -- use Bliz's built-in handler for the stuff it understands, ie, not items
+        SpellFlyoutButton_UpdateCount(self)
+        return
+    end
+
+    -- for items, I copied and hacked Bliz's SpellFlyoutButton_UpdateCount
+    local textFrame = _G[self:GetName().."Count"];
+    local nomnom = IsConsumableItem(itemId) -- returns false for potions. fuck you Blizzard.
+    local _, _, _, _, _, itemType = GetItemInfo(itemId)
+    local count = GetItemCount(itemId, includeBank, includeCharges)
+    debugTrace:out("X",5,"UFO_UpdateCount 1", "itemId",itemId, "NOMNOM",nomnom,"count",count,"itemType",itemType)
+
+    if (CONSUMABLE == itemType) then
+        local includeBank = false
+        local includeCharges = true
+        local count = GetItemCount(self.itemID, includeBank, includeCharges)
+        if ( count > (self.maxDisplayCount or 9999 ) ) then
+            textFrame:SetText("*");
+        else
+            textFrame:SetText(count);
+        end
+    else
+        textFrame:SetText("");
+    end
+end
+
 
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutBtn XML Callbacks
 -------------------------------------------------------------------------------
 
--- initialize and coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
 function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(btnOnFlyout)
+    -- initialize the Bliz ActionButton
     btnOnFlyout:SmallActionButtonMixin_OnLoad()
     btnOnFlyout.PushedTexture:SetSize(31.6, 30.9)
     btnOnFlyout:RegisterForDrag("LeftButton")
@@ -40,7 +110,8 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(btnOnFlyout)
     btnOnFlyout.maxDisplayCount = 99
     btnOnFlyout:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
 
-    -- TODO: copy ButtonOnFlyoutMenu fields and methods onto the btnOnFlyout object
+    -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
+    ButtonOnFlyoutMenu.oneOfUs(btnOnFlyout)
 end
 
 -- add a spell/item/etc to a flyout
@@ -97,7 +168,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
         -- drop the dragged spell/item/etc
         ClearCursor()
         updateAllGerms()
-        updateFlyoutMenuForCatalog(flyoutMenu, flyoutId)
+        flyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
 
         -- update the cursor to show the existing spell/item/etc (if any)
         if oldActionType == "spell" then
@@ -188,6 +259,6 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(btnOnFlyout)
     if flyoutFrame.IsConfig then
         removeSpell(flyoutFrame.idFlyout, btnOnFlyout:GetID())
         updateAllGerms()
-        updateFlyoutMenuForCatalog(flyoutFrame, flyoutFrame.idFlyout)
+        flyoutFrame:updateFlyoutMenuForCatalog(flyoutFrame.idFlyout)
     end
 end

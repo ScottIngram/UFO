@@ -14,6 +14,8 @@ TODO
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
 * NUKE all OO syntax that's not actual OO.  Foo:Bar() doesn't need "self" if there is never an instance foo:Bar()
+* fix C_MountJournal OnPickup global var bug
+* consolidate all the redundant code, such as the if actionType == "spell" then PickupSpell(spellId) --> function ButtonOnFlyoutMenu:PickMeUp()
 *
 * DONE: BUG: cooldown display only works for spells, not inventory items (hearthstone, trinkets, potions, etc)
 * DONE: NUKE all function paramsNamed(self) and rename them with actual NAMES
@@ -309,16 +311,29 @@ function serializeAsAssignments(name, val, isRecurse)
     return tmp
 end
 
+function isClass(firstArg, class)
+    assert(class, "nil is not a Class")
+    return (firstArg and type(firstArg) == "table" and firstArg.ufoType == class.ufoType)
+end
+
+function assertIsFunctionOf(firstArg, class)
+    assert(not isClass(firstArg, class), "Um... it's var.foo() not var:foo()")
+end
+
+function assertIsMethodOf(firstArg, class)
+    assert(isClass(firstArg, class), "Um... it's var:foo() not var.foo()")
+end
+
 -------------------------------------------------------------------------------
 -- Addon Lifecycle
 -------------------------------------------------------------------------------
 
 function initalizeAddonStuff()
-    defineCatalogPopupDialogs()
+    Catalog:definePopupDialogWindow()
     Config:initializeFlyouts()
     Config:initializePlacements()
-    initializeOnClickHandlersForFlyouts()
-    hooksecurefunc(C_MountJournal, "Pickup", saveMountJournalSelection);
+    FlyoutMenu:initializeOnClickHandlersForFlyouts()
+    hooksecurefunc(C_MountJournal, "Pickup", saveMountJournalSelection); -- TODO: improve how mounts are handled
     isUfoInitialized = true
 end
 

@@ -10,117 +10,113 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 ---@type Debug -- IntelliJ-EmmyLua annotation
 local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
 
+---@class FlyoutMenu -- IntelliJ-EmmyLua annotation
+---@field ufoType string The classname
+---@field isForGerm boolean
+---@field isForCatalog boolean
+local FlyoutMenu = {
+    ufoType = "FlyoutMenu",
+    isForGerm = false,
+    isForCatalog = false,
+}
+Ufo.FlyoutMenu = FlyoutMenu
+
+FlyoutMenuForCatalog = nil
+
+-------------------------------------------------------------------------------
+-- Functions / Methods
+-------------------------------------------------------------------------------
+
+function FlyoutMenu:oneOfUs(fomu)
+    -- merge the Bliz ActionButton object
+    -- with this class's methods, functions, etc
+    deepcopy(self, fomu)
+end
+
+function FlyoutMenu:getButtonFor(i)
+    return _G[ self:GetName().."Button"..i ]
+end
+
+function FlyoutMenu:forEachButton(handler)
+    for i, button in ipairs({self:GetChildren()}) do
+        if button:GetObjectType() == "CheckButton" then
+            handler(button)
+        end
+    end
+end
+
+function FlyoutMenu:initializeOnClickHandlersForFlyouts()
+    --for i, button in ipairs({UIUFO_FlyoutMenuForGerm:GetChildren()}) do
+    --    if button:GetObjectType() == "CheckButton" then
+    --        SecureHandlerWrapScript(button, "OnClick", button, "self:GetParent():Hide()")
+    --    end
+    --end
+
+    UIUFO_FlyoutMenuForGerm:forEachButton(function(button)
+        SecureHandlerWrapScript(button, "OnClick", button, "self:GetParent():Hide()")
+    end)
+    UIUFO_FlyoutMenuForCatalog.IsConfig = true
+end
+
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutMenu XML Callbacks
 -------------------------------------------------------------------------------
 
-function GLOBAL_UIUFO_FlyoutMenu_OnLoad(...)
-    SpellFlyout_OnLoad(...) -- call Blizzard handler
+---@param flyoutMenu FlyoutMenu
+function GLOBAL_UIUFO_FlyoutMenuForGerm_OnLoad(flyoutMenu)
+    -- call Blizzard handler
+    SpellFlyout_OnLoad(flyoutMenu)
+
+    -- initialize fields
+    FlyoutMenu:oneOfUs(flyoutMenu)
+    Germ.flyoutMenu = flyoutMenu
+    flyoutMenu.isForGerm = true
 end
 
-function GLOBAL_UIUFO_FlyoutMenu_OnShow(self)
-    debugInfo:out("/",20,"GLOBAL_UIUFO_FlyoutMenu_OnShow")
-    SpellFlyout_OnShow(self) -- call Blizzard handler
+---@param flyoutMenu FlyoutMenu
+function GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad(flyoutMenu)
+    -- call Blizzard handler
+    SpellFlyout_OnLoad(flyoutMenu)
+
+    -- initialize fields
+    FlyoutMenu:oneOfUs(flyoutMenu)
+    FlyoutMenuForCatalog = flyoutMenu
+    flyoutMenu.isForCatalog = true
+end
+
+---@param flyoutMenu FlyoutMenu
+function GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow(flyoutMenu)
+    debugTrace:out("/",20,"GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow")
+    SpellFlyout_OnShow(flyoutMenu) -- call Blizzard handler
 
     -- TODO: the below probably aren't needed anymore
-    self:RegisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
-    self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
+    --flyoutMenu:RegisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
+    --flyoutMenu:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
 
-    updateAllButtonStatusesFor(self, function(button)
-        -- TODO move this into ButtonOnFlyoutMenu
-        debugInfo:out("/",30,"GLOBAL_UIUFO_FlyoutMenu_OnShow 2","")
-        Ufo_UpdateItemOrSpellCooldown(button)
-        SpellFlyoutButton_UpdateState(button)
-        SpellFlyoutButton_UpdateUsable(button)
-        UFO_UpdateItemOrSpellCount(button)
+    ---@param btn ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+    flyoutMenu:forEachButton(function(btn)
+        debugTrace:out("~",40, "btn updatery from FlyoutMenu:OnShow()")
+        btn:updateCooldownsAndCountsAndStatesEtc()
     end)
 
 end
 
-function GLOBAL_UIUFO_FlyoutMenu_OnHide(self)
+function GLOBAL_UIUFO_FlyoutMenuForGerm_OnHide(self)
     SpellFlyout_OnHide(self) -- call Blizzard handler
     if (self.eventsRegistered == true) then
-        self:UnregisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
-        self:UnregisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
+        --self:UnregisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
+        --self:UnregisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
     end
 end
 
-local function getButtonFor(parent, i)
-    return _G[ parent:GetName().."Button"..i ]
-end
+-- TODO: consolidate these two wet ass procedures
+-- TODO: merge updateFlyoutMenuForCatalog() and updateFlyoutMenuForGerm()
 
-function updateAllButtonStatusesFor(flyoutMenu, handler)
-    local i = 1
-    local button = getButtonFor(flyoutMenu, i)
-    while (button and button:IsShown()) do
-        if exists(button.spellID or button.action) then
-            handler(button)
-        end
-        i = i+1
-        button = getButtonFor(flyoutMenu, i)
-    end
-end
-
-function Ufo_UpdateItemOrSpellCooldown(btn)
-    -- use Bliz's built-in handler for the stuff it understands, ie, not items
-    if not btn.itemID then
-        SpellFlyoutButton_UpdateCooldown(btn)
-        return
-    end
-
-    -- for items, I copied and hacked Bliz's ActionButton_UpdateCooldown
-    local modRate = 1.0;
-    local chargeModRate = 1.0;
-    local locStart, locDuration = GetSpellLossOfControlCooldown(btn.itemID);
-    local start, duration, enable = GetItemCooldown(btn.itemID);
-    debugInfo:out("X",5,"Ufo_UpdateCooldown 2 ITEM","actionType",actionType, "start",start, "duration",duration, "enable",enable )
-
-    if ( btn.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL ) then
-        btn.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
-        btn.cooldown:SetSwipeColor(0, 0, 0);
-        btn.cooldown:SetHideCountdownNumbers(false);
-        btn.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL;
-    end
-
-    CooldownFrame_Set(btn.cooldown, start, duration, enable, false, modRate);
-end
-
-function UFO_UpdateItemOrSpellCount(btn)
-    local itemId = btn.itemID
-    -- use Bliz's built-in handler for the stuff it understands, ie, not items
-    if not itemId then
-        SpellFlyoutButton_UpdateCount(btn)
-        return
-    end
-
-    -- for items, I copied and hacked Bliz's SpellFlyoutButton_UpdateCount
-    local textFrame = _G[btn:GetName().."Count"];
-    local nomnom = IsConsumableItem(itemId) -- returns false for potions. fuck you Blizzard.  hard.
-    local _, _, _, _, _, itemType = GetItemInfo(itemId)
-    local count = GetItemCount(itemId, includeBank, includeCharges)
-    debugInfo:out("X",5,"UFO_UpdateCount 1", "itemId",itemId, "NOMNOM",nomnom,"count",count)
-    debugInfo:print(GetItemInfo(itemId))
-    debugInfo:print(itemType)
-
-    if (CONSUMABLE == itemType) then
-        local includeBank = false
-        local includeCharges = true
-        local count = GetItemCount(btn.itemID, includeBank, includeCharges)
-        if ( count > (btn.maxDisplayCount or 9999 ) ) then
-            textFrame:SetText("*");
-        else
-            textFrame:SetText(count);
-        end
-    else
-        textFrame:SetText("");
-    end
-end
-
-function updateFlyoutMenuForCatalog(flyoutMenu, flyoutId)
+function FlyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
     local direction = "RIGHT"
-    local parent = flyoutMenu.parent
+    local parent = self.parent
 
-    flyoutMenu.idFlyout = flyoutId
+    self.idFlyout = flyoutId
 
     -- Update all spell buttons for this flyout
     local prevButton = nil;
@@ -133,10 +129,11 @@ function updateFlyoutMenuForCatalog(flyoutMenu, flyoutId)
 
     for i=1, math.min(#actionTypes+1, MAX_FLYOUT_SIZE) do
         local spellId    = spells[i]
+        local itemId     = (type == "item") and spellId
         local actionType = actionTypes[i]
         local mountIndex = mountIndexes[i]
         local pet        = pets[i]
-        local button = _G["UIUFO_FlyoutMenuForCatalogButton"..numButtons+1]
+        local button     = self:getButtonFor(numButtons+1)
 
         button:ClearAllPoints()
         if direction == "UP" then
@@ -173,15 +170,12 @@ function updateFlyoutMenuForCatalog(flyoutMenu, flyoutId)
             button.mountIndex = mountIndex
             button.battlepet  = pet
             local texture = getTexture(actionType, spellId, pet)
-            _G[button:GetName().."Icon"]:SetTexture(texture)
+            button:setIconTexture(texture)
             if spellId then
-                SpellFlyoutButton_UpdateCooldown(button)
-                SpellFlyoutButton_UpdateState(button)
-                SpellFlyoutButton_UpdateUsable(button)
-                SpellFlyoutButton_UpdateCount(button)
+                button:updateCooldownsAndCountsAndStatesEtc()
             end
         else
-            _G[button:GetName().."Icon"]:SetTexture(nil)
+            button:setIconTexture(nil)
             button.spellID = nil
             button.actionType = nil
             button.mountIndex = nil
@@ -193,93 +187,181 @@ function updateFlyoutMenuForCatalog(flyoutMenu, flyoutId)
 
     -- Hide unused buttons
     local unusedButtonIndex = numButtons+1
-    while _G["UIUFO_FlyoutMenuForCatalogButton"..unusedButtonIndex] do
-        _G["UIUFO_FlyoutMenuForCatalogButton"..unusedButtonIndex]:Hide()
+    local button = self:getButtonFor(unusedButtonIndex)
+    while button do
+        button:Hide()
         unusedButtonIndex = unusedButtonIndex+1
+        button = self:getButtonFor(unusedButtonIndex)
     end
 
     if numButtons == 0 then
-        flyoutMenu:Hide()
+        self:Hide()
         return
     end
 
     -- Show the flyout
-    flyoutMenu:SetFrameStrata("DIALOG")
-    flyoutMenu:ClearAllPoints()
+    self:SetFrameStrata("DIALOG")
+    self:ClearAllPoints()
 
     local distance = 3
 
-    flyoutMenu.Background.End:ClearAllPoints()
-    flyoutMenu.Background.Start:ClearAllPoints()
+    self.Background.End:ClearAllPoints()
+    self.Background.Start:ClearAllPoints()
     if (direction == "UP") then
-        flyoutMenu:SetPoint("BOTTOM", parent, "TOP");
-        flyoutMenu.Background.End:SetPoint("TOP", 0, SPELLFLYOUT_INITIAL_SPACING);
-        SetClampedTextureRotation(flyoutMenu.Background.End, 0);
-        SetClampedTextureRotation(flyoutMenu.Background.VerticalMiddle, 0);
-        flyoutMenu.Background.Start:SetPoint("TOP", flyoutMenu.Background.VerticalMiddle, "BOTTOM");
-        SetClampedTextureRotation(flyoutMenu.Background.Start, 0);
-        flyoutMenu.Background.HorizontalMiddle:Hide();
-        flyoutMenu.Background.VerticalMiddle:Show();
-        flyoutMenu.Background.VerticalMiddle:ClearAllPoints();
-        flyoutMenu.Background.VerticalMiddle:SetPoint("TOP", flyoutMenu.Background.End, "BOTTOM");
-        flyoutMenu.Background.VerticalMiddle:SetPoint("BOTTOM", 0, distance);
+        self:SetPoint("BOTTOM", parent, "TOP");
+        self.Background.End:SetPoint("TOP", 0, SPELLFLYOUT_INITIAL_SPACING);
+        SetClampedTextureRotation(self.Background.End, 0);
+        SetClampedTextureRotation(self.Background.VerticalMiddle, 0);
+        self.Background.Start:SetPoint("TOP", self.Background.VerticalMiddle, "BOTTOM");
+        SetClampedTextureRotation(self.Background.Start, 0);
+        self.Background.HorizontalMiddle:Hide();
+        self.Background.VerticalMiddle:Show();
+        self.Background.VerticalMiddle:ClearAllPoints();
+        self.Background.VerticalMiddle:SetPoint("TOP", self.Background.End, "BOTTOM");
+        self.Background.VerticalMiddle:SetPoint("BOTTOM", 0, distance);
     elseif (direction == "DOWN") then
-        flyoutMenu:SetPoint("TOP", parent, "BOTTOM");
-        flyoutMenu.Background.End:SetPoint("BOTTOM", 0, -SPELLFLYOUT_INITIAL_SPACING);
-        SetClampedTextureRotation(flyoutMenu.Background.End, 180);
-        SetClampedTextureRotation(flyoutMenu.Background.VerticalMiddle, 180);
-        flyoutMenu.Background.Start:SetPoint("BOTTOM", flyoutMenu.Background.VerticalMiddle, "TOP");
-        SetClampedTextureRotation(flyoutMenu.Background.Start, 180);
-        flyoutMenu.Background.HorizontalMiddle:Hide();
-        flyoutMenu.Background.VerticalMiddle:Show();
-        flyoutMenu.Background.VerticalMiddle:ClearAllPoints();
-        flyoutMenu.Background.VerticalMiddle:SetPoint("BOTTOM", flyoutMenu.Background.End, "TOP");
-        flyoutMenu.Background.VerticalMiddle:SetPoint("TOP", 0, -distance);
+        self:SetPoint("TOP", parent, "BOTTOM");
+        self.Background.End:SetPoint("BOTTOM", 0, -SPELLFLYOUT_INITIAL_SPACING);
+        SetClampedTextureRotation(self.Background.End, 180);
+        SetClampedTextureRotation(self.Background.VerticalMiddle, 180);
+        self.Background.Start:SetPoint("BOTTOM", self.Background.VerticalMiddle, "TOP");
+        SetClampedTextureRotation(self.Background.Start, 180);
+        self.Background.HorizontalMiddle:Hide();
+        self.Background.VerticalMiddle:Show();
+        self.Background.VerticalMiddle:ClearAllPoints();
+        self.Background.VerticalMiddle:SetPoint("BOTTOM", self.Background.End, "TOP");
+        self.Background.VerticalMiddle:SetPoint("TOP", 0, -distance);
     elseif (direction == "LEFT") then
-        flyoutMenu:SetPoint("RIGHT", parent, "LEFT");
-        flyoutMenu.Background.End:SetPoint("LEFT", -SPELLFLYOUT_INITIAL_SPACING, 0);
-        SetClampedTextureRotation(flyoutMenu.Background.End, 270);
-        SetClampedTextureRotation(flyoutMenu.Background.HorizontalMiddle, 180);
-        flyoutMenu.Background.Start:SetPoint("LEFT", flyoutMenu.Background.HorizontalMiddle, "RIGHT");
-        SetClampedTextureRotation(flyoutMenu.Background.Start, 270);
-        flyoutMenu.Background.VerticalMiddle:Hide();
-        flyoutMenu.Background.HorizontalMiddle:Show();
-        flyoutMenu.Background.HorizontalMiddle:ClearAllPoints();
-        flyoutMenu.Background.HorizontalMiddle:SetPoint("LEFT", flyoutMenu.Background.End, "RIGHT");
-        flyoutMenu.Background.HorizontalMiddle:SetPoint("RIGHT", -distance, 0);
+        self:SetPoint("RIGHT", parent, "LEFT");
+        self.Background.End:SetPoint("LEFT", -SPELLFLYOUT_INITIAL_SPACING, 0);
+        SetClampedTextureRotation(self.Background.End, 270);
+        SetClampedTextureRotation(self.Background.HorizontalMiddle, 180);
+        self.Background.Start:SetPoint("LEFT", self.Background.HorizontalMiddle, "RIGHT");
+        SetClampedTextureRotation(self.Background.Start, 270);
+        self.Background.VerticalMiddle:Hide();
+        self.Background.HorizontalMiddle:Show();
+        self.Background.HorizontalMiddle:ClearAllPoints();
+        self.Background.HorizontalMiddle:SetPoint("LEFT", self.Background.End, "RIGHT");
+        self.Background.HorizontalMiddle:SetPoint("RIGHT", -distance, 0);
     elseif (direction == "RIGHT") then
-        flyoutMenu:SetPoint("LEFT", parent, "RIGHT");
-        flyoutMenu.Background.End:SetPoint("RIGHT", SPELLFLYOUT_INITIAL_SPACING, 0);
-        SetClampedTextureRotation(flyoutMenu.Background.End, 90);
-        SetClampedTextureRotation(flyoutMenu.Background.HorizontalMiddle, 0);
-        flyoutMenu.Background.Start:SetPoint("RIGHT", flyoutMenu.Background.HorizontalMiddle, "LEFT");
-        SetClampedTextureRotation(flyoutMenu.Background.Start, 90);
-        flyoutMenu.Background.VerticalMiddle:Hide();
-        flyoutMenu.Background.HorizontalMiddle:Show();
-        flyoutMenu.Background.HorizontalMiddle:ClearAllPoints();
-        flyoutMenu.Background.HorizontalMiddle:SetPoint("RIGHT", flyoutMenu.Background.End, "LEFT");
-        flyoutMenu.Background.HorizontalMiddle:SetPoint("LEFT", distance, 0);
+        self:SetPoint("LEFT", parent, "RIGHT");
+        self.Background.End:SetPoint("RIGHT", SPELLFLYOUT_INITIAL_SPACING, 0);
+        SetClampedTextureRotation(self.Background.End, 90);
+        SetClampedTextureRotation(self.Background.HorizontalMiddle, 0);
+        self.Background.Start:SetPoint("RIGHT", self.Background.HorizontalMiddle, "LEFT");
+        SetClampedTextureRotation(self.Background.Start, 90);
+        self.Background.VerticalMiddle:Hide();
+        self.Background.HorizontalMiddle:Show();
+        self.Background.HorizontalMiddle:ClearAllPoints();
+        self.Background.HorizontalMiddle:SetPoint("RIGHT", self.Background.End, "LEFT");
+        self.Background.HorizontalMiddle:SetPoint("LEFT", distance, 0);
     end
 
     if direction == "UP" or direction == "DOWN" then
-        flyoutMenu:SetWidth(prevButton:GetWidth())
-        flyoutMenu:SetHeight((prevButton:GetHeight()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
+        self:SetWidth(prevButton:GetWidth())
+        self:SetHeight((prevButton:GetHeight()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
     else
-        flyoutMenu:SetHeight(prevButton:GetHeight())
-        flyoutMenu:SetWidth((prevButton:GetWidth()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
+        self:SetHeight(prevButton:GetHeight())
+        self:SetWidth((prevButton:GetWidth()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
     end
 
-    flyoutMenu.direction = direction;
-    flyoutMenu:SetBorderColor(0.7, 0.7, 0.7);
-    flyoutMenu:SetBorderSize(47);
+    self.direction = direction;
+    self:SetBorderColor(0.7, 0.7, 0.7);
+    self:SetBorderSize(47);
 end
 
-function initializeOnClickHandlersForFlyouts()
-    for i, button in ipairs({UIUFO_FlyoutMenu:GetChildren()}) do
-        if button:GetObjectType() == "CheckButton" then
-            SecureHandlerWrapScript(button, "OnClick", button, "self:GetParent():Hide()")
+---@param germ Germ
+function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
+    germ:SetChecked(not germ:GetChecked())
+    local direction = germ:GetAttribute("flyoutDirection");
+
+    local spellList = fknSplit(germ:GetAttribute("spelllist"))
+    --print("~~~~~~ /spellList/ =",self:GetAttribute("spellList"))
+    --print("~~~~~~ spellList -->")
+    --DevTools_Dump(spellList)
+
+    local typeList = fknSplit(germ:GetAttribute("typelist"))
+    --print("~~~~~~ /typeList/ =",self:GetAttribute("typelist"))
+    --print("~~~~~~ typeList -->")
+    --DevTools_Dump(typeList)
+
+    local pets     = fknSplit(germ:GetAttribute("petlist"))
+    --print("~~~~~~ /pets/ =",self:GetAttribute("petlist"))
+    --print("~~~~~~ pets -->")
+    --DevTools_Dump(pets)
+
+    local buttonFrames = { UIUFO_FlyoutMenuForGerm:GetChildren() }
+    table.remove(buttonFrames, 1)
+    ---@param buttonFrame ButtonOnFlyoutMenu
+    for i, buttonFrame in ipairs(buttonFrames) do
+        local type = typeList[i]
+        if not isEmpty(type) then
+            local spellId = spellList[i]
+            local itemId = (type == "item") and spellId
+            local pet = pets[i]
+            --print("Germ_PreClick(): i =",i, "| spellID =",spellId,  "| type =",type, "| pet =", pet)
+
+            -- fields recognized by Bliz internal UI code
+            buttonFrame.spellID = spellId
+            buttonFrame.itemID = itemId
+            buttonFrame.actionID = spellId
+            buttonFrame.actionType = type
+            buttonFrame.battlepet = pet
+
+            local icon = getTexture(type, spellId, pet)
+            buttonFrame:setIconTexture(icon)
+
+            buttonFrame:updateCooldownsAndCountsAndStatesEtc()
         end
     end
-
-    UIUFO_FlyoutMenuForCatalog.IsConfig = true
+    UIUFO_FlyoutMenuForGerm.Background.End:ClearAllPoints()
+    UIUFO_FlyoutMenuForGerm.Background.Start:ClearAllPoints()
+    local distance = 3
+    if (direction == "UP") then
+        UIUFO_FlyoutMenuForGerm.Background.End:SetPoint("TOP", 0, SPELLFLYOUT_INITIAL_SPACING);
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.End, 0);
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle, 0);
+        UIUFO_FlyoutMenuForGerm.Background.Start:SetPoint("TOP", UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle, "BOTTOM");
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.Start, 0);
+        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:Hide();
+        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:Show();
+        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:ClearAllPoints();
+        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:SetPoint("TOP", UIUFO_FlyoutMenuForGerm.Background.End, "BOTTOM");
+        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:SetPoint("BOTTOM", 0, distance);
+    elseif (direction == "DOWN") then
+        UIUFO_FlyoutMenuForGerm.Background.End:SetPoint("BOTTOM", 0, -SPELLFLYOUT_INITIAL_SPACING);
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.End, 180);
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle, 180);
+        UIUFO_FlyoutMenuForGerm.Background.Start:SetPoint("BOTTOM", UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle, "TOP");
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.Start, 180);
+        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:Hide();
+        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:Show();
+        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:ClearAllPoints();
+        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:SetPoint("BOTTOM", UIUFO_FlyoutMenuForGerm.Background.End, "TOP");
+        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:SetPoint("TOP", 0, -distance);
+    elseif (direction == "LEFT") then
+        UIUFO_FlyoutMenuForGerm.Background.End:SetPoint("LEFT", -SPELLFLYOUT_INITIAL_SPACING, 0);
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.End, 270);
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle, 180);
+        UIUFO_FlyoutMenuForGerm.Background.Start:SetPoint("LEFT", UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle, "RIGHT");
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.Start, 270);
+        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:Hide();
+        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:Show();
+        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:ClearAllPoints();
+        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:SetPoint("LEFT", UIUFO_FlyoutMenuForGerm.Background.End, "RIGHT");
+        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:SetPoint("RIGHT", -distance, 0);
+    elseif (direction == "RIGHT") then
+        UIUFO_FlyoutMenuForGerm.Background.End:SetPoint("RIGHT", SPELLFLYOUT_INITIAL_SPACING, 0);
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.End, 90);
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle, 0);
+        UIUFO_FlyoutMenuForGerm.Background.Start:SetPoint("RIGHT", UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle, "LEFT");
+        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.Start, 90);
+        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:Hide();
+        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:Show();
+        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:ClearAllPoints();
+        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:SetPoint("RIGHT", UIUFO_FlyoutMenuForGerm.Background.End, "LEFT");
+        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:SetPoint("LEFT", distance, 0);
+    end
+    UIUFO_FlyoutMenuForGerm:SetBorderColor(0.7, 0.7, 0.7)
+    UIUFO_FlyoutMenuForGerm:SetBorderSize(47);
 end

@@ -11,7 +11,33 @@ local L10N = Ufo.L10N
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
 ---@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
+
+---@class Catalog -- IntelliJ-EmmyLua annotation
+---@field ufoType string The classname
+local Catalog = {
+    ufoType = "Catalog",
+}
+Ufo.Catalog = Catalog
+
+-------------------------------------------------------------------------------
+-- Functions / Methods
+-------------------------------------------------------------------------------
+
+-- Executed on load, calls general set-up functions
+function Catalog:definePopupDialogWindow()
+    StaticPopupDialogs["UFO_CONFIRM_DELETE"] = {
+        text = L10N["CONFIRM_DELETE"],
+        button1 = YES,
+        button2 = NO,
+        OnAccept = function (dialog) deleteFlyout(dialog.flyoutId); updateCatalog(); updateAllGerms(); end,
+        OnCancel = function (dialog) end,
+        hideOnEscape = 1,
+        timeout = 0,
+        exclusive = 1,
+        whileDead = 1,
+    }
+end
 
 -------------------------------------------------------------------------------
 -- CATALOG Functions Supporting Catalog UI
@@ -34,7 +60,7 @@ function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
 end
 
 function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
-    debugInfo:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton)
+    debugTrace:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton)
     if not SpellBookFrame:IsShown() then
         ToggleSpellBook("spell")
         --SpellBookFrame:Show()
@@ -155,7 +181,7 @@ function updateCatalog()
                     button.SelectedBar:Show()
                     button.Arrow:Show()
                     UIUFO_FlyoutMenuForCatalog.parent = button
-                    updateFlyoutMenuForCatalog(UIUFO_FlyoutMenuForCatalog, pos)
+                    UIUFO_FlyoutMenuForCatalog:updateFlyoutMenuForCatalog(pos)
                     UIUFO_FlyoutMenuForCatalog:Show()
                 else
                     button.SelectedBar:Hide()
@@ -204,19 +230,4 @@ function updateCatalog()
         end
     end
 
-end
-
--- Executed on load, calls general set-up functions
-function defineCatalogPopupDialogs()
-    StaticPopupDialogs["UFO_CONFIRM_DELETE"] = {
-        text = L10N["CONFIRM_DELETE"],
-        button1 = YES,
-        button2 = NO,
-        OnAccept = function (dialog) deleteFlyout(dialog.flyoutId); updateCatalog(); updateAllGerms(); end,
-        OnCancel = function (dialog) end,
-        hideOnEscape = 1,
-        timeout = 0,
-        exclusive = 1,
-        whileDead = 1,
-    }
 end

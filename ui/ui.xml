@@ -1,9 +1,6 @@
-<!-- This Source Code Form is subject to the terms of the Mozilla Public
-   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
-   - You can obtain one at http://mozilla.org/MPL/2.0/.  -->
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
 
-    <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate" virtual="TRUE" inherits="SmallActionButtonTemplate, SecureActionButtonTemplate">
+<CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate" virtual="TRUE" inherits="SmallActionButtonTemplate, SecureActionButtonTemplate">
         <Scripts>
             <OnLoad function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad" />
             <OnEnter function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip" />
@@ -60,16 +57,21 @@
             <CheckButton name="$parentButton20" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="20" />
         </Frames>
         <Scripts>
-            <OnLoad function="GLOBAL_UIUFO_FlyoutMenu_OnLoad"/>
-            <OnShow function="GLOBAL_UIUFO_FlyoutMenu_OnShow"/>
-            <OnHide function="GLOBAL_UIUFO_FlyoutMenu_OnHide"/>
+            <OnShow function="GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow"/>
+            <OnHide function="GLOBAL_UIUFO_FlyoutMenuForGerm_OnHide"/>
         </Scripts>
     </Frame>
 
-    <Frame name="UIUFO_FlyoutMenu" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
+    <Frame name="UIUFO_FlyoutMenuForGerm" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
+        <Scripts>
+            <OnLoad function="GLOBAL_UIUFO_FlyoutMenuForGerm_OnLoad"/>
+        </Scripts>
     </Frame>
 
     <Frame name="UIUFO_FlyoutMenuForCatalog" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
+        <Scripts>
+            <OnLoad function="GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad"/>
+        </Scripts>
     </Frame>
 
     <Button name="UIUFO_CatalogFlyoutOptionsMouseOver" virtual="true">

@@ -13,12 +13,14 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 ---@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
 
 ---@class Germ -- IntelliJ-EmmyLua annotation
+---@field ufoType string The classname
+---@field flyoutId number Identifies which flyout is currently copied into this germ
+---@field flyoutMenu table The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
 local Germ = {
-    flyoutId = false,
-    isGerm = true,
+    ufoType = "Germ",
 }
 Ufo.Germ = Germ
 
@@ -36,7 +38,7 @@ local GERM_UI_NAME_PREFIX = "UfoGerm"
 local snippet_Germ_Click = [=[
 	local DELIMITER = "]=]..DELIMITER..[=["
 	local EMPTY_ELEMENT = "]=]..EMPTY_ELEMENT..[=["
-	local ref = self:GetFrameRef("UIUFO_FlyoutMenu")
+	local ref = self:GetFrameRef("UIUFO_FlyoutMenuForGerm")
 	local direction = self:GetAttribute("flyoutDirection")
 	local prevButton = nil;
 
@@ -137,27 +139,25 @@ local snippet_Germ_Click = [=[
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
-local function isGermMethod(firstArg)
-    return (firstArg and type(firstArg) == "table" and firstArg.isGerm)
-end
-
-local function assertIsGermFunction(firstArg)
-    assert(not isGermMethod(firstArg), "Um... it's var.foo() not var:foo()")
-end
-
-local function assertIsGermMethod(firstArg)
-    assert(isGermMethod(firstArg), "Um... it's var:foo() not var.foo()")
-end
-
 function Germ.new(flyoutId, actionBarBtn)
-    assertIsGermFunction(flyoutId)
+    assertIsFunctionOf(flyoutId,Germ)
     local flyoutConf = getFlyoutConfig(flyoutId)
     if not flyoutConf then return end -- because one toon can delete a flyout while other toons still have it on their bars
     local name = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
-    local btn = CreateFrame("CheckButton", name, actionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
-    deepcopy(Germ, btn) -- copy Germ's methods, functions, etc to the UI btn
-    btn.flyoutId = flyoutId
-    return btn
+    ---@type Germ
+    local protoGerm = CreateFrame("CheckButton", name, actionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
+    deepcopy(Germ, protoGerm) -- copy Germ's methods, functions, etc to the UI btn
+    protoGerm.flyoutId = flyoutId
+    protoGerm.flyoutMenu = UIUFO_FlyoutMenuForGerm -- the one UI object is reused by every germ
+    return protoGerm
+end
+
+function Germ:setIconTexture(texture)
+    if texture and type(texture) ~= "number" then
+        texture = ("INTERFACE\\ICONS\\"..texture)
+    end
+
+    _G[ self:GetName().."Icon" ]:SetTexture(texture)
 end
 
 function Germ:GetBtnSlotIndex()
@@ -167,7 +167,7 @@ function Germ:GetBtnSlotIndex()
 end
 
 function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
-    assertIsGermMethod(self)
+    assertIsMethodOf(self, Germ)
     local germ = self
 
     germ.flyoutId = flyoutId
@@ -197,7 +197,7 @@ function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
     germ:SetToplevel(true)
 
     germ:SetAttribute("flyoutDirection", direction)
-    germ:SetFrameRef("UIUFO_FlyoutMenu", UIUFO_FlyoutMenu)
+    germ:SetFrameRef("UIUFO_FlyoutMenuForGerm", UIUFO_FlyoutMenuForGerm)
 
     for i, actionType in ipairs(flyoutConf.actionTypes) do
         if flyoutConf.spellNames[i] == nil then
@@ -256,18 +256,8 @@ function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
     germ:RegisterForClicks("AnyUp")
     germ:RegisterForDrag("LeftButton")
 
-    -- TODO: calculate the icon on the fly - consider if a toon knows the spell before choosing its icon
-    local iconFrame = _G[germ:GetName().."Icon"] -- TODO: SURELY there is an API to do this
-    if flyoutConf.icon then
-        if type(flyoutConf.icon) == "number" then
-            iconFrame:SetTexture(flyoutConf.icon)
-        else
-            iconFrame:SetTexture("INTERFACE\\ICONS\\"..flyoutConf.icon)
-        end
-    elseif actionTypes[1] then
-        local texture = getTexture(actionTypes[1], spells[1], pets[1])
-        iconFrame:SetTexture(texture)
-    end
+    local texture = flyoutConf.icon or actionTypes[1] and getTexture(actionTypes[1], spells[1], pets[1])
+    germ:setIconTexture(texture)
 
     if visibleIf then
         local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. visibleIf
@@ -284,7 +274,7 @@ local function handleGermUpdateEvent(germ)
     local arrowDistance;
     -- Update border
     local isMouseOverButton =  GetMouseFocus() == germ;
-    local isFlyoutShown = UIUFO_FlyoutMenu and UIUFO_FlyoutMenu:IsShown() and UIUFO_FlyoutMenu:GetParent() == germ;
+    local isFlyoutShown = UIUFO_FlyoutMenuForGerm and UIUFO_FlyoutMenuForGerm:IsShown() and UIUFO_FlyoutMenuForGerm:GetParent() == germ;
     if isFlyoutShown or isMouseOverButton then
         germ.FlyoutBorderShadow:Show();
         arrowDistance = 5;
@@ -341,13 +331,13 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnMouseUp(germ)
-    debugInfo:out("^",5,"OnMouseUp()","name",germ:GetName())
+    debugTrace:out("^",5,"OnMouseUp()","name",germ:GetName())
     handlers.OnReceiveDrag(germ)
 end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnReceiveDrag(germ)
-    debugInfo:out("^",5,"OnReceiveDrag()","name",germ:GetName())
+    debugTrace:out("^",5,"OnReceiveDrag()","name",germ:GetName())
     if InCombatLockdown() then
         return
     end
@@ -361,7 +351,7 @@ end
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.PickupAndDrag(germ)
     if not InCombatLockdown() and (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
-        debugInfo:out("^",5,"OnDragStart()","name",germ:GetName())
+        debugTrace:out("^",5,"OnDragStart()","name",germ:GetName())
         pickupFlyout(germ.flyoutId)
         forgetPlacement(germ:GetBtnSlotIndex())
         updateAllGerms()
@@ -391,115 +381,19 @@ function handlers.OnUpdate(germ, elapsed)
     handleGermUpdateEvent(germ)
 end
 
+---@param germ Germ
 function handlers.OnPreClick(germ, whichMouseButton, down)
-    germ:SetChecked(not germ:GetChecked())
-    local direction = germ:GetAttribute("flyoutDirection");
-
-    local spellList = fknSplit(germ:GetAttribute("spelllist"))
-    --print("~~~~~~ /spellList/ =",self:GetAttribute("spellList"))
-    --print("~~~~~~ spellList -->")
-    --DevTools_Dump(spellList)
-
-    local typeList = fknSplit(germ:GetAttribute("typelist"))
-    --print("~~~~~~ /typeList/ =",self:GetAttribute("typelist"))
-    --print("~~~~~~ typeList -->")
-    --DevTools_Dump(typeList)
-
-    local pets     = fknSplit(germ:GetAttribute("petlist"))
-    --print("~~~~~~ /pets/ =",self:GetAttribute("petlist"))
-    --print("~~~~~~ pets -->")
-    --DevTools_Dump(pets)
-
-    local buttonFrames = { UIUFO_FlyoutMenu:GetChildren() }
-    table.remove(buttonFrames, 1)
-    for i, buttonFrame in ipairs(buttonFrames) do
-        local type = typeList[i]
-        if not isEmpty(type) then
-            local spellId = spellList[i]
-            local itemId = (type == "item") and spellId
-            local pet = pets[i]
-            --print("Germ_PreClick(): i =",i, "| spellID =",spellId,  "| type =",type, "| pet =", pet)
-
-            -- fields recognized by Bliz internal UI code
-            buttonFrame.spellID = spellId
-            buttonFrame.itemID = itemId
-            buttonFrame.actionID = spellId
-            buttonFrame.actionType = type
-            buttonFrame.battlepet = pet
-
-            local icon = getTexture(type, spellId, pet)
-            _G[buttonFrame:GetName().."Icon"]:SetTexture(icon)
-
-            if not isEmpty(spellId) then
-                SpellFlyoutButton_UpdateCooldown(buttonFrame)
-                SpellFlyoutButton_UpdateState(buttonFrame)
-                SpellFlyoutButton_UpdateUsable(buttonFrame)
-                SpellFlyoutButton_UpdateCount(buttonFrame)
-            end
-        end
-    end
-    UIUFO_FlyoutMenu.Background.End:ClearAllPoints()
-    UIUFO_FlyoutMenu.Background.Start:ClearAllPoints()
-    local distance = 3
-    if (direction == "UP") then
-        UIUFO_FlyoutMenu.Background.End:SetPoint("TOP", 0, SPELLFLYOUT_INITIAL_SPACING);
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.End, 0);
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.VerticalMiddle, 0);
-        UIUFO_FlyoutMenu.Background.Start:SetPoint("TOP", UIUFO_FlyoutMenu.Background.VerticalMiddle, "BOTTOM");
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.Start, 0);
-        UIUFO_FlyoutMenu.Background.HorizontalMiddle:Hide();
-        UIUFO_FlyoutMenu.Background.VerticalMiddle:Show();
-        UIUFO_FlyoutMenu.Background.VerticalMiddle:ClearAllPoints();
-        UIUFO_FlyoutMenu.Background.VerticalMiddle:SetPoint("TOP", UIUFO_FlyoutMenu.Background.End, "BOTTOM");
-        UIUFO_FlyoutMenu.Background.VerticalMiddle:SetPoint("BOTTOM", 0, distance);
-    elseif (direction == "DOWN") then
-        UIUFO_FlyoutMenu.Background.End:SetPoint("BOTTOM", 0, -SPELLFLYOUT_INITIAL_SPACING);
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.End, 180);
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.VerticalMiddle, 180);
-        UIUFO_FlyoutMenu.Background.Start:SetPoint("BOTTOM", UIUFO_FlyoutMenu.Background.VerticalMiddle, "TOP");
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.Start, 180);
-        UIUFO_FlyoutMenu.Background.HorizontalMiddle:Hide();
-        UIUFO_FlyoutMenu.Background.VerticalMiddle:Show();
-        UIUFO_FlyoutMenu.Background.VerticalMiddle:ClearAllPoints();
-        UIUFO_FlyoutMenu.Background.VerticalMiddle:SetPoint("BOTTOM", UIUFO_FlyoutMenu.Background.End, "TOP");
-        UIUFO_FlyoutMenu.Background.VerticalMiddle:SetPoint("TOP", 0, -distance);
-    elseif (direction == "LEFT") then
-        UIUFO_FlyoutMenu.Background.End:SetPoint("LEFT", -SPELLFLYOUT_INITIAL_SPACING, 0);
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.End, 270);
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.HorizontalMiddle, 180);
-        UIUFO_FlyoutMenu.Background.Start:SetPoint("LEFT", UIUFO_FlyoutMenu.Background.HorizontalMiddle, "RIGHT");
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.Start, 270);
-        UIUFO_FlyoutMenu.Background.VerticalMiddle:Hide();
-        UIUFO_FlyoutMenu.Background.HorizontalMiddle:Show();
-        UIUFO_FlyoutMenu.Background.HorizontalMiddle:ClearAllPoints();
-        UIUFO_FlyoutMenu.Background.HorizontalMiddle:SetPoint("LEFT", UIUFO_FlyoutMenu.Background.End, "RIGHT");
-        UIUFO_FlyoutMenu.Background.HorizontalMiddle:SetPoint("RIGHT", -distance, 0);
-    elseif (direction == "RIGHT") then
-        UIUFO_FlyoutMenu.Background.End:SetPoint("RIGHT", SPELLFLYOUT_INITIAL_SPACING, 0);
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.End, 90);
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.HorizontalMiddle, 0);
-        UIUFO_FlyoutMenu.Background.Start:SetPoint("RIGHT", UIUFO_FlyoutMenu.Background.HorizontalMiddle, "LEFT");
-        SetClampedTextureRotation(UIUFO_FlyoutMenu.Background.Start, 90);
-        UIUFO_FlyoutMenu.Background.VerticalMiddle:Hide();
-        UIUFO_FlyoutMenu.Background.HorizontalMiddle:Show();
-        UIUFO_FlyoutMenu.Background.HorizontalMiddle:ClearAllPoints();
-        UIUFO_FlyoutMenu.Background.HorizontalMiddle:SetPoint("RIGHT", UIUFO_FlyoutMenu.Background.End, "LEFT");
-        UIUFO_FlyoutMenu.Background.HorizontalMiddle:SetPoint("LEFT", distance, 0);
-    end
-    UIUFO_FlyoutMenu:SetBorderColor(0.7, 0.7, 0.7)
-    UIUFO_FlyoutMenu:SetBorderSize(47);
+    germ.flyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
 end
 
--- this is needed for the edge case of clicking on a different germ while the current one is still opens
+-- this is needed for the edge case of clicking on a different germ while the current one is still open
 -- in which case there is no OnShow event which is where the below usually happens
 function handlers.OnPostClick(germ, whichMouseButton, down)
-    debugInfo:print("=== handlers.OnPostClick !!!!!")
-    updateAllButtonStatusesFor(UIUFO_FlyoutMenu, function(button)
-        -- TODO move this into ButtonOnFlyoutMenu
-        debugInfo:out("~",40)
-        Ufo_UpdateItemOrSpellCooldown(button)
-        SpellFlyoutButton_UpdateState(button)
-        SpellFlyoutButton_UpdateUsable(button)
-        UFO_UpdateItemOrSpellCount(button)
+    ---@type FlyoutMenu
+    local flyoutMenu = germ.flyoutMenu
+    ---@param btn ButtonOnFlyoutMenu
+    flyoutMenu:forEachButton(function(btn)
+        debugTrace:out("~",40, "btn updatery from Germ:OnPostClick()")
+        btn:updateCooldownsAndCountsAndStatesEtc()
     end)
 end

@@ -63,7 +63,7 @@ local function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
         germ = Germ.new(flyoutId, actionBarBtn)
         rememberGerm(germ)
     end
-    debugInfo:out("*",3,"bindFlyoutToActionBarSlot()","germ...",germ)
+    debugTrace:out("*",3,"bindFlyoutToActionBarSlot()","germ...",germ)
     germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
 end
 
