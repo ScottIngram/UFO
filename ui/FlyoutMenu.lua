@@ -270,6 +270,7 @@ function FlyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
     self:SetBorderSize(47);
 end
 
+-- TODO: refactor this into a germ:Method() then the remainder in this flyoutMenu:Method()
 ---@param germ Germ
 function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
     germ:SetChecked(not germ:GetChecked())
@@ -297,8 +298,9 @@ function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
         local type = typeList[i]
         if not isEmpty(type) then
             local spellId = spellList[i]
-            local itemId = (type == "item") and spellId
+            local itemId = (type == "item") and spellId or nil
             local pet = pets[i]
+            debugInfo:out("~",3,"updateFlyoutMenuForGerm", "i",i, "spellId",spellId, "type", type)
             --print("Germ_PreClick(): i =",i, "| spellID =",spellId,  "| type =",type, "| pet =", pet)
 
             -- fields recognized by Bliz internal UI code

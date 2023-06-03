@@ -7,7 +7,9 @@ TODO
 * implement UFO_SV_FLYOUTS as array of self-contained button objects rather than each button spread across multiple parallel arrays
 * encapsulate as FlyoutConfigData
 * encapsulate as PlacementConfigData
+* refactor FlyoutMenu:updateFlyoutMenuForGerm and move some logic into a germ:Method(); replace all mentions of UIUFO_FlyoutMenuForGerm with simply self
 * replace existing icon picker with something closer to MacroManager / Weak Auras
+* question: can I use GetItemSpell(itemId) to simplify my code ?
 * BUG: germs that extend horizontally (as the ones on the vertical action bars) sometimes have weirdly wide borders
 * BUG: OnDragStart needs to accommodate when there is already something on the cursor
 * - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
@@ -16,7 +18,10 @@ TODO
 * NUKE all OO syntax that's not actual OO.  Foo:Bar() doesn't need "self" if there is never an instance foo:Bar()
 * fix C_MountJournal OnPickup global var bug
 * consolidate all the redundant code, such as the if actionType == "spell" then PickupSpell(spellId) --> function ButtonOnFlyoutMenu:PickMeUp()
+* use ACE Lib/DataBroker
 *
+* DONE: BUG: flyouts don't indicate if an item is usable / not usable
+* DONE: BUG: stacks, charges, etc for things that don't have stacks etc.
 * DONE: BUG: cooldown display only works for spells, not inventory items (hearthstone, trinkets, potions, etc)
 * DONE: NUKE all function paramsNamed(self) and rename them with actual NAMES
 * DONE: identify which Ufo:Foo() methods actually need to be global
@@ -35,7 +40,7 @@ local L10N = Ufo.L10N
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
 ---@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
 
 -------------------------------------------------------------------------------
 -- Data

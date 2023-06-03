@@ -34,19 +34,50 @@ end
 
 function ButtonOnFlyoutMenu:updateCooldownsAndCountsAndStatesEtc()
     if (self.spellID) then
-        self:UpdateCooldown()
         SpellFlyoutButton_UpdateState(self)
-        SpellFlyoutButton_UpdateUsable(self)
-        self:UpdateCount()
+    end
+
+    self:UpdateUsable()
+    self:UpdateCooldown()
+    self:UpdateCount()
+end
+
+function ButtonOnFlyoutMenu:UpdateUsable()
+    local itemId = self.itemID
+    local spellId = self.spellID
+
+    local isUsable = true
+    local notEnoughMana = false
+    if itemId or spellId then
+        if itemId then
+            _, spellId = GetItemSpell(itemId)
+            isUsable = IsUsableSpell(spellId)
+        else
+            isUsable, notEnoughMana = IsUsableSpell(spellId)
+        end
+    end
+
+    debugTrace:out("#",5,"UpdateUsable", "isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
+
+    local name = self:GetName();
+    local icon = _G[name.."Icon"];
+    if isUsable then
+        icon:SetVertexColor(1.0, 1.0, 1.0);
+    elseif notEnoughMana then
+        icon:SetVertexColor(0.5, 0.5, 1.0);
+    else
+        icon:SetVertexColor(0.4, 0.4, 0.4);
     end
 end
+
 
 function ButtonOnFlyoutMenu:UpdateCooldown()
     local itemId = self.itemID
     debugTrace:out("X",40,"Ufo_UpdateCooldown 1 ITEM","self.itemID",self.itemID, "self.spellID",self.spellID)
 
-    if (not itemId) and self.spellID then
+    if (not exists(itemId)) and exists(self.spellID) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
+        debugTrace:out("@",20,"updateCooldownsAndCountsAndStatesEtc", "self.spellID",self.spellID)
         SpellFlyoutButton_UpdateCooldown(self)
         return
     end
@@ -68,32 +99,38 @@ end
 
 function ButtonOnFlyoutMenu:UpdateCount()
     local itemId = self.itemID
+    local hasItem = exists(itemId)
 
-    if not itemId then
-        -- use Bliz's built-in handler for the stuff it understands, ie, not items
-        SpellFlyoutButton_UpdateCount(self)
-        return
-    end
-
-    -- for items, I copied and hacked Bliz's SpellFlyoutButton_UpdateCount
-    local textFrame = _G[self:GetName().."Count"];
-    local nomnom = IsConsumableItem(itemId) -- returns false for potions. fuck you Blizzard.
-    local _, _, _, _, _, itemType = GetItemInfo(itemId)
-    local count = GetItemCount(itemId, includeBank, includeCharges)
-    debugTrace:out("X",5,"UFO_UpdateCount 1", "itemId",itemId, "NOMNOM",nomnom,"count",count,"itemType",itemType)
-
-    if (CONSUMABLE == itemType) then
-        local includeBank = false
-        local includeCharges = true
-        local count = GetItemCount(self.itemID, includeBank, includeCharges)
-        if ( count > (self.maxDisplayCount or 9999 ) ) then
-            textFrame:SetText("*");
-        else
-            textFrame:SetText(count);
+    if not hasItem then
+        if exists(self.spellID) then
+            debugTrace:out("X",5,"UFO_UpdateCount 0... deferring to SpellFlyoutButton_UpdateCount ", "spellID",self.spellID)
+            -- use Bliz's built-in handler for the stuff it understands, ie, not items
+            SpellFlyoutButton_UpdateCount(self)
+            return
         end
-    else
-        textFrame:SetText("");
     end
+
+    local name, itemType, display
+    if hasItem then
+        name, _, _, _, _, itemType = GetItemInfo(itemId)
+    end
+    local includeBank = false
+    local includeCharges = true
+    local count = GetItemCount(itemId, includeBank, includeCharges)
+    local tooMany = ( count > (self.maxDisplayCount or 9999 ) )
+    debugTrace:out("X",5,"UFO_UpdateCount 1 ", "itemId",itemId, "hasItem",hasItem, "name",name, "itemType",itemType, "max",self.maxDisplayCount, "count",count, "tooMany",tooMany)
+
+    local max = self.maxDisplayCount or 9999
+    if count > max then
+        display = ">"..max
+    elseif CONSUMABLE == itemType then
+        display = (count == 0) and "" or count
+    else
+        display = (count == 0 or count == 1) and "" or count
+    end
+
+    local textFrame = _G[self:GetName().."Count"];
+    textFrame:SetText(display);
 end
 
 

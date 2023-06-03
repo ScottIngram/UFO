@@ -5,6 +5,8 @@
 -------------------------------------------------------------------------------
 
 local ADDON_NAME, Ufo = ...
+
+---@class Config -- IntelliJ-EmmyLua annotation
 local Config = {}
 Ufo.Config = Config
 
