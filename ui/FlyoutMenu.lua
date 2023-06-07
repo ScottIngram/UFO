@@ -124,14 +124,14 @@ function FlyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
     local flyoutConfig = getFlyoutConfig(flyoutId)
     local spells = flyoutConfig and flyoutConfig.spells
     local actionTypes = flyoutConfig and flyoutConfig.actionTypes
-    local mountIndexes = flyoutConfig and flyoutConfig.mountIndex
+    local mounts = flyoutConfig and flyoutConfig.mounts
     local pets = flyoutConfig and flyoutConfig.pets
 
     for i=1, math.min(#actionTypes+1, MAX_FLYOUT_SIZE) do
         local spellId    = spells[i]
         local itemId     = (type == "item") and spellId
         local actionType = actionTypes[i]
-        local mountIndex = mountIndexes[i]
+        local mountId    = mounts[i]
         local pet        = pets[i]
         local button     = self:getButtonFor(numButtons+1)
 
@@ -167,7 +167,7 @@ function FlyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
         if actionType then
             button.spellID = spellId -- this is read by Bliz code in SpellFlyout.lua which expects only numbers
             button.actionType = actionType
-            button.mountIndex = mountIndex
+            button.mountId = mountId
             button.battlepet  = pet
             local texture = getTexture(actionType, spellId, pet)
             button:setIconTexture(texture)
@@ -178,7 +178,7 @@ function FlyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
             button:setIconTexture(nil)
             button.spellID = nil
             button.actionType = nil
-            button.mountIndex = nil
+            button.mountId = nil
         end
 
         prevButton = button
@@ -276,22 +276,11 @@ function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
     debugTrace:out("~",3,"updateFlyoutMenuForGerm")
 
     germ:SetChecked(not germ:GetChecked())
+
     local direction = germ:GetAttribute("flyoutDirection");
-
     local spellList = fknSplit(germ:GetAttribute("spelllist"))
-    --print("~~~~~~ /spellList/ =",self:GetAttribute("spellList"))
-    --print("~~~~~~ spellList -->")
-    --DevTools_Dump(spellList)
-
     local typeList = fknSplit(germ:GetAttribute("typelist"))
-    --print("~~~~~~ /typeList/ =",self:GetAttribute("typelist"))
-    --print("~~~~~~ typeList -->")
-    --DevTools_Dump(typeList)
-
     local pets     = fknSplit(germ:GetAttribute("petlist"))
-    --print("~~~~~~ /pets/ =",self:GetAttribute("petlist"))
-    --print("~~~~~~ pets -->")
-    --DevTools_Dump(pets)
 
     local buttonFrames = { UIUFO_FlyoutMenuForGerm:GetChildren() }
     table.remove(buttonFrames, 1)

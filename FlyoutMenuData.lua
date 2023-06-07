@@ -37,10 +37,10 @@ flyoutConfig:addButton(myNewBtn) -- or smarter DWIM behavior that takes a macro 
 -------------------------------------------------------------------------------
 
 -- "spell" can mean also item, mount, macro, etc.
-STRUCT_FLYOUT_DEF = { spells={}, actionTypes={}, mountIndex={}, spellNames={}, macroOwners={}, pets={} }
+STRUCT_FLYOUT_DEF = { spells={}, actionTypes={}, mountId={}, spellNames={}, macroOwners={}, pets={} }
 
 NEW_STRUCT_FLYOUT_DEF = { id=false, name="", icon="", btns={} }
-NEW_STRUCT_FLYOUT_BTN_DEF = { type="", spellId="", mountIndex="", spellName="", macroOwner="", pet="", }
+NEW_STRUCT_FLYOUT_BTN_DEF = { type="", spellId="", mountId="", spellName="", macroOwner="", pet="", }
 
 -------------------------------------------------------------------------------
 -- Flyout Menu Functions - SavedVariables, config CRUD
@@ -126,7 +126,7 @@ function removeSpell(flyoutId, spellPos)
     local flyoutConf = getFlyoutConfig(flyoutId)
     table.remove(flyoutConf.spells, spellPos)
     table.remove(flyoutConf.actionTypes, spellPos)
-    table.remove(flyoutConf.mountIndex, spellPos)
+    table.remove(flyoutConf.mounts, spellPos)
     table.remove(flyoutConf.spellNames, spellPos)
     table.remove(flyoutConf.macroOwners, spellPos)
     table.remove(flyoutConf.pets, spellPos)

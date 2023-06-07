@@ -176,7 +176,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
     -- debugInfo:out(">",7,"OnReceiveDrag", "GetMountInfoByID -> info1",info1 )
     -- debugInfo:print( C_MountJournal.GetMountInfoByID(info1) )
 
-    local thingyId, mountIndex, macroOwner, pet
+    local thingyId, mountId, macroOwner, pet
 
     if kind == "spell" then
         thingyId = info3
@@ -187,15 +187,15 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
         if pickedUpMount then
             actionType = "spell"
             thingyId = pickedUpMount.spellId
-            mountIndex = pickedUpMount.mountId
+            mountId = pickedUpMount.mountId
         else
             debugWarn:print("Sorry, the Blizzard API provided bad data for this mount.")
         end
     elseif kind == "mount" then
         actionType = "spell" -- mounts can be summoned by casting as a spell
-        local name, spellId, icon, _, isUsable, _, _, _, _, shouldHideOnChar, _, mountId = C_MountJournal.GetMountInfoByID(info1)
+        local name, spellId, icon, _, isUsable, _, _, _, _, shouldHideOnChar, _, _ = C_MountJournal.GetMountInfoByID(info1)
         thingyId = spellId
-        mountIndex = mountId
+        mountId = info1
     elseif kind == "item" then
         thingyId = info1
     elseif kind == "macro" then
@@ -215,12 +215,12 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
 
         local oldThingyId   = flyoutConf.spells[btnIndex]
         local oldActionType = flyoutConf.actionTypes[btnIndex]
-        local oldMountIndex = flyoutConf.mountIndex[btnIndex]
+        local oldmountId    = flyoutConf.mounts[btnIndex]
         local oldPet        = flyoutConf.pets[btnIndex]
 
         flyoutConf.spells[btnIndex] = thingyId
         flyoutConf.actionTypes[btnIndex] = actionType
-        flyoutConf.mountIndex[btnIndex] = mountIndex
+        flyoutConf.mounts[btnIndex] = mountId
         flyoutConf.spellNames[btnIndex] = getThingyNameById(actionType, thingyId or pet)
         flyoutConf.macroOwners[btnIndex] = macroOwner
         flyoutConf.pets[btnIndex] = pet
@@ -232,9 +232,9 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
 
         -- update the cursor to show the existing spell/item/etc (if any)
         if oldActionType == "spell" then
-            if oldMountIndex then
+            if oldmountId then
                 pickedUpMount = {
-                    mountId = oldMountIndex,
+                    mountId = oldmountId,
                     spellId = oldThingyId
                 }
             end
@@ -297,14 +297,14 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(btnOnFlyout)
 
     local actionType = btnOnFlyout.actionType
     local spell = btnOnFlyout.spellID
-    local mountIndex = btnOnFlyout.mountIndex
+    local mountId = btnOnFlyout.mountId
     local pet = btnOnFlyout.battlepet
 
-    debugTrace:out("<",5,"OnDragStart", "actionType",actionType, "mountIndex",mountIndex)
+    debugTrace:out("<",5,"OnDragStart", "actionType",actionType, "mountId",mountId)
     if actionType == "spell" then
-        if mountIndex then
+        if mountId then
             pickedUpMount = {
-                mountId = mountIndex,
+                mountId = mountId,
                 spellId = spell
             }
         end

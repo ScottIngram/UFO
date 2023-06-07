@@ -214,7 +214,7 @@ function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
     local n = 1
     for i, actionType in ipairs(flyoutConf.actionTypes) do
         local spellID = flyoutConf.spells[i]
-        if isThingyUsable(spellID, flyoutConf.actionTypes[i], flyoutConf.mountIndex[i], flyoutConf.macroOwners[i], flyoutConf.pets[i]) then
+        if isThingyUsable(spellID, flyoutConf.actionTypes[i], flyoutConf.mounts[i], flyoutConf.macroOwners[i], flyoutConf.pets[i]) then
             -- table.insert won't preserve correct indicies of arrays with nil elements, so do this[instead]
             spells[n]      = flyoutConf.spells[i]
             spellNames[n]  = flyoutConf.spellNames[i]
@@ -269,6 +269,7 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 local function handleGermUpdateEvent(germ)
+    -- TODO: throttle this?
     -- print("========== Germ_UpdateFlyout()") this is being called continuously while a flyout exists on any bar
     -- Update border and determine arrow position
     local arrowDistance;
