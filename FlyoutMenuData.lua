@@ -13,7 +13,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 ---@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.TRACE)
+local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
 
 ---@class FlyoutMenuData -- IntelliJ-EmmyLua annotation
 local FlyoutMenuData = {}
