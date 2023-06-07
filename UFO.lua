@@ -20,6 +20,7 @@ TODO
 * consolidate all the redundant code, such as the if actionType == "spell" then PickupSpell(spellId) --> function ButtonOnFlyoutMenu:PickMeUp()
 * use ACE Lib/DataBroker
 *
+* DONE: BLIZ BUG: fixed flyouts on side bars pointing in the wrong direction because the Bliz API reported the wrong direction
 * DONE: BUG: bliz bug: C_MountJournal index is in flux (e.g. a search filter will change the indices)
 * DONE: BLIZ BUG: picking up a mount by its spell ID results in a cursor whose GetCursorInfo() returns "companion" n "MOUNT" where n is... a meaningless number?
 * DONE: BUG: flyouts don't indicate if an item is usable / not usable
@@ -66,11 +67,11 @@ function EventHandlers:PLAYER_LOGIN()
     debugTrace:print("PLAYER_LOGIN")
     DEFAULT_CHAT_FRAME:AddMessage( "|cffd78900"..ADDON_NAME.." v"..VERSION.."|r loaded." )
     initalizeAddonStuff()
-    updateAllGerms()
 end
 
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
     debugTrace:out("",1,"PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
+    updateAllGerms() -- moved this here from PLAYER_LOGIN() because the Bliz API was misrepresenting the bar directions >:(
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
