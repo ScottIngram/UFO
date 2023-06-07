@@ -20,6 +20,8 @@ TODO
 * consolidate all the redundant code, such as the if actionType == "spell" then PickupSpell(spellId) --> function ButtonOnFlyoutMenu:PickMeUp()
 * use ACE Lib/DataBroker
 *
+* DONE: BUG: bliz bug: C_MountJournal index is in flux (e.g. a search filter will change the indices)
+* DONE: BLIZ BUG: picking up a mount by its spell ID results in a cursor whose GetCursorInfo() returns "companion" n "MOUNT" where n is... a meaningless number?
 * DONE: BUG: flyouts don't indicate if an item is usable / not usable
 * DONE: BUG: stacks, charges, etc for things that don't have stacks etc.
 * DONE: BUG: cooldown display only works for spells, not inventory items (hearthstone, trinkets, potions, etc)
@@ -88,7 +90,7 @@ end
 -------------------------------------------------------------------------------
 
 function createEventListener(targetSelfAsProxy, eventHandlers)
-    debugInfo:print(ADDON_NAME .. " EventListener:Activate() ...")
+    debugTrace:print(ADDON_NAME .. " EventListener:Activate() ...")
 
     local dispatcher = function(listenerFrame, eventName, ...)
         -- ignore the listenerFrame and instead
@@ -99,7 +101,7 @@ function createEventListener(targetSelfAsProxy, eventHandlers)
     eventListenerFrame:SetScript("OnEvent", dispatcher)
 
     for eventName, _ in pairs(eventHandlers) do
-        debugInfo:print("EventListener:activate() - registering " .. eventName)
+        debugTrace:print("EventListener:activate() - registering " .. eventName)
         eventListenerFrame:RegisterEvent(eventName)
     end
 end
@@ -217,12 +219,6 @@ function stripEmptyElements(table)
     return table
 end
 
--- TODO: fix this
-Ufo.mountIndex = nil;
-function saveMountJournalSelection(index)
-    Ufo.mountIndex = index;
-end
-
 -------------------------------------------------------------------------------
 -- Utility Functions
 -------------------------------------------------------------------------------
@@ -338,7 +334,6 @@ function initalizeAddonStuff()
     Config:initializeFlyouts()
     Config:initializePlacements()
     FlyoutMenu:initializeOnClickHandlersForFlyouts()
-    hooksecurefunc(C_MountJournal, "Pickup", saveMountJournalSelection); -- TODO: improve how mounts are handled
     isUfoInitialized = true
 end
 

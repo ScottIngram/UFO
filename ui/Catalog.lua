@@ -140,7 +140,7 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
 end
 
 function updateCatalog()
-    local flyouts = getFlyoutsConfigs()
+    local flyouts = getFlyoutsConfig()
     local flyoutsCount = #flyouts + 1
     HybridScrollFrame_Update(UIUFO_CatalogScrollPane, flyoutsCount * EQUIPMENTSET_BUTTON_HEIGHT + 20, UIUFO_CatalogScrollPane:GetHeight()) -- TODO: is this the source of the too-tall bug
 

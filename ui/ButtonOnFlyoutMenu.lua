@@ -18,6 +18,12 @@ local ButtonOnFlyoutMenu = {
 Ufo.ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 
 -------------------------------------------------------------------------------
+-- Data
+-------------------------------------------------------------------------------
+
+local pickedUpMount -- workaround the Bliz API which handles mounts inconsistently
+
+-------------------------------------------------------------------------------
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
@@ -69,7 +75,6 @@ function ButtonOnFlyoutMenu:UpdateUsable()
         icon:SetVertexColor(0.4, 0.4, 0.4);
     end
 end
-
 
 function ButtonOnFlyoutMenu:UpdateCooldown()
     local itemId = self.itemID
@@ -153,8 +158,6 @@ end
 
 -- add a spell/item/etc to a flyout
 function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
-    local thingyId, mountIndex, macroOwner, pet
-
     local flyoutMenu = btnOnFlyout:GetParent()
     if not flyoutMenu.IsConfig then return end
 
@@ -164,13 +167,35 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
     local actionType = kind
 
     -- TODO: distinguish between toys and spells
-    --print("@@@@ GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag-->  kind =",kind, " --  info1 =",info1, " --  info2 =",info2, " --  info3 =",info3)
+
+    debugTrace:out(">",5,"OnReceiveDrag","kind",kind,"info1",info1 ,"info2",info2, "info3",info3)
+
+    -- Here, in the absence of useful documentation, I'm researching the behavior of these mount/pointer APIs
+    -- debugInfo:out(">",7,"OnReceiveDrag", "GetAllCreatureDisplayIDsForMountID -> info1",info1 )
+    -- debugInfo:print( C_MountJournal.GetAllCreatureDisplayIDsForMountID(info1) )
+    -- debugInfo:out(">",7,"OnReceiveDrag", "GetMountInfoByID -> info1",info1 )
+    -- debugInfo:print( C_MountJournal.GetMountInfoByID(info1) )
+
+    local thingyId, mountIndex, macroOwner, pet
+
     if kind == "spell" then
         thingyId = info3
+    elseif kind == "companion" then
+        -- this is an abnormal result containing a useless ID which isn't accepted by any API.  Not helpful.
+        -- It's caused when the mouse pointer is loaded via Bliz's API PickupSpell(withTheSpellIdOfSomeMount)
+        -- This is a workaround to Bliz's API and retrieves a usable ID from my secret stash created when the user grabbed the mount.
+        if pickedUpMount then
+            actionType = "spell"
+            thingyId = pickedUpMount.spellId
+            mountIndex = pickedUpMount.mountId
+        else
+            debugWarn:print("Sorry, the Blizzard API provided bad data for this mount.")
+        end
     elseif kind == "mount" then
         actionType = "spell" -- mounts can be summoned by casting as a spell
-        _, thingyId, _, _, _, _, _, _, _, _, _ = C_MountJournal.GetDisplayedMountInfo(Ufo.mountIndex);
-        mountIndex = Ufo.mountIndex
+        local name, spellId, icon, _, isUsable, _, _, _, _, shouldHideOnChar, _, mountId = C_MountJournal.GetMountInfoByID(info1)
+        thingyId = spellId
+        mountIndex = mountId
     elseif kind == "item" then
         thingyId = info1
     elseif kind == "macro" then
@@ -200,20 +225,20 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
         flyoutConf.macroOwners[btnIndex] = macroOwner
         flyoutConf.pets[btnIndex] = pet
 
-        --print("@#$* GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag-->  btnIndex =",btnIndex, "| kind =",kind, "| thingyId =",thingyId, "| petId =", pet)
-
-        -- drop the dragged spell/item/etc
-        ClearCursor()
+        ClearCursor() -- drop the dragged spell/item/etc
+        pickedUpMount = nil
         updateAllGerms()
         flyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
 
         -- update the cursor to show the existing spell/item/etc (if any)
         if oldActionType == "spell" then
             if oldMountIndex then
-                C_MountJournal.Pickup(oldMountIndex)
-            else
-                PickupSpell(oldThingyId)
+                pickedUpMount = {
+                    mountId = oldMountIndex,
+                    spellId = oldThingyId
+                }
             end
+            PickupSpell(oldThingyId)
         elseif oldActionType == "item" then
             PickupItem(oldThingyId)
         elseif oldActionType == "macro" then
@@ -222,7 +247,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
             C_PetJournal.PickupPet(oldPet)
         end
     else
-        print("sorry, unsupported type:", kind)
+        debugWarn:print("Sorry, unsupported type:", kind)
     end
 end
 
@@ -275,13 +300,16 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(btnOnFlyout)
     local mountIndex = btnOnFlyout.mountIndex
     local pet = btnOnFlyout.battlepet
 
+    debugTrace:out("<",5,"OnDragStart", "actionType",actionType, "mountIndex",mountIndex)
     if actionType == "spell" then
         if mountIndex then
-            C_MountJournal.Pickup(mountIndex)
-        else
-            PickupSpell(spell)
+            pickedUpMount = {
+                mountId = mountIndex,
+                spellId = spell
+            }
         end
-        Ufo.mountIndex = mountIndex
+
+        PickupSpell(spell)
     elseif actionType == "item" then
         PickupItem(spell)
     elseif actionType == "macro" then
@@ -289,8 +317,6 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(btnOnFlyout)
     elseif actionType == "battlepet" then
         C_PetJournal.PickupPet(pet)
     end
-
-    --print("#### GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart-->  actionType =",actionType, " spellID =", spell, " mountIndex =", mountIndex, "petId =", pet)
 
     local flyoutFrame = btnOnFlyout:GetParent()
     if flyoutFrame.IsConfig then

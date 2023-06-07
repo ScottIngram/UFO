@@ -211,9 +211,9 @@ function refreshFlyoutIconInfo()
 
     local popup = UIUFO_DetailerPopup
     if popup.name then
-        local spells = getFlyoutsConfigs()[popup.name].spells
-        local actionTypes = getFlyoutsConfigs()[popup.name].actionTypes
-        local pets = getFlyoutsConfigs()[popup.name].pets
+        local spells = getFlyoutsConfig()[popup.name].spells
+        local actionTypes = getFlyoutsConfig()[popup.name].actionTypes
+        local pets = getFlyoutsConfig()[popup.name].pets
         for i = 1, #actionTypes do
             local itemTexture = getTexture(actionTypes[i], spells[i], pets[i])
             if itemTexture then

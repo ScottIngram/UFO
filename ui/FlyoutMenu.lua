@@ -273,6 +273,8 @@ end
 -- TODO: refactor this into a germ:Method() then the remainder in this flyoutMenu:Method()
 ---@param germ Germ
 function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
+    debugTrace:out("~",3,"updateFlyoutMenuForGerm")
+
     germ:SetChecked(not germ:GetChecked())
     local direction = germ:GetAttribute("flyoutDirection");
 
@@ -300,7 +302,7 @@ function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
             local spellId = spellList[i]
             local itemId = (type == "item") and spellId or nil
             local pet = pets[i]
-            debugInfo:out("~",3,"updateFlyoutMenuForGerm", "i",i, "spellId",spellId, "type", type)
+            debugTrace:out("~",5,"updateFlyoutMenuForGerm", "i",i, "spellId",spellId, "type", type)
             --print("Germ_PreClick(): i =",i, "| spellID =",spellId,  "| type =",type, "| pet =", pet)
 
             -- fields recognized by Bliz internal UI code

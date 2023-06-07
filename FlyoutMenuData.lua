@@ -75,13 +75,13 @@ function isConfigOlderThan(major, minor, patch, ufo)
     end
 end
 
-function getFlyoutsConfigs()
+function getFlyoutsConfig()
     return UFO_SV_ACCOUNT and UFO_SV_ACCOUNT.flyouts
 end
 
 function getFlyoutConfig(flyoutId)
     assert(flyoutId and type(flyoutId)=="number", "Bad flyoutId arg.")
-    local config = getFlyoutsConfigs()
+    local config = getFlyoutsConfig()
     assert(config, "Flyouts config structure is abnormal.")
     local flyoutConfig = config[flyoutId]
     assert(flyoutConfig, "No config found for #"..flyoutId)
@@ -94,14 +94,14 @@ end
 
 function addFlyout()
     local newFlyoutDef = getNewFlyoutDef()
-    local flyoutsConfig = getFlyoutsConfigs()
+    local flyoutsConfig = getFlyoutsConfig()
     table.insert(flyoutsConfig, newFlyoutDef)
     return newFlyoutDef
 end
 
 function deleteFlyout(flyoutId)
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
-    table.remove(getFlyoutsConfigs(), flyoutId)
+    table.remove(getFlyoutsConfig(), flyoutId)
     -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
     local placementsForEachSpec = getGermPlacementsConfig()
     for i = 1, #placementsForEachSpec do
