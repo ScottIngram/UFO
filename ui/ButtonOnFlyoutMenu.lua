@@ -7,8 +7,8 @@
 
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
----@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
+
+local debug = Debug:new(DEBUG_OUTPUT.WARN)
 
 ---@class ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -63,7 +63,7 @@ function ButtonOnFlyoutMenu:UpdateUsable()
         end
     end
 
-    debugTrace:out("#",5,"UpdateUsable", "isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
+    debug.trace:out("#",5,"UpdateUsable", "isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
 
     local name = self:GetName();
     local icon = _G[name.."Icon"];
@@ -78,11 +78,11 @@ end
 
 function ButtonOnFlyoutMenu:UpdateCooldown()
     local itemId = self.itemID
-    debugTrace:out("X",40,"Ufo_UpdateCooldown 1 ITEM","self.itemID",self.itemID, "self.spellID",self.spellID)
+    debug.trace:out("X",40,"Ufo_UpdateCooldown 1 ITEM","self.itemID",self.itemID, "self.spellID",self.spellID)
 
     if (not exists(itemId)) and exists(self.spellID) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
-        debugTrace:out("@",20,"updateCooldownsAndCountsAndStatesEtc", "self.spellID",self.spellID)
+        debug.trace:out("@",20,"updateCooldownsAndCountsAndStatesEtc", "self.spellID",self.spellID)
         SpellFlyoutButton_UpdateCooldown(self)
         return
     end
@@ -90,7 +90,7 @@ function ButtonOnFlyoutMenu:UpdateCooldown()
     -- for items, I copied and hacked Bliz's ActionButton_UpdateCooldown
     local modRate = 1.0;
     local start, duration, enable = GetItemCooldown(itemId);
-    debugTrace:out("X",5,"Ufo_UpdateCooldown 2 ITEM","actionType",actionType, "start",start, "duration",duration, "enable",enable )
+    debug.trace:out("X",5,"Ufo_UpdateCooldown 2 ITEM","actionType",actionType, "start",start, "duration",duration, "enable",enable )
 
     if ( self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL ) then
         self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
@@ -108,7 +108,7 @@ function ButtonOnFlyoutMenu:UpdateCount()
 
     if not hasItem then
         if exists(self.spellID) then
-            debugTrace:out("X",5,"UFO_UpdateCount 0... deferring to SpellFlyoutButton_UpdateCount ", "spellID",self.spellID)
+            debug.trace:out("X",5,"UFO_UpdateCount 0... deferring to SpellFlyoutButton_UpdateCount ", "spellID",self.spellID)
             -- use Bliz's built-in handler for the stuff it understands, ie, not items
             SpellFlyoutButton_UpdateCount(self)
             return
@@ -123,7 +123,7 @@ function ButtonOnFlyoutMenu:UpdateCount()
     local includeCharges = true
     local count = GetItemCount(itemId, includeBank, includeCharges)
     local tooMany = ( count > (self.maxDisplayCount or 9999 ) )
-    debugTrace:out("X",5,"UFO_UpdateCount 1 ", "itemId",itemId, "hasItem",hasItem, "name",name, "itemType",itemType, "max",self.maxDisplayCount, "count",count, "tooMany",tooMany)
+    debug.trace:out("X",5,"UFO_UpdateCount 1 ", "itemId",itemId, "hasItem",hasItem, "name",name, "itemType",itemType, "max",self.maxDisplayCount, "count",count, "tooMany",tooMany)
 
     local max = self.maxDisplayCount or 9999
     if count > max then
@@ -168,13 +168,13 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
 
     -- TODO: distinguish between toys and spells
 
-    debugTrace:out(">",5,"OnReceiveDrag","kind",kind,"info1",info1 ,"info2",info2, "info3",info3)
+    debug.trace:out(">",5,"OnReceiveDrag","kind",kind,"info1",info1 ,"info2",info2, "info3",info3)
 
     -- Here, in the absence of useful documentation, I'm researching the behavior of these mount/pointer APIs
-    -- debugInfo:out(">",7,"OnReceiveDrag", "GetAllCreatureDisplayIDsForMountID -> info1",info1 )
-    -- debugInfo:print( C_MountJournal.GetAllCreatureDisplayIDsForMountID(info1) )
-    -- debugInfo:out(">",7,"OnReceiveDrag", "GetMountInfoByID -> info1",info1 )
-    -- debugInfo:print( C_MountJournal.GetMountInfoByID(info1) )
+    -- debug.info:out(">",7,"OnReceiveDrag", "GetAllCreatureDisplayIDsForMountID -> info1",info1 )
+    -- debug.info:print( C_MountJournal.GetAllCreatureDisplayIDsForMountID(info1) )
+    -- debug.info:out(">",7,"OnReceiveDrag", "GetMountInfoByID -> info1",info1 )
+    -- debug.info:print( C_MountJournal.GetMountInfoByID(info1) )
 
     local thingyId, mountId, macroOwner, pet
 
@@ -189,7 +189,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
             thingyId = pickedUpMount.spellId
             mountId = pickedUpMount.mountId
         else
-            debugWarn:print("Sorry, the Blizzard API provided bad data for this mount.")
+            debug.warn:print("Sorry, the Blizzard API provided bad data for this mount.")
         end
     elseif kind == "mount" then
         actionType = "spell" -- mounts can be summoned by casting as a spell
@@ -247,7 +247,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
             C_PetJournal.PickupPet(oldPet)
         end
     else
-        debugWarn:print("Sorry, unsupported type:", kind)
+        debug.warn:print("Sorry, unsupported type:", kind)
     end
 end
 
@@ -300,7 +300,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(btnOnFlyout)
     local mountId = btnOnFlyout.mountId
     local pet = btnOnFlyout.battlepet
 
-    debugTrace:out("<",5,"OnDragStart", "actionType",actionType, "mountId",mountId)
+    debug.trace:out("<",5,"OnDragStart", "actionType",actionType, "mountId",mountId)
     if actionType == "spell" then
         if mountId then
             pickedUpMount = {

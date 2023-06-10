@@ -8,8 +8,8 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
----@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
+
+local debug = Debug:new(DEBUG_OUTPUT.WARN)
 
 ---@type Germ -- IntelliJ-EmmyLua annotation
 local Germ = Ufo.Germ
@@ -63,7 +63,7 @@ local function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
         germ = Germ.new(flyoutId, actionBarBtn)
         rememberGerm(germ)
     end
-    debugTrace:out("*",3,"bindFlyoutToActionBarSlot()","germ...",germ)
+    debug.trace:out("*",3,"bindFlyoutToActionBarSlot()","germ...",germ)
     germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
 end
 
@@ -177,14 +177,14 @@ end
 -- keep track of spec changes so getConfigForSpec() can initialize a brand new config based on the old one
 function recordCurrentSpec()
     local newSpec = getSpecId()
-    --[[DEBUG]] debugTrace:out("+",5,"recordCurrentSpec()", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+    --[[DEBUG]] debug.trace:out("+",5,"recordCurrentSpec()", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
     if currentSpec ~= newSpec then
         previousSpec = currentSpec
         currentSpec = newSpec
-        --[[DEBUG]] debugTrace:out("+",5,"REASSIGNED->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+        --[[DEBUG]] debug.trace:out("+",5,"REASSIGNED->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
         return true
     else
-        --[[DEBUG]] debugTrace:out("+",5,"unchanged ->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+        --[[DEBUG]] debug.trace:out("+",5,"unchanged ->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
         return false
     end
 end
@@ -210,17 +210,17 @@ function getConfigForSpec(specId)
     assert(placementsForAllSpecs,"Oops!  placements config is nil")
 
     -- is this a never-before-encountered spec? - if so, initialze its config
-    --[[DEBUG]] debugTrace:out("+",5,"getConfigForSpec().....", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "placementsForAllSpecs[specId]",placementsForAllSpecs[specId])
+    --[[DEBUG]] debug.trace:out("+",5,"getConfigForSpec().....", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "placementsForAllSpecs[specId]",placementsForAllSpecs[specId])
     if not placementsForAllSpecs[specId] then -- TODO: identify empty OR nil
         local initialConfig
         if not previousSpec or specId == previousSpec then
-            --[[DEBUG]] debugTrace:out("+",7,"getConfigForSpec() blanking", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
+            --[[DEBUG]] debug.trace:out("+",7,"getConfigForSpec() blanking", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
             initialConfig = {}
         else
             -- initialize the new config based on the old one
-            --[[DEBUG]] debugTrace:out("+",7,"getConfigForSpec() COPYING", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
+            --[[DEBUG]] debug.trace:out("+",7,"getConfigForSpec() COPYING", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
             initialConfig = deepcopy(getConfigForSpec(previousSpec))
-            --[[DEBUG]] debugTrace:dump(initialConfig)
+            --[[DEBUG]] debug.trace:dump(initialConfig)
         end
         placementsForAllSpecs[specId] = initialConfig
     end

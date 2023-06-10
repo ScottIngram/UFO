@@ -8,8 +8,8 @@
 
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
----@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
+
+local debug = Debug:new(DEBUG_OUTPUT.WARN)
 
 -------------------------------------------------------------------------------
 -- Constants: Ace -> Bliz Config UI definition

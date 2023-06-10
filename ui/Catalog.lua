@@ -10,8 +10,7 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
----@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
+local debug = Debug:new(DEBUG_OUTPUT.WARN)
 
 ---@class Catalog -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -60,7 +59,7 @@ function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
 end
 
 function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
-    debugTrace:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton)
+    debug.trace:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton)
     if not SpellBookFrame:IsShown() then
         ToggleSpellBook("spell")
         --SpellBookFrame:Show()

@@ -42,8 +42,7 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
----@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
+local debug = Debug:new(DEBUG_OUTPUT.WARN)
 
 -------------------------------------------------------------------------------
 -- Data
@@ -59,30 +58,30 @@ local EventHandlers = { }
 
 function EventHandlers:ADDON_LOADED(addonName)
     if addonName == ADDON_NAME then
-        debugTrace:print("ADDON_LOADED", addonName)
+        debug.trace:print("ADDON_LOADED", addonName)
     end
 end
 
 function EventHandlers:PLAYER_LOGIN()
-    debugTrace:print("PLAYER_LOGIN")
+    debug.trace:print("PLAYER_LOGIN")
     DEFAULT_CHAT_FRAME:AddMessage( "|cffd78900"..ADDON_NAME.." v"..VERSION.."|r loaded." )
     initalizeAddonStuff()
 end
 
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
-    debugTrace:out("",1,"PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
+    debug.trace:out("",1,"PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
     updateAllGerms() -- moved this here from PLAYER_LOGIN() because the Bliz API was misrepresenting the bar directions >:(
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
     if not isUfoInitialized then return end
-    debugTrace:out("",1,"ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
+    debug.trace:out("",1,"ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
     handleActionBarSlotChanged(actionBarSlotId)
 end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
     if not isUfoInitialized then return end
-    debugTrace:print("PLAYER_SPECIALIZATION_CHANGED")
+    debug.trace:print("PLAYER_SPECIALIZATION_CHANGED")
     updateAllGerms()
 end
 
@@ -91,7 +90,7 @@ end
 -------------------------------------------------------------------------------
 
 function createEventListener(targetSelfAsProxy, eventHandlers)
-    debugTrace:print(ADDON_NAME .. " EventListener:Activate() ...")
+    debug.trace:print(ADDON_NAME .. " EventListener:Activate() ...")
 
     local dispatcher = function(listenerFrame, eventName, ...)
         -- ignore the listenerFrame and instead
@@ -102,7 +101,7 @@ function createEventListener(targetSelfAsProxy, eventHandlers)
     eventListenerFrame:SetScript("OnEvent", dispatcher)
 
     for eventName, _ in pairs(eventHandlers) do
-        debugTrace:print("EventListener:activate() - registering " .. eventName)
+        debug.trace:print("EventListener:activate() - registering " .. eventName)
         eventListenerFrame:RegisterEvent(eventName)
     end
 end

@@ -7,8 +7,8 @@
 
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
----@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
+
+local debug = Debug:new(DEBUG_OUTPUT.WARN)
 
 ---@class FlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -86,7 +86,7 @@ end
 
 ---@param flyoutMenu FlyoutMenu
 function GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow(flyoutMenu)
-    debugTrace:out("/",20,"GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow")
+    debug.trace:out("/",20,"GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow")
     SpellFlyout_OnShow(flyoutMenu) -- call Blizzard handler
 
     -- TODO: the below probably aren't needed anymore
@@ -95,7 +95,7 @@ function GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow(flyoutMenu)
 
     ---@param btn ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
     flyoutMenu:forEachButton(function(btn)
-        debugTrace:out("~",40, "btn updatery from FlyoutMenu:OnShow()")
+        debug.trace:out("~",40, "btn updatery from FlyoutMenu:OnShow()")
         btn:updateCooldownsAndCountsAndStatesEtc()
     end)
 
@@ -273,7 +273,7 @@ end
 -- TODO: refactor this into a germ:Method() then the remainder in this flyoutMenu:Method()
 ---@param germ Germ
 function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
-    debugTrace:out("~",3,"updateFlyoutMenuForGerm")
+    debug.trace:out("~",3,"updateFlyoutMenuForGerm")
 
     germ:SetChecked(not germ:GetChecked())
 
@@ -291,7 +291,7 @@ function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
             local spellId = spellList[i]
             local itemId = (type == "item") and spellId or nil
             local pet = pets[i]
-            debugTrace:out("~",5,"updateFlyoutMenuForGerm", "i",i, "spellId",spellId, "type", type)
+            debug.trace:out("~",5,"updateFlyoutMenuForGerm", "i",i, "spellId",spellId, "type", type)
             --print("Germ_PreClick(): i =",i, "| spellID =",spellId,  "| type =",type, "| pet =", pet)
 
             -- fields recognized by Bliz internal UI code

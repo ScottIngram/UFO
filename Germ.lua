@@ -12,8 +12,8 @@
 
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
----@type Debug -- IntelliJ-EmmyLua annotation
-local debugTrace, debugInfo, debugWarn, debugError = Debug:new(Debug.INFO)
+
+local debug = Debug:new(DEBUG_OUTPUT.WARN)
 
 ---@class Germ -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -332,13 +332,13 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnMouseUp(germ)
-    debugTrace:out("^",5,"OnMouseUp()","name",germ:GetName())
+    debug.trace:out("^",5,"OnMouseUp()","name",germ:GetName())
     handlers.OnReceiveDrag(germ)
 end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnReceiveDrag(germ)
-    debugTrace:out("^",5,"OnReceiveDrag()","name",germ:GetName())
+    debug.trace:out("^",5,"OnReceiveDrag()","name",germ:GetName())
     if InCombatLockdown() then
         return
     end
@@ -352,7 +352,7 @@ end
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.PickupAndDrag(germ)
     if not InCombatLockdown() and (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
-        debugTrace:out("^",5,"OnDragStart()","name",germ:GetName())
+        debug.trace:out("^",5,"OnDragStart()","name",germ:GetName())
         pickupFlyout(germ.flyoutId)
         forgetPlacement(germ:GetBtnSlotIndex())
         updateAllGerms()
@@ -394,7 +394,7 @@ function handlers.OnPostClick(germ, whichMouseButton, down)
     local flyoutMenu = germ.flyoutMenu
     ---@param btn ButtonOnFlyoutMenu
     flyoutMenu:forEachButton(function(btn)
-        debugTrace:out("~",40, "btn updatery from Germ:OnPostClick()")
+        debug.trace:out("~",40, "btn updatery from Germ:OnPostClick()")
         btn:updateCooldownsAndCountsAndStatesEtc()
     end)
 end
