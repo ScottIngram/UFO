@@ -81,8 +81,18 @@ function updateAllGerms()
     clearGerms()
     local placements = getConfigForCurrentSpec()
     for btnSlotIndex, flyoutId in pairs(placements) do
-        bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
+        -- because one toon can delete a flyout while other toons still have it on their bars
+        if doesFlyoutExists(flyoutId) then
+            bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
+        else
+            forgetPlacement(btnSlotIndex)
+        end
     end
+end
+
+function doesFlyoutExists(flyoutId)
+    local flyoutConf = getFlyoutConfig(flyoutId)
+    return flyoutConf and true or false
 end
 
 local function newGermProxy(flyoutId, texture)

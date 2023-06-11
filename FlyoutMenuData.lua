@@ -37,7 +37,7 @@ flyoutConfig:addButton(myNewBtn) -- or smarter DWIM behavior that takes a macro 
 -------------------------------------------------------------------------------
 
 -- "spell" can mean also item, mount, macro, etc.
-STRUCT_FLYOUT_DEF = { spells={}, actionTypes={}, mountId={}, spellNames={}, macroOwners={}, pets={} }
+STRUCT_FLYOUT_DEF = { spells={}, actionTypes={}, mounts={}, spellNames={}, macroOwners={}, pets={} }
 
 NEW_STRUCT_FLYOUT_DEF = { id=false, name="", icon="", btns={} }
 NEW_STRUCT_FLYOUT_BTN_DEF = { type="", spellId="", mountId="", spellName="", macroOwner="", pet="", }
@@ -84,7 +84,7 @@ function getFlyoutConfig(flyoutId)
     local config = getFlyoutsConfig()
     assert(config, "Flyouts config structure is abnormal.")
     local flyoutConfig = config[flyoutId]
-    assert(flyoutConfig, "No config found for #"..flyoutId)
+    --[[DEBUG]] debug.trace:print(flyoutConfig, "No config found for #"..flyoutId)
     return flyoutConfig
 end
 
@@ -104,13 +104,16 @@ function deleteFlyout(flyoutId)
     table.remove(getFlyoutsConfig(), flyoutId)
     -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
     local placementsForEachSpec = getGermPlacementsConfig()
-    for i = 1, #placementsForEachSpec do
-        local placements = placementsForEachSpec[i]
-        for btnSlotIndex, fId in pairs(placements) do
-            if fId == flyoutId then
-                placements[btnSlotIndex] = nil
-            elseif fId > flyoutId then
-                placements[btnSlotIndex] = fId - 1
+    --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()","flyoutId",flyoutId)
+    --[[DEBUG]] debug.trace:dump(placementsForEachSpec)
+    for spec, placementsForSpec in pairs(placementsForEachSpec) do
+        --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()", "flyId", flyId, "flyoutId",flyoutId, "spec", spec)
+        for btnSlotIndex, flyId in pairs(placementsForSpec) do
+            --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()", "flyId", flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
+            if flyId == flyoutId then
+                placementsForSpec[btnSlotIndex] = nil
+            elseif flyId > flyoutId then
+                placementsForSpec[btnSlotIndex] = flyId - 1
             end
         end
     end

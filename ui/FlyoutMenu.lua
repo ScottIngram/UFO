@@ -21,8 +21,6 @@ local FlyoutMenu = {
 }
 Ufo.FlyoutMenu = FlyoutMenu
 
-FlyoutMenuForCatalog = nil
-
 -------------------------------------------------------------------------------
 -- Functions / Methods
 -------------------------------------------------------------------------------
@@ -55,7 +53,7 @@ function FlyoutMenu:initializeOnClickHandlersForFlyouts()
     UIUFO_FlyoutMenuForGerm:forEachButton(function(button)
         SecureHandlerWrapScript(button, "OnClick", button, "self:GetParent():Hide()")
     end)
-    UIUFO_FlyoutMenuForCatalog.IsConfig = true
+    UIUFO_FlyoutMenuForCatalog.isForCatalog = true
 end
 
 -------------------------------------------------------------------------------
@@ -80,7 +78,6 @@ function GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad(flyoutMenu)
 
     -- initialize fields
     FlyoutMenu:oneOfUs(flyoutMenu)
-    FlyoutMenuForCatalog = flyoutMenu
     flyoutMenu.isForCatalog = true
 end
 
@@ -116,7 +113,7 @@ function FlyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
     local direction = "RIGHT"
     local parent = self.parent
 
-    self.idFlyout = flyoutId
+    self.id = flyoutId
 
     -- Update all spell buttons for this flyout
     local prevButton = nil;

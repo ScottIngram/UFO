@@ -28,15 +28,21 @@ local pickedUpMount -- workaround the Bliz API which handles mounts inconsistent
 -------------------------------------------------------------------------------
 
 function ButtonOnFlyoutMenu.oneOfUs(btnOnFlyout)
+    btnOnFlyout.BlizGetParent = btnOnFlyout.GetParent -- rename for safekeeping so I can implement OO inheritance
+
     -- merge the Bliz ActionButton object
     -- with this class's methods, functions, etc
     deepcopy(ButtonOnFlyoutMenu, btnOnFlyout)
 end
 
+---@return FlyoutMenu -- IntelliJ-EmmyLua annotation
+function ButtonOnFlyoutMenu:GetParent()
+    return self:BlizGetParent()
+end
+
 function ButtonOnFlyoutMenu:setIconTexture(texture)
     _G[ self:GetName().."Icon" ]:SetTexture(texture)
 end
-
 
 function ButtonOnFlyoutMenu:updateCooldownsAndCountsAndStatesEtc()
     if (self.spellID) then
@@ -138,7 +144,6 @@ function ButtonOnFlyoutMenu:UpdateCount()
     textFrame:SetText(display);
 end
 
-
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutBtn XML Callbacks
 -------------------------------------------------------------------------------
@@ -156,12 +161,17 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(btnOnFlyout)
     ButtonOnFlyoutMenu.oneOfUs(btnOnFlyout)
 end
 
--- add a spell/item/etc to a flyout
+---@param btnOnFlyout ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
-    local flyoutMenu = btnOnFlyout:GetParent()
-    if not flyoutMenu.IsConfig then return end
+    btnOnFlyout:OnReceiveDragAddIt()
+end
 
-    local flyoutId = flyoutMenu.idFlyout
+-- add a spell/item/etc to a flyout
+function ButtonOnFlyoutMenu:OnReceiveDragAddIt()
+    -- only the flyouts in the catalog are allowed to change.  TODO: let flyouts on the germs receive too?
+
+    local flyoutMenu = self:GetParent()
+    if not flyoutMenu.isForCatalog then return end
 
     local kind, info1, info2, info3 = GetCursorInfo()
     local actionType = kind
@@ -209,9 +219,11 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
         actionType = nil
     end
 
+    local flyoutId = flyoutMenu.id
+
     if actionType then
         local flyoutConf = getFlyoutConfig(flyoutId)
-        local btnIndex = btnOnFlyout:GetID()
+        local btnIndex = self:GetID()
 
         local oldThingyId   = flyoutConf.spells[btnIndex]
         local oldActionType = flyoutConf.actionTypes[btnIndex]
@@ -319,9 +331,9 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(btnOnFlyout)
     end
 
     local flyoutFrame = btnOnFlyout:GetParent()
-    if flyoutFrame.IsConfig then
-        removeSpell(flyoutFrame.idFlyout, btnOnFlyout:GetID())
+    if flyoutFrame.isForCatalog then
+        removeSpell(flyoutFrame.id, btnOnFlyout:GetID())
         updateAllGerms()
-        flyoutFrame:updateFlyoutMenuForCatalog(flyoutFrame.idFlyout)
+        flyoutFrame:updateFlyoutMenuForCatalog(flyoutFrame.id)
     end
 end
