@@ -13,7 +13,9 @@ utils\Debug.lua
 utils\Config.lua
 constants.lua
 locales\index.xml
-FlyoutMenuData.lua
+FlyoutMenus.lua
+FlyoutMenuDef.lua
+ButtonDef.lua
 Germ.lua
 GermCommander.lua
 UFO.lua

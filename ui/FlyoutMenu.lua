@@ -118,7 +118,7 @@ function FlyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
     -- Update all spell buttons for this flyout
     local prevButton = nil;
     local numButtons = 0;
-    local flyoutConfig = getFlyoutConfig(flyoutId)
+    local flyoutConfig = FlyoutMenus:get(flyoutId)
     local spells = flyoutConfig and flyoutConfig.spells
     local actionTypes = flyoutConfig and flyoutConfig.actionTypes
     local mounts = flyoutConfig and flyoutConfig.mounts
@@ -279,7 +279,7 @@ function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
     local typeList = fknSplit(germ:GetAttribute("typelist"))
     local pets     = fknSplit(germ:GetAttribute("petlist"))
 
-    local buttonFrames = { UIUFO_FlyoutMenuForGerm:GetChildren() }
+    local buttonFrames = { self:GetChildren() }
     table.remove(buttonFrames, 1)
     ---@param buttonFrame ButtonOnFlyoutMenu
     for i, buttonFrame in ipairs(buttonFrames) do
@@ -304,54 +304,54 @@ function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
             buttonFrame:updateCooldownsAndCountsAndStatesEtc()
         end
     end
-    UIUFO_FlyoutMenuForGerm.Background.End:ClearAllPoints()
-    UIUFO_FlyoutMenuForGerm.Background.Start:ClearAllPoints()
+
+    self.Background.End:ClearAllPoints()
+    self.Background.Start:ClearAllPoints()
+    self.Background.VerticalMiddle:ClearAllPoints()
+    self.Background.HorizontalMiddle:ClearAllPoints()
+
     local distance = 3
     if (direction == "UP") then
-        UIUFO_FlyoutMenuForGerm.Background.End:SetPoint("TOP", 0, SPELLFLYOUT_INITIAL_SPACING);
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.End, 0);
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle, 0);
-        UIUFO_FlyoutMenuForGerm.Background.Start:SetPoint("TOP", UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle, "BOTTOM");
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.Start, 0);
-        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:Hide();
-        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:Show();
-        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:ClearAllPoints();
-        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:SetPoint("TOP", UIUFO_FlyoutMenuForGerm.Background.End, "BOTTOM");
-        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:SetPoint("BOTTOM", 0, distance);
+        self.Background.End:SetPoint("TOP", 0, SPELLFLYOUT_INITIAL_SPACING);
+        SetClampedTextureRotation(self.Background.End, 0);
+        SetClampedTextureRotation(self.Background.VerticalMiddle, 0);
+        self.Background.Start:SetPoint("TOP", self.Background.VerticalMiddle, "BOTTOM");
+        SetClampedTextureRotation(self.Background.Start, 0);
+        self.Background.HorizontalMiddle:Hide();
+        self.Background.VerticalMiddle:Show();
+        self.Background.VerticalMiddle:SetPoint("TOP", self.Background.End, "BOTTOM");
+        self.Background.VerticalMiddle:SetPoint("BOTTOM", 0, distance);
     elseif (direction == "DOWN") then
-        UIUFO_FlyoutMenuForGerm.Background.End:SetPoint("BOTTOM", 0, -SPELLFLYOUT_INITIAL_SPACING);
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.End, 180);
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle, 180);
-        UIUFO_FlyoutMenuForGerm.Background.Start:SetPoint("BOTTOM", UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle, "TOP");
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.Start, 180);
-        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:Hide();
-        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:Show();
-        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:ClearAllPoints();
-        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:SetPoint("BOTTOM", UIUFO_FlyoutMenuForGerm.Background.End, "TOP");
-        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:SetPoint("TOP", 0, -distance);
+        self.Background.End:SetPoint("BOTTOM", 0, -SPELLFLYOUT_INITIAL_SPACING);
+        SetClampedTextureRotation(self.Background.End, 180);
+        SetClampedTextureRotation(self.Background.VerticalMiddle, 180);
+        self.Background.Start:SetPoint("BOTTOM", self.Background.VerticalMiddle, "TOP");
+        SetClampedTextureRotation(self.Background.Start, 180);
+        self.Background.HorizontalMiddle:Hide();
+        self.Background.VerticalMiddle:Show();
+        self.Background.VerticalMiddle:SetPoint("BOTTOM", self.Background.End, "TOP");
+        self.Background.VerticalMiddle:SetPoint("TOP", 0, -distance);
     elseif (direction == "LEFT") then
-        UIUFO_FlyoutMenuForGerm.Background.End:SetPoint("LEFT", -SPELLFLYOUT_INITIAL_SPACING, 0);
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.End, 270);
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle, 180);
-        UIUFO_FlyoutMenuForGerm.Background.Start:SetPoint("LEFT", UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle, "RIGHT");
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.Start, 270);
-        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:Hide();
-        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:Show();
-        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:ClearAllPoints();
-        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:SetPoint("LEFT", UIUFO_FlyoutMenuForGerm.Background.End, "RIGHT");
-        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:SetPoint("RIGHT", -distance, 0);
+        self.Background.End:SetPoint("LEFT", -SPELLFLYOUT_INITIAL_SPACING, 0);
+        SetClampedTextureRotation(self.Background.End, 270);
+        SetClampedTextureRotation(self.Background.HorizontalMiddle, 180);
+        self.Background.Start:SetPoint("LEFT", self.Background.HorizontalMiddle, "RIGHT");
+        SetClampedTextureRotation(self.Background.Start, 270);
+        self.Background.VerticalMiddle:Hide();
+        self.Background.HorizontalMiddle:Show();
+        self.Background.HorizontalMiddle:SetPoint("LEFT", self.Background.End, "RIGHT");
+        self.Background.HorizontalMiddle:SetPoint("RIGHT", -distance, 0);
     elseif (direction == "RIGHT") then
-        UIUFO_FlyoutMenuForGerm.Background.End:SetPoint("RIGHT", SPELLFLYOUT_INITIAL_SPACING, 0);
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.End, 90);
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle, 0);
-        UIUFO_FlyoutMenuForGerm.Background.Start:SetPoint("RIGHT", UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle, "LEFT");
-        SetClampedTextureRotation(UIUFO_FlyoutMenuForGerm.Background.Start, 90);
-        UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:Hide();
-        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:Show();
-        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:ClearAllPoints();
-        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:SetPoint("RIGHT", UIUFO_FlyoutMenuForGerm.Background.End, "LEFT");
-        UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:SetPoint("LEFT", distance, 0);
+        self.Background.End:SetPoint("RIGHT", SPELLFLYOUT_INITIAL_SPACING, 0);
+        SetClampedTextureRotation(self.Background.End, 90);
+        SetClampedTextureRotation(self.Background.HorizontalMiddle, 0);
+        self.Background.Start:SetPoint("RIGHT", self.Background.HorizontalMiddle, "LEFT");
+        SetClampedTextureRotation(self.Background.Start, 90);
+        self.Background.VerticalMiddle:Hide();
+        self.Background.HorizontalMiddle:Show();
+        self.Background.HorizontalMiddle:SetPoint("RIGHT", self.Background.End, "LEFT");
+        self.Background.HorizontalMiddle:SetPoint("LEFT", distance, 0);
     end
-    UIUFO_FlyoutMenuForGerm:SetBorderColor(0.7, 0.7, 0.7)
-    UIUFO_FlyoutMenuForGerm:SetBorderSize(47);
+    self:SetBorderColor(0.7, 0.7, 0.7)
+    self:SetBorderSize(47);
 end

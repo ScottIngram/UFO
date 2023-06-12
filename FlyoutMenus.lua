@@ -1,6 +1,5 @@
--- FlyoutMenuData
+-- FlyoutMenus
 -- unique flyout definitions shown in the config panel
--- data for a single flyout object, its spells/pets/macros/items/etc.  and methods for manipulating that data
 -- TODO: invert the FlyoutMenu data structure
 -- TODO: * implement as array of self-contained button objects rather than each button spread across multiple parallel arrays
 -- is currently a collection if parallel lists, each containing one param for each button in the menu
@@ -15,18 +14,17 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 local debug = Debug:new(DEBUG_OUTPUT.WARN)
 
----@class FlyoutMenuData -- IntelliJ-EmmyLua annotation
-local FlyoutMenuData = {}
-Ufo.FlyoutMenuData = FlyoutMenuData
+---@class FlyoutMenus -- IntelliJ-EmmyLua annotation
+local FlyoutMenus = {}
+Ufo.FlyoutMenus = FlyoutMenus
 
 --[[
 --TODO: implement as OO
 
-Ufo.FlyoutMenuData = {}
-Ufo.Wormhole(Ufo.FlyoutMenuData, Ufo) -- now it's FlyoutMenuData inheriting from Ufo
+Ufo.FlyoutMenus = {}
+Ufo.Wormhole(Ufo.FlyoutMenus, Ufo) -- now it's FlyoutMenus inheriting from Ufo
 
-local flyoutsConfigurator = Ufo.getFlyoutMenusConfigurator()
-local flyoutConfig = flyoutsConfigurator:get(flyoutId) -- also :new() :add(flyout); :delete(flyoutId);
+local flyoutConfig = FlyoutMenus:get(flyoutId) -- also :new() :add(flyout); :delete(flyoutId);
 local flyoutBtns = flyoutConfig:getButtons()
 local flyoutBtn1 = flyoutConfig:getButton(1)
 flyoutConfig:addButton(myNewBtn) -- or smarter DWIM behavior that takes a macro or pet or mount etc.  Or the AceBtn ? no.
@@ -36,11 +34,59 @@ flyoutConfig:addButton(myNewBtn) -- or smarter DWIM behavior that takes a macro 
 -- Constants
 -------------------------------------------------------------------------------
 
--- "spell" can mean also item, mount, macro, etc.
-STRUCT_FLYOUT_DEF = { spells={}, actionTypes={}, mounts={}, spellNames={}, macroOwners={}, pets={} }
 
-NEW_STRUCT_FLYOUT_DEF = { id=false, name="", icon="", btns={} }
-NEW_STRUCT_FLYOUT_BTN_DEF = { type="", spellId="", mountId="", spellName="", macroOwner="", pet="", }
+-------------------------------------------------------------------------------
+-- Methods
+-------------------------------------------------------------------------------
+
+
+function FlyoutMenus:appendNewOne()
+    local newFlyoutDef = FlyoutMenuDef:new()
+    local flyoutsConfig = self:getAll()
+    table.insert(flyoutsConfig, newFlyoutDef)
+    return newFlyoutDef
+end
+
+function FlyoutMenus:howMany()
+    local flyouts = self:getAll()
+    return #flyouts
+end
+
+function FlyoutMenus:getAll()
+    return UFO_SV_ACCOUNT and UFO_SV_ACCOUNT.flyouts
+end
+
+function FlyoutMenus:get(flyoutId)
+    assert(flyoutId and type(flyoutId)=="number", "Bad flyoutId arg.")
+    local config = self:getAll()
+    assert(config, "Flyouts config structure is abnormal.")
+    local flyoutConfig = config[flyoutId]
+    --[[DEBUG]] debug.trace:print(flyoutConfig, "No config found for #"..flyoutId)
+    return flyoutConfig
+end
+
+function FlyoutMenus:delete(flyoutId)
+    if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
+    table.remove(self:getAll(), flyoutId)
+    -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
+    local placementsForEachSpec = getGermPlacementsConfig()
+    --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()","flyoutId",flyoutId)
+    --[[DEBUG]] debug.trace:dump(placementsForEachSpec)
+    for spec, placementsForSpec in pairs(placementsForEachSpec) do
+        --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()", "flyId", flyId, "flyoutId",flyoutId, "spec", spec)
+        for btnSlotIndex, flyId in pairs(placementsForSpec) do
+            --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()", "flyId", flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
+            if flyId == flyoutId then
+                placementsForSpec[btnSlotIndex] = nil
+            elseif flyId > flyoutId then
+                placementsForSpec[btnSlotIndex] = flyId - 1
+            end
+        end
+    end
+end
+
+
+
 
 -------------------------------------------------------------------------------
 -- Flyout Menu Functions - SavedVariables, config CRUD
@@ -75,50 +121,6 @@ function isConfigOlderThan(major, minor, patch, ufo)
     end
 end
 
-function getFlyoutsConfig()
-    return UFO_SV_ACCOUNT and UFO_SV_ACCOUNT.flyouts
-end
-
-function getFlyoutConfig(flyoutId)
-    assert(flyoutId and type(flyoutId)=="number", "Bad flyoutId arg.")
-    local config = getFlyoutsConfig()
-    assert(config, "Flyouts config structure is abnormal.")
-    local flyoutConfig = config[flyoutId]
-    --[[DEBUG]] debug.trace:print(flyoutConfig, "No config found for #"..flyoutId)
-    return flyoutConfig
-end
-
-local function getNewFlyoutDef()
-    return deepcopy(STRUCT_FLYOUT_DEF)
-end
-
-function addFlyout()
-    local newFlyoutDef = getNewFlyoutDef()
-    local flyoutsConfig = getFlyoutsConfig()
-    table.insert(flyoutsConfig, newFlyoutDef)
-    return newFlyoutDef
-end
-
-function deleteFlyout(flyoutId)
-    if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
-    table.remove(getFlyoutsConfig(), flyoutId)
-    -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
-    local placementsForEachSpec = getGermPlacementsConfig()
-    --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()","flyoutId",flyoutId)
-    --[[DEBUG]] debug.trace:dump(placementsForEachSpec)
-    for spec, placementsForSpec in pairs(placementsForEachSpec) do
-        --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()", "flyId", flyId, "flyoutId",flyoutId, "spec", spec)
-        for btnSlotIndex, flyId in pairs(placementsForSpec) do
-            --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()", "flyId", flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
-            if flyId == flyoutId then
-                placementsForSpec[btnSlotIndex] = nil
-            elseif flyId > flyoutId then
-                placementsForSpec[btnSlotIndex] = flyId - 1
-            end
-        end
-    end
-end
-
 -------------------------------------------------------------------------------
 -- Flyout Button Functions
 -------------------------------------------------------------------------------
@@ -126,7 +128,7 @@ end
 function removeSpell(flyoutId, spellPos)
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
     if type(spellPos) == "string" then spellPos = tonumber(spellPos) end
-    local flyoutConf = getFlyoutConfig(flyoutId)
+    local flyoutConf = FlyoutMenus:get(flyoutId)
     table.remove(flyoutConf.spells, spellPos)
     table.remove(flyoutConf.actionTypes, spellPos)
     table.remove(flyoutConf.mounts, spellPos)

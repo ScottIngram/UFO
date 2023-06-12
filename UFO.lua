@@ -10,6 +10,7 @@ TODO
 * refactor FlyoutMenu:updateFlyoutMenuForGerm and move some logic into a germ:Method(); replace all mentions of UIUFO_FlyoutMenuForGerm with simply self
 * replace existing icon picker with something closer to MacroManager / Weak Auras
 * question: can I use GetItemSpell(itemId) to simplify my code ?
+* BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 * BUG: germs that extend horizontally (as the ones on the vertical action bars) sometimes have weirdly wide borders
 * BUG: OnDragStart needs to accommodate when there is already something on the cursor
 * - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging

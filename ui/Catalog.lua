@@ -29,7 +29,7 @@ function Catalog:definePopupDialogWindow()
         text = L10N["CONFIRM_DELETE"],
         button1 = YES,
         button2 = NO,
-        OnAccept = function (dialog) deleteFlyout(dialog.flyoutId); updateCatalog(); updateAllGerms(); end,
+        OnAccept = function (dialog) FlyoutMenus:delete(dialog.flyoutId); updateCatalog(); updateAllGerms(); end,
         OnCancel = function (dialog) end,
         hideOnEscape = 1,
         timeout = 0,
@@ -139,9 +139,9 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
 end
 
 function updateCatalog()
-    local flyouts = getFlyoutsConfig()
-    local flyoutsCount = #flyouts + 1
-    HybridScrollFrame_Update(UIUFO_CatalogScrollPane, flyoutsCount * EQUIPMENTSET_BUTTON_HEIGHT + 20, UIUFO_CatalogScrollPane:GetHeight()) -- TODO: is this the source of the too-tall bug
+    local flyoutsCount = FlyoutMenus:howMany()
+    local numRows = flyoutsCount + 1
+    HybridScrollFrame_Update(UIUFO_CatalogScrollPane, numRows * EQUIPMENTSET_BUTTON_HEIGHT + 20, UIUFO_CatalogScrollPane:GetHeight()) -- TODO: is this the source of the too-tall bug
 
     local scrollOffset = HybridScrollFrame_GetOffset(UIUFO_CatalogScrollPane)
     local buttons = UIUFO_CatalogScrollPane.buttons
@@ -150,17 +150,17 @@ function updateCatalog()
     local texture, button, flyout
     for i = 1, #buttons do
         local pos = i+scrollOffset
-        if pos <= flyoutsCount then
+        if pos <= numRows then
             button = buttons[i]
             buttons[i]:Show()
             button:Enable()
 
-            if pos < flyoutsCount then
+            if pos < numRows then
                 -- Normal flyout button
                 button.name = pos
                 button.text:SetText(button.name);
                 button.text:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
-                flyout = getFlyoutConfig(pos)
+                flyout = FlyoutMenus:get(pos)
                 texture = flyout.icon
 
                 if not texture and flyout.actionTypes[1] then
@@ -209,7 +209,7 @@ function updateCatalog()
                 buttons[i].BgMiddle:SetPoint("TOP")
             end
 
-            if (pos) == flyoutsCount then
+            if (pos) == numRows then
                 buttons[i].BgBottom:Show()
                 buttons[i].BgMiddle:SetPoint("BOTTOM", buttons[i].BgBottom, "TOP")
             else

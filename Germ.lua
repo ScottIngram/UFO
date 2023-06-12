@@ -38,101 +38,104 @@ local GERM_UI_NAME_PREFIX = "UfoGerm"
 local snippet_Germ_Click = [=[
 	local DELIMITER = "]=]..DELIMITER..[=["
 	local EMPTY_ELEMENT = "]=]..EMPTY_ELEMENT..[=["
-	local ref = self:GetFrameRef("UIUFO_FlyoutMenuForGerm")
-	local direction = self:GetAttribute("flyoutDirection")
-	local prevButton = nil;
+	local germ = self
+	local flyoutMenu = germ:GetFrameRef("UIUFO_FlyoutMenuForGerm")
+	local direction = germ:GetAttribute("flyoutDirection")
+	local prevBtn = nil;
 
-	if ref:IsShown() and ref:GetParent() == self then
-		ref:Hide()
-	else
-		ref:SetParent(self)
-		ref:ClearAllPoints()
-		if direction == "UP" then
-			ref:SetPoint("BOTTOM", self, "TOP", 0, 0)
-		elseif direction == "DOWN" then
-			ref:SetPoint("TOP", self, "BOTTOM", 0, 0)
-		elseif direction == "LEFT" then
-			ref:SetPoint("RIGHT", self, "LEFT", 0, 0)
-		elseif direction == "RIGHT" then
-			ref:SetPoint("LEFT", self, "RIGHT", 0, 0)
-		end
+	if flyoutMenu:IsShown() and flyoutMenu:GetParent() == germ then
+		flyoutMenu:Hide()
+		return
+    end
 
-		local spellNameList = table.new(strsplit(DELIMITER, self:GetAttribute("spellnamelist")or""))
-		local typeList = table.new(strsplit(DELIMITER, self:GetAttribute("typelist")or""))
-		local pets = table.new(strsplit(DELIMITER, self:GetAttribute("petlist")or""))
-		local buttonList = table.new(ref:GetChildren())
-		table.remove(buttonList, 1)
-		for i, buttonRef in ipairs(buttonList) do
-			if typeList[i] then
-				buttonRef:ClearAllPoints()
-				if direction == "UP" then
-					if prevButton then
-						buttonRef:SetPoint("BOTTOM", prevButton, "TOP", 0, ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[)
-					else
-						buttonRef:SetPoint("BOTTOM", "$parent", 0, ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[)
-					end
-				elseif direction == "DOWN" then
-					if prevButton then
-						buttonRef:SetPoint("TOP", prevButton, "BOTTOM", 0, -]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[)
-					else
-						buttonRef:SetPoint("TOP", "$parent", 0, -]=]..SPELLFLYOUT_INITIAL_SPACING..[=[)
-					end
-				elseif direction == "LEFT" then
-					if prevButton then
-						buttonRef:SetPoint("RIGHT", prevButton, "LEFT", -]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[, 0)
-					else
-						buttonRef:SetPoint("RIGHT", "$parent", -]=]..SPELLFLYOUT_INITIAL_SPACING..[=[, 0)
-					end
-				elseif direction == "RIGHT" then
-					if prevButton then
-						buttonRef:SetPoint("LEFT", prevButton, "RIGHT", ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[, 0)
-					else
-						buttonRef:SetPoint("LEFT", "$parent", ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[, 0)
-					end
-				end
+    flyoutMenu:SetParent(germ)
+    flyoutMenu:ClearAllPoints()
+    if direction == "UP" then
+        flyoutMenu:SetPoint("BOTTOM", germ, "TOP", 0, 0)
+    elseif direction == "DOWN" then
+        flyoutMenu:SetPoint("TOP", germ, "BOTTOM", 0, 0)
+    elseif direction == "LEFT" then
+        flyoutMenu:SetPoint("RIGHT", germ, "LEFT", 0, 0)
+    elseif direction == "RIGHT" then
+        flyoutMenu:SetPoint("LEFT", germ, "RIGHT", 0, 0)
+    end
 
-				local type = typeList[i]
-				local thisId = ((typeList[i] == "battlepet") and pets[i]) or spellNameList[i]
+    local spellNameList = table.new(strsplit(DELIMITER, germ:GetAttribute("spellnamelist")or""))
+    local typeList      = table.new(strsplit(DELIMITER, germ:GetAttribute("typelist")or""))
+    local pets          = table.new(strsplit(DELIMITER, germ:GetAttribute("petlist")or""))
+    local uiButtons     = table.new(flyoutMenu:GetChildren())
+    table.remove(uiButtons, 1)
+    for i, btn in ipairs(uiButtons) do
+        if typeList[i] then
+            btn:ClearAllPoints()
+            if direction == "UP" then
+                if prevBtn then
+                    btn:SetPoint("BOTTOM", prevBtn, "TOP", 0, ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[)
+                else
+                    btn:SetPoint("BOTTOM", "$parent", 0, ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[)
+                end
+            elseif direction == "DOWN" then
+                if prevBtn then
+                    btn:SetPoint("TOP", prevBtn, "BOTTOM", 0, -]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[)
+                else
+                    btn:SetPoint("TOP", "$parent", 0, -]=]..SPELLFLYOUT_INITIAL_SPACING..[=[)
+                end
+            elseif direction == "LEFT" then
+                if prevBtn then
+                    btn:SetPoint("RIGHT", prevBtn, "LEFT", -]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[, 0)
+                else
+                    btn:SetPoint("RIGHT", "$parent", -]=]..SPELLFLYOUT_INITIAL_SPACING..[=[, 0)
+                end
+            elseif direction == "RIGHT" then
+                if prevBtn then
+                    btn:SetPoint("LEFT", prevBtn, "RIGHT", ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[, 0)
+                else
+                    btn:SetPoint("LEFT", "$parent", ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[, 0)
+                end
+            end
 
-				-- It appears that SecureActionButtonTemplate
-				-- provides no support for summoning battlepets
-				-- because summoning a battlepet is not a protected action.
-				-- So, fake it with an adhoc macro!
-				if (type == "battlepet") then
-					-- here I was fumbling around guessing at a solution:
-					-- buttonRef:SetAttribute("pet", thisId)
-					-- buttonRef:SetAttribute("companion", thisId)
-					-- buttonRef:SetAttribute("CompanionPet", thisId)
+            local type = typeList[i]
+            local thisId = ((typeList[i] == "battlepet") and pets[i]) or spellNameList[i]
 
-					-- summon the pet via a macro
-					local petMacro = "/run C_PetJournal.SummonPetByGUID(\"" .. thisId .. "\")"
-					buttonRef:SetAttribute("type", "macro")
-					buttonRef:SetAttribute("macrotext", petMacro)
-				else
-					buttonRef:SetAttribute("type", type)
-					buttonRef:SetAttribute(type, thisId)
+            -- It appears that SecureActionButtonTemplate
+            -- provides no support for summoning battlepets
+            -- because summoning a battlepet is not a protected action.
+            -- So, fake it with an adhoc macro!
+            if (type == "battlepet") then
+                -- here I was fumbling around guessing at a solution:
+                -- btn:SetAttribute("pet", thisId)
+                -- btn:SetAttribute("companion", thisId)
+                -- btn:SetAttribute("CompanionPet", thisId)
 
-				end
+                -- summon the pet via a macro
+                local petMacro = "/run C_PetJournal.SummonPetByGUID(\"" .. thisId .. "\")"
+                btn:SetAttribute("type", "macro")
+                btn:SetAttribute("macrotext", petMacro)
+            else
+                btn:SetAttribute("type", type)
+                btn:SetAttribute(type, thisId)
 
-				buttonRef:Show()
+            end
 
-				prevButton = buttonRef
-			else
-				buttonRef:Hide()
-			end
-		end
-		local numButtons = table.maxn(typeList)
-		if direction == "UP" or direction == "DOWN" then
-			ref:SetWidth(prevButton:GetWidth())
-			ref:SetHeight((prevButton:GetHeight()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
-		else
-			ref:SetHeight(prevButton:GetHeight())
-			ref:SetWidth((prevButton:GetWidth()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
-		end
-		ref:Show()
-		--ref:RegisterAutoHide(1)
-		--ref:AddToAutoHide(self)
-	end
+            btn:Show()
+
+            prevBtn = btn
+
+        else
+            btn:Hide()
+        end
+    end
+    local numButtons = table.maxn(typeList)
+    if direction == "UP" or direction == "DOWN" then
+        flyoutMenu:SetWidth(prevBtn:GetWidth())
+        flyoutMenu:SetHeight((prevBtn:GetHeight()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
+    else
+        flyoutMenu:SetHeight(prevBtn:GetHeight())
+        flyoutMenu:SetWidth((prevBtn:GetWidth()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
+    end
+    flyoutMenu:Show()
+    --flyoutMenu:RegisterAutoHide(1)
+    --flyoutMenu:AddToAutoHide(germ)
 ]=]
 
 -------------------------------------------------------------------------------
@@ -141,7 +144,7 @@ local snippet_Germ_Click = [=[
 
 function Germ.new(flyoutId, actionBarBtn)
     assertIsFunctionOf(flyoutId,Germ)
-    local flyoutConf = getFlyoutConfig(flyoutId)
+    local flyoutConf = FlyoutMenus:get(flyoutId)
     if not flyoutConf then return end -- because one toon can delete a flyout while other toons still have it on their bars
     local name = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
     ---@type Germ
@@ -171,7 +174,7 @@ function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
     local germ = self
 
     germ.flyoutId = flyoutId
-    local flyoutConf = getFlyoutConfig(germ.flyoutId)
+    local flyoutConf = FlyoutMenus:get(germ.flyoutId)
     if not flyoutConf then return end -- because one toon can delete a flyout while other toons still have it on their bars
 
     germ.action = btnSlotIndex -- used deep inside the Bliz APIs

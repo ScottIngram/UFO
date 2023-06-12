@@ -222,7 +222,7 @@ function ButtonOnFlyoutMenu:OnReceiveDragAddIt()
     local flyoutId = flyoutMenu.id
 
     if actionType then
-        local flyoutConf = getFlyoutConfig(flyoutId)
+        local flyoutConf = FlyoutMenus:get(flyoutId)
         local btnIndex = self:GetID()
 
         local oldThingyId   = flyoutConf.spells[btnIndex]

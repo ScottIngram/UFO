@@ -121,10 +121,10 @@ function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pu
     local config
     if popup.isEdit then
         -- Modifying a flyout
-        config = getFlyoutConfig(popup.name)
+        config = FlyoutMenus:get(popup.name)
     else
         -- Saving a new flyout
-        config = addFlyout()
+        config = FlyoutMenus:appendNewOne()
     end
     config.icon = iconTexture
     popup:Hide()
@@ -210,10 +210,12 @@ function refreshFlyoutIconInfo()
     local index = 2
 
     local popup = UIUFO_DetailerPopup
-    if popup.name then
-        local spells = getFlyoutsConfig()[popup.name].spells
-        local actionTypes = getFlyoutsConfig()[popup.name].actionTypes
-        local pets = getFlyoutsConfig()[popup.name].pets
+    local flyoutId = popup.name
+    if flyoutId then
+        local flyoutDef = FlyoutMenus:get(flyoutId)
+        local spells = flyoutDef.spells
+        local actionTypes = flyoutDef.actionTypes
+        local pets = flyoutDef.pets
         for i = 1, #actionTypes do
             local itemTexture = getTexture(actionTypes[i], spells[i], pets[i])
             if itemTexture then

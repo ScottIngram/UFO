@@ -91,7 +91,7 @@ function updateAllGerms()
 end
 
 function doesFlyoutExists(flyoutId)
-    local flyoutConf = getFlyoutConfig(flyoutId)
+    local flyoutConf = FlyoutMenus:get(flyoutId)
     return flyoutConf and true or false
 end
 
@@ -166,7 +166,7 @@ function pickupFlyout(flyoutId)
         return;
     end
 
-    local flyoutConf = getFlyoutConfig(flyoutId)
+    local flyoutConf = FlyoutMenus:get(flyoutId)
     local texture = flyoutConf.icon
 
     if not texture and flyoutConf.actionTypes[1] then
