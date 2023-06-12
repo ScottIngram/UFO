@@ -306,6 +306,9 @@ function FlyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
     end
     UIUFO_FlyoutMenuForGerm.Background.End:ClearAllPoints()
     UIUFO_FlyoutMenuForGerm.Background.Start:ClearAllPoints()
+    UIUFO_FlyoutMenuForGerm.Background.VerticalMiddle:ClearAllPoints();
+    UIUFO_FlyoutMenuForGerm.Background.HorizontalMiddle:ClearAllPoints();
+
     local distance = 3
     if (direction == "UP") then
         UIUFO_FlyoutMenuForGerm.Background.End:SetPoint("TOP", 0, SPELLFLYOUT_INITIAL_SPACING);

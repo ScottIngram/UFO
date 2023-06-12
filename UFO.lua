@@ -10,7 +10,6 @@ TODO
 * refactor FlyoutMenu:updateFlyoutMenuForGerm and move some logic into a germ:Method(); replace all mentions of UIUFO_FlyoutMenuForGerm with simply self
 * replace existing icon picker with something closer to MacroManager / Weak Auras
 * question: can I use GetItemSpell(itemId) to simplify my code ?
-* BUG: germs that extend horizontally (as the ones on the vertical action bars) sometimes have weirdly wide borders
 * BUG: OnDragStart needs to accommodate when there is already something on the cursor
 * - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
@@ -20,6 +19,7 @@ TODO
 * consolidate all the redundant code, such as the if actionType == "spell" then PickupSpell(spellId) --> function ButtonOnFlyoutMenu:PickMeUp()
 * use ACE Lib/DataBroker
 *
+* DONE: BUG: germs that extend horizontally (as the ones on the vertical action bars) sometimes have weirdly wide borders
 * DONE: BLIZ BUG: fixed flyouts on side bars pointing in the wrong direction because the Bliz API reported the wrong direction
 * DONE: BUG: bliz bug: C_MountJournal index is in flux (e.g. a search filter will change the indices)
 * DONE: BLIZ BUG: picking up a mount by its spell ID results in a cursor whose GetCursorInfo() returns "companion" n "MOUNT" where n is... a meaningless number?
