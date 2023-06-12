@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(DEBUG_OUTPUT.WARN)
+local debug = Debug:new(Debug.OUTPUT.WARN)
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -121,10 +121,10 @@ function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pu
     local config
     if popup.isEdit then
         -- Modifying a flyout
-        config = FlyoutMenus:get(popup.name)
+        config = FlyoutMenusDb:get(popup.name)
     else
         -- Saving a new flyout
-        config = FlyoutMenus:appendNewOne()
+        config = FlyoutMenusDb:appendNewOne()
     end
     config.icon = iconTexture
     popup:Hide()
@@ -212,7 +212,7 @@ function refreshFlyoutIconInfo()
     local popup = UIUFO_DetailerPopup
     local flyoutId = popup.name
     if flyoutId then
-        local flyoutDef = FlyoutMenus:get(flyoutId)
+        local flyoutDef = FlyoutMenusDb:get(flyoutId)
         local spells = flyoutDef.spells
         local actionTypes = flyoutDef.actionTypes
         local pets = flyoutDef.pets

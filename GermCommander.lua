@@ -9,7 +9,7 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
 
-local debug = Debug:new(DEBUG_OUTPUT.WARN)
+local debug = Debug:new(Debug.OUTPUT.WARN)
 
 ---@type Germ -- IntelliJ-EmmyLua annotation
 local Germ = Ufo.Germ
@@ -91,7 +91,7 @@ function updateAllGerms()
 end
 
 function doesFlyoutExists(flyoutId)
-    local flyoutConf = FlyoutMenus:get(flyoutId)
+    local flyoutConf = FlyoutMenusDb:get(flyoutId)
     return flyoutConf and true or false
 end
 
@@ -166,7 +166,7 @@ function pickupFlyout(flyoutId)
         return;
     end
 
-    local flyoutConf = FlyoutMenus:get(flyoutId)
+    local flyoutConf = FlyoutMenusDb:get(flyoutId)
     local texture = flyoutConf.icon
 
     if not texture and flyoutConf.actionTypes[1] then

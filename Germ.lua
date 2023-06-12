@@ -13,7 +13,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(DEBUG_OUTPUT.WARN)
+local debug = Debug:new(Debug.OUTPUT.WARN)
 
 ---@class Germ -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -144,7 +144,7 @@ local snippet_Germ_Click = [=[
 
 function Germ.new(flyoutId, actionBarBtn)
     assertIsFunctionOf(flyoutId,Germ)
-    local flyoutConf = FlyoutMenus:get(flyoutId)
+    local flyoutConf = FlyoutMenusDb:get(flyoutId)
     if not flyoutConf then return end -- because one toon can delete a flyout while other toons still have it on their bars
     local name = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
     ---@type Germ
@@ -174,7 +174,7 @@ function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
     local germ = self
 
     germ.flyoutId = flyoutId
-    local flyoutConf = FlyoutMenus:get(germ.flyoutId)
+    local flyoutConf = FlyoutMenusDb:get(germ.flyoutId)
     if not flyoutConf then return end -- because one toon can delete a flyout while other toons still have it on their bars
 
     germ.action = btnSlotIndex -- used deep inside the Bliz APIs

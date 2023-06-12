@@ -10,7 +10,7 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(DEBUG_OUTPUT.WARN)
+local debug = Debug:new(Debug.OUTPUT.WARN)
 
 ---@class Catalog -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -29,7 +29,7 @@ function Catalog:definePopupDialogWindow()
         text = L10N["CONFIRM_DELETE"],
         button1 = YES,
         button2 = NO,
-        OnAccept = function (dialog) FlyoutMenus:delete(dialog.flyoutId); updateCatalog(); updateAllGerms(); end,
+        OnAccept = function (dialog) FlyoutMenusDb:delete(dialog.flyoutId); updateCatalog(); updateAllGerms(); end,
         OnCancel = function (dialog) end,
         hideOnEscape = 1,
         timeout = 0,
@@ -139,7 +139,7 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
 end
 
 function updateCatalog()
-    local flyoutsCount = FlyoutMenus:howMany()
+    local flyoutsCount = FlyoutMenusDb:howMany()
     local numRows = flyoutsCount + 1
     HybridScrollFrame_Update(UIUFO_CatalogScrollPane, numRows * EQUIPMENTSET_BUTTON_HEIGHT + 20, UIUFO_CatalogScrollPane:GetHeight()) -- TODO: is this the source of the too-tall bug
 
@@ -160,7 +160,7 @@ function updateCatalog()
                 button.name = pos
                 button.text:SetText(button.name);
                 button.text:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
-                flyout = FlyoutMenus:get(pos)
+                flyout = FlyoutMenusDb:get(pos)
                 texture = flyout.icon
 
                 if not texture and flyout.actionTypes[1] then

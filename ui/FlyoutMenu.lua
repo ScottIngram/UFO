@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(DEBUG_OUTPUT.WARN)
+local debug = Debug:new(Debug.OUTPUT.WARN)
 
 ---@class FlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -118,7 +118,7 @@ function FlyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
     -- Update all spell buttons for this flyout
     local prevButton = nil;
     local numButtons = 0;
-    local flyoutConfig = FlyoutMenus:get(flyoutId)
+    local flyoutConfig = FlyoutMenusDb:get(flyoutId)
     local spells = flyoutConfig and flyoutConfig.spells
     local actionTypes = flyoutConfig and flyoutConfig.actionTypes
     local mounts = flyoutConfig and flyoutConfig.mounts

@@ -13,7 +13,7 @@ utils\Debug.lua
 utils\Config.lua
 constants.lua
 locales\index.xml
-FlyoutMenus.lua
+FlyoutMenusDb.lua
 FlyoutMenuDef.lua
 ButtonDef.lua
 Germ.lua

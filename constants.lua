@@ -27,6 +27,8 @@ V_PATCH = 0
 V_UFO = "a"
 VERSION = table.concat({V_MAJOR, V_MINOR, V_PATCH, V_UFO}, ".")
 
+QUIET_DEBUG_LEVEL = Debug.OUTPUT.WARN
+
 X = nil
 MAX_FLYOUT_SIZE = 20
 NON_SPEC_SLOT = 5

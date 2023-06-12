@@ -22,7 +22,10 @@ local DEBUG_OUTPUT = {
 }
 
 ---@class Debug -- IntelliJ-EmmyLua annotation
-local Debug = { }
+---@field OUTPUT DebugLevel -- IntelliJ-EmmyLua annotation
+local Debug = {
+    OUTPUT = DEBUG_OUTPUT
+}
 
 ADDON_VARS.Debug = Debug
 ADDON_VARS.DEBUG_OUTPUT = DEBUG_OUTPUT
