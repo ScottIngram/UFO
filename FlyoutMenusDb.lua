@@ -34,12 +34,11 @@ flyoutConfig:addButton(myNewBtn) -- or smarter DWIM behavior that takes a macro 
 -- Constants
 -------------------------------------------------------------------------------
 
-
 -------------------------------------------------------------------------------
 -- Methods
 -------------------------------------------------------------------------------
 
-
+---@return FlyoutMenuDef
 function FlyoutMenusDb:appendNewOne()
     local newFlyoutDef = FlyoutMenuDef:new()
     local flyoutsConfig = self:getAll()
@@ -56,13 +55,15 @@ function FlyoutMenusDb:getAll()
     return UFO_SV_ACCOUNT and UFO_SV_ACCOUNT.flyouts
 end
 
+---@return FlyoutMenuDef
 function FlyoutMenusDb:get(flyoutId)
     assert(flyoutId and type(flyoutId)=="number", "Bad flyoutId arg.")
     local config = self:getAll()
     assert(config, "Flyouts config structure is abnormal.")
     local flyoutConfig = config[flyoutId]
     --[[DEBUG]] debug.trace:print(flyoutConfig, "No config found for #"..flyoutId)
-    return flyoutConfig
+    local flyoutDef = FlyoutMenuDef:oneOfUs(flyoutConfig)
+    return flyoutDef
 end
 
 function FlyoutMenusDb:delete(flyoutId)
@@ -83,56 +84,4 @@ function FlyoutMenusDb:delete(flyoutId)
             end
         end
     end
-end
-
-
-
-
--------------------------------------------------------------------------------
--- Flyout Menu Functions - SavedVariables, config CRUD
--------------------------------------------------------------------------------
-
-function updateVersionId()
-    UFO_SV_FLYOUTS.v = VERSION
-    UFO_SV_FLYOUTS.V_MAJOR = V_MAJOR
-    UFO_SV_FLYOUTS.V_MINOR = V_MINOR
-    UFO_SV_FLYOUTS.V_PATCH = V_PATCH
-end
-
--- compares the config's stored version to input parameters
-function isConfigOlderThan(major, minor, patch, ufo)
-    local configMajor = UFO_SV_FLYOUTS.V_MAJOR
-    local configMinor = UFO_SV_FLYOUTS.V_MINOR
-    local configPatch = UFO_SV_FLYOUTS.V_PATCH
-    local configUfo   = UFO_SV_FLYOUTS.V_UFO
-
-    if not (configMajor and configMinor and configPatch) then
-        return true
-    elseif configMajor < major then
-        return true
-    elseif configMinor < minor then
-        return true
-    elseif configPatch < patch then
-        return true
-    elseif configUfo < ufo then
-        return true
-    else
-        return false
-    end
-end
-
--------------------------------------------------------------------------------
--- Flyout Button Functions
--------------------------------------------------------------------------------
-
-function removeSpell(flyoutId, spellPos)
-    if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
-    if type(spellPos) == "string" then spellPos = tonumber(spellPos) end
-    local flyoutConf = FlyoutMenusDb:get(flyoutId)
-    table.remove(flyoutConf.spells, spellPos)
-    table.remove(flyoutConf.actionTypes, spellPos)
-    table.remove(flyoutConf.mounts, spellPos)
-    table.remove(flyoutConf.spellNames, spellPos)
-    table.remove(flyoutConf.macroOwners, spellPos)
-    table.remove(flyoutConf.pets, spellPos)
 end

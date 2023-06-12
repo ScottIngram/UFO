@@ -332,7 +332,8 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(btnOnFlyout)
 
     local flyoutFrame = btnOnFlyout:GetParent()
     if flyoutFrame.isForCatalog then
-        removeSpell(flyoutFrame.id, btnOnFlyout:GetID())
+        local flyoutMenuDef = FlyoutMenusDb:get(flyoutFrame.id)
+        flyoutMenuDef:removeSpell(btnOnFlyout:GetID())
         updateAllGerms()
         flyoutFrame:updateFlyoutMenuForCatalog(flyoutFrame.id)
     end

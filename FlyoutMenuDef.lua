@@ -16,11 +16,19 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 local debug = Debug:new(Debug.OUTPUT.WARN)
 
 ---@class FlyoutMenuDef -- IntelliJ-EmmyLua annotation
----@field name string
----@field icon string
----@field btns
+---@field spells table
+---@field spellNames table
+---@field actionTypes table
+---@field mounts table
+---@field pets table
+---@field macroOwners table
 local FlyoutMenuDef = {}
 Ufo.FlyoutMenuDef = FlyoutMenuDef
+
+-- FUTURE structure
+---@field name string
+---@field icon string
+---@field btns table
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -39,5 +47,22 @@ NEW_STRUCT_FLYOUT_BTN_DEF = { type="", blizType="", spells="", mounts="", spellN
 
 ---@returns FlyoutMenuDef
 function FlyoutMenuDef:new()
-    return deepcopy(STRUCT_FLYOUT_DEF)
+    local newInstance = deepcopy(STRUCT_FLYOUT_DEF)
+    setmetatable(newInstance, { __index = FlyoutMenuDef })
+    return newInstance
+end
+
+function FlyoutMenuDef:oneOfUs(flyoutConfig)
+    setmetatable(flyoutConfig, { __index = FlyoutMenuDef })
+    return flyoutConfig
+end
+
+function FlyoutMenuDef:removeSpell(spellPos)
+    if type(spellPos) == "string" then spellPos = tonumber(spellPos) end
+    table.remove(self.spells, spellPos)
+    table.remove(self.actionTypes, spellPos)
+    table.remove(self.mounts, spellPos)
+    table.remove(self.spellNames, spellPos)
+    table.remove(self.macroOwners, spellPos)
+    table.remove(self.pets, spellPos)
 end

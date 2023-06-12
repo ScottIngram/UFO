@@ -174,7 +174,7 @@ function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
     local germ = self
 
     germ.flyoutId = flyoutId
-    local flyoutConf = FlyoutMenusDb:get(germ.flyoutId)
+    local flyoutConf = FlyoutMenusDb:get(flyoutId)
     if not flyoutConf then return end -- because one toon can delete a flyout while other toons still have it on their bars
 
     germ.action = btnSlotIndex -- used deep inside the Bliz APIs

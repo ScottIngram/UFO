@@ -1,5 +1,6 @@
 -- ButtonDef
 -- data for a single button, its spell/pet/macro/item/etc.  and methods for manipulating that data
+-- CURRENTLY UNUSED - work in progress / proof of concept
 
 -------------------------------------------------------------------------------
 -- Module Loading
@@ -63,7 +64,9 @@ NEW_STRUCT_FLYOUT_BTN_DEF = {
 -- Methods
 -------------------------------------------------------------------------------
 
----@returns FlyoutMenuDef
-function FlyoutMenuDef:new()
-    return deepcopy(STRUCT_FLYOUT_DEF)
+---@returns ButtonDef
+function ButtonDef:new()
+    local newInstance = deepcopy(NEW_STRUCT_FLYOUT_BTN_DEF)
+    setmetatable(newInstance, { __index = ButtonDef })
+    return newInstance
 end
