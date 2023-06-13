@@ -173,7 +173,7 @@ function ButtonOnFlyoutMenu:OnReceiveDragAddIt()
     local flyoutMenu = self:GetParent()
     if not flyoutMenu.isForCatalog then return end
 
-    local kind, info1, info2, info3 = GetCursorInfo()
+    local kind, info1, info2, info3 = GetCursorInfo() -- info2 is sometimes a tooltip
     local actionType = kind
 
     -- TODO: distinguish between toys and spells
@@ -207,6 +207,7 @@ function ButtonOnFlyoutMenu:OnReceiveDragAddIt()
         thingyId = spellId
         mountId = info1
     elseif kind == "item" then
+        -- TODO: parse info2 as a tooltip and find "toy"
         thingyId = info1
     elseif kind == "macro" then
         thingyId = info1

@@ -23,12 +23,12 @@ local debug = Debug:new(Debug.OUTPUT.WARN)
 
 ---@class ButtonType -- IntelliJ-EmmyLua annotation
 local ButtonType = {
-    spell = "spell",
-    item = "spell",
-    mount = "spell",
-    pet = "battlepet",
-    macro = "spell",
-
+    spell = { invocationType = "spell",     invocationField = "name", },
+    mount = { invocationType = "spell",     invocationField = "name", },
+    item  = { invocationType = "item",      invocationField = "name", },
+    toy   = { invocationType = "item",      invocationField = "name", },
+    pet   = { invocationType = "battlepet", invocationField = "petGuid", },
+    macro = { invocationType = "macro",     invocationField = "name", },
 }
 Ufo.ButtonType = ButtonType
 
@@ -49,14 +49,14 @@ Ufo.ButtonDef = ButtonDef
 -------------------------------------------------------------------------------
 
 NEW_STRUCT_FLYOUT_BTN_DEF = {
-    type="",
-    name="",
-    spellId="",
-    itemId="",
-    mountId="",
-    petGuid="",
-    macroId="",
-    macroOwner="",
+    type = false,
+    name = false,
+    spellId = false,
+    itemId = false,
+    mountId = false,
+    petGuid = false,
+    macroId = false,
+    macroOwner = false,
 }
 
 
@@ -64,9 +64,16 @@ NEW_STRUCT_FLYOUT_BTN_DEF = {
 -- Methods
 -------------------------------------------------------------------------------
 
----@returns ButtonDef
+---@return ButtonDef
 function ButtonDef:new()
-    local newInstance = deepcopy(NEW_STRUCT_FLYOUT_BTN_DEF)
-    setmetatable(newInstance, { __index = ButtonDef })
-    return newInstance
+    local self = deepcopy(NEW_STRUCT_FLYOUT_BTN_DEF)
+    setmetatable(self, { __index = ButtonDef })
+    return self
+end
+
+---@return ButtonDef
+function ButtonDef:create(table)
+    local self = deepcopy(NEW_STRUCT_FLYOUT_BTN_DEF)
+    setmetatable(self, { __index = ButtonDef })
+    return self
 end

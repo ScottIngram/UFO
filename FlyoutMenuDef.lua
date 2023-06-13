@@ -25,7 +25,7 @@ local debug = Debug:new(Debug.OUTPUT.WARN)
 local FlyoutMenuDef = {}
 Ufo.FlyoutMenuDef = FlyoutMenuDef
 
--- FUTURE structure
+-- NEO structure
 ---@field name string
 ---@field icon string
 ---@field btns table
@@ -37,15 +37,14 @@ Ufo.FlyoutMenuDef = FlyoutMenuDef
 -- "spell" can mean also item, mount, macro, etc.
 STRUCT_FLYOUT_DEF = { spells={}, actionTypes={}, mounts={}, spellNames={}, macroOwners={}, pets={} }
 
-NEW_STRUCT_FLYOUT_DEF = { name="", icon="", btns={} }
-NEW_STRUCT_FLYOUT_BTN_DEF = { type="", blizType="", spells="", mounts="", spellName="", macroOwner="", pet="", }
+NEO_STRUCT_FLYOUT_DEF = { name=false, icon=false, btns={} }
 
 
 -------------------------------------------------------------------------------
 -- Methods
 -------------------------------------------------------------------------------
 
----@returns FlyoutMenuDef
+---@return FlyoutMenuDef
 function FlyoutMenuDef:new()
     local newInstance = deepcopy(STRUCT_FLYOUT_DEF)
     setmetatable(newInstance, { __index = FlyoutMenuDef })
@@ -57,12 +56,31 @@ function FlyoutMenuDef:oneOfUs(flyoutConfig)
     return flyoutConfig
 end
 
-function FlyoutMenuDef:removeSpell(spellPos)
-    if type(spellPos) == "string" then spellPos = tonumber(spellPos) end
-    table.remove(self.spells, spellPos)
-    table.remove(self.actionTypes, spellPos)
-    table.remove(self.mounts, spellPos)
-    table.remove(self.spellNames, spellPos)
-    table.remove(self.macroOwners, spellPos)
-    table.remove(self.pets, spellPos)
+function FlyoutMenuDef:removeSpell(i)
+    if type(i) == "string" then i = tonumber(i) end
+    table.remove(self.spells, i)
+    table.remove(self.actionTypes, i)
+    table.remove(self.mounts, i)
+    table.remove(self.spellNames, i)
+    table.remove(self.macroOwners, i)
+    table.remove(self.pets, i)
+
+    -- TODO: NEO
+    --self.btns[i] = nil
+end
+
+-------------------------------------------------------------------------------
+-- NEO
+-------------------------------------------------------------------------------
+
+---@return FlyoutMenuDef
+function FlyoutMenuDef:NEOnew()
+    local self = deepcopy(NEO_STRUCT_FLYOUT_DEF)
+    setmetatable(self, { __index = FlyoutMenuDef })
+    return self
+end
+
+---@param btn ButtonDef -- IntelliJ-EmmyLua annotation
+function FlyoutMenuDef:add(btn)
+    table.insert(self.btns, btn)
 end

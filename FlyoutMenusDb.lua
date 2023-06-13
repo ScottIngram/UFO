@@ -85,3 +85,59 @@ function FlyoutMenusDb:delete(flyoutId)
         end
     end
 end
+
+-------------------------------------------------------------------------------
+-- APOCALYPSE
+-------------------------------------------------------------------------------
+
+function FlyoutMenusDb:convertOldToNew()
+    local old = self:getAll()
+    UFO_SV_ACCOUNT.neoFlyouts = {}
+
+    for i, oldFlyout in ipairs(old) do
+        local neoFlyout = FlyoutMenuDef:NEOnew()
+        neoFlyout.icon = oldFlyout.icon
+
+        for j, actionType in ipairs(oldFlyout.actionTypes) do
+            local mount = oldFlyout.mounts[j]
+            if mount then
+                local _, _, _, _, _, _, _, _, _, _, _, mountID = C_MountJournal.GetDisplayedMountInfo(mount)
+                mount = mountID
+            end
+
+            local btn = ButtonDef:new()
+            btn.type       = actionType
+            btn.name       = oldFlyout.spellNames[j]
+            btn.spellId    = oldFlyout.spells[j]
+            btn.itemId     = nil
+            btn.mountId    = mount
+            btn.petGuid    = oldFlyout.pets[j]
+            btn.macroId    = nil
+            btn.macroOwner = oldFlyout.macroOwners[j]
+
+            neoFlyout:add(btn)
+        end
+        FlyoutMenusDb:add(neoFlyout)
+    end
+end
+
+function FlyoutMenusDb:NEOgetAll()
+    return UFO_SV_ACCOUNT.neoFlyouts
+end
+
+---@param flyoutMenuDef FlyoutMenuDef -- IntelliJ-EmmyLua annotation
+function FlyoutMenusDb:add(flyoutMenuDef)
+    table.insert(self:NEOgetAll(), flyoutMenuDef)
+end
+
+---@param flyoutId number -- IntelliJ-EmmyLua annotation
+function FlyoutMenusDb:delete(flyoutId)
+    -- leave an empty placeholder
+    -- so the array stays an array of contiguous indices
+    -- and every flyout always keeps its original ID
+    self:NEOgetAll()[flyoutId] = false
+end
+
+function FlyoutMenusDb:foo()
+
+end
