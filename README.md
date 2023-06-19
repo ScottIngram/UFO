@@ -2,7 +2,7 @@
 
 A World of Warcraft addon.
 
-**_ALPHA_** pre-release and full of bugs.
+**_ALPHA_** pre-release!
 
 UFO lets you create custom actionbar flyout menus similar to the ones Blizzard provides for collections of similar spells such as mage portals & teleports, warlock demons, dragonriding abilities, etc.  However, in addition to just spells, UFO also supports:
 
