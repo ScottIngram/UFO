@@ -1,7 +1,7 @@
 ## Interface: 100100
 ## Title: UFO - Universal FlyOuts
 ## Author: Scott Ingram
-## Version: v10.1.0.a
+## Version: v10.1.0.alpha
 ## AddonCompartmentFunc: GLOBAL_UIUFO_BlizCompartment_OnClick
 ## IconTexture: Interface\Icons\Ability_racial_rocketbarrage
 ## SavedVariables: UFO_SV_ACCOUNT
