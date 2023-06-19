@@ -31,7 +31,7 @@ Ufo.FlyoutMenuDef = FlyoutMenuDef
 -- coerce the incoming table into a FlyoutMenuDef instance
 ---@return FlyoutMenuDef
 function FlyoutMenuDef:oneOfUs(self)
-    --[[DEBUG]] debug.trace:out("+",3,"FlyoutMenuDef:oneOfUs()", "self",self)
+    debug.trace:out("+",3,"FlyoutMenuDef:oneOfUs()", "self",self)
     if self.ufoType == FlyoutMenuDef.ufoType then
         return self
     end
@@ -76,13 +76,13 @@ function FlyoutMenuDef:forEachBtn(callback)
     assert(self.btns, "This instance of FlyoutMenuDef has no 'btns' field to coerce.")
 
     for i, buttonDef in ipairs(self.btns) do
-        --[[DEBUG]] debug.info:out(".",3,"FlyoutMenusDb:forEachBtn()", "i",i, "buttonDef", buttonDef)
+        debug.info:out(".",3,"FlyoutMenusDb:forEachBtn()", "i",i, "buttonDef", buttonDef)
         callback(buttonDef, buttonDef) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
     end
 end
 
 function FlyoutMenuDef:getAllButtonDefs()
-    --[[DEBUG]] debug.info:out("C",3,"FlyoutMenuDef:getAllButtonDefs()...")
+    debug.info:out("C",3,"FlyoutMenuDef:getAllButtonDefs()...")
     if not self.alreadyCoercedMyButtons then
         self:forEachBtn(ButtonDef.oneOfUs)
         self:setAlreadyCoercedMyButtons()

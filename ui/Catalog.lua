@@ -10,7 +10,7 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(Debug.OUTPUT.WARN)
+local debug = Debug:new()
 
 ---@class Catalog -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -161,9 +161,9 @@ function updateCatalog()
                 button.text:SetText(pos);
                 button.text:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
 
-                --[[DEBUG]] debug.error:out("U",3,"updateCatalog()", "pos",pos)
+                debug:out("U",3,"updateCatalog()", "pos",pos)
                 local flyoutMenuDef = FlyoutMenusDb:get(pos)
-                --[[DEBUG]] debug.error:out("U",3,"updateCatalog()", "pos",pos, "flyoutMenuDef", flyoutMenuDef)
+                debug:out("U",3,"updateCatalog()", "pos",pos, "flyoutMenuDef", flyoutMenuDef)
                 local icon = flyoutMenuDef:getIcon()
 
                 if icon then

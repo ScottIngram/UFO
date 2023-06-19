@@ -4,29 +4,27 @@
 --[[
 
 TODO
-* implement UFO_SV_FLYOUTS as array of self-contained button objects rather than each button spread across multiple parallel arrays
-* encapsulate as FlyoutConfigData
-* encapsulate as PlacementConfigData
-* refactor FlyoutMenu:updateFlyoutMenuForGerm and move some logic into a germ:Method(); replace all mentions of UIUFO_FlyoutMenuForGerm with simply self
 * replace existing icon picker with something closer to MacroManager / Weak Auras
 * question: can I use GetItemSpell(itemId) to simplify my code ?
 * BUG: when germs omit unusable buttons, they still appear and now it and each subsequent btn behaves as though it were the one after
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
-* BUG: germs that extend horizontally (as the ones on the vertical action bars) sometimes have weirdly wide borders
 * BUG: OnDragStart needs to accommodate when there is already something on the cursor
 * - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
-* NUKE all OO syntax that's not actual OO.  Foo:Bar() doesn't need "self" if there is never an instance foo:Bar()
 * use ACE Lib/DataBroker
 *
+* DONE: refactor FlyoutMenu:updateFlyoutMenuForGerm and move some logic into a germ:Method(); replace all mentions of UIUFO_FlyoutMenuForGerm with simply self
+* DONE: implement UFO_SV_FLYOUTS as array of self-contained button objects rather than each button spread across multiple parallel arrays
+* DONE: encapsulate as FlyoutConfigData
+* DONE: encapsulate as PlacementConfigData
+* DONE: BUG: germs that extend horizontally (as the ones on the vertical action bars) sometimes have weirdly wide borders
 * DONE: fix C_MountJournal OnPickup global var bug
 * DONE: consolidate all the redundant code, such as the if actionType == "spell" then PickupSpell(spellId) --> function ButtonOnFlyoutMenu:PickMeUp()
 * DONE: BLIZ BUG: fixed flyouts on side bars pointing in the wrong direction because the Bliz API reported the wrong direction
 * DONE: BUG: bliz bug: C_MountJournal index is in flux (e.g. a search filter will change the indices)
 * DONE: BLIZ BUG: picking up a mount by its spell ID results in a cursor whose GetCursorInfo() returns "companion" n "MOUNT" where n is... a meaningless number?
 * DONE: BUG: flyouts don't indicate if an item is usable / not usable
-
 * DONE: BUG: stacks, charges, etc for things that don't have stacks etc.
 * DONE: BUG: cooldown display only works for spells, not inventory items (hearthstone, trinkets, potions, etc)
 * DONE: NUKE all function paramsNamed(self) and rename them with actual NAMES
@@ -45,7 +43,7 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(Debug.OUTPUT.TRACE)
+local debug = Debug:new()
 
 -------------------------------------------------------------------------------
 -- Data

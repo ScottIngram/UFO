@@ -47,7 +47,7 @@ ADDON_VARS.Debug = Debug
 -- Constants
 -------------------------------------------------------------------------------
 
-local DEFAULT_DEBUG = OUTPUT.ALL --WARN
+local DEFAULT_DEBUG = OUTPUT.WARN
 local ERR_MSG = "DEBUGGER SYNTAX ERROR: invoke as debug.info:func() not debug.info.func()"
 local PREFIX = "<" .. ADDON_NAME .. ">"
 local DEFAULT_LABEL = "[DEBUG]"

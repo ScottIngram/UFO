@@ -215,8 +215,8 @@ end
 
 function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
     assertIsMethodOf(self, Germ)
-    --[[DEBUG]] debug.trace:setHeader("%","Germ:redefine()")
-    --[[DEBUG]] debug.trace:line(3, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "direction",direction)
+    debug.trace:setHeader("%","Germ:redefine()")
+    debug.trace:line(3, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "direction",direction)
 
     local flyoutDef = FlyoutMenusDb:get(flyoutId)
     if not flyoutDef then
@@ -250,7 +250,7 @@ function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
     -- local UFO_NAMES = self:GetAttribute("UFO_NAMES")
     -- local UFO_BLIZ_TYPES = self:GetAttribute("UFO_BLIZ_TYPES")
     -- local UFO_PETS  = self:GetAttribute("UFO_PETS")
-    --[[DEBUG]] --debug.trace:line(3, "UFO_NAMES",UFO_NAMES, "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES, "UFO_PETS",UFO_PETS)
+    --debug.trace:line(3, "UFO_NAMES",UFO_NAMES, "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES, "UFO_PETS",UFO_PETS)
 
     self:setHandlers() -- TODO: move this into self:new() and rework bindFlyoutToActionBarSlot() so it give more info to :new()
 
@@ -383,7 +383,7 @@ function handlers.OnPreClick(germ, whichMouseButton, down)
     local UFO_NAMES = germ:GetAttribute("UFO_NAMES")
     local UFO_BLIZ_TYPES = germ:GetAttribute("UFO_BLIZ_TYPES")
     local UFO_PETS  = germ:GetAttribute("UFO_PETS")
-    --[[DEBUG]] debug.trace:out("~",3, "OnPreClick()", "UFO_NAMES",UFO_NAMES, "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES, "UFO_PETS",UFO_PETS)
+    debug.trace:out("~",3, "OnPreClick()", "UFO_NAMES",UFO_NAMES, "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES, "UFO_PETS",UFO_PETS)
 end
 
 -- this is needed for the edge case of clicking on a different germ while the current one is still open

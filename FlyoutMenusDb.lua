@@ -32,15 +32,15 @@ end
 function FlyoutMenusDb:forEachFlyoutConfig(callback)
     local allFlyouts = Config:getFlyoutsConfig()
     for i, flyoutConfig in ipairs(allFlyouts) do
-        --[[DEBUG]] debug.info:out(".",3,"FlyoutMenusDb:forEachFlyoutConfig()", "i",i, "flyoutConfig",flyoutConfig)
+        debug.info:out(".",3,"FlyoutMenusDb:forEachFlyoutConfig()", "i",i, "flyoutConfig",flyoutConfig)
         callback(flyoutConfig,flyoutConfig) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
     end
 end
 
 function FlyoutMenusDb:getAll()
-    --[[DEBUG]] debug.info:out("A",3,"FlyoutMenusDb:getAll()...")
+    debug.info:out("A",3,"FlyoutMenusDb:getAll()...")
     local allFlyouts = Config:getFlyoutsConfig()
-    --[[DEBUG]] debug.info:out("A",3,"FlyoutMenusDb:getAll()", "allFlyouts", allFlyouts)
+    debug.info:out("A",3,"FlyoutMenusDb:getAll()", "allFlyouts", allFlyouts)
     if not self.isInitialized then
         FlyoutMenusDb:forEachFlyoutConfig(FlyoutMenuDef.oneOfUs)
         self.isInitialized = true
@@ -51,11 +51,11 @@ end
 ---@return FlyoutMenuDef
 function FlyoutMenusDb:get(flyoutId)
     flyoutId = tonumber(flyoutId)
-    --[[TYPECHECK]] assert(flyoutId, ADDON_NAME..": The flyoutId arg is empty.")
+    assert(flyoutId, ADDON_NAME..": The flyoutId arg is empty.")
     local config = self:getAll()
-    --[[TYPECHECK]] assert(config, ADDON_NAME..": Flyouts config structure is abnormal.")
+    assert(config, ADDON_NAME..": Flyouts config structure is abnormal.")
     local flyoutConfig = config[flyoutId]
-    --[[DEBUG]] debug.trace:out("B",3,"FlyoutMenusDb:get()", "flyoutConfig",flyoutConfig)
+    debug.trace:out("B",3,"FlyoutMenusDb:get()", "flyoutConfig",flyoutConfig)
 
     if not flyoutConfig then
         debug.warn:print(flyoutConfig, "No config found for #"..flyoutId)
@@ -79,17 +79,17 @@ function FlyoutMenusDb:add(flyoutMenuDef)
 end
 
 function FlyoutMenusDb:delete(flyoutId)
-    --[[DEBUG]] local debug = debug.trace:setHeader("#","FlyoutMenusDb:delete")
+    local debug = debug.trace:setHeader("#","FlyoutMenusDb:delete")
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
     table.remove(self:getAll(), flyoutId)
     -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
     local placementsForEachSpec = GermCommander:getAllSpecsPlacementsConfig()
-    --[[DEBUG]] --debug:line(5, "flyoutId",flyoutId)
-    --[[DEBUG]] --debug:dump(placementsForEachSpec)
+    --debug:line(5, "flyoutId",flyoutId)
+    --debug:dump(placementsForEachSpec)
     for spec, placementsForSpec in pairs(placementsForEachSpec) do
-        --[[DEBUG]] debug:line(5, "flyoutId",flyoutId, "spec",spec)
+        debug:line(5, "flyoutId",flyoutId, "spec",spec)
         for btnSlotIndex, flyId in pairs(placementsForSpec) do
-            --[[DEBUG]] debug:line(5, "flyId",flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
+            debug:line(5, "flyId",flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
             if flyId == flyoutId then
                 placementsForSpec[btnSlotIndex] = nil
             elseif flyId > flyoutId then

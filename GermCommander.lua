@@ -108,24 +108,24 @@ end
 -------------------------------------------------------------------------------
 
 function GermCommander:updateAll()
-    --[[DEBUG]] local debug = debug.info:setHeader("-","GermCommander:updateAll()")
-    --[[DEBUG]] debug:line(20)
+    local debug = debug.info:setHeader("-","GermCommander:updateAll()")
+    debug:line(20)
     if isInCombatLockdown("Reconfiguring") then return end
 
     clearGerms()
     local placements = self:getPlacementConfigForCurrentSpec()
-    --[[DEBUG]] --debug:line(5, "getPlacementConfigForCurrentSpec",placements, " --->")
-    --[[DEBUG]] --debug:dump(placements)
+    --debug:line(5, "getPlacementConfigForCurrentSpec",placements, " --->")
+    --debug:dump(placements)
     for btnSlotIndex, flyoutId in pairs(placements) do
         local isThere = doesFlyoutExist(flyoutId)
-        --[[DEBUG]] debug:line(5, "flyoutId",flyoutId, "isThere", isThere)
+        debug:line(5, "flyoutId",flyoutId, "isThere", isThere)
         if isThere then
             bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
         else
             -- because one toon can delete a flyout while other toons still have it on their bars
-            --[[DEBUG]] debug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETING!")
+            debug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETING!")
             GermCommander:deletePlacement(btnSlotIndex)
-            --[[DEBUG]] debug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETED!!!")
+            debug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETED!!!")
         end
     end
 end
@@ -144,7 +144,7 @@ function GermCommander:BROKEN_handleActionBarSlotChanged(btnSlotIndex)
     local configChanged
     local existingFlyoutId = getFlyoutIdForSlot(btnSlotIndex)
     if existingFlyoutId then
-        --[[DEBUG]] debug.info:out("%",5,"GermCommander:handleActionBarSlotChanged() removing the supplanted PLACEMENT", "btnSlotIndex",btnSlotIndex, "existingFlyoutId", existingFlyoutId)
+        debug.info:out("%",5,"GermCommander:handleActionBarSlotChanged() removing the supplanted PLACEMENT", "btnSlotIndex",btnSlotIndex, "existingFlyoutId", existingFlyoutId)
         FlyoutMenu:pickup(existingFlyoutId)
         GermCommander:deletePlacement(btnSlotIndex)
         configChanged = true
@@ -206,13 +206,10 @@ function GermCommander:deletePlacement(btnSlotIndex)
     btnSlotIndex = tonumber(btnSlotIndex)
     local placementConfigForCurrentSpec = self:getPlacementConfigForCurrentSpec()
     local flyoutId = self:getPlacementConfigForCurrentSpec()[btnSlotIndex]
-    --[[DEBUG]] debug.info:out("%",5,"GermCommander:deletePlacement() DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyoutId, "placementConfigForCurrentSpec -->")
-    --[[DEBUG]] debug.info:dump(placementConfigForCurrentSpec)
-    local msg = "btnSlotIndex = " .. btnSlotIndex or -1
-    debug.error:alert(msg)
-    --assert(false, "WUT? :-/")
-    placementConfigForCurrentSpec[btnSlotIndex] = nil
+    debug.info:out("%",5,"GermCommander:deletePlacement() DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyoutId, "placementConfigForCurrentSpec -->")
+    debug.info:dump(placementConfigForCurrentSpec)
     -- the germ UI Frame stays in place but is now empty
+    placementConfigForCurrentSpec[btnSlotIndex] = nil
 end
 
 function GermCommander:nukeFlyout(flyoutId)
@@ -232,14 +229,14 @@ end
 function GermCommander:recordCurrentSpec()
     local hasChanged
     local newSpec = getSpecId()
-    --[[DEBUG]] debug.trace:out("+",5,"recordCurrentSpec()", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+    debug.trace:out("+",5,"recordCurrentSpec()", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
     if currentSpec ~= newSpec then
         previousSpec = currentSpec
         currentSpec = newSpec
-        --[[DEBUG]] debug.trace:out("+",5,"REASSIGNED->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+        debug.trace:out("+",5,"REASSIGNED->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
         hasChanged = true
     else
-        --[[DEBUG]] debug.trace:out("+",5,"unchanged ->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+        debug.trace:out("+",5,"unchanged ->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
         hasChanged = false
     end
     return hasChanged
@@ -268,21 +265,21 @@ function GermCommander:getConfigForSpec(specId)
 
     local result = placementsForAllSpecs[specId]
     -- is this a never-before-encountered spec? - if so, initialze its config
-    --[[DEBUG]] debug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1",result)
+    debug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1",result)
     if not result then -- TODO: identify empty OR nil
         if not previousSpec or specId == previousSpec then
-            --[[DEBUG]] debug:out(7, "blanking specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
+            debug:out(7, "blanking specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
             result = {}
         else
             -- initialize the new config based on the old one
             result = deepcopy(self:getConfigForSpec(previousSpec))
-            --[[DEBUG]] debug:line(7, "COPYING specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "initialConfig", "result 1b",result)
+            debug:line(7, "COPYING specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "initialConfig", "result 1b",result)
             placementsForAllSpecs[specId] = result
 
         end
     end
-    --[[DEBUG]] debug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 2",result)
-    --[[DEBUG]] --debug:dump(result)
+    debug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 2",result)
+    --debug:dump(result)
     return result
 end
 

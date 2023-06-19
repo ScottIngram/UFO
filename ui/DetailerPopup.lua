@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(Debug.OUTPUT.WARN)
+local debug = Debug:new()
 
 -------------------------------------------------------------------------------
 -- Constants

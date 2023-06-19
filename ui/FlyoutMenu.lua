@@ -151,7 +151,7 @@ end
 
 ---@param germ Germ
 function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
-    --[[DEBUG]] debug.trace:setHeader("~","FlyoutMenu:updateForGerm()")
+    debug.trace:setHeader("~","FlyoutMenu:updateForGerm()")
 
     germ:SetChecked(not germ:GetChecked())
 
@@ -160,8 +160,8 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
     local flyoutDef = self:getDef(flyoutId)
     local buttonFrames = { self:GetChildren() }
     local firstThing = table.remove(buttonFrames, 1) -- TODO: what is this?
-     --[[DEBUG]] debug.trace:line(3,"firstThing", firstThing)
-     --[[DEBUG]] debug.trace:dump(firstThing)
+     debug.trace:line(3,"firstThing", firstThing)
+     debug.trace:dump(firstThing)
 
     local flyoutId = flyoutDef
     self:setId(flyoutId)
@@ -170,16 +170,16 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
     for i, btnFrame in ipairs(buttonFrames) do
         if btnFrame.ignoreInlayout then
             -- this is prolly the contents of firstThing
-             --[[DEBUG]] debug.trace:line(3, "btnFrame.ignoreInlayout",btnFrame.ignoreInlayout)
-             --[[DEBUG]] debug.trace:dump(btnFrame)
+             debug.trace:line(3, "btnFrame.ignoreInlayout",btnFrame.ignoreInlayout)
+             debug.trace:dump(btnFrame)
         end
 
         local btnDef = flyoutDef:getButtonDef(i)
         btnFrame:setDef(btnDef)
-        --[[DEBUG]] debug.trace:line(3, "i",i, "btnDef", btnDef)
+        debug.trace:line(3, "i",i, "btnDef", btnDef)
 
         if btnDef then
-            --[[DEBUG]] debug.trace:line(5, "i",i, "spellId",btnDef.spellId, "type", btnDef.type)
+            debug.trace:line(5, "i",i, "spellId",btnDef.spellId, "type", btnDef.type)
             btnFrame:setIconTexture( btnDef:getIcon() )
             btnFrame:setGeometry(self.direction)
         end
