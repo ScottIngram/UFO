@@ -36,8 +36,6 @@ function FlyoutMenuDef:oneOfUs(self)
         return self
     end
 
-    self.btns = {}
-
     -- create a table to store stuff that we do NOT want persisted out to SAVED_VARIABLES
     -- and attach methods to get and put that data
     local privateData = {
@@ -57,7 +55,7 @@ local flyoutIndex = 1
 
 ---@return FlyoutMenuDef
 function FlyoutMenuDef:new()
-    local self = { }
+    local self = { btns = {} } -- I tried putting self.btns = {} into oneOfUs() but then they failed to persist out to SAVED_VARIABLES :-/
     self.name = flyoutIndex
     flyoutIndex = flyoutIndex + 1
     return FlyoutMenuDef:oneOfUs(self)
