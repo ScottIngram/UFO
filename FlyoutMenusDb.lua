@@ -84,12 +84,12 @@ function FlyoutMenusDb:delete(flyoutId)
     table.remove(self:getAll(), flyoutId)
     -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
     local placementsForEachSpec = GermCommander:getAllSpecsPlacementsConfig()
-    --[[DEBUG]] --debug:out(5, "flyoutId",flyoutId)
+    --[[DEBUG]] --debug:line(5, "flyoutId",flyoutId)
     --[[DEBUG]] --debug:dump(placementsForEachSpec)
     for spec, placementsForSpec in pairs(placementsForEachSpec) do
-        --[[DEBUG]] debug:out(5, "flyoutId",flyoutId, "spec",spec)
+        --[[DEBUG]] debug:line(5, "flyoutId",flyoutId, "spec",spec)
         for btnSlotIndex, flyId in pairs(placementsForSpec) do
-            --[[DEBUG]] debug:out(5, "flyId",flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
+            --[[DEBUG]] debug:line(5, "flyId",flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
             if flyId == flyoutId then
                 placementsForSpec[btnSlotIndex] = nil
             elseif flyId > flyoutId then
