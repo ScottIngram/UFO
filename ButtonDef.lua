@@ -61,6 +61,7 @@ Ufo.ButtonDef = ButtonDef
 function ButtonDef:oneOfUs(self)
     debug.trace:out("'",3,"FlyoutMenuDef:oneOfUs()", "self",self)
     if self.ufoType == ButtonDef.ufoType then
+        -- it's already "one of us" so nothing needs to be done.
         return self
     end
 

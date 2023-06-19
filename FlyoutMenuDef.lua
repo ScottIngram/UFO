@@ -75,7 +75,7 @@ end
 function FlyoutMenuDef:forEachBtn(callback)
     assert(self.btns, "This instance of FlyoutMenuDef has no 'btns' field to coerce.")
 
-    for i, buttonDef in ipairs(self.btns) do
+    for i, buttonDef in ipairs(self.btns) do -- this must remain self.btns and NOT self:getAllButtonDefs() - otherwise infinite loop
         debug.info:out(".",3,"FlyoutMenusDb:forEachBtn()", "i",i, "buttonDef", buttonDef)
         callback(buttonDef, buttonDef) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
     end
@@ -129,7 +129,7 @@ function FlyoutMenuDef:filterOutUnusable()
     ---@type FlyoutMenuDef
     local usableFlyoutMenuDef = FlyoutMenuDef:new()
     ---@param btn ButtonDef
-    for i, btn in ipairs(self.btns) do
+    for i, btn in ipairs(self:getAllButtonDefs()) do
         if btn:isUsable() then
             usableFlyoutMenuDef:addButton(btn)
         end
@@ -157,7 +157,7 @@ function FlyoutMenuDef:asLists()
         macroIds = {},
     }
     ---@param btn ButtonDef
-    for i, btn in ipairs(self.btns) do
+    for i, btn in ipairs(self:getAllButtonDefs()) do
         local blizApiFieldDef = btn:getBlizApiFieldDef()
         local typeForApi = blizApiFieldDef.typeForBliz
 
