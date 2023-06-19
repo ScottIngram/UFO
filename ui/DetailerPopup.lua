@@ -129,12 +129,13 @@ function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pu
     config.icon = iconTexture
     popup:Hide()
     updateCatalog()
-    updateAllGerms()
+    GermCommander:updateAll()
 end
 
-function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(btn)
-    if btn.name and btn.name ~= "" then
-        pickupFlyout(btn.name)
+function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(btnInCatalog)
+    local flyoutId = btnInCatalog.name
+    if exists(flyoutId) then
+        FlyoutMenu:pickup(flyoutId)
     end
 end
 
@@ -203,6 +204,7 @@ end
 
 --[[
 RefreshFlyoutIconInfo() counts how many uniquely textured spells the player has in the current flyout.
+And tries to make the first few icons in the popup picker be the same as the buttons on the flyout ???
 ]]
 function refreshFlyoutIconInfo()
     FC_ICON_FILENAMES = {}
@@ -213,13 +215,12 @@ function refreshFlyoutIconInfo()
     local flyoutId = popup.name
     if flyoutId then
         local flyoutDef = FlyoutMenusDb:get(flyoutId)
-        local spells = flyoutDef.spells
-        local actionTypes = flyoutDef.actionTypes
-        local pets = flyoutDef.pets
-        for i = 1, #actionTypes do
-            local itemTexture = getTexture(actionTypes[i], spells[i], pets[i])
-            if itemTexture then
-                FC_ICON_FILENAMES[index] = gsub( strupper(itemTexture), "INTERFACE\\ICONS\\", "" )
+        local btnDefs = flyoutDef:getAllButtonDefs()
+        ---@param btnDef ButtonDef
+        for i, btnDef in ipairs(btnDefs) do
+            local icon = btnDef:getIcon()
+            if icon then
+                FC_ICON_FILENAMES[index] = gsub( strupper(icon), "INTERFACE\\ICONS\\", "" )
                 if FC_ICON_FILENAMES[index] then
                     index = index + 1
                     for j=1, (index-1) do

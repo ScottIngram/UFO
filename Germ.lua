@@ -13,7 +13,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(Debug.OUTPUT.WARN)
+local debug = Debug:new()
 
 ---@class Germ -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -60,71 +60,62 @@ local snippet_Germ_Click = [=[
         flyoutMenu:SetPoint("LEFT", germ, "RIGHT", 0, 0)
     end
 
-    local spellNameList = table.new(strsplit(DELIMITER, germ:GetAttribute("spellnamelist")or""))
-    local typeList      = table.new(strsplit(DELIMITER, germ:GetAttribute("typelist")or""))
-    local pets          = table.new(strsplit(DELIMITER, germ:GetAttribute("petlist")or""))
-    local uiButtons     = table.new(flyoutMenu:GetChildren())
-    table.remove(uiButtons, 1)
+    local nameList  = table.new(strsplit(DELIMITER, germ:GetAttribute("UFO_NAMES") or ""))
+    local typeList  = table.new(strsplit(DELIMITER, germ:GetAttribute("UFO_BLIZ_TYPES") or ""))
+    local pets      = table.new(strsplit(DELIMITER, germ:GetAttribute("UFO_PETS")  or ""))
+
+    local uiButtons = table.new(flyoutMenu:GetChildren())
+    table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
     for i, btn in ipairs(uiButtons) do
         if typeList[i] then
             btn:ClearAllPoints()
-            if direction == "UP" then
-                if prevBtn then
-                    btn:SetPoint("BOTTOM", prevBtn, "TOP", 0, ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[)
-                else
-                    btn:SetPoint("BOTTOM", "$parent", 0, ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[)
+
+            local parent = prevBtn or "$parent"
+            if prevBtn then
+                if direction == "UP" then
+                    btn:SetPoint("BOTTOM", parent, "TOP", 0, ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[)
+                elseif direction == "DOWN" then
+                    btn:SetPoint("TOP", parent, "BOTTOM", 0, -]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[)
+                elseif direction == "LEFT" then
+                    btn:SetPoint("RIGHT", parent, "LEFT", -]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[, 0)
+                elseif direction == "RIGHT" then
+                    btn:SetPoint("LEFT", parent, "RIGHT", ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[, 0)
                 end
-            elseif direction == "DOWN" then
-                if prevBtn then
-                    btn:SetPoint("TOP", prevBtn, "BOTTOM", 0, -]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[)
-                else
-                    btn:SetPoint("TOP", "$parent", 0, -]=]..SPELLFLYOUT_INITIAL_SPACING..[=[)
-                end
-            elseif direction == "LEFT" then
-                if prevBtn then
-                    btn:SetPoint("RIGHT", prevBtn, "LEFT", -]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[, 0)
-                else
-                    btn:SetPoint("RIGHT", "$parent", -]=]..SPELLFLYOUT_INITIAL_SPACING..[=[, 0)
-                end
-            elseif direction == "RIGHT" then
-                if prevBtn then
-                    btn:SetPoint("LEFT", prevBtn, "RIGHT", ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[, 0)
-                else
-                    btn:SetPoint("LEFT", "$parent", ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[, 0)
+            else
+                if direction == "UP" then
+                    btn:SetPoint("BOTTOM", parent, 0, ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[)
+                elseif direction == "DOWN" then
+                    btn:SetPoint("TOP", parent, 0, -]=]..SPELLFLYOUT_INITIAL_SPACING..[=[)
+                elseif direction == "LEFT" then
+                    btn:SetPoint("RIGHT", parent, -]=]..SPELLFLYOUT_INITIAL_SPACING..[=[, 0)
+                elseif direction == "RIGHT" then
+                    btn:SetPoint("LEFT", parent, ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[, 0)
                 end
             end
 
             local type = typeList[i]
-            local thisId = ((typeList[i] == "battlepet") and pets[i]) or spellNameList[i]
 
             -- It appears that SecureActionButtonTemplate
             -- provides no support for summoning battlepets
             -- because summoning a battlepet is not a protected action.
             -- So, fake it with an adhoc macro!
             if (type == "battlepet") then
-                -- here I was fumbling around guessing at a solution:
-                -- btn:SetAttribute("pet", thisId)
-                -- btn:SetAttribute("companion", thisId)
-                -- btn:SetAttribute("CompanionPet", thisId)
-
                 -- summon the pet via a macro
-                local petMacro = "/run C_PetJournal.SummonPetByGUID(\"" .. thisId .. "\")"
+                local petMacro = "/run C_PetJournal.SummonPetByGUID(\"" .. pets[i] .. "\")"
                 btn:SetAttribute("type", "macro")
                 btn:SetAttribute("macrotext", petMacro)
             else
                 btn:SetAttribute("type", type)
-                btn:SetAttribute(type, thisId)
-
+                btn:SetAttribute(type, nameList[i]) -- huh, I woulda thought spellId or itemId etc
             end
 
-            btn:Show()
-
             prevBtn = btn
-
+            btn:Show()
         else
             btn:Hide()
         end
     end
+
     local numButtons = table.maxn(typeList)
     if direction == "UP" or direction == "DOWN" then
         flyoutMenu:SetWidth(prevBtn:GetWidth())
@@ -133,9 +124,10 @@ local snippet_Germ_Click = [=[
         flyoutMenu:SetHeight(prevBtn:GetHeight())
         flyoutMenu:SetWidth((prevBtn:GetWidth()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
     end
+
     flyoutMenu:Show()
-    --flyoutMenu:RegisterAutoHide(1)
-    --flyoutMenu:AddToAutoHide(germ)
+    --flyoutMenu:RegisterAutoHide(1) -- TODO: add this back in?
+    --flyoutMenu:AddToAutoHide(germ) -- ditto?
 ]=]
 
 -------------------------------------------------------------------------------
@@ -149,128 +141,124 @@ function Germ.new(flyoutId, actionBarBtn)
     local name = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
     ---@type Germ
     local protoGerm = CreateFrame("CheckButton", name, actionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
-    deepcopy(Germ, protoGerm) -- copy Germ's methods, functions, etc to the UI btn
-    protoGerm.flyoutId = flyoutId
-    protoGerm.flyoutMenu = UIUFO_FlyoutMenuForGerm -- the one UI object is reused by every germ
-    return protoGerm
+    -- copy Germ's methods, functions, etc to the UI btn
+    -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
+    local self = deepcopy(Germ, protoGerm)
+    self.flyoutId = flyoutId
+    self.flyoutMenu = UIUFO_FlyoutMenuForGerm -- the one UI object is reused by every germ
+    --self:setHandlers()
+    return self
 end
 
-function Germ:setIconTexture(texture)
-    if texture and type(texture) ~= "number" then
-        texture = ("INTERFACE\\ICONS\\"..texture)
-    end
-
-    _G[ self:GetName().."Icon" ]:SetTexture(texture)
-end
-
-function Germ:GetBtnSlotIndex()
-    local whateverIsActionBarBtnParent = self:GetParent()
-    assert(whateverIsActionBarBtnParent, "Um, this germ has no parent?!")
-    return whateverIsActionBarBtnParent.action
-end
-
-function Germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
-    assertIsMethodOf(self, Germ)
-    local germ = self
-
-    germ.flyoutId = flyoutId
-    local flyoutConf = FlyoutMenusDb:get(flyoutId)
-    if not flyoutConf then
-        -- because one toon can delete a flyout while other toons still have it on their bars
-        debug.warn:print(ADDON_NAME, ": Flyout", flyoutId, "no longer exists.  Removing it from your action bars.")
-        return
-    end
-
-    germ.action = btnSlotIndex -- used deep inside the Bliz APIs
-
-    local actionBarBtn = germ:GetParent()
+function Germ:setHandlers()
+    local actionBarBtn = self:GetParent()
     if actionBarBtn then
         if actionBarBtn:GetSize() and actionBarBtn:IsRectValid() then
-            germ:SetAllPoints(actionBarBtn)
+            self:SetAllPoints(actionBarBtn)
         else
             local spacerName = "UIUfo_ActionBarButtonSpacer"..tostring(actionBarBtn.index)
             local children = { actionBarBtn:GetParent():GetChildren()}
             for _, child in ipairs(children) do
                 if child:GetName() == spacerName then
-                    germ:SetAllPoints(child)
+                    self:SetAllPoints(child)
                     break;
                 end
             end
         end
+    else
+        debug.trace:out("-",3,"Germ:setHandlers()... How is there no actionBarBtn?", "btnSlotIndex", self.btnSlotIndex)
     end
 
-    germ:SetFrameStrata(STRATA_DEFAULT)
-    germ:SetFrameLevel(100)
-    germ:SetToplevel(true)
+    self:SetFrameStrata(STRATA_DEFAULT)
+    self:SetFrameLevel(100)
+    self:SetToplevel(true)
 
-    germ:SetAttribute("flyoutDirection", direction)
-    germ:SetFrameRef("UIUFO_FlyoutMenuForGerm", UIUFO_FlyoutMenuForGerm)
-
-    for i, actionType in ipairs(flyoutConf.actionTypes) do
-        if flyoutConf.spellNames[i] == nil then
-            flyoutConf.spellNames[i] = getThingyNameById(flyoutConf.actionTypes[i], flyoutConf.spells[i] or flyoutConf.pets[i])
-        end
-    end
-
-    local spells = {}
-    local spellNames = {}
-    local actionTypes = {}
-    local pets = {}
-
-    -- filter out unsuable spell/item/etc - use the "actionType" field because it never has missing elements, unlike spells and pets
-    local n = 1
-    for i, actionType in ipairs(flyoutConf.actionTypes) do
-        local spellID = flyoutConf.spells[i]
-        if isThingyUsable(spellID, flyoutConf.actionTypes[i], flyoutConf.mounts[i], flyoutConf.macroOwners[i], flyoutConf.pets[i]) then
-            -- table.insert won't preserve correct indicies of arrays with nil elements, so do this[instead]
-            spells[n]      = flyoutConf.spells[i]
-            spellNames[n]  = flyoutConf.spellNames[i]
-            actionTypes[n] = flyoutConf.actionTypes[i]
-            pets[n]        = flyoutConf.pets[i]
-            n = n + 1
-        end
-    end
-
-    -- attach string representations of the "arrays" to the germ because Blizzard "secure" templates don't let us attach the actual array
-    germ:SetAttribute("spelllist", fknJoin(spells))
-    germ:SetAttribute("spellnamelist", fknJoin(spellNames))
-    germ:SetAttribute("typelist", fknJoin(actionTypes))
-    germ:SetAttribute("petlist", fknJoin(pets))
-
-    --[[
-        germ:SetAttribute("spelllist", strjoin(",", unpack(flyoutConf.spells)))
-        local spellnameList = flyoutConf.spellNames
-        for i, spellID in ipairs(flyoutConf.spells) do
-            if spellnameList[i] == nil then
-                spellnameList[i] = getItemOrSpellNameById(flyoutConf.actionTypes[i], spellID)
-            end
-        end
-        germ:SetAttribute("spellnamelist", strjoin(",", unpack(flyoutConf.spellNames)))
-        germ:SetAttribute("typelist", strjoin(",", unpack(flyoutConf.actionTypes)))
-    ]]
+    self:SetAttribute("flyoutDirection", self.direction)
+    self:SetFrameRef("UIUFO_FlyoutMenuForGerm", UIUFO_FlyoutMenuForGerm)
 
     -- TODO: these only need to be set when the germ is first created.
     -- TODO: find a way to eliminate the need for OnUpdate
-    germ:SetScript("OnUpdate", handlers.OnUpdate)
-    germ:SetScript("OnEnter", handlers.OnEnter)
-    germ:SetScript("OnLeave", handlers.OnLeave)
-    germ:SetScript("OnReceiveDrag", handlers.OnReceiveDrag)
-    germ:SetScript("OnMouseUp", handlers.OnMouseUp)
-    germ:SetScript("OnDragStart", handlers.PickupAndDrag)
-    germ:SetScript("PreClick", handlers.OnPreClick)
-    germ:SetScript("PostClick", handlers.OnPostClick)
-    germ:SetAttribute("_onclick", snippet_Germ_Click)
-    germ:RegisterForClicks("AnyUp")
-    germ:RegisterForDrag("LeftButton")
+    self:SetScript("OnUpdate",      handlers.OnUpdate)
+    self:SetScript("OnEnter",       handlers.OnEnter)
+    self:SetScript("OnLeave",       handlers.OnLeave)
+    self:SetScript("OnReceiveDrag", handlers.OnReceiveDrag)
+    self:SetScript("OnMouseUp",     handlers.OnMouseUp)
+    self:SetScript("OnDragStart",   handlers.OnPickupAndDrag)
+    self:SetScript("PreClick",      handlers.OnPreClick)
+    self:SetScript("PostClick",     handlers.OnPostClick)
+    self:SetAttribute("_onclick",   snippet_Germ_Click)
+    self:RegisterForClicks("AnyUp")
+    self:RegisterForDrag("LeftButton")
+end
 
-    local texture = flyoutConf.icon or actionTypes[1] and getTexture(actionTypes[1], spells[1], pets[1])
-    germ:setIconTexture(texture)
+function Germ:setIcon(icon)
+    if icon and type(icon) ~= "number" then
+        icon = ("INTERFACE\\ICONS\\".. icon)
+    end
+
+    _G[ self:GetName().."Icon" ]:SetTexture(icon)
+end
+
+function Germ:getBtnSlotIndex()
+    local myActionBarBtnParent = self:GetParent()
+    assert(myActionBarBtnParent, ADDON_NAME..": Um, this germ has no parent?!")
+    return myActionBarBtnParent.action
+end
+
+function Germ:getFlyoutId()
+    return self.flyoutId
+end
+
+function Germ:setFlyoutId(flyoutId)
+    self.flyoutId = tonumber(flyoutId)
+end
+
+function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
+    assertIsMethodOf(self, Germ)
+    --[[DEBUG]] debug.trace:setHeader("%","Germ:redefine()")
+    --[[DEBUG]] debug.trace:line(3, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "direction",direction)
+
+    local flyoutDef = FlyoutMenusDb:get(flyoutId)
+    if not flyoutDef then
+        -- because one toon can delete a flyout while other toons still have it on their bars
+        local msg = "Flyout".. flyoutId .."no longer exists.  Removing it from your action bars."
+        debug.warn:print(msg)
+        debug.warn:alert(msg)
+        GermCommander:deletePlacement(btnSlotIndex)
+        return
+    end
+
+    self.direction    = direction
+    self.btnSlotIndex = btnSlotIndex
+    self.action       = btnSlotIndex -- used deep inside the Bliz APIs
+    self:setFlyoutId(flyoutId)
+
+    local icon = flyoutDef:getIcon()
+    self:setIcon(icon)
+
+    -- discard any buttons that the toon can't ever use
+    local usableFlyout = flyoutDef:filterOutUnusable()
+
+    -- attach string representations of the buttons
+    -- because Blizzard "secure" templates don't let us attach the actual array
+    local asLists = usableFlyout:asLists()
+    self:SetAttribute("UFO_SPELL_IDS", fknJoin(asLists.spellIds))
+    self:SetAttribute("UFO_NAMES", fknJoin(asLists.names))
+    self:SetAttribute("UFO_BLIZ_TYPES", fknJoin(asLists.blizTypes))
+    self:SetAttribute("UFO_PETS", fknJoin(asLists.petGuids))
+
+    -- local UFO_NAMES = self:GetAttribute("UFO_NAMES")
+    -- local UFO_BLIZ_TYPES = self:GetAttribute("UFO_BLIZ_TYPES")
+    -- local UFO_PETS  = self:GetAttribute("UFO_PETS")
+    --[[DEBUG]] --debug.trace:line(3, "UFO_NAMES",UFO_NAMES, "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES, "UFO_PETS",UFO_PETS)
+
+    self:setHandlers() -- TODO: move this into self:new() and rework bindFlyoutToActionBarSlot() so it give more info to :new()
 
     if visibleIf then
         local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. visibleIf
-        RegisterStateDriver(germ, "visibility", "["..stateCondition.."] show; hide")
+        RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
     else
-        germ:Show()
+        self:Show()
     end
 end
 
@@ -346,23 +334,22 @@ end
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnReceiveDrag(germ)
     debug.trace:out("^",5,"OnReceiveDrag()","name",germ:GetName())
-    if InCombatLockdown() then
-        return
-    end
+    if isInCombatLockdown("Drag and drop") then return end
 
     local cursor = GetCursorInfo()
     if cursor then
-        PlaceAction(germ:GetBtnSlotIndex())
+        PlaceAction(germ:getBtnSlotIndex())
     end
 end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
-function handlers.PickupAndDrag(germ)
-    if not InCombatLockdown() and (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
+function handlers.OnPickupAndDrag(germ)
+    if (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
+        if isInCombatLockdown("Drag and drop") then return end
         debug.trace:out("^",5,"OnDragStart()","name",germ:GetName())
-        pickupFlyout(germ.flyoutId)
-        forgetPlacement(germ:GetBtnSlotIndex())
-        updateAllGerms()
+        FlyoutMenu:pickup(germ.flyoutId)
+        GermCommander:deletePlacement(germ:getBtnSlotIndex())
+        GermCommander:updateAll()
     end
 end
 
@@ -391,7 +378,12 @@ end
 
 ---@param germ Germ
 function handlers.OnPreClick(germ, whichMouseButton, down)
-    germ.flyoutMenu:updateFlyoutMenuForGerm(germ, whichMouseButton, down)
+    germ.flyoutMenu:updateForGerm(germ, whichMouseButton, down)
+
+    local UFO_NAMES = germ:GetAttribute("UFO_NAMES")
+    local UFO_BLIZ_TYPES = germ:GetAttribute("UFO_BLIZ_TYPES")
+    local UFO_PETS  = germ:GetAttribute("UFO_PETS")
+    --[[DEBUG]] debug.trace:out("~",3, "OnPreClick()", "UFO_NAMES",UFO_NAMES, "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES, "UFO_PETS",UFO_PETS)
 end
 
 -- this is needed for the edge case of clicking on a different germ while the current one is still open
@@ -401,7 +393,7 @@ function handlers.OnPostClick(germ, whichMouseButton, down)
     local flyoutMenu = germ.flyoutMenu
     ---@param btn ButtonOnFlyoutMenu
     flyoutMenu:forEachButton(function(btn)
-        debug.trace:out("~",40, "btn updatery from Germ:OnPostClick()")
+        --debug.trace:out("~",40, "btn updatery from Germ:OnPostClick()")
         btn:updateCooldownsAndCountsAndStatesEtc()
     end)
 end

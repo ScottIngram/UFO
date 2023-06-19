@@ -5,6 +5,7 @@
 -------------------------------------------------------------------------------
 
 local ADDON_NAME, Ufo = ...
+local debug = Ufo.Debug:new()
 
 ---@class Config -- IntelliJ-EmmyLua annotation
 local Config = {}
@@ -12,14 +13,28 @@ Ufo.Config = Config
 
 function Config:initializeFlyouts()
     if not UFO_SV_ACCOUNT then
-        UFO_SV_ACCOUNT = { flyouts = {} }
+        UFO_SV_ACCOUNT = { neoFlyouts = {} }
     end
+end
+
+function Config:tmpNeoNuke()
+    UFO_SV_ACCOUNT.neoFlyouts = {}
+end
+
+-- the set of flyouts is shared between all toons on the account
+function Config:getFlyoutsConfig()
+    return UFO_SV_ACCOUNT.neoFlyouts
 end
 
 function Config:initializePlacements()
     if not UFO_SV_TOON then
         UFO_SV_TOON = { placementsForAllSpecs = {} }
     end
+end
+
+-- the placement of flyouts on the action bars is stored separately for each toon
+function Config:getAllSpecsPlacementsConfig()
+    return UFO_SV_TOON.placementsForAllSpecs
 end
 
 function Config:updateVersionId()

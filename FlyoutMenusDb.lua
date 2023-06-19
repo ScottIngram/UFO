@@ -12,31 +12,58 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(Debug.OUTPUT.WARN)
+local debug = Debug:new()
 
 ---@class FlyoutMenusDb -- IntelliJ-EmmyLua annotation
-local FlyoutMenusDb = {}
+local FlyoutMenusDb = {
+    isInitialized = false
+}
 Ufo.FlyoutMenusDb = FlyoutMenusDb
-
---[[
---TODO: implement as OO
-
-Ufo.FlyoutMenusDb = {}
-Ufo.Wormhole(Ufo.FlyoutMenusDb, Ufo) -- now it's FlyoutMenusDb inheriting from Ufo
-
-local flyoutConfig = FlyoutMenusDb:get(flyoutId) -- also :new() :add(flyout); :delete(flyoutId);
-local flyoutBtns = flyoutConfig:getButtons()
-local flyoutBtn1 = flyoutConfig:getButton(1)
-flyoutConfig:addButton(myNewBtn) -- or smarter DWIM behavior that takes a macro or pet or mount etc.  Or the AceBtn ? no.
-]]
-
--------------------------------------------------------------------------------
--- Constants
--------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
 -- Methods
 -------------------------------------------------------------------------------
+
+function FlyoutMenusDb:howMany()
+    local flyouts = self:getAll()
+    return #flyouts
+end
+
+function FlyoutMenusDb:forEachFlyoutConfig(callback)
+    local allFlyouts = Config:getFlyoutsConfig()
+    for i, flyoutConfig in ipairs(allFlyouts) do
+        --[[DEBUG]] debug.info:out(".",3,"FlyoutMenusDb:forEachFlyoutConfig()", "i",i, "flyoutConfig",flyoutConfig)
+        callback(flyoutConfig,flyoutConfig) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
+    end
+end
+
+function FlyoutMenusDb:getAll()
+    --[[DEBUG]] debug.info:out("A",3,"FlyoutMenusDb:getAll()...")
+    local allFlyouts = Config:getFlyoutsConfig()
+    --[[DEBUG]] debug.info:out("A",3,"FlyoutMenusDb:getAll()", "allFlyouts", allFlyouts)
+    if not self.isInitialized then
+        FlyoutMenusDb:forEachFlyoutConfig(FlyoutMenuDef.oneOfUs)
+        self.isInitialized = true
+    end
+    return allFlyouts
+end
+
+---@return FlyoutMenuDef
+function FlyoutMenusDb:get(flyoutId)
+    flyoutId = tonumber(flyoutId)
+    --[[TYPECHECK]] assert(flyoutId, ADDON_NAME..": The flyoutId arg is empty.")
+    local config = self:getAll()
+    --[[TYPECHECK]] assert(config, ADDON_NAME..": Flyouts config structure is abnormal.")
+    local flyoutConfig = config[flyoutId]
+    --[[DEBUG]] debug.trace:out("B",3,"FlyoutMenusDb:get()", "flyoutConfig",flyoutConfig)
+
+    if not flyoutConfig then
+        debug.warn:print(flyoutConfig, "No config found for #"..flyoutId)
+        return nil
+    end
+
+    return flyoutConfig
+end
 
 ---@return FlyoutMenuDef
 function FlyoutMenusDb:appendNewOne()
@@ -46,37 +73,23 @@ function FlyoutMenusDb:appendNewOne()
     return newFlyoutDef
 end
 
-function FlyoutMenusDb:howMany()
-    local flyouts = self:getAll()
-    return #flyouts
-end
-
-function FlyoutMenusDb:getAll()
-    return UFO_SV_ACCOUNT and UFO_SV_ACCOUNT.flyouts
-end
-
----@return FlyoutMenuDef
-function FlyoutMenusDb:get(flyoutId)
-    assert(flyoutId and type(flyoutId)=="number", "Bad flyoutId arg.")
-    local config = self:getAll()
-    assert(config, "Flyouts config structure is abnormal.")
-    local flyoutConfig = config[flyoutId]
-    --[[DEBUG]] debug.trace:print(flyoutConfig, "No config found for #"..flyoutId)
-    local flyoutDef = FlyoutMenuDef:oneOfUs(flyoutConfig)
-    return flyoutDef
+---@param flyoutMenuDef FlyoutMenuDef -- IntelliJ-EmmyLua annotation
+function FlyoutMenusDb:add(flyoutMenuDef)
+    table.insert(self:getAll(), flyoutMenuDef)
 end
 
 function FlyoutMenusDb:delete(flyoutId)
+    --[[DEBUG]] local debug = debug.trace:setHeader("#","FlyoutMenusDb:delete")
     if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
     table.remove(self:getAll(), flyoutId)
     -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
-    local placementsForEachSpec = getGermPlacementsConfig()
-    --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()","flyoutId",flyoutId)
-    --[[DEBUG]] debug.trace:dump(placementsForEachSpec)
+    local placementsForEachSpec = GermCommander:getAllSpecsPlacementsConfig()
+    --[[DEBUG]] --debug:out(5, "flyoutId",flyoutId)
+    --[[DEBUG]] --debug:dump(placementsForEachSpec)
     for spec, placementsForSpec in pairs(placementsForEachSpec) do
-        --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()", "flyId", flyId, "flyoutId",flyoutId, "spec", spec)
+        --[[DEBUG]] debug:out(5, "flyoutId",flyoutId, "spec",spec)
         for btnSlotIndex, flyId in pairs(placementsForSpec) do
-            --[[DEBUG]] debug.trace:out(X,X,"deleteFlyout()", "flyId", flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
+            --[[DEBUG]] debug:out(5, "flyId",flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
             if flyId == flyoutId then
                 placementsForSpec[btnSlotIndex] = nil
             elseif flyId > flyoutId then
@@ -86,58 +99,46 @@ function FlyoutMenusDb:delete(flyoutId)
     end
 end
 
--------------------------------------------------------------------------------
--- APOCALYPSE
--------------------------------------------------------------------------------
-
-function FlyoutMenusDb:convertOldToNew()
-    local old = self:getAll()
-    UFO_SV_ACCOUNT.neoFlyouts = {}
-
-    for i, oldFlyout in ipairs(old) do
-        local neoFlyout = FlyoutMenuDef:NEOnew()
-        neoFlyout.icon = oldFlyout.icon
-
-        for j, actionType in ipairs(oldFlyout.actionTypes) do
-            local mount = oldFlyout.mounts[j]
-            if mount then
-                local _, _, _, _, _, _, _, _, _, _, _, mountID = C_MountJournal.GetDisplayedMountInfo(mount)
-                mount = mountID
-            end
-
-            local btn = ButtonDef:new()
-            btn.type       = actionType
-            btn.name       = oldFlyout.spellNames[j]
-            btn.spellId    = oldFlyout.spells[j]
-            btn.itemId     = nil
-            btn.mountId    = mount
-            btn.petGuid    = oldFlyout.pets[j]
-            btn.macroId    = nil
-            btn.macroOwner = oldFlyout.macroOwners[j]
-
-            neoFlyout:add(btn)
-        end
-        FlyoutMenusDb:add(neoFlyout)
-    end
-end
-
-function FlyoutMenusDb:NEOgetAll()
-    return UFO_SV_ACCOUNT.neoFlyouts
-end
-
----@param flyoutMenuDef FlyoutMenuDef -- IntelliJ-EmmyLua annotation
-function FlyoutMenusDb:add(flyoutMenuDef)
-    table.insert(self:NEOgetAll(), flyoutMenuDef)
-end
-
+-- TODO: use this one instead?
+-- converts the previous config format into the new one
 ---@param flyoutId number -- IntelliJ-EmmyLua annotation
-function FlyoutMenusDb:delete(flyoutId)
+function FlyoutMenusDb:NEW_delete(flyoutId)
     -- leave an empty placeholder
     -- so the array stays an array of contiguous indices
     -- and every flyout always keeps its original ID
-    self:NEOgetAll()[flyoutId] = false
+    self:getAll()[tonumber(flyoutId)] = false
 end
 
-function FlyoutMenusDb:foo()
+-- TODO: delete after dev is done
+function FlyoutMenusDb:convertOldToNew()
+    debug.trace:out("+",40,"FlyoutMenusDb:convertOldToNew()")
+    local old = UFO_SV_ACCOUNT.flyouts
+    Config:tmpNeoNuke()
 
+    for i, oldFlyout in ipairs(old) do
+        local neoFlyout = FlyoutMenuDef:new()
+        neoFlyout.icon = oldFlyout.icon
+        FlyoutMenusDb:add(neoFlyout)
+
+        for j, type in ipairs(oldFlyout.actionTypes) do
+            local mount = oldFlyout.mounts[j]
+            if mount then
+                local _, _, _, _, _, _, _, _, _, _, _, mountID = C_MountJournal.GetDisplayedMountInfo(mount)
+                mount = mountID or mount
+            end
+
+            local btn = ButtonDef:new()
+            local isMount = oldFlyout.mounts[j] and true
+            btn.type       = isMount and ButtonType.MOUNT or type
+            btn.name       = oldFlyout.spellNames[j]
+            btn.spellId    = (type == ButtonType.SPELL) and oldFlyout.spells[j] or nil
+            btn.itemId     = (type == ButtonType.ITEM) and oldFlyout.spells[j] or nil
+            btn.mountId    = mount
+            btn.petGuid    = oldFlyout.pets[j]
+            btn.macroId    = (type == ButtonType.MACRO) and oldFlyout.spells[j] or nil
+            btn.macroOwner = oldFlyout.macroOwners[j]
+
+            neoFlyout:addButton(btn)
+        end
+    end
 end

@@ -8,8 +8,12 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
+local debug = Debug:new()
 
-local debug = Debug:new(Debug.OUTPUT.WARN)
+---@class GermCommander -- IntelliJ-EmmyLua annotation
+---@field ufoType string The classname
+local GermCommander = { }
+Ufo.GermCommander = GermCommander
 
 ---@type Germ -- IntelliJ-EmmyLua annotation
 local Germ = Ufo.Germ
@@ -23,7 +27,7 @@ local previousSpec
 local currentSpec
 
 -------------------------------------------------------------------------------
--- Functions / Methods
+-- Private Functions
 -------------------------------------------------------------------------------
 
 local function getGerm(btnSlotIndex)
@@ -32,15 +36,16 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 local function rememberGerm(germ)
-    local btnSlotIndex = germ:GetBtnSlotIndex()
+    local btnSlotIndex = germ:getBtnSlotIndex()
     germs[btnSlotIndex] = germ
 end
 
+-- TODO: refactor -  actionBarBtn to the Germ
 local function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
     -- examine the action/bonus/multi bar
     local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
     local actionBarDef = BLIZ_BAR_METADATA[barNum]
-    assert(actionBarDef, "No ".. ADDON_NAME .." config defined for button bar #"..barNum) -- in case Blizzard adds more bars, complain here clearly.
+    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum) -- in case Blizzard adds more bars, complain here clearly.
     local actionBarName = actionBarDef.name
     local visibleIf = actionBarDef.visibleIf
 
@@ -64,7 +69,7 @@ local function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
         rememberGerm(germ)
     end
     debug.trace:out("*",3,"bindFlyoutToActionBarSlot()","germ...",germ)
-    germ:Refresh(flyoutId, btnSlotIndex, direction, visibleIf)
+    germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
 end
 
 local function clearGerms()
@@ -74,33 +79,12 @@ local function clearGerms()
     end
 end
 
-function updateAllGerms()
-    if InCombatLockdown() then
-        return
-    end
-    clearGerms()
-    local placements = getConfigForCurrentSpec()
-    for btnSlotIndex, flyoutId in pairs(placements) do
-        -- because one toon can delete a flyout while other toons still have it on their bars
-        if doesFlyoutExists(flyoutId) then
-            bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
-        else
-            forgetPlacement(btnSlotIndex)
-        end
-    end
-end
-
-function doesFlyoutExists(flyoutId)
+local function doesFlyoutExist(flyoutId)
     local flyoutConf = FlyoutMenusDb:get(flyoutId)
     return flyoutConf and true or false
 end
 
-local function newGermProxy(flyoutId, texture)
-    DeleteMacro(PROXY_MACRO_NAME)
-    return CreateMacro(PROXY_MACRO_NAME, texture, flyoutId, nil, nil)
-end
-
-local function isGermProxy(type, macroId)
+local function getFlyoutIdFromGermProxy(type, macroId)
     local flyoutId
     if type == "macro" then
         local name, texture, body = GetMacroInfo(macroId)
@@ -112,13 +96,77 @@ local function isGermProxy(type, macroId)
 end
 
 local function getFlyoutIdForSlot(btnSlotIndex)
-    return getConfigForCurrentSpec()[btnSlotIndex]
+    return GermCommander:getPlacementConfigForCurrentSpec()[btnSlotIndex]
+end
+
+local function getSpecId()
+    return GetSpecialization() or NON_SPEC_SLOT
+end
+
+-------------------------------------------------------------------------------
+-- Methods
+-------------------------------------------------------------------------------
+
+function GermCommander:updateAll()
+    --[[DEBUG]] local debug = debug.info:setHeader("-","GermCommander:updateAll()")
+    --[[DEBUG]] debug:line(20)
+    if isInCombatLockdown("Reconfiguring") then return end
+
+    clearGerms()
+    local placements = self:getPlacementConfigForCurrentSpec()
+    --[[DEBUG]] --debug:line(5, "getPlacementConfigForCurrentSpec",placements, " --->")
+    --[[DEBUG]] --debug:dump(placements)
+    for btnSlotIndex, flyoutId in pairs(placements) do
+        local isThere = doesFlyoutExist(flyoutId)
+        --[[DEBUG]] debug:line(5, "flyoutId",flyoutId, "isThere", isThere)
+        if isThere then
+            bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
+        else
+            -- because one toon can delete a flyout while other toons still have it on their bars
+            --[[DEBUG]] debug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETING!")
+            GermCommander:deletePlacement(btnSlotIndex)
+            --[[DEBUG]] debug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETED!!!")
+        end
+    end
+end
+
+function GermCommander:newGermProxy(flyoutId, icon)
+    DeleteMacro(PROXY_MACRO_NAME)
+    local macroText = flyoutId
+    return CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText, nil, nil)
+end
+
+-- TODO: figure out why this fails but the above works
+-- Responds to event: ACTIONBAR_SLOT_CHANGED
+-- Check if this event was caused by dragging a flyout out of the Catalog and dropping it onto an actionbar.
+-- The targeted slot could: be empty; already have a different germ (or the same one); anything else.
+function GermCommander:BROKEN_handleActionBarSlotChanged(btnSlotIndex)
+    local configChanged
+    local existingFlyoutId = getFlyoutIdForSlot(btnSlotIndex)
+    if existingFlyoutId then
+        --[[DEBUG]] debug.info:out("%",5,"GermCommander:handleActionBarSlotChanged() removing the supplanted PLACEMENT", "btnSlotIndex",btnSlotIndex, "existingFlyoutId", existingFlyoutId)
+        FlyoutMenu:pickup(existingFlyoutId)
+        GermCommander:deletePlacement(btnSlotIndex)
+        configChanged = true
+    end
+
+    local type, macroId = GetActionInfo(btnSlotIndex)
+    local droppedFlyoutId = getFlyoutIdFromGermProxy(type, macroId)
+    if droppedFlyoutId then
+        self:savePlacement(btnSlotIndex, droppedFlyoutId)
+        DeleteMacro(PROXY_MACRO_NAME)
+        configChanged = true
+    end
+
+    if configChanged then
+        self:updateAll()
+    end
 end
 
 -- Responds to event: ACTIONBAR_SLOT_CHANGED
 -- Check if this event was caused by dragging a flyout out of the Catalog and dropping it onto an actionbar.
 -- The targeted slot could: be empty; already have a different germ (or the same one); anything else.
-function handleActionBarSlotChanged(btnSlotIndex)
+function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
     local configChanged
     local existingFlyoutId = getFlyoutIdForSlot(btnSlotIndex)
 
@@ -127,117 +175,119 @@ function handleActionBarSlotChanged(btnSlotIndex)
         return
     end
 
-    local flyoutId = isGermProxy(type, macroId)
-    if flyoutId then
-        savePlacement(btnSlotIndex, flyoutId)
+    local droppedFlyoutId = getFlyoutIdFromGermProxy(type, macroId)
+    if droppedFlyoutId then
+        self:savePlacement(btnSlotIndex, droppedFlyoutId)
         DeleteMacro(PROXY_MACRO_NAME)
         configChanged = true
     end
 
     -- after dropping the flyout on the cursor, pickup the one we just replaced
     if existingFlyoutId then
-        pickupFlyout(existingFlyoutId)
+        FlyoutMenu:pickup(existingFlyoutId)
         if not configChanged then
-            forgetPlacement(btnSlotIndex)
+            GermCommander:deletePlacement(btnSlotIndex)
             configChanged = true
         end
     end
 
     if configChanged then
-        updateAllGerms()
+        self:updateAll()
     end
 end
 
-function savePlacement(btnSlotIndex, flyoutId)
-    if type(btnSlotIndex) == "string" then btnSlotIndex = tonumber(btnSlotIndex) end
-    if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
-    getConfigForCurrentSpec()[btnSlotIndex] = flyoutId
+function GermCommander:savePlacement(btnSlotIndex, flyoutId)
+    btnSlotIndex = tonumber(btnSlotIndex)
+    flyoutId = tonumber(flyoutId)
+    self:getPlacementConfigForCurrentSpec()[btnSlotIndex] = flyoutId
 end
 
-function forgetPlacement(btnSlotIndex)
-    if type(btnSlotIndex) == "string" then btnSlotIndex = tonumber(btnSlotIndex) end
-    getConfigForCurrentSpec()[btnSlotIndex] = nil
+function GermCommander:deletePlacement(btnSlotIndex)
+    btnSlotIndex = tonumber(btnSlotIndex)
+    local placementConfigForCurrentSpec = self:getPlacementConfigForCurrentSpec()
+    local flyoutId = self:getPlacementConfigForCurrentSpec()[btnSlotIndex]
+    --[[DEBUG]] debug.info:out("%",5,"GermCommander:deletePlacement() DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyoutId, "placementConfigForCurrentSpec -->")
+    --[[DEBUG]] debug.info:dump(placementConfigForCurrentSpec)
+    local msg = "btnSlotIndex = " .. btnSlotIndex or -1
+    debug.error:alert(msg)
+    --assert(false, "WUT? :-/")
+    placementConfigForCurrentSpec[btnSlotIndex] = nil
+    -- the germ UI Frame stays in place but is now empty
 end
 
--- when the user picks up a flyout from the catalog (or a germ from the actionbars?)
--- we need a draggable UI element, so create a dummy macro with the same icon as the flyout
-function pickupFlyout(flyoutId)
-    if InCombatLockdown() then
-        return;
+function GermCommander:nukeFlyout(flyoutId)
+    flyoutId = tonumber(flyoutId)
+    for i, allSpecsConfig in ipairs(self:getAllSpecsPlacementsConfig()) do
+        for i, specConfig in ipairs(allSpecsConfig) do
+            for btnSlotIndex, flyoutId2 in pairs(specConfig) do
+                if flyoutId == flyoutId2 then
+                    specConfig[btnSlotIndex] = nil
+                end
+            end
+        end
     end
-
-    local flyoutConf = FlyoutMenusDb:get(flyoutId)
-    local texture = flyoutConf.icon
-
-    if not texture and flyoutConf.actionTypes[1] then
-        texture = getTexture(flyoutConf.actionTypes[1], flyoutConf.spells[1], flyoutConf.pets[1])
-    end
-    if not texture then
-        texture = "INV_Misc_QuestionMark"
-    end
-
-    local proxy = newGermProxy(flyoutId, texture)
-    PickupMacro(proxy)
-end
-
-local function getSpecId()
-    return GetSpecialization() or NON_SPEC_SLOT
 end
 
 -- keep track of spec changes so getConfigForSpec() can initialize a brand new config based on the old one
-function recordCurrentSpec()
+function GermCommander:recordCurrentSpec()
+    local hasChanged
     local newSpec = getSpecId()
     --[[DEBUG]] debug.trace:out("+",5,"recordCurrentSpec()", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
     if currentSpec ~= newSpec then
         previousSpec = currentSpec
         currentSpec = newSpec
         --[[DEBUG]] debug.trace:out("+",5,"REASSIGNED->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
-        return true
+        hasChanged = true
     else
         --[[DEBUG]] debug.trace:out("+",5,"unchanged ->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
-        return false
+        hasChanged = false
     end
+    return hasChanged
 end
 
 -- I originally created this method to handle the PLAYER_SPECIALIZATION_CHANGED event
 -- but, in consitent bliz inconsistency, it's unreliable whether that event
 -- will shoot off before, during, or after the ACTIONBAR_SLOT_CHANGED event which also will trigger updateAllGerms()
 -- so, I had to move recordCurrentSpec() directly into getConfigForCurrentSpec() and am leaving this here as a monument.
-function changePlacementsBecauseSpecChanged()
+function GermCommander:changePlacementsBecauseSpecChanged()
     -- recordCurrentSpec() -- nope, nevermind.  moved below
-    updateAllGerms()
+    self:updateAll()
 end
 
-function getConfigForCurrentSpec()
-    recordCurrentSpec() --
+function GermCommander:getPlacementConfigForCurrentSpec()
+    self:recordCurrentSpec()
     local specId = getSpecId()
-    return getConfigForSpec(specId)
+    return self:getConfigForSpec(specId)
 end
 
-function getConfigForSpec(specId)
+function GermCommander:getConfigForSpec(specId)
+    local debug = debug.trace:setHeader("+","GermCommander:getConfigForSpec()")
     -- the placement of flyouts on the action bars changes from spec to spec
-    local placementsForAllSpecs = getGermPlacementsConfig()
-    assert(placementsForAllSpecs,"Oops!  placements config is nil")
+    local placementsForAllSpecs = GermCommander:getAllSpecsPlacementsConfig()
+    assert(placementsForAllSpecs, ADDON_NAME..": Oops!  placements config is nil")
 
+    local result = placementsForAllSpecs[specId]
     -- is this a never-before-encountered spec? - if so, initialze its config
-    --[[DEBUG]] debug.trace:out("+",5,"getConfigForSpec().....", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "placementsForAllSpecs[specId]",placementsForAllSpecs[specId])
-    if not placementsForAllSpecs[specId] then -- TODO: identify empty OR nil
-        local initialConfig
+    --[[DEBUG]] debug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1",result)
+    if not result then -- TODO: identify empty OR nil
         if not previousSpec or specId == previousSpec then
-            --[[DEBUG]] debug.trace:out("+",7,"getConfigForSpec() blanking", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
-            initialConfig = {}
+            --[[DEBUG]] debug:out(7, "blanking specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
+            result = {}
         else
             -- initialize the new config based on the old one
-            --[[DEBUG]] debug.trace:out("+",7,"getConfigForSpec() COPYING", "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
-            initialConfig = deepcopy(getConfigForSpec(previousSpec))
-            --[[DEBUG]] debug.trace:dump(initialConfig)
+            result = deepcopy(self:getConfigForSpec(previousSpec))
+            --[[DEBUG]] debug:line(7, "COPYING specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "initialConfig", "result 1b",result)
+            placementsForAllSpecs[specId] = result
+
         end
-        placementsForAllSpecs[specId] = initialConfig
     end
-    return placementsForAllSpecs[specId]
+    --[[DEBUG]] debug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 2",result)
+    --[[DEBUG]] --debug:dump(result)
+    return result
 end
 
 -- the placement of flyouts on the action bars is stored separately for each toon
-function getGermPlacementsConfig()
-    return UFO_SV_TOON and UFO_SV_TOON.placementsForAllSpecs
+function GermCommander:getAllSpecsPlacementsConfig()
+    local foo = Config:getAllSpecsPlacementsConfig()
+    return foo
 end
