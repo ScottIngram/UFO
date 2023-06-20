@@ -137,7 +137,7 @@ end
 function updateCatalog()
     local flyoutsCount = FlyoutMenusDb:howMany()
     local numRows = flyoutsCount + 1
-    HybridScrollFrame_Update(UIUFO_CatalogScrollPane, numRows * EQUIPMENTSET_BUTTON_HEIGHT + 20, UIUFO_CatalogScrollPane:GetHeight()) -- TODO: is this the source of the too-tall bug
+    HybridScrollFrame_Update(UIUFO_CatalogScrollPane, numRows * EQUIPMENTSET_BUTTON_HEIGHT + 20, UIUFO_CatalogScrollPane:GetHeight())
 
     local scrollOffset = HybridScrollFrame_GetOffset(UIUFO_CatalogScrollPane)
     local buttons = UIUFO_CatalogScrollPane.buttons

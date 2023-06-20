@@ -129,6 +129,7 @@ local snippet_Germ_Click = [=[
     --flyoutMenu:RegisterAutoHide(1) -- TODO: add this back in?
     --flyoutMenu:AddToAutoHide(germ) -- ditto?
 ]=]
+-- TODO: add the RegisterAutoHide etc back in?
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -266,8 +267,6 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 local function handleGermUpdateEvent(germ)
-    -- TODO: throttle this?
-    -- print("========== Germ_UpdateFlyout()") this is being called continuously while a flyout exists on any bar
     -- Update border and determine arrow position
     local arrowDistance;
     -- Update border

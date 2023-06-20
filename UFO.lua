@@ -5,15 +5,16 @@
 
 TODO
 * replace existing icon picker with something closer to MacroManager / Weak Auras
+* make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
+* optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
+* use ACE Lib/DataBroker so Titan Panel and other addons can open the UFO catalog
 * question: can I use GetItemSpell(itemId) to simplify my code ?
-* BUG: when germs omit unusable buttons, they still appear and now it and each subsequent btn behaves as though it were the one after
+* BUG: Oops, I clobbered the frames on the germ flyouts
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 * BUG: OnDragStart needs to accommodate when there is already something on the cursor
 * - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
-* make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
-* optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
-* use ACE Lib/DataBroker
 *
+* DONE: BUG: when germs omit unusable buttons, they still appear and now it and each subsequent btn behaves as though it were the one after
 * DONE: refactor FlyoutMenu:updateFlyoutMenuForGerm and move some logic into a germ:Method(); replace all mentions of UIUFO_FlyoutMenuForGerm with simply self
 * DONE: implement UFO_SV_FLYOUTS as array of self-contained button objects rather than each button spread across multiple parallel arrays
 * DONE: encapsulate as FlyoutConfigData
@@ -209,6 +210,8 @@ function exists(s)
     return not isEmpty(s)
 end
 
+-- convert data structures into JSON-like strings
+-- useful for injecting tables into secure functions because SFs don't allow tables
 function serialize(val, name, skipnewlines, depth)
     skipnewlines = skipnewlines or false
     depth = depth or 0
@@ -239,6 +242,7 @@ end
 local QUOTE = "\""
 local EOL = "\n"
 
+-- convert data structures into lines of Lua variable assignments
 -- useful for injecting tables into secure functions because SFs don't allow tables
 -- TODO: can I use this instead of the "asLists" solution?  Or would it produce gigantic strings?
 function serializeAsAssignments(name, val, isRecurse)

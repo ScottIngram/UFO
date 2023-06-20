@@ -1,9 +1,6 @@
 -- FlyoutMenusDb
 -- unique flyout definitions shown in the config panel
--- TODO: invert the FlyoutMenu data structure
--- TODO: * implement as array of self-contained button objects rather than each button spread across multiple parallel arrays
--- is currently a collection if parallel lists, each containing one param for each button in the menu
--- instead, should be one collection/list of button objects, each containing all params for each button.  ENCAPSULATION FTW!
+-- TODO: stop reclaiming flyout indices when one is deleted - let the index be its unique, permanent ID.
 
 -------------------------------------------------------------------------------
 -- Module Loading
