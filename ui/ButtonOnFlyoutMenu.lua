@@ -54,6 +54,13 @@ function ButtonOnFlyoutMenu:getIconFrame()
     return _G[ self:GetName().."Icon" ]
 end
 
+function ButtonOnFlyoutMenu:isEmpty()
+    return not self:hasDef()
+end
+
+function ButtonOnFlyoutMenu:hasDef()
+    return self.btnDef and true or false
+end
 
 ---@return ButtonDef
 function ButtonOnFlyoutMenu:getDef()
@@ -82,6 +89,7 @@ end
 ---@param self ButtonOnFlyoutMenu
 function ButtonOnFlyoutMenu:onDragStartDoPickup()
     if isInCombatLockdown("Drag and drop") then return end
+    if self:isEmpty() then return end
 
     ---@type FlyoutMenu
     local flyoutFrame = self:GetParent()
@@ -377,8 +385,7 @@ end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip(self)
-    local btnDef = self:getDef()
-    if not btnDef then
+    if self:isEmpty() then
         -- this is the empty btn in the catalog... or is it?
         if not self:getParent().isForCatalog then
             local btnId = self:getId()
@@ -388,6 +395,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip(self)
         return
     end
 
+    local btnDef = self:getDef()
     local type = btnDef.type
     local someId
 

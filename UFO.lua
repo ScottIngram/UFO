@@ -9,6 +9,7 @@ TODO
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
 * use ACE Lib/DataBroker so Titan Panel and other addons can open the UFO catalog
 * question: can I use GetItemSpell(itemId) to simplify my code ?
+* try to centralize the numerous "if ButtonType == FOO then BAR" blocks into some common solution
 * BUG: Oops, I clobbered the frames on the germ flyouts
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 * BUG: OnDragStart needs to accommodate when there is already something on the cursor
