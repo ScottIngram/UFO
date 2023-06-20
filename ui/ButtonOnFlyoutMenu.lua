@@ -171,7 +171,10 @@ function ButtonOnFlyoutMenu:getFromCursor()
         btnDef.kind = type or "UnKnOwN"
     end
 
-    btnDef:populateName()
+    if type then
+        -- discovering the name requires knowing its type
+        btnDef:populateName()
+    end
 
     return btnDef
 end
@@ -357,6 +360,14 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(self)
 
     -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
     ButtonOnFlyoutMenu.oneOfUs(self)
+end
+
+---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp(self)
+    local isDragging = GetCursorInfo()
+    if isDragging then
+        self:onReceiveDragAddIt()
+    end
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation

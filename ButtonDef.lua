@@ -91,6 +91,10 @@ function ButtonDef:remapIdToBlizApiExpectations()
         --debug.trace:out("$",20,"ButtonDef:getProperId()", "self.type",self.type, "RETURNING CACHE :-) self.idForBlizApis", self.idForBlizApis)
         return self.idForBlizApis
     end
+    if not self.type then
+        -- if there is no type, there can't be a typeForBliz
+        return
+    end
     local blizApiFieldDef = self:getBlizApiFieldDef()
     local typeForBliz     = blizApiFieldDef.typeForBliz
     local idFieldName     = blizApiFieldDef.idFieldName or typeForBliz .. "Id" -- spellId or itemId or petGuid or etcId
