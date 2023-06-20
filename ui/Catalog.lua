@@ -10,7 +10,7 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(DEBUG_OUTPUT.WARN)
+local debug = Debug:new()
 
 ---@class Catalog -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -29,7 +29,7 @@ function Catalog:definePopupDialogWindow()
         text = L10N["CONFIRM_DELETE"],
         button1 = YES,
         button2 = NO,
-        OnAccept = function (dialog) deleteFlyout(dialog.flyoutId); updateCatalog(); updateAllGerms(); end,
+        OnAccept = function (dialog) FlyoutMenusDb:delete(dialog.flyoutId); updateCatalog(); GermCommander:updateAll(); end,
         OnCancel = function (dialog) end,
         hideOnEscape = 1,
         timeout = 0,
@@ -114,10 +114,6 @@ function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(scrollPane, whichM
     end
 end
 
--------------------------------------------------------------------------------
--- CATALOG Functions Supporting Catalog UI
--------------------------------------------------------------------------------
-
 function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
     for i = 1, #scrollPane.buttons do
         local button = scrollPane.buttons[i]
@@ -139,38 +135,42 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
 end
 
 function updateCatalog()
-    local flyouts = getFlyoutsConfig()
-    local flyoutsCount = #flyouts + 1
-    HybridScrollFrame_Update(UIUFO_CatalogScrollPane, flyoutsCount * EQUIPMENTSET_BUTTON_HEIGHT + 20, UIUFO_CatalogScrollPane:GetHeight()) -- TODO: is this the source of the too-tall bug
+    local flyoutsCount = FlyoutMenusDb:howMany()
+    local numRows = flyoutsCount + 1
+    HybridScrollFrame_Update(UIUFO_CatalogScrollPane, numRows * EQUIPMENTSET_BUTTON_HEIGHT + 20, UIUFO_CatalogScrollPane:GetHeight())
 
     local scrollOffset = HybridScrollFrame_GetOffset(UIUFO_CatalogScrollPane)
     local buttons = UIUFO_CatalogScrollPane.buttons
     local selectedIdx = UIUFO_CatalogScrollPane.selectedIdx
-    UIUFO_FlyoutMenuForCatalog:Hide()
-    local texture, button, flyout
+
+    ---@type FlyoutMenu
+    local flyoutMenu = UIUFO_FlyoutMenuForCatalog
+    flyoutMenu:Hide()
+
     for i = 1, #buttons do
         local pos = i+scrollOffset
-        if pos <= flyoutsCount then
-            button = buttons[i]
+        if pos <= numRows then
+            local button = buttons[i]
             buttons[i]:Show()
             button:Enable()
 
-            if pos < flyoutsCount then
+            if pos < numRows then
                 -- Normal flyout button
                 button.name = pos
-                button.text:SetText(button.name);
+                button.flyoutId = pos
+                button.text:SetText(pos);
                 button.text:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
-                flyout = getFlyoutConfig(pos)
-                texture = flyout.icon
 
-                if not texture and flyout.actionTypes[1] then
-                    texture = getTexture(flyout.actionTypes[1], flyout.spells[1], flyout.pets[1])
-                end
-                if texture then
-                    if(type(texture) == "number") then
-                        button.icon:SetTexture(texture);
+                debug:out("U",3,"updateCatalog()", "pos",pos)
+                local flyoutMenuDef = FlyoutMenusDb:get(pos)
+                debug:out("U",3,"updateCatalog()", "pos",pos, "flyoutMenuDef", flyoutMenuDef)
+                local icon = flyoutMenuDef:getIcon()
+
+                if icon then
+                    if(type(icon) == "number") then
+                        button.icon:SetTexture(icon);
                     else
-                        button.icon:SetTexture("INTERFACE\\ICONS\\"..texture);
+                        button.icon:SetTexture("INTERFACE\\ICONS\\".. icon);
                     end
                 else
                     button.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
@@ -179,9 +179,9 @@ function updateCatalog()
                 if selectedIdx and (pos == selectedIdx) then
                     button.SelectedBar:Show()
                     button.Arrow:Show()
-                    UIUFO_FlyoutMenuForCatalog.parent = button
-                    UIUFO_FlyoutMenuForCatalog:updateFlyoutMenuForCatalog(pos)
-                    UIUFO_FlyoutMenuForCatalog:Show()
+                    flyoutMenu.parent = button
+                    flyoutMenu:updateForCatalog(pos)
+                    flyoutMenu:Show()
                 else
                     button.SelectedBar:Hide()
                     button.Arrow:Hide()
@@ -209,7 +209,7 @@ function updateCatalog()
                 buttons[i].BgMiddle:SetPoint("TOP")
             end
 
-            if (pos) == flyoutsCount then
+            if (pos) == numRows then
                 buttons[i].BgBottom:Show()
                 buttons[i].BgMiddle:SetPoint("BOTTOM", buttons[i].BgBottom, "TOP")
             else
@@ -228,5 +228,4 @@ function updateCatalog()
             buttons[i]:Hide()
         end
     end
-
 end

@@ -24,7 +24,7 @@ BLIZ_BAR_METADATA = {
 V_MAJOR = 10
 V_MINOR = 1
 V_PATCH = 0
-V_UFO = "a"
+V_UFO = "alpha"
 VERSION = table.concat({V_MAJOR, V_MINOR, V_PATCH, V_UFO}, ".")
 
 X = nil
@@ -41,3 +41,4 @@ MAX_GLOBAL_MACRO_ID = 120
 DELIMITER = "\a"
 EMPTY_ELEMENT = "\t" -- strjoin skips "" as if they were nil, but "" isn't treated as nil. omfg Lua, get it together.
 CONSUMABLE = "Consumable"
+DEFAULT_ICON = "INV_Misc_QuestionMark"

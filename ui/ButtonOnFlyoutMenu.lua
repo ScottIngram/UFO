@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(DEBUG_OUTPUT.WARN)
+local debug = Debug:new()
 
 ---@class ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -27,93 +27,266 @@ local pickedUpMount -- workaround the Bliz API which handles mounts inconsistent
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
+-- can't do my usual metatable magic because (I think) the Bliz UI objects already have.
+-- so, instead, just copy all of my methods onto the Bliz UI object
 function ButtonOnFlyoutMenu.oneOfUs(btnOnFlyout)
-    btnOnFlyout.BlizGetParent = btnOnFlyout.GetParent -- rename for safekeeping so I can implement OO inheritance
-
     -- merge the Bliz ActionButton object
     -- with this class's methods, functions, etc
     deepcopy(ButtonOnFlyoutMenu, btnOnFlyout)
 end
 
+function ButtonOnFlyoutMenu:getId()
+    -- the button ID never changes because it's never actually dragged or moved.
+    -- It's the underlying btnDef that moves from one button to another.
+    return self:GetID()
+end
+
 ---@return FlyoutMenu -- IntelliJ-EmmyLua annotation
-function ButtonOnFlyoutMenu:GetParent()
-    return self:BlizGetParent()
+function ButtonOnFlyoutMenu:getParent()
+    return self:GetParent()
 end
 
 function ButtonOnFlyoutMenu:setIconTexture(texture)
-    _G[ self:GetName().."Icon" ]:SetTexture(texture)
+    self:getIconFrame():SetTexture(texture)
+end
+
+function ButtonOnFlyoutMenu:getIconFrame()
+    return _G[ self:GetName().."Icon" ]
+end
+
+
+---@return ButtonDef
+function ButtonOnFlyoutMenu:getDef()
+    return self.btnDef
+end
+
+---@param btnDef ButtonDef
+function ButtonOnFlyoutMenu:setDef(btnDef)
+    self.btnDef = btnDef
+    self:copyDefToBlizFields()
+end
+
+function ButtonOnFlyoutMenu:copyDefToBlizFields()
+    local d = self.btnDef or {}
+    -- the names on the left are used deep inside Bliz code
+    self.actionType = d.type
+    self.actionID   = d.spellId or d.itemId or d.toyId or d.mountId -- or d.petGuid
+    self.spellID    = d.spellId
+    self.itemID     = d.itemId
+    self.mountID    = d.mountId
+    self.battlepet  = d.petGuid
+end
+
+-- TODO: TEST dragging the empty button
+-- pickup an existing button from an existing flyout
+---@param self ButtonOnFlyoutMenu
+function ButtonOnFlyoutMenu:onDragStartDoPickup()
+    if isInCombatLockdown("Drag and drop") then return end
+
+    ---@type FlyoutMenu
+    local flyoutFrame = self:GetParent()
+    if flyoutFrame.isForCatalog then
+        self:pickupToCursor()
+        local flyoutId = flyoutFrame:getId()
+        local flyoutMenuDef = FlyoutMenusDb:get(flyoutId)
+        flyoutMenuDef:removeButton(self:getId())
+        self:setDef(nil)
+        flyoutFrame:updateForCatalog(flyoutId)
+        GermCommander:updateAll()
+    end
+end
+
+function ButtonOnFlyoutMenu:onReceiveDragAddIt()
+    local flyoutMenu = self:getParent()
+    if not flyoutMenu.isForCatalog then return end -- only the flyouts in the catalog are valid drop targets.  TODO: let flyouts on the germs receive too?
+
+    local crsDef = ButtonOnFlyoutMenu:getFromCursor()
+    if not crsDef.type then
+        debug.warn:print("Sorry, unsupported type:", crsDef.kind)
+        return
+    end
+
+    local flyoutId = flyoutMenu:getId()
+    local flyoutDef = FlyoutMenusDb:get(flyoutId)
+    local btnIndex = self:getId()
+    local oldBtnDef = flyoutDef:getButtonDef(btnIndex)
+    flyoutDef:replaceButton(btnIndex, crsDef)
+
+    ClearCursor()
+    GermCommander:updateAll()
+    flyoutMenu:updateForCatalog(flyoutId)
+    pickedUpMount = nil
+
+    if oldBtnDef then
+        ButtonOnFlyoutMenu:pickupToCursor(oldBtnDef)
+    end
+end
+
+-- TODO: implement
+local function parseToolTipForType(toolTip)
+    debug.trace:out(")",10,"parseToolTipForType()", toolTip)
+    debug.trace:dump(toolTip)
+end
+
+-- TODO: distinguish between toys and items
+---@return ButtonDef
+function ButtonOnFlyoutMenu:getFromCursor()
+    ---@type ButtonDef
+    local btnDef = ButtonDef:new()
+    local type, c1, c2, c3 = GetCursorInfo() -- c1 is usually the ID; c2 is sometimes a tooltip;
+    debug.trace:out(">",5,"getFromCursor()", "type",type, "c1",c1, "c2",c2, "c3",c3)
+
+    btnDef.type = type
+    if type == ButtonType.SPELL then
+        btnDef.spellId = c3
+    elseif type == ButtonType.SNAFU then
+        -- this is an abnormal result containing a useless ID which isn't accepted by any API.  Not helpful.
+        -- It's caused when the mouse pointer is loaded via Bliz's API PickupSpell(withTheSpellIdOfSomeMount)
+        -- This is a workaround to Bliz's API and retrieves a usable ID from my secret stash created when the user grabbed the mount.
+        if pickedUpMount then
+            btnDef.type = ButtonType.MOUNT
+            btnDef.spellId = pickedUpMount.spellId
+            btnDef.mountId = pickedUpMount.mountId
+        else
+            debug.warn:print("Sorry, the Blizzard API provided bad data for this mount.")
+        end
+    elseif type == ButtonType.MOUNT then
+        local name, spellId = C_MountJournal.GetMountInfoByID(c1)
+        btnDef.spellId = spellId
+        btnDef.mountId = c1
+    elseif type == ButtonType.ITEM then
+        local ttType = parseToolTipForType(c2)
+        if ttType == ButtonType.TOY then
+            btnDef.type = ButtonType.TOY
+        end
+        btnDef.itemId = c1
+    elseif type == ButtonType.MACRO then
+        btnDef.macroId = c1
+        if not isMacroGlobal(c1) then
+            btnDef.macroOwner = getIdForCurrentToon()
+        end
+    elseif type == ButtonType.PET then
+        btnDef.petGuid = c1
+    else
+        btnDef.kind = type or "UnKnOwN"
+    end
+
+    if type then
+        -- discovering the name requires knowing its type
+        btnDef:populateName()
+    end
+
+    return btnDef
+end
+
+function ButtonOnFlyoutMenu:pickupToCursor(btnDef)
+    local def = btnDef or self:getDef()
+    local type = def.type
+
+    debug.trace:out("<",5,"ButtonOnFlyoutMenu:pickup", "actionType",def.type, "name",def.name, "spellId",def.spellId, "itemId",def.itemId, "mountId",def.mountId)
+
+    if type == "mount" then
+        -- set a global variable because the Bliz API is broken
+        pickedUpMount = {
+            mountId = def.mountId,
+            spellId = def.spellId
+        }
+        PickupSpell(def.spellId)
+    elseif type == "spell" then
+        PickupSpell(def.spellId)
+    elseif type == "item" then
+        PickupItem(def.itemId)
+    elseif type == "macro" then
+        PickupMacro(def.macroId)
+    elseif type == "battlepet" then
+        C_PetJournal.PickupPet(def.petGuid)
+    end
+    -- TODO: bug - address TOY
 end
 
 function ButtonOnFlyoutMenu:updateCooldownsAndCountsAndStatesEtc()
-    if (self.spellID) then
+    local btnDef = self:getDef()
+    local spellId = btnDef and btnDef.spellId
+    if (spellId) then
         SpellFlyoutButton_UpdateState(self)
     end
 
-    self:UpdateUsable()
-    self:UpdateCooldown()
-    self:UpdateCount()
+    self:updateUsable()
+    self:updateCooldown()
+    self:updateCount()
 end
 
-function ButtonOnFlyoutMenu:UpdateUsable()
-    local itemId = self.itemID
-    local spellId = self.spellID
-
+function ButtonOnFlyoutMenu:updateUsable()
     local isUsable = true
     local notEnoughMana = false
-    if itemId or spellId then
-        if itemId then
-            _, spellId = GetItemSpell(itemId)
-            isUsable = IsUsableSpell(spellId)
-        else
-            isUsable, notEnoughMana = IsUsableSpell(spellId)
+    local btnDef = self:getDef()
+    if btnDef then
+        local itemId = btnDef.itemId
+        local spellId = btnDef.spellId
+
+        if itemId or spellId then
+            if itemId then
+                _, spellId = GetItemSpell(itemId)
+                isUsable = IsUsableSpell(spellId)
+            else
+                isUsable, notEnoughMana = IsUsableSpell(spellId)
+            end
         end
+
+        debug.trace:out("#",5,"updateUsable()", "isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
     end
 
-    debug.trace:out("#",5,"UpdateUsable", "isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
-
-    local name = self:GetName();
-    local icon = _G[name.."Icon"];
+    local iconFrame = self:getIconFrame();
     if isUsable then
-        icon:SetVertexColor(1.0, 1.0, 1.0);
+        iconFrame:SetVertexColor(1.0, 1.0, 1.0);
     elseif notEnoughMana then
-        icon:SetVertexColor(0.5, 0.5, 1.0);
+        iconFrame:SetVertexColor(0.5, 0.5, 1.0);
     else
-        icon:SetVertexColor(0.4, 0.4, 0.4);
+        iconFrame:SetVertexColor(0.4, 0.4, 0.4);
     end
 end
 
-function ButtonOnFlyoutMenu:UpdateCooldown()
-    local itemId = self.itemID
-    debug.trace:out("X",40,"Ufo_UpdateCooldown 1 ITEM","self.itemID",self.itemID, "self.spellID",self.spellID)
+function ButtonOnFlyoutMenu:updateCooldown()
+    local btnDef = self:getDef()
+    local itemId = btnDef and btnDef.itemId
+    local spellId = btnDef and btnDef.spellId
+    debug.trace:out("X",40,"updateCooldown() 1 ITEM","itemId",itemId, "spellId",spellId)
 
-    if (not exists(itemId)) and exists(self.spellID) then
+    if exists(spellId) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
-        debug.trace:out("@",20,"updateCooldownsAndCountsAndStatesEtc", "self.spellID",self.spellID)
+        debug.trace:out("X",20,"updateCooldown() SPELL", "spellId",spellId)
         SpellFlyoutButton_UpdateCooldown(self)
         return
     end
 
     -- for items, I copied and hacked Bliz's ActionButton_UpdateCooldown
-    local modRate = 1.0;
-    local start, duration, enable = GetItemCooldown(itemId);
-    debug.trace:out("X",5,"Ufo_UpdateCooldown 2 ITEM","actionType",actionType, "start",start, "duration",duration, "enable",enable )
+    local start, duration, enable = 1, 1, true;
+    if itemId then
+        start, duration, enable = GetItemCooldown(itemId);
+    end
 
-    if ( self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL ) then
+    local type = btnDef and btnDef.type
+    debug.trace:out("X",5,"updateCooldown() 2 ITEM","type",type, "start",start, "duration",duration, "enable",enable )
+
+    if self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL then
         self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
         self.cooldown:SetSwipeColor(0, 0, 0);
         self.cooldown:SetHideCountdownNumbers(false);
         self.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL;
     end
 
+    local modRate = 1.0;
     CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
 end
 
-function ButtonOnFlyoutMenu:UpdateCount()
-    local itemId = self.itemID
+function ButtonOnFlyoutMenu:updateCount()
+    local btnDef = self:getDef()
+    local itemId = btnDef and btnDef.itemId
     local hasItem = exists(itemId)
 
     if not hasItem then
-        if exists(self.spellID) then
+        local spellId = btnDef and btnDef.spellId
+        if exists(spellId) then
             debug.trace:out("X",5,"UFO_UpdateCount 0... deferring to SpellFlyoutButton_UpdateCount ", "spellID",self.spellID)
             -- use Bliz's built-in handler for the stuff it understands, ie, not items
             SpellFlyoutButton_UpdateCount(self)
@@ -144,196 +317,121 @@ function ButtonOnFlyoutMenu:UpdateCount()
     textFrame:SetText(display);
 end
 
+function ButtonOnFlyoutMenu:setGeometry(direction, prevBtn)
+    self:ClearAllPoints()
+    if prevBtn then
+        if direction == "UP" then
+            self:SetPoint("BOTTOM", prevBtn, "TOP", 0, SPELLFLYOUT_DEFAULT_SPACING)
+        elseif direction == "DOWN" then
+            self:SetPoint("TOP", prevBtn, "BOTTOM", 0, -SPELLFLYOUT_DEFAULT_SPACING)
+        elseif direction == "LEFT" then
+            self:SetPoint("RIGHT", prevBtn, "LEFT", -SPELLFLYOUT_DEFAULT_SPACING, 0)
+        elseif direction == "RIGHT" then
+            self:SetPoint("LEFT", prevBtn, "RIGHT", SPELLFLYOUT_DEFAULT_SPACING, 0)
+        end
+    else
+        if direction == "UP" then
+            self:SetPoint("BOTTOM", 0, SPELLFLYOUT_INITIAL_SPACING)
+        elseif direction == "DOWN" then
+            self:SetPoint("TOP", 0, -SPELLFLYOUT_INITIAL_SPACING)
+        elseif direction == "LEFT" then
+            self:SetPoint("RIGHT", -SPELLFLYOUT_INITIAL_SPACING, 0)
+        elseif direction == "RIGHT" then
+            self:SetPoint("LEFT", SPELLFLYOUT_INITIAL_SPACING, 0)
+        end
+    end
+
+    self:Show()
+end
+
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutBtn XML Callbacks
 -------------------------------------------------------------------------------
 
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(btnOnFlyout)
+---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(self)
     -- initialize the Bliz ActionButton
-    btnOnFlyout:SmallActionButtonMixin_OnLoad()
-    btnOnFlyout.PushedTexture:SetSize(31.6, 30.9)
-    btnOnFlyout:RegisterForDrag("LeftButton")
-    _G[btnOnFlyout:GetName().."Count"]:SetPoint("BOTTOMRIGHT", 0, 0)
-    btnOnFlyout.maxDisplayCount = 99
-    btnOnFlyout:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
+    self:SmallActionButtonMixin_OnLoad()
+    self.PushedTexture:SetSize(31.6, 30.9)
+    self:RegisterForDrag("LeftButton")
+    _G[self:GetName().."Count"]:SetPoint("BOTTOMRIGHT", 0, 0)
+    self.maxDisplayCount = 99
+    self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
 
     -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
-    ButtonOnFlyoutMenu.oneOfUs(btnOnFlyout)
+    ButtonOnFlyoutMenu.oneOfUs(self)
 end
 
----@param btnOnFlyout ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(btnOnFlyout)
-    btnOnFlyout:OnReceiveDragAddIt()
-end
-
--- add a spell/item/etc to a flyout
-function ButtonOnFlyoutMenu:OnReceiveDragAddIt()
-    -- only the flyouts in the catalog are allowed to change.  TODO: let flyouts on the germs receive too?
-
-    local flyoutMenu = self:GetParent()
-    if not flyoutMenu.isForCatalog then return end
-
-    local kind, info1, info2, info3 = GetCursorInfo()
-    local actionType = kind
-
-    -- TODO: distinguish between toys and spells
-
-    debug.trace:out(">",5,"OnReceiveDrag","kind",kind,"info1",info1 ,"info2",info2, "info3",info3)
-
-    -- Here, in the absence of useful documentation, I'm researching the behavior of these mount/pointer APIs
-    -- debug.info:out(">",7,"OnReceiveDrag", "GetAllCreatureDisplayIDsForMountID -> info1",info1 )
-    -- debug.info:print( C_MountJournal.GetAllCreatureDisplayIDsForMountID(info1) )
-    -- debug.info:out(">",7,"OnReceiveDrag", "GetMountInfoByID -> info1",info1 )
-    -- debug.info:print( C_MountJournal.GetMountInfoByID(info1) )
-
-    local thingyId, mountId, macroOwner, pet
-
-    if kind == "spell" then
-        thingyId = info3
-    elseif kind == "companion" then
-        -- this is an abnormal result containing a useless ID which isn't accepted by any API.  Not helpful.
-        -- It's caused when the mouse pointer is loaded via Bliz's API PickupSpell(withTheSpellIdOfSomeMount)
-        -- This is a workaround to Bliz's API and retrieves a usable ID from my secret stash created when the user grabbed the mount.
-        if pickedUpMount then
-            actionType = "spell"
-            thingyId = pickedUpMount.spellId
-            mountId = pickedUpMount.mountId
-        else
-            debug.warn:print("Sorry, the Blizzard API provided bad data for this mount.")
-        end
-    elseif kind == "mount" then
-        actionType = "spell" -- mounts can be summoned by casting as a spell
-        local name, spellId, icon, _, isUsable, _, _, _, _, shouldHideOnChar, _, _ = C_MountJournal.GetMountInfoByID(info1)
-        thingyId = spellId
-        mountId = info1
-    elseif kind == "item" then
-        thingyId = info1
-    elseif kind == "macro" then
-        thingyId = info1
-        if not isMacroGlobal(thingyId) then
-            macroOwner = getIdForCurrentToon()
-        end
-    elseif kind == "battlepet" then
-        pet = info1
-    else
-        actionType = nil
-    end
-
-    local flyoutId = flyoutMenu.id
-
-    if actionType then
-        local flyoutConf = getFlyoutConfig(flyoutId)
-        local btnIndex = self:GetID()
-
-        local oldThingyId   = flyoutConf.spells[btnIndex]
-        local oldActionType = flyoutConf.actionTypes[btnIndex]
-        local oldmountId    = flyoutConf.mounts[btnIndex]
-        local oldPet        = flyoutConf.pets[btnIndex]
-
-        flyoutConf.spells[btnIndex] = thingyId
-        flyoutConf.actionTypes[btnIndex] = actionType
-        flyoutConf.mounts[btnIndex] = mountId
-        flyoutConf.spellNames[btnIndex] = getThingyNameById(actionType, thingyId or pet)
-        flyoutConf.macroOwners[btnIndex] = macroOwner
-        flyoutConf.pets[btnIndex] = pet
-
-        ClearCursor() -- drop the dragged spell/item/etc
-        pickedUpMount = nil
-        updateAllGerms()
-        flyoutMenu:updateFlyoutMenuForCatalog(flyoutId)
-
-        -- update the cursor to show the existing spell/item/etc (if any)
-        if oldActionType == "spell" then
-            if oldmountId then
-                pickedUpMount = {
-                    mountId = oldmountId,
-                    spellId = oldThingyId
-                }
-            end
-            PickupSpell(oldThingyId)
-        elseif oldActionType == "item" then
-            PickupItem(oldThingyId)
-        elseif oldActionType == "macro" then
-            PickupMacro(oldThingyId)
-        elseif oldActionType == "battlepet" then
-            C_PetJournal.PickupPet(oldPet)
-        end
-    else
-        debug.warn:print("Sorry, unsupported type:", kind)
+---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp(self)
+    local isDragging = GetCursorInfo()
+    if isDragging then
+        self:onReceiveDragAddIt()
     end
 end
 
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip(btnOnFlyout)
-    local thingyId = btnOnFlyout.spellID
+---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(self)
+    self:onReceiveDragAddIt()
+end
+
+---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip(self)
+    local btnDef = self:getDef()
+    if not btnDef then
+        -- this is the empty btn in the catalog... or is it?
+        if not self:getParent().isForCatalog then
+            local btnId = self:getId()
+            local flyoutId = self:getParent():getId()
+            debug.info:out(X,X,"GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip()", "No btnDef found for flyoutId",flyoutId, "btnId",btnId)
+        end
+        return
+    end
+
+    local type = btnDef.type
+    local someId
+
     if GetCVar("UberTooltips") == "1" then
-        GameTooltip_SetDefaultAnchor(GameTooltip, btnOnFlyout)
+        GameTooltip_SetDefaultAnchor(GameTooltip, self)
 
         local tooltipSetter
-        if btnOnFlyout.actionType == "spell" then
+        if type == ButtonType.SPELL or type == ButtonType.MOUNT then
             tooltipSetter = GameTooltip.SetSpellByID
-        elseif btnOnFlyout.actionType == "item" then
+            someId = btnDef.spellId or btnDef.mountId
+        elseif type == ButtonType.ITEM or type == ButtonType.TOY then
             tooltipSetter = GameTooltip.SetItemByID
-        elseif btnOnFlyout.actionType == "macro" then
+            someId = btnDef.itemId or btnDef.toyId
+        elseif type == ButtonType.MACRO then
             tooltipSetter = function(zelf, macroId)
                 local name, _, _ = GetMacroInfo(macroId)
                 if not macroId then macroId = "NiL" end
                 return GameTooltip:SetText("Macro: ".. macroId .." " .. (name or "UNKNOWN"))
             end
-        elseif btnOnFlyout.actionType == "battlepet" then
-            thingyId = btnOnFlyout.battlepet
+            someId = btnDef.macroId
+        elseif type == ButtonType.PET then
             tooltipSetter = GameTooltip.SetCompanionPet
-            -- print("))))) GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip(): actionType = battlepet | thingyId =", thingyId)
+            someId = btnDef.petGuid
         end
 
-        if tooltipSetter and thingyId and tooltipSetter(GameTooltip, thingyId) then
-            btnOnFlyout.UpdateTooltip = GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip
+        if tooltipSetter and someId and tooltipSetter(GameTooltip, someId) then
+            self.UpdateTooltip = GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip
         else
-            btnOnFlyout.UpdateTooltip = nil
+            self.UpdateTooltip = nil
         end
     else
-        local parent = btnOnFlyout:GetParent():GetParent():GetParent():GetParent()
+        local parent = self:GetParent():GetParent():GetParent():GetParent()
         if parent == MultiBarBottomRight or parent == MultiBarRight or parent == MultiBarLeft then
-            GameTooltip:SetOwner(btnOnFlyout, "ANCHOR_LEFT")
+            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         else
-            GameTooltip:SetOwner(btnOnFlyout, "ANCHOR_RIGHT")
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         end
-        local spellName = getThingyNameById(btnOnFlyout.actionType, thingyId)
-        GameTooltip:SetText(spellName, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
-        btnOnFlyout.UpdateTooltip = nil
+        GameTooltip:SetText(btnDef.name, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+        self.UpdateTooltip = nil
     end
 end
 
 -- pickup an existing button from an existing flyout
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(btnOnFlyout)
-    if InCombatLockdown() then return end
-
-    local actionType = btnOnFlyout.actionType
-    local spell = btnOnFlyout.spellID
-    local mountId = btnOnFlyout.mountId
-    local pet = btnOnFlyout.battlepet
-
-    debug.trace:out("<",5,"OnDragStart", "actionType",actionType, "mountId",mountId)
-    if actionType == "spell" then
-        if mountId then
-            pickedUpMount = {
-                mountId = mountId,
-                spellId = spell
-            }
-        end
-
-        PickupSpell(spell)
-    elseif actionType == "item" then
-        PickupItem(spell)
-    elseif actionType == "macro" then
-        PickupMacro(spell)
-    elseif actionType == "battlepet" then
-        C_PetJournal.PickupPet(pet)
-    end
-
-    local flyoutFrame = btnOnFlyout:GetParent()
-    if flyoutFrame.isForCatalog then
-        removeSpell(flyoutFrame.id, btnOnFlyout:GetID())
-        updateAllGerms()
-        flyoutFrame:updateFlyoutMenuForCatalog(flyoutFrame.id)
-    end
+---@param self ButtonOnFlyoutMenu
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(self)
+    self:onDragStartDoPickup()
 end

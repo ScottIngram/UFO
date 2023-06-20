@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(DEBUG_OUTPUT.WARN)
+local debug = Debug:new()
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -121,20 +121,21 @@ function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pu
     local config
     if popup.isEdit then
         -- Modifying a flyout
-        config = getFlyoutConfig(popup.name)
+        config = FlyoutMenusDb:get(popup.name)
     else
         -- Saving a new flyout
-        config = addFlyout()
+        config = FlyoutMenusDb:appendNewOne()
     end
     config.icon = iconTexture
     popup:Hide()
     updateCatalog()
-    updateAllGerms()
+    GermCommander:updateAll()
 end
 
-function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(btn)
-    if btn.name and btn.name ~= "" then
-        pickupFlyout(btn.name)
+function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(btnInCatalog)
+    local flyoutId = btnInCatalog.name
+    if exists(flyoutId) then
+        FlyoutMenu:pickup(flyoutId)
     end
 end
 
@@ -203,6 +204,7 @@ end
 
 --[[
 RefreshFlyoutIconInfo() counts how many uniquely textured spells the player has in the current flyout.
+And tries to make the first few icons in the popup picker be the same as the buttons on the flyout ???
 ]]
 function refreshFlyoutIconInfo()
     FC_ICON_FILENAMES = {}
@@ -210,14 +212,15 @@ function refreshFlyoutIconInfo()
     local index = 2
 
     local popup = UIUFO_DetailerPopup
-    if popup.name then
-        local spells = getFlyoutsConfig()[popup.name].spells
-        local actionTypes = getFlyoutsConfig()[popup.name].actionTypes
-        local pets = getFlyoutsConfig()[popup.name].pets
-        for i = 1, #actionTypes do
-            local itemTexture = getTexture(actionTypes[i], spells[i], pets[i])
-            if itemTexture then
-                FC_ICON_FILENAMES[index] = gsub( strupper(itemTexture), "INTERFACE\\ICONS\\", "" )
+    local flyoutId = popup.name
+    if flyoutId then
+        local flyoutDef = FlyoutMenusDb:get(flyoutId)
+        local btnDefs = flyoutDef:getAllButtonDefs()
+        ---@param btnDef ButtonDef
+        for i, btnDef in ipairs(btnDefs) do
+            local icon = btnDef:getIcon()
+            if icon then
+                FC_ICON_FILENAMES[index] = gsub( strupper(icon), "INTERFACE\\ICONS\\", "" )
                 if FC_ICON_FILENAMES[index] then
                     index = index + 1
                     for j=1, (index-1) do

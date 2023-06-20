@@ -9,7 +9,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(DEBUG_OUTPUT.WARN)
+local debug = Debug:new()
 
 -------------------------------------------------------------------------------
 -- Constants: Ace -> Bliz Config UI definition

@@ -9,7 +9,7 @@
             </OnLeave>
             <OnDragStart function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart" />
             <OnReceiveDrag function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag" />
-            <OnMouseUp function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag" />
+            <OnMouseUp function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp" />
             <PreClick>
                 self:SetChecked(false)
             </PreClick>

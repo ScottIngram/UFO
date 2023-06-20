@@ -4,22 +4,24 @@
 --[[
 
 TODO
-* implement UFO_SV_FLYOUTS as array of self-contained button objects rather than each button spread across multiple parallel arrays
-* encapsulate as FlyoutConfigData
-* encapsulate as PlacementConfigData
-* refactor FlyoutMenu:updateFlyoutMenuForGerm and move some logic into a germ:Method(); replace all mentions of UIUFO_FlyoutMenuForGerm with simply self
 * replace existing icon picker with something closer to MacroManager / Weak Auras
-* question: can I use GetItemSpell(itemId) to simplify my code ?
-* BUG: OnDragStart needs to accommodate when there is already something on the cursor
-* - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
-* NUKE all OO syntax that's not actual OO.  Foo:Bar() doesn't need "self" if there is never an instance foo:Bar()
-* fix C_MountJournal OnPickup global var bug
-* consolidate all the redundant code, such as the if actionType == "spell" then PickupSpell(spellId) --> function ButtonOnFlyoutMenu:PickMeUp()
-* use ACE Lib/DataBroker
+* use ACE Lib/DataBroker so Titan Panel and other addons can open the UFO catalog
+* question: can I use GetItemSpell(itemId) to simplify my code ?
+* BUG: Oops, I clobbered the frames on the germ flyouts
+* BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
+* BUG: OnDragStart needs to accommodate when there is already something on the cursor
+* - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
 *
+* DONE: BUG: when germs omit unusable buttons, they still appear and now it and each subsequent btn behaves as though it were the one after
+* DONE: refactor FlyoutMenu:updateFlyoutMenuForGerm and move some logic into a germ:Method(); replace all mentions of UIUFO_FlyoutMenuForGerm with simply self
+* DONE: implement UFO_SV_FLYOUTS as array of self-contained button objects rather than each button spread across multiple parallel arrays
+* DONE: encapsulate as FlyoutConfigData
+* DONE: encapsulate as PlacementConfigData
 * DONE: BUG: germs that extend horizontally (as the ones on the vertical action bars) sometimes have weirdly wide borders
+* DONE: fix C_MountJournal OnPickup global var bug
+* DONE: consolidate all the redundant code, such as the if actionType == "spell" then PickupSpell(spellId) --> function ButtonOnFlyoutMenu:PickMeUp()
 * DONE: BLIZ BUG: fixed flyouts on side bars pointing in the wrong direction because the Bliz API reported the wrong direction
 * DONE: BUG: bliz bug: C_MountJournal index is in flux (e.g. a search filter will change the indices)
 * DONE: BLIZ BUG: picking up a mount by its spell ID results in a cursor whose GetCursorInfo() returns "companion" n "MOUNT" where n is... a meaningless number?
@@ -42,7 +44,7 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new(DEBUG_OUTPUT.WARN)
+local debug = Debug:new()
 
 -------------------------------------------------------------------------------
 -- Data
@@ -64,25 +66,25 @@ end
 
 function EventHandlers:PLAYER_LOGIN()
     debug.trace:print("PLAYER_LOGIN")
-    DEFAULT_CHAT_FRAME:AddMessage( "|cffd78900"..ADDON_NAME.." v"..VERSION.."|r loaded." )
-    initalizeAddonStuff()
+    debug.warn:print("v",VERSION,"loaded")
 end
 
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
     debug.trace:out("",1,"PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
-    updateAllGerms() -- moved this here from PLAYER_LOGIN() because the Bliz API was misrepresenting the bar directions >:(
+    initalizeAddonStuff() -- moved this here from PLAYER_LOGIN() because the Bliz API was just generally shitting the bed
+    GermCommander:updateAll() -- moved this here from PLAYER_LOGIN() because the Bliz API was misrepresenting the bar directions >:(
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
     if not isUfoInitialized then return end
     debug.trace:out("",1,"ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
-    handleActionBarSlotChanged(actionBarSlotId)
+    GermCommander:handleActionBarSlotChanged(actionBarSlotId)
 end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
     if not isUfoInitialized then return end
     debug.trace:print("PLAYER_SPECIALIZATION_CHANGED")
-    updateAllGerms()
+    GermCommander:updateAll()
 end
 
 -------------------------------------------------------------------------------
@@ -110,6 +112,16 @@ end
 -- Random stuff - TODO: tidy up
 -------------------------------------------------------------------------------
 
+function isInCombatLockdown(actionDescription)
+    if InCombatLockdown() then
+        local msg = actionDescription or "That action"
+        debug.warn:print(msg .. " is not allowed during combat.")
+        return true
+    else
+        return false
+    end
+end
+
 function getIdForCurrentToon()
     local name, realm = UnitFullName("player") -- FU Bliz, realm is arbitrarily nil sometimes but not always
     realm = GetRealmName()
@@ -121,54 +133,6 @@ function getPetNameAndIcon(petGuid)
     local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, tradable, unique, obtainable = C_PetJournal.GetPetInfoByPetID(petGuid)
     --print("getPetNameAndIcon(): petGuid =",petGuid, "| name =", name, "| icon =", icon)
     return name, icon
-end
-
-function getTexture(actionType, spellId, petId)
-    local id = pickSpellIdOrPetId(actionType, spellId, petId)
-    --print("getTexture(): actionType =",actionType, "| spellId =",spellId, "| petId =",petId, "| id =",id)
-    if actionType == "spell" then
-        return GetSpellTexture(id)
-    elseif actionType == "item" then
-        return GetItemIcon(id)
-    elseif actionType == "macro" then
-        local _, texture, _ = GetMacroInfo(id)
-        return texture
-    elseif actionType == "battlepet" then
-        local _, icon = getPetNameAndIcon(id)
-        return icon
-    end
-end
-
-function pickSpellIdOrPetId(type, spellId, petId)
-    return ((type == "battlepet") and petId) or spellId
-end
-
-function getThingyNameById(actionType, id)
-    if actionType == "spell" then
-        return GetSpellInfo(id)
-    elseif actionType == "item" then
-        return GetItemInfo(id)
-    elseif actionType == "macro" then
-        local name, _, _ = GetMacroInfo(id)
-        return name
-    elseif actionType == "battlepet" then
-        return getPetNameAndIcon(id)
-    end
-end
-
-function isThingyUsable(id, actionType, mountId, macroOwner,petId)
-    if mountId or petId then
-        -- TODO: figure out how to find a mount
-        return true -- GetMountInfoByID(mountId)
-    elseif actionType == "spell" then
-        return IsSpellKnown(id)
-    elseif  actionType == "item" then
-        local n = GetItemCount(id)
-        local t = PlayerHasToy(id) -- TODO: update the config code so it sets actionType = toy
-        return t or n > 0
-    elseif actionType == "macro" then
-        return isMacroGlobal(id) or getIdForCurrentToon() == macroOwner
-    end
 end
 
 function isMacroGlobal(macroId)
@@ -246,6 +210,8 @@ function exists(s)
     return not isEmpty(s)
 end
 
+-- convert data structures into JSON-like strings
+-- useful for injecting tables into secure functions because SFs don't allow tables
 function serialize(val, name, skipnewlines, depth)
     skipnewlines = skipnewlines or false
     depth = depth or 0
@@ -276,10 +242,12 @@ end
 local QUOTE = "\""
 local EOL = "\n"
 
+-- convert data structures into lines of Lua variable assignments
 -- useful for injecting tables into secure functions because SFs don't allow tables
+-- TODO: can I use this instead of the "asLists" solution?  Or would it produce gigantic strings?
 function serializeAsAssignments(name, val, isRecurse)
-    assert(val, "val is required")
-    assert(name, "name is required")
+    assert(val, ADDON_NAME..": val is required")
+    assert(name, ADDON_NAME..": name is required")
 
     local tmp
     if isRecurse then
@@ -313,16 +281,16 @@ function serializeAsAssignments(name, val, isRecurse)
 end
 
 function isClass(firstArg, class)
-    assert(class, "nil is not a Class")
+    assert(class, ADDON_NAME..": nil is not a Class")
     return (firstArg and type(firstArg) == "table" and firstArg.ufoType == class.ufoType)
 end
 
 function assertIsFunctionOf(firstArg, class)
-    assert(not isClass(firstArg, class), "Um... it's var.foo() not var:foo()")
+    assert(not isClass(firstArg, class), ADDON_NAME..": Um... it's var.foo() not var:foo()")
 end
 
 function assertIsMethodOf(firstArg, class)
-    assert(isClass(firstArg, class), "Um... it's var:foo() not var.foo()")
+    assert(isClass(firstArg, class), ADDON_NAME..": Um... it's var:foo() not var.foo()")
 end
 
 -------------------------------------------------------------------------------
@@ -330,11 +298,15 @@ end
 -------------------------------------------------------------------------------
 
 function initalizeAddonStuff()
+    if isUfoInitialized then return end
+
     Catalog:definePopupDialogWindow()
     Config:initializeFlyouts()
     Config:initializePlacements()
     FlyoutMenu:initializeOnClickHandlersForFlyouts()
     isUfoInitialized = true
+
+    --FlyoutMenusDb:convertOldToNew()
 end
 
 -------------------------------------------------------------------------------
