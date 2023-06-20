@@ -109,7 +109,7 @@ end
 -- TODO: delete after dev is done
 function FlyoutMenusDb:convertOldToNew()
     debug.trace:out("+",40,"FlyoutMenusDb:convertOldToNew()")
-    local old = UFO_SV_ACCOUNT.flyouts
+    local old = UFO_SV_ACCOUNT.OLD_flyouts
     Config:tmpNeoNuke()
 
     for i, oldFlyout in ipairs(old) do

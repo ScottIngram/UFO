@@ -13,17 +13,17 @@ Ufo.Config = Config
 
 function Config:initializeFlyouts()
     if not UFO_SV_ACCOUNT then
-        UFO_SV_ACCOUNT = { neoFlyouts = {} }
+        UFO_SV_ACCOUNT = { flyouts = {} }
     end
 end
 
 function Config:tmpNeoNuke()
-    UFO_SV_ACCOUNT.neoFlyouts = {}
+    UFO_SV_ACCOUNT.flyouts = {}
 end
 
 -- the set of flyouts is shared between all toons on the account
 function Config:getFlyoutsConfig()
-    return UFO_SV_ACCOUNT.neoFlyouts
+    return UFO_SV_ACCOUNT.flyouts
 end
 
 function Config:initializePlacements()
