@@ -158,8 +158,9 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
     local flyoutId = germ:getFlyoutId()
     self:setId(flyoutId)
     local flyoutDef = self:getDef(flyoutId)
+    local usableFlyout = flyoutDef:filterOutUnusable()
     local buttonFrames = { self:GetChildren() }
-    local firstThing = table.remove(buttonFrames, 1) -- TODO: what is this?
+    local firstThing = table.remove(buttonFrames, 1) -- this is the non-button UI element "Background" from ui.xml
      debug.trace:line(3,"firstThing", firstThing)
      debug.trace:dump(firstThing)
 
@@ -168,13 +169,7 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
 
     ---@param btnFrame ButtonOnFlyoutMenu
     for i, btnFrame in ipairs(buttonFrames) do
-        if btnFrame.ignoreInlayout then
-            -- this is prolly the contents of firstThing
-             debug.trace:line(3, "btnFrame.ignoreInlayout",btnFrame.ignoreInlayout)
-             debug.trace:dump(btnFrame)
-        end
-
-        local btnDef = flyoutDef:getButtonDef(i)
+        local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef)
         debug.trace:line(3, "i",i, "btnDef", btnDef)
 

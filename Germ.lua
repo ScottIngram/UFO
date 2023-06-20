@@ -215,8 +215,8 @@ end
 
 function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
     assertIsMethodOf(self, Germ)
-    debug.trace:setHeader("%","Germ:redefine()")
-    debug.trace:line(3, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "direction",direction)
+    local debug = debug.trace:setHeader("%","Germ:redefine()")
+    debug:line(3, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "direction",direction)
 
     local flyoutDef = FlyoutMenusDb:get(flyoutId)
     if not flyoutDef then
@@ -247,10 +247,12 @@ function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
     self:SetAttribute("UFO_BLIZ_TYPES", fknJoin(asLists.blizTypes))
     self:SetAttribute("UFO_PETS", fknJoin(asLists.petGuids))
 
-    -- local UFO_NAMES = self:GetAttribute("UFO_NAMES")
-    -- local UFO_BLIZ_TYPES = self:GetAttribute("UFO_BLIZ_TYPES")
-    -- local UFO_PETS  = self:GetAttribute("UFO_PETS")
-    --debug.trace:line(3, "UFO_NAMES",UFO_NAMES, "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES, "UFO_PETS",UFO_PETS)
+    local UFO_NAMES = self:GetAttribute("UFO_NAMES")
+    local UFO_BLIZ_TYPES = self:GetAttribute("UFO_BLIZ_TYPES")
+    local UFO_PETS  = self:GetAttribute("UFO_PETS")
+    debug:line(3, "UFO_NAMES",UFO_NAMES)
+    debug:line(3, "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES)
+    debug:line(3, "UFO_PETS",UFO_PETS)
 
     self:setHandlers() -- TODO: move this into self:new() and rework bindFlyoutToActionBarSlot() so it give more info to :new()
 

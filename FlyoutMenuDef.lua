@@ -133,12 +133,18 @@ end
 
 ---@return FlyoutMenuDef
 function FlyoutMenuDef:filterOutUnusable()
+    local debug = debug.trace:setHeader(X,"FlyoutMenuDef:filterOutUnusable()")
+    debug:line(10, "FlyoutMenuDef #", self.name)
+
     ---@type FlyoutMenuDef
     local usableFlyoutMenuDef = FlyoutMenuDef:new()
     ---@param btn ButtonDef
     for i, btn in ipairs(self:getAllButtonDefs()) do
         if btn:isUsable() then
+            debug:line(5, "can use", btn:getName())
             usableFlyoutMenuDef:addButton(btn)
+        else
+            debug:line(5, "CANNOT use", btn:getName())
         end
     end
     return usableFlyoutMenuDef
