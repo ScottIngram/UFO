@@ -77,7 +77,7 @@ function FlyoutMenuDef:forEachBtn(callback)
 
     for i, buttonDef in ipairs(self.btns) do -- this must remain self.btns and NOT self:getAllButtonDefs() - otherwise infinite loop
         debug.info:out(".",3,"FlyoutMenusDb:forEachBtn()", "i",i, "buttonDef", buttonDef)
-        callback(buttonDef, buttonDef) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
+        callback(buttonDef, buttonDef, i) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
     end
 end
 
@@ -108,8 +108,15 @@ function FlyoutMenuDef:replaceButton(i, buttonDef)
     self:setCachedLists(nil)
 end
 
-function FlyoutMenuDef:removeButton(i)
-    self.btns[tonumber(i)] = nil
+-- removes a button an moves the rest down a notch
+function FlyoutMenuDef:removeButton(removeAtIndex)
+    local howManyButtons = self:howManyButtons()
+    self:forEachBtn(function(buttonDef, buttonDef, i)
+        if i >= removeAtIndex and i <= howManyButtons then
+            local nextBtnDef = self:getButtonDef(i + 1) -- lua is OK with index out of range
+            self:replaceButton(i, nextBtnDef)
+        end
+    end)
 end
 
 function FlyoutMenuDef:getIcon()
