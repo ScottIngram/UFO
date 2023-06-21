@@ -171,10 +171,7 @@ function FlyoutMenuDef:asLists()
     }
     ---@param btn ButtonDef
     for i, btn in ipairs(self:getAllButtonDefs()) do
-        local blizApiFieldDef = btn:getBlizApiFieldDef()
-        local typeForApi = blizApiFieldDef.typeForBliz
-
-        lists.blizTypes[i] = typeForApi
+        lists.blizTypes[i] = btn:getTypeForBlizApi()
         lists.types    [i] = btn.type
         lists.names    [i] = btn.name
         lists.spellIds [i] = btn.spellId
