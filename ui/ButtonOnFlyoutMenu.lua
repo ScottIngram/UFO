@@ -87,6 +87,12 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     ---@type FlyoutMenu
     local flyoutFrame = self:GetParent()
     if flyoutFrame.isForCatalog then
+        local isDragging = GetCursorInfo()
+        if isDragging then
+            self:onReceiveDragAddIt()
+            return
+        end
+
         self:getDef():pickupToCursor()
         local flyoutId = flyoutFrame:getId()
         local flyoutMenuDef = FlyoutMenusDb:get(flyoutId)
@@ -102,8 +108,8 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     if not flyoutMenu.isForCatalog then return end -- only the flyouts in the catalog are valid drop targets.  TODO: let flyouts on the germs receive too?
 
     local crsDef = ButtonDef:getFromCursor()
-    if not crsDef.type then
-        debug.warn:print("Sorry, unsupported type:", crsDef.kind)
+    if not crsDef then
+        debug.warn:print("Sorry, unsupported type:", Ufo.unknownType)
         return
     end
 

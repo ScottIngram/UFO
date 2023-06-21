@@ -276,7 +276,9 @@ function ButtonDef:getFromCursor()
     elseif type == ButtonType.PET then
         btnDef.petGuid = c1
     else
-        btnDef.kind = type or "UnKnOwN"
+        Ufo.unknownType = type or "UnKnOwN"
+        type = nil
+        btnDef = nil
     end
 
     if type then

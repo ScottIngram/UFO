@@ -84,17 +84,6 @@ local function doesFlyoutExist(flyoutId)
     return flyoutConf and true or false
 end
 
-local function getFlyoutIdFromGermProxy(type, macroId)
-    local flyoutId
-    if type == "macro" then
-        local name, texture, body = GetMacroInfo(macroId)
-        if name == PROXY_MACRO_NAME then
-            flyoutId = body
-        end
-    end
-    return flyoutId
-end
-
 local function getFlyoutIdForSlot(btnSlotIndex)
     return GermCommander:getPlacementConfigForCurrentSpec()[btnSlotIndex]
 end
@@ -136,33 +125,6 @@ function GermCommander:newGermProxy(flyoutId, icon)
     return CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText, nil, nil)
 end
 
--- TODO: figure out why this fails but the above works
--- Responds to event: ACTIONBAR_SLOT_CHANGED
--- Check if this event was caused by dragging a flyout out of the Catalog and dropping it onto an actionbar.
--- The targeted slot could: be empty; already have a different germ (or the same one); anything else.
-function GermCommander:BROKEN_handleActionBarSlotChanged(btnSlotIndex)
-    local configChanged
-    local existingFlyoutId = getFlyoutIdForSlot(btnSlotIndex)
-    if existingFlyoutId then
-        debug.info:out("%",5,"GermCommander:handleActionBarSlotChanged() removing the supplanted PLACEMENT", "btnSlotIndex",btnSlotIndex, "existingFlyoutId", existingFlyoutId)
-        FlyoutMenu:pickup(existingFlyoutId)
-        GermCommander:deletePlacement(btnSlotIndex)
-        configChanged = true
-    end
-
-    local type, macroId = GetActionInfo(btnSlotIndex)
-    local droppedFlyoutId = getFlyoutIdFromGermProxy(type, macroId)
-    if droppedFlyoutId then
-        self:savePlacement(btnSlotIndex, droppedFlyoutId)
-        DeleteMacro(PROXY_MACRO_NAME)
-        configChanged = true
-    end
-
-    if configChanged then
-        self:updateAll()
-    end
-end
-
 -- Responds to event: ACTIONBAR_SLOT_CHANGED
 -- Check if this event was caused by dragging a flyout out of the Catalog and dropping it onto an actionbar.
 -- The targeted slot could: be empty; already have a different germ (or the same one); anything else.
@@ -175,7 +137,7 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
         return
     end
 
-    local droppedFlyoutId = getFlyoutIdFromGermProxy(type, macroId)
+    local droppedFlyoutId = self:getFlyoutIdFromGermProxy(type, macroId)
     if droppedFlyoutId then
         self:savePlacement(btnSlotIndex, droppedFlyoutId)
         DeleteMacro(PROXY_MACRO_NAME)
@@ -194,6 +156,17 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
     if configChanged then
         self:updateAll()
     end
+end
+
+function GermCommander:getFlyoutIdFromGermProxy(type, macroId)
+    local flyoutId
+    if type == "macro" then
+        local name, texture, body = GetMacroInfo(macroId)
+        if name == PROXY_MACRO_NAME then
+            flyoutId = body
+        end
+    end
+    return flyoutId
 end
 
 function GermCommander:savePlacement(btnSlotIndex, flyoutId)

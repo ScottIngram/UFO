@@ -12,9 +12,9 @@ TODO
 * question: can I use GetItemSpell(itemId) to simplify my code ?
 * BUG: Oops, I clobbered the frames on the germ flyouts
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
-* BUG: OnDragStart needs to accommodate when there is already something on the cursor
-* - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
 *
+* DONE: BUG: OnDragStart needs to accommodate when there is already something on the cursor
+* DONE: - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
 * DONE: BUG: macros sometimes(?) have the wrong image / tooltip
 * DONE: centralize the numerous "if ButtonType == FOO then BAR" blocks into some common solution
 * DONE: BUG: when germs omit unusable buttons, they still appear and now it and each subsequent btn behaves as though it were the one after
