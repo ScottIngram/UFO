@@ -4,17 +4,19 @@
 --[[
 
 TODO
+* put a ufo -> catalog button on the collections and macro panels too
 * replace existing icon picker with something closer to MacroManager / Weak Auras
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
 * use ACE Lib/DataBroker so Titan Panel and other addons can open the UFO catalog
 * question: can I use GetItemSpell(itemId) to simplify my code ?
-* try to centralize the numerous "if ButtonType == FOO then BAR" blocks into some common solution
 * BUG: Oops, I clobbered the frames on the germ flyouts
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 * BUG: OnDragStart needs to accommodate when there is already something on the cursor
 * - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
 *
+* DONE: BUG: macros sometimes(?) have the wrong image / tooltip
+* DONE: centralize the numerous "if ButtonType == FOO then BAR" blocks into some common solution
 * DONE: BUG: when germs omit unusable buttons, they still appear and now it and each subsequent btn behaves as though it were the one after
 * DONE: refactor FlyoutMenu:updateFlyoutMenuForGerm and move some logic into a germ:Method(); replace all mentions of UIUFO_FlyoutMenuForGerm with simply self
 * DONE: implement UFO_SV_FLYOUTS as array of self-contained button objects rather than each button spread across multiple parallel arrays
@@ -305,6 +307,7 @@ function initalizeAddonStuff()
     Config:initializeFlyouts()
     Config:initializePlacements()
     FlyoutMenu:initializeOnClickHandlersForFlyouts()
+    ButtonDef:registerToolTipRecorder()
     isUfoInitialized = true
 
     --FlyoutMenusDb:convertOldToNew()

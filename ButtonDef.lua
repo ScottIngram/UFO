@@ -108,6 +108,7 @@ function ButtonDef:getIdForBlizApi()
     local typeForBliz = blizDef.typeForBliz
     local idKey       = blizDef.key or (typeForBliz.."Id") -- spellId or itemId or petGuid or etcId
     local happyBlizId = self[idKey]
+    --debug:out(X,X,"ButtonDef:getIdForBlizApi()", "self.type",self.type, "typeForBliz",typeForBliz, "idKey",idKey, "happyBlizId",happyBlizId)
     self:setIdForBlizApi(happyBlizId) -- cache the result to save processing cycles on repeated calls
     return happyBlizId
 end
@@ -121,7 +122,7 @@ end
 function ButtonDef:isUsable()
     local t = self.type
     local id = self:getIdForBlizApi()
-    if t == ButtonType.MOUNT or t == ButtonType.PET then
+    if t == ButtonType.MOUNT or t == ButtonType.PET or t == ButtonType.TOY then
         -- TODO: figure out how to find a mount
         return true -- GetMountInfoByID(mountId)
     elseif t == ButtonType.SPELL then
@@ -140,7 +141,7 @@ function ButtonDef:getIcon()
     local id = self:getIdForBlizApi()
     if t == ButtonType.SPELL or t == ButtonType.MOUNT then
         return GetSpellTexture(id)
-    elseif t == ButtonType.ITEM then
+    elseif t == ButtonType.ITEM or t == ButtonType.TOY then
         return GetItemIcon(id)
     elseif t == ButtonType.MACRO then
         local _, texture, _ = GetMacroInfo(id)
@@ -160,7 +161,7 @@ function ButtonDef:getName()
     local id = self:getIdForBlizApi()
     if t == ButtonType.SPELL or t == ButtonType.MOUNT then
         self.name =  GetSpellInfo(id)
-    elseif t == ButtonType.ITEM then
+    elseif t == ButtonType.ITEM or t == ButtonType.TOY then
         self.name =  GetItemInfo(id)
     elseif t == ButtonType.TOY then
         self.name =  GetItemInfo(id)
@@ -204,7 +205,38 @@ function ButtonDef:getToolTipSetter()
     return nil
 end
 
--- TODO: distinguish between toys and items
+local ttData
+
+function ButtonDef:registerToolTipRecorder()
+    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip, data)
+        if tooltip == GameTooltip then
+            ttData = data
+        end
+    end)
+end
+
+function ButtonDef:readToolTipForToyType()
+    ttData = nil -- will be re-populated by the registerToolTipRecorder() event handler above
+
+    -- trigger the tooltip
+    local tooltipSetter = self:getToolTipSetter()
+    local foo = tooltipSetter and tooltipSetter()
+    if not ttData then
+        return false
+    end
+
+    -- scan the text in the tooltip
+    for i, ttLine in ipairs(ttData.lines) do
+        debug.trace:out(")",10,"parseToolTipForType()", "ttLine.leftText",ttLine.leftText)
+        if ttLine.leftText == L10N.TOY then
+            debug.trace:out(")",30,"TOY !!!")
+            return true
+        end
+    end
+
+    return false
+end
+
 ---@return ButtonDef
 function ButtonDef:getFromCursor()
     ---@type ButtonDef
@@ -231,11 +263,11 @@ function ButtonDef:getFromCursor()
         btnDef.spellId = spellId
         btnDef.mountId = c1
     elseif type == ButtonType.ITEM then
-        local ttType = parseToolTipForType(c2)
-        if ttType == ButtonType.TOY then
+        btnDef.itemId = c1
+        local isToy = btnDef:readToolTipForToyType()
+        if isToy then
             btnDef.type = ButtonType.TOY
         end
-        btnDef.itemId = c1
     elseif type == ButtonType.MACRO then
         btnDef.macroId = c1
         if not isMacroGlobal(c1) then
@@ -276,5 +308,4 @@ function ButtonDef:pickupToCursor()
     elseif type == ButtonType.PET then
         C_PetJournal.PickupPet(self.petGuid)
     end
-    -- TODO: bug - address TOY
 end

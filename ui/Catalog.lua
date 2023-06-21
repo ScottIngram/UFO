@@ -26,7 +26,7 @@ Ufo.Catalog = Catalog
 -- Executed on load, calls general set-up functions
 function Catalog:definePopupDialogWindow()
     StaticPopupDialogs["UFO_CONFIRM_DELETE"] = {
-        text = L10N["CONFIRM_DELETE"],
+        text = L10N.CONFIRM_DELETE,
         button1 = YES,
         button2 = NO,
         OnAccept = function (dialog) FlyoutMenusDb:delete(dialog.flyoutId); updateCatalog(); GermCommander:updateAll(); end,
@@ -192,7 +192,7 @@ function updateCatalog()
             else
                 -- This is the Add New button
                 button.name = nil
-                button.text:SetText(L10N["NEW_FLYOUT"])
+                button.text:SetText(L10N.NEW_FLYOUT)
                 button.text:SetTextColor(GREEN_FONT_COLOR.r, GREEN_FONT_COLOR.g, GREEN_FONT_COLOR.b)
                 button.icon:SetTexture("Interface\\PaperDollInfoFrame\\Character-Plus")
                 button.icon:SetSize(30, 30)
