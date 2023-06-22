@@ -46,7 +46,6 @@ function Catalog:hookFrame(frame)
     end
 end
 
-local w = {}
 local toggleBtns = {}
 
 function Catalog:createToggleButton(blizFrame)
@@ -71,14 +70,11 @@ function Catalog:createToggleButton(blizFrame)
     btnFrame:Show()
 
     toggleBtns[blizFrame] = btnFrame
-    w[blizFrame] = GetUIPanelWidth(blizFrame)
-    debug.trace:out(X,X,"Catalog:createToggleButton() TAIL", "parentName", blizFrameName, "w", w[blizFrame], "parentFrame", blizFrame)
-
 end
 
-function Catalog:toggle(anyBtnToToggleCatalog, forceOpen)
+function Catalog:toggle(clickedBtn, forceOpen)
     local catalogFrame = UIUFO_Catalog
-    local blizFrame = anyBtnToToggleCatalog:GetParent()
+    local blizFrame = clickedBtn:GetParent()
     local blizFrameName = blizFrame:GetName()
     local oldBlizFrame = catalogFrame:GetParent()
     local isCatalogOpen = catalogFrame:IsShown()
@@ -87,37 +83,34 @@ function Catalog:toggle(anyBtnToToggleCatalog, forceOpen)
     if forceOpen then
         willCloseCatalog = false
     end
-    if not w[blizFrame] then
-        debug.trace:out(X,X,"Catalog:open() WUT?!", "parentName", blizFrameName, "w", w[blizFrame], "parentFrame", blizFrame)
-    end
 
-    debug.error:out(X,X,"Catalog:open()", "parentName", blizFrameName, "w",w[blizFrame], "oldParent name", oldBlizFrame:GetName(), "isCatalogOpen",isCatalogOpen, "willMoveCatalog", willMoveCatalog, "willCloseCatalog", willCloseCatalog )
+    debug.trace:out(X,X,"Catalog:open()", "parentName", blizFrameName, "oldParent name", oldBlizFrame:GetName(), "isCatalogOpen",isCatalogOpen, "willMoveCatalog", willMoveCatalog, "willCloseCatalog", willCloseCatalog )
 
     local xOffSet = 0
     if blizFrame == SpellBookFrame then
-        -- accomodate those tabs down the side...
+        -- accommodate those tabs down the side...
         -- because they aren't already included in the width?!?!  Facepalm.
         xOffSet = 35
     end
 
     if willCloseCatalog then
-        SetUIPanelAttribute(blizFrame, "width", w[blizFrame])
+        SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth())
         catalogFrame:Hide()
     end
 
     if (willMoveCatalog and isCatalogOpen) or willCloseCatalog then
-        SetUIPanelAttribute(oldBlizFrame, "width", w[blizFrame])
+        SetUIPanelAttribute(oldBlizFrame, "width", oldBlizFrame:GetWidth())
     end
 
     if willMoveCatalog then
-        SetUIPanelAttribute(blizFrame, "width", w[blizFrame] +150)
+        SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth() +150)
         catalogFrame:SetParent(blizFrame)
         catalogFrame:SetPoint("TOPLEFT", blizFrameName, "TOPRIGHT", xOffSet, -15)
         catalogFrame:SetPoint("BOTTOMLEFT", blizFrameName, "BOTTOMRIGHT", xOffSet, -5)
     end
 
     if not willCloseCatalog then
-        SetUIPanelAttribute(blizFrame, "width", w[blizFrame] +150)
+        SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth() +150)
         catalogFrame:Show()
     end
 
@@ -246,7 +239,7 @@ end
 
 function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
     local catalogFrame = UIUFO_Catalog
-    debug.warn:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton, "SpellBookFrame",SpellBookFrame)
+    debug.trace:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton, "SpellBookFrame",SpellBookFrame)
 
     local anyOpenBlizFrame
     for blizFrame, _ in pairs(toggleBtns) do
@@ -262,7 +255,7 @@ function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
         anyOpenBlizFrame = SpellBookFrame
     end
 
-    debug.warn:dump(toggleBtns)
+    debug.trace:dump(toggleBtns)
     local toggleBtn = toggleBtns[anyOpenBlizFrame]
     Catalog:toggle(toggleBtn, true)
 end
