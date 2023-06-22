@@ -38,99 +38,93 @@ function Catalog:definePopupDialogWindow()
     }
 end
 
--------------------------------------------------------------------------------
--- CATALOG Functions Supporting Catalog UI
--------------------------------------------------------------------------------
-
-function GLOBAL_UIUFO_CatalogScrollPane_OnLoad(scrollPane)
-    HybridScrollFrame_OnLoad(scrollPane)
-    scrollPane.update = updateCatalog
-    HybridScrollFrame_CreateButtons(scrollPane, "UIUFO_CatalogFlyoutOptionsMouseOver")
-end
-
-function GLOBAL_UIUFO_CatalogScrollPane_OnShow(scrollPane)
-    HybridScrollFrame_CreateButtons(scrollPane, "UIUFO_CatalogFlyoutOptionsMouseOver")
-    updateCatalog()
-end
-
-function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
-    UIUFO_DetailerPopup:Hide()
-    UIUFO_FlyoutMenuForCatalog:Hide()
-end
-
-function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
-    debug.trace:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton)
-    if not SpellBookFrame:IsShown() then
-        ToggleSpellBook("spell")
-        --SpellBookFrame:Show()
+function Catalog:hookFrame(frame)
+    -- CollectionsJournal
+    -- MacroFrame
+    if frame then
+        frame:HookScript("OnShow", Catalog.createToggleButton)
     end
-    GLOBAL_UIUFO_OpenCatalogBtn_OnClick()
 end
 
-function GLOBAL_UIUFO_OpenCatalogBtn_OnClick(prollyUIUFO_OpenCatalogBtn)
-    if UIUFO_Catalog:IsShown() then
-        -- Hide FlyoutConfig panel and collapse its space
-        UIUFO_Catalog:Hide()
-        SetUIPanelAttribute(SpellBookFrame, "width", GetUIPanelWidth(SpellBookFrame) - 150)
-        UpdateUIPanelPositions(SpellBookFrame)
-    else
-        -- Show FlyoutConfig panel and make room for it
-        UIUFO_Catalog:Show()
-        SetUIPanelAttribute(SpellBookFrame, "width", GetUIPanelWidth(SpellBookFrame) + 150)
-        UpdateUIPanelPositions(SpellBookFrame)
-    end
+local w = {}
+local toggleBtns = {}
 
-end
-
--- throttle OnUpdate because it fires as often as FPS and is very resource intensive
-local C_UI_ON_UPDATE_TIMER_FREQUENCY = 0.25
-local onUpdateTimerForConfigUi = 0
-
-function GLOBAL_UIUFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
-    onUpdateTimerForConfigUi = onUpdateTimerForConfigUi + elapsed
-    if onUpdateTimerForConfigUi < C_UI_ON_UPDATE_TIMER_FREQUENCY then
+function Catalog:createToggleButton(blizFrame)
+    local blizFrameName = blizFrame:GetName()
+    local btnName = "UIUFO_BtnToToggleCatalog_On".. blizFrameName
+    local btnFrame = _G[btnName]
+    if btnFrame then
+        -- we've already made it
         return
     end
-    --print("GLOBAL_UIUFO_CatalogScrollPane_OnUpdate() UFO_CatalogScrollPane_onUpdateTimer =", onUpdateTimerForConfigUi)
-    onUpdateTimerForConfigUi = 0
-    UFO_CatalogScrollPane_DoUpdate(scrollPane)
+    local xBtnName = blizFrameName .."CloseButton"
+    local xBtnFrame = _G[xBtnName]
+    debug.trace:out(X,X,"Catalog:createToggleButton() HEAD", "parentName", blizFrameName, "xBtnName", xBtnName, "btnName",btnName)
+
+    btnFrame = CreateFrame("Button", btnName, blizFrame, "UIPanelButtonTemplate")
+    btnFrame:SetSize(80,22)
+    btnFrame:SetPoint("RIGHT", xBtnName, "LEFT", 2, 1)
+    btnFrame:SetFrameStrata(xBtnFrame:GetFrameStrata())
+    btnFrame:SetFrameLevel(xBtnFrame:GetFrameLevel()+1 )
+    btnFrame.Text:SetText("UFO")
+    btnFrame:SetScript("OnClick", function(zelf) Catalog:toggle(zelf) end)
+    btnFrame:Show()
+
+    toggleBtns[blizFrame] = btnFrame
+    w[blizFrame] = GetUIPanelWidth(blizFrame)
+    debug.trace:out(X,X,"Catalog:createToggleButton() TAIL", "parentName", blizFrameName, "w", w[blizFrame], "parentFrame", blizFrame)
+
 end
 
-function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(scrollPane, whichMouseButton, down)
-    if scrollPane.name and scrollPane.name ~= "" then
-        if UIUFO_CatalogScrollPane.selectedIdx == scrollPane.name then
-            UIUFO_CatalogScrollPane.selectedIdx = nil
-        else
-            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)		-- inappropriately named, but a good sound.
-            UIUFO_CatalogScrollPane.selectedIdx = scrollPane.name
-        end
-        updateCatalog()
-        UIUFO_DetailerPopup:Hide()
-    else
-        -- This is the "New" button
-        UIUFO_DetailerPopup:Show()
-        UIUFO_CatalogScrollPane.selectedIdx = nil
-        updateCatalog()
+function Catalog:toggle(anyBtnToToggleCatalog, forceOpen)
+    local catalogFrame = UIUFO_Catalog
+    local blizFrame = anyBtnToToggleCatalog:GetParent()
+    local blizFrameName = blizFrame:GetName()
+    local oldBlizFrame = catalogFrame:GetParent()
+    local isCatalogOpen = catalogFrame:IsShown()
+    local willMoveCatalog = blizFrame ~= oldBlizFrame
+    local willCloseCatalog = (isCatalogOpen and not willMoveCatalog)
+    if forceOpen then
+        willCloseCatalog = false
     end
-end
+    if not w[blizFrame] then
+        debug.trace:out(X,X,"Catalog:open() WUT?!", "parentName", blizFrameName, "w", w[blizFrame], "parentFrame", blizFrame)
+    end
 
-function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
-    for i = 1, #scrollPane.buttons do
-        local button = scrollPane.buttons[i]
-        if button:IsMouseOver() then
-            if button.name then
-                button.DeleteButton:Show()
-                button.EditButton:Show()
-            else
-                button.DeleteButton:Hide()
-                button.EditButton:Hide()
-            end
-            button.HighlightBar:Show()
-        else
-            button.DeleteButton:Hide()
-            button.EditButton:Hide()
-            button.HighlightBar:Hide()
-        end
+    debug.error:out(X,X,"Catalog:open()", "parentName", blizFrameName, "w",w[blizFrame], "oldParent name", oldBlizFrame:GetName(), "isCatalogOpen",isCatalogOpen, "willMoveCatalog", willMoveCatalog, "willCloseCatalog", willCloseCatalog )
+
+    local xOffSet = 0
+    if blizFrame == SpellBookFrame then
+        -- accomodate those tabs down the side...
+        -- because they aren't already included in the width?!?!  Facepalm.
+        xOffSet = 35
+    end
+
+    if willCloseCatalog then
+        SetUIPanelAttribute(blizFrame, "width", w[blizFrame])
+        catalogFrame:Hide()
+    end
+
+    if (willMoveCatalog and isCatalogOpen) or willCloseCatalog then
+        SetUIPanelAttribute(oldBlizFrame, "width", w[blizFrame])
+    end
+
+    if willMoveCatalog then
+        SetUIPanelAttribute(blizFrame, "width", w[blizFrame] +150)
+        catalogFrame:SetParent(blizFrame)
+        catalogFrame:SetPoint("TOPLEFT", blizFrameName, "TOPRIGHT", xOffSet, -15)
+        catalogFrame:SetPoint("BOTTOMLEFT", blizFrameName, "BOTTOMRIGHT", xOffSet, -5)
+    end
+
+    if not willCloseCatalog then
+        SetUIPanelAttribute(blizFrame, "width", w[blizFrame] +150)
+        catalogFrame:Show()
+    end
+
+    -- tell the UI to update window positions
+    UpdateUIPanelPositions(blizFrame)
+    if willMoveCatalog then
+        UpdateUIPanelPositions(oldBlizFrame)
     end
 end
 
@@ -226,6 +220,105 @@ function updateCatalog()
             end
         else
             buttons[i]:Hide()
+        end
+    end
+end
+
+-------------------------------------------------------------------------------
+-- GLOBAL Functions Supporting Catalog XML Callbacks
+-------------------------------------------------------------------------------
+
+function GLOBAL_UIUFO_CatalogScrollPane_OnLoad(scrollPane)
+    HybridScrollFrame_OnLoad(scrollPane)
+    scrollPane.update = updateCatalog
+    HybridScrollFrame_CreateButtons(scrollPane, "UIUFO_CatalogFlyoutOptionsMouseOver")
+end
+
+function GLOBAL_UIUFO_CatalogScrollPane_OnShow(scrollPane)
+    HybridScrollFrame_CreateButtons(scrollPane, "UIUFO_CatalogFlyoutOptionsMouseOver")
+    updateCatalog()
+end
+
+function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
+    UIUFO_DetailerPopup:Hide()
+    UIUFO_FlyoutMenuForCatalog:Hide()
+end
+
+function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
+    local catalogFrame = UIUFO_Catalog
+    debug.warn:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton, "SpellBookFrame",SpellBookFrame)
+
+    local anyOpenBlizFrame
+    for blizFrame, _ in pairs(toggleBtns) do
+        if blizFrame:IsShown() then
+            if not anyOpenBlizFrame then
+                anyOpenBlizFrame = blizFrame
+            end
+        end
+    end
+
+    if not anyOpenBlizFrame then
+        ToggleSpellBook("spell")
+        anyOpenBlizFrame = SpellBookFrame
+    end
+
+    debug.warn:dump(toggleBtns)
+    local toggleBtn = toggleBtns[anyOpenBlizFrame]
+    Catalog:toggle(toggleBtn, true)
+end
+
+function GLOBAL_Any_BtnToToggleCatalog_OnClick(anyBtnToToggleCatalog)
+    Catalog:toggle(anyBtnToToggleCatalog)
+end
+
+-- throttle OnUpdate because it fires as often as FPS and is very resource intensive
+local C_UI_ON_UPDATE_TIMER_FREQUENCY = 0.25
+local onUpdateTimerForConfigUi = 0
+
+function GLOBAL_UIUFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
+    onUpdateTimerForConfigUi = onUpdateTimerForConfigUi + elapsed
+    if onUpdateTimerForConfigUi < C_UI_ON_UPDATE_TIMER_FREQUENCY then
+        return
+    end
+    --print("GLOBAL_UIUFO_CatalogScrollPane_OnUpdate() UFO_CatalogScrollPane_onUpdateTimer =", onUpdateTimerForConfigUi)
+    onUpdateTimerForConfigUi = 0
+    UFO_CatalogScrollPane_DoUpdate(scrollPane)
+end
+
+function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(scrollPane, whichMouseButton, down)
+    if scrollPane.name and scrollPane.name ~= "" then
+        if UIUFO_CatalogScrollPane.selectedIdx == scrollPane.name then
+            UIUFO_CatalogScrollPane.selectedIdx = nil
+        else
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)		-- inappropriately named, but a good sound.
+            UIUFO_CatalogScrollPane.selectedIdx = scrollPane.name
+        end
+        updateCatalog()
+        UIUFO_DetailerPopup:Hide()
+    else
+        -- This is the "New" button
+        UIUFO_DetailerPopup:Show()
+        UIUFO_CatalogScrollPane.selectedIdx = nil
+        updateCatalog()
+    end
+end
+
+function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
+    for i = 1, #scrollPane.buttons do
+        local button = scrollPane.buttons[i]
+        if button:IsMouseOver() then
+            if button.name then
+                button.DeleteButton:Show()
+                button.EditButton:Show()
+            else
+                button.DeleteButton:Hide()
+                button.EditButton:Hide()
+            end
+            button.HighlightBar:Show()
+        else
+            button.DeleteButton:Hide()
+            button.EditButton:Hide()
+            button.HighlightBar:Hide()
         end
     end
 end

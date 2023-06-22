@@ -65,6 +65,32 @@ function EventHandlers:ADDON_LOADED(addonName)
     if addonName == ADDON_NAME then
         debug.trace:print("ADDON_LOADED", addonName)
     end
+
+    --[[
+    How many different ways can Bliz find to
+    make simple tasks that should share common, consistent procedures
+    instead require a myriad of inconsitent, poorly documented, unintuitive, incompatible code.
+    Unlike SpellBookFrame, the following two Bliz panels do not exist until the user opens them.
+    Thus, you can't refer to them in your UI XML as you can with SpellBookFrame.
+    So if you need to create any UI that depends on these non-existent bliz frames,
+    you must do so programatically in Lua.
+    And how do you know if these frames exist yet?
+    Is there an global event announcing the frame has been opened?  Nope.
+    Is there a hook for an OnShow script?  Not if the frame doesn't exist!  So, Nope again.
+    Is there a function in the API namespaces to force them into existence?  Nope.
+    (I've discovered MacroFrame_LoadUI() and CollectionsJournal_LoadUI() in the wow-ui-source)
+    BUT, if you happen to discover these frames are internal Bliz ADDONS that load on demand,
+    AND, know about the global ADDON_LOADED event
+    AND, can find the name of these addons... you find yourself here.
+    Fuck me with a chainsaw.
+    ]]
+    if addonName == "Blizzard_Collections" then
+        Catalog:createToggleButton(CollectionsJournal)
+    end
+
+    if addonName == "Blizzard_MacroUI" then
+        Catalog:createToggleButton(MacroFrame)
+    end
 end
 
 function EventHandlers:PLAYER_LOGIN()
@@ -308,6 +334,7 @@ function initalizeAddonStuff()
     Config:initializePlacements()
     FlyoutMenu:initializeOnClickHandlersForFlyouts()
     ButtonDef:registerToolTipRecorder()
+    Catalog:createToggleButton(SpellBookFrame)
     isUfoInitialized = true
 
     --FlyoutMenusDb:convertOldToNew()
