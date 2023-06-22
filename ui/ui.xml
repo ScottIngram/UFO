@@ -65,12 +65,14 @@
     <Frame name="UIUFO_FlyoutMenuForGerm" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
         <Scripts>
             <OnLoad function="GLOBAL_UIUFO_FlyoutMenuForGerm_OnLoad"/>
+            <OnUpdate function="GLOBAL_UIUFO_FlyoutMenu_OnUpdate"/>
         </Scripts>
     </Frame>
 
     <Frame name="UIUFO_FlyoutMenuForCatalog" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
         <Scripts>
             <OnLoad function="GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad"/>
+            <OnUpdate function="GLOBAL_UIUFO_FlyoutMenu_OnUpdate"/>
         </Scripts>
     </Frame>
 

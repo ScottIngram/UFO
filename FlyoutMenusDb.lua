@@ -1,6 +1,7 @@
 -- FlyoutMenusDb
 -- unique flyout definitions shown in the config panel
--- TODO: stop reclaiming flyout indices when one is deleted - let the index be its unique, permanent ID.
+-- TODO: stop reclaiming flyout indices when one is deleted - let the index be its unique, permanent ID. - OR...
+-- yes, put a unique ID inside the flyoutMenuDef that is NOT its index in the array.  Then, *maintain* an index of the ids
 
 -------------------------------------------------------------------------------
 -- Module Loading

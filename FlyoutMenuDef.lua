@@ -1,8 +1,6 @@
 -- FlyoutMenuDef
 -- a flyout menu definition
 -- data for a single flyout object, its spells/pets/macros/items/etc.  and methods for manipulating that data
--- TODO: invert the FlyoutMenu data structure
--- TODO: * implement as array of self-contained button objects rather than each button spread across multiple parallel arrays
 -- is currently a collection if parallel lists, each containing one param for each button in the menu
 -- instead, should be one collection/list of button objects, each containing all params for each button.  ENCAPSULATION FTW!
 

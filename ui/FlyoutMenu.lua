@@ -164,9 +164,6 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
      debug.trace:line(3,"firstThing", firstThing)
      debug.trace:dump(firstThing)
 
-    local flyoutId = flyoutDef
-    self:setId(flyoutId)
-
     ---@param btnFrame ButtonOnFlyoutMenu
     for i, btnFrame in ipairs(buttonFrames) do
         local btnDef = usableFlyout:getButtonDef(i)
@@ -271,28 +268,51 @@ function GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad(flyoutMenu)
     flyoutMenu.isForCatalog = true
 end
 
--- TODO: should I put the  RegisterEvent() calls back in?
+-- throttle OnUpdate because it can fire as often as FPS and is very resource intensive
+local ON_UPDATE_TIMER_FREQUENCY = 1.0
+local onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
+
+---@param flyoutMenu FlyoutMenu
+function GLOBAL_UIUFO_FlyoutMenu_OnUpdate(flyoutMenu, elapsed)
+    onUpdateTimer = onUpdateTimer + elapsed
+    if onUpdateTimer < ON_UPDATE_TIMER_FREQUENCY then
+        return
+    end
+    onUpdateTimer = 0
+
+    debug.trace:out(X,X,"GLOBAL_UIUFO_FlyoutMenu_OnUpdate()")
+    flyoutMenu:updateAllBtnCooldownsEtc()
+end
+
 ---@param flyoutMenu FlyoutMenu
 function GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow(flyoutMenu)
     debug.trace:out("/",20,"GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow")
+    local originalEventsRegistered = flyoutMenu.eventsRegistered -- SpellFlyout_OnShow will reset this so snapshot it
     SpellFlyout_OnShow(flyoutMenu) -- call Blizzard handler
+    flyoutMenu:updateAllBtnCooldownsEtc()
 
-    -- TODO: the below probably aren't needed anymore
-    --flyoutMenu:RegisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
-    --flyoutMenu:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
-
-    ---@param btn ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-    flyoutMenu:forEachButton(function(btn)
-        --debug.trace:out("~",40, "btn updatery from FlyoutMenu:OnShow()")
-        btn:updateCooldownsAndCountsAndStatesEtc()
-    end)
-
+    -- Cooldown indicators are enabled by the above which is usually sufficient.
+    -- But, the following event registrations support the rare condition of
+    -- a flyout is still open while one of its spells/items/etc is being cast/used/etc and completes.
+    -- At that point, flyoutMenu:updateAllBtnCooldownsEtc() must be called again via these events
+    -- because there won't be a OnShow event to do so.
+    if not originalEventsRegistered then
+        flyoutMenu:RegisterEvent("BAG_UPDATE_COOLDOWN") -- to support items
+        flyoutMenu:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN") -- to support items
+    end
 end
 
-function GLOBAL_UIUFO_FlyoutMenuForGerm_OnHide(self)
-    SpellFlyout_OnHide(self) -- call Blizzard handler
-    if (self.eventsRegistered == true) then
-        --self:UnregisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
-        --self:UnregisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
+function GLOBAL_UIUFO_FlyoutMenuForGerm_OnHide(flyoutMenu)
+    debug.trace:out("|",20,"GLOBAL_UIUFO_FlyoutMenuForGerm_OnHide")
+    if (flyoutMenu.eventsRegistered == true) then
+        -- supplement SpellFlyout_OnHide() with extra events specifically for items
+        flyoutMenu:UnregisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
+        flyoutMenu:UnregisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
     end
+    SpellFlyout_OnHide(flyoutMenu) -- call Blizzard handler (it sets eventsRegistered = false)
+end
+
+function FlyoutMenu:updateAllBtnCooldownsEtc()
+    debug.trace:print("FlyoutMenu:updateAllBtnCooldownsEtc()",self:getId())
+    self:forEachButton(ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc)
 end

@@ -18,7 +18,7 @@ local debug = Debug:new()
 ---@class Germ -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
 ---@field flyoutId number Identifies which flyout is currently copied into this germ
----@field flyoutMenu table The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
+---@field flyoutMenu FlyoutMenu The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
 local Germ = {
     ufoType = "Germ",
 }
@@ -126,10 +126,9 @@ local snippet_Germ_Click = [=[
     end
 
     flyoutMenu:Show()
-    --flyoutMenu:RegisterAutoHide(1) -- TODO: add this back in?
-    --flyoutMenu:AddToAutoHide(germ) -- ditto?
+    --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
+    --flyoutMenu:AddToAutoHide(germ)
 ]=]
--- TODO: add the RegisterAutoHide etc back in?
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -149,6 +148,11 @@ function Germ.new(flyoutId, actionBarBtn)
     self.flyoutMenu = UIUFO_FlyoutMenuForGerm -- the one UI object is reused by every germ
     --self:setHandlers()
     return self
+end
+
+function Germ:updateAllBtnCooldownsEtc()
+    debug.info:print("Germ:updateAllBtnCooldownsEtc()",self:getFlyoutId())
+    self.flyoutMenu:updateAllBtnCooldownsEtc()
 end
 
 function Germ:setHandlers()
@@ -265,56 +269,55 @@ function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
     end
 end
 
----@param germ Germ -- IntelliJ-EmmyLua annotation
-local function handleGermUpdateEvent(germ)
+function Germ:handleGermUpdateEvent()
     -- Update border and determine arrow position
     local arrowDistance;
     -- Update border
-    local isMouseOverButton =  GetMouseFocus() == germ;
-    local isFlyoutShown = UIUFO_FlyoutMenuForGerm and UIUFO_FlyoutMenuForGerm:IsShown() and UIUFO_FlyoutMenuForGerm:GetParent() == germ;
+    local isMouseOverButton = GetMouseFocus() == self;
+    local isFlyoutShown = UIUFO_FlyoutMenuForGerm and UIUFO_FlyoutMenuForGerm:IsShown() and UIUFO_FlyoutMenuForGerm:GetParent() == self;
     if isFlyoutShown or isMouseOverButton then
-        germ.FlyoutBorderShadow:Show();
+        self.FlyoutBorderShadow:Show();
         arrowDistance = 5;
     else
-        germ.FlyoutBorderShadow:Hide();
+        self.FlyoutBorderShadow:Hide();
         arrowDistance = 2;
     end
 
     -- Update arrow
-    local isButtonDown = germ:GetButtonState() == "PUSHED"
-    local flyoutArrowTexture = germ.FlyoutArrowContainer.FlyoutArrowNormal
+    local isButtonDown = self:GetButtonState() == "PUSHED"
+    local flyoutArrowTexture = self.FlyoutArrowContainer.FlyoutArrowNormal
 
     if isButtonDown then
-        flyoutArrowTexture = germ.FlyoutArrowContainer.FlyoutArrowPushed;
+        flyoutArrowTexture = self.FlyoutArrowContainer.FlyoutArrowPushed;
 
-        germ.FlyoutArrowContainer.FlyoutArrowNormal:Hide();
-        germ.FlyoutArrowContainer.FlyoutArrowHighlight:Hide();
+        self.FlyoutArrowContainer.FlyoutArrowNormal:Hide();
+        self.FlyoutArrowContainer.FlyoutArrowHighlight:Hide();
     elseif isMouseOverButton then
-        flyoutArrowTexture = germ.FlyoutArrowContainer.FlyoutArrowHighlight;
+        flyoutArrowTexture = self.FlyoutArrowContainer.FlyoutArrowHighlight;
 
-        germ.FlyoutArrowContainer.FlyoutArrowNormal:Hide();
-        germ.FlyoutArrowContainer.FlyoutArrowPushed:Hide();
+        self.FlyoutArrowContainer.FlyoutArrowNormal:Hide();
+        self.FlyoutArrowContainer.FlyoutArrowPushed:Hide();
     else
-        germ.FlyoutArrowContainer.FlyoutArrowHighlight:Hide();
-        germ.FlyoutArrowContainer.FlyoutArrowPushed:Hide();
+        self.FlyoutArrowContainer.FlyoutArrowHighlight:Hide();
+        self.FlyoutArrowContainer.FlyoutArrowPushed:Hide();
     end
 
-    germ.FlyoutArrowContainer:Show();
+    self.FlyoutArrowContainer:Show();
     flyoutArrowTexture:Show();
     flyoutArrowTexture:ClearAllPoints();
 
-    local direction = germ:GetAttribute("flyoutDirection");
+    local direction = self:GetAttribute("flyoutDirection");
     if (direction == "LEFT") then
-        flyoutArrowTexture:SetPoint("LEFT", germ, "LEFT", -arrowDistance, 0);
+        flyoutArrowTexture:SetPoint("LEFT", self, "LEFT", -arrowDistance, 0);
         SetClampedTextureRotation(flyoutArrowTexture, 270);
     elseif (direction == "RIGHT") then
-        flyoutArrowTexture:SetPoint("RIGHT", germ, "RIGHT", arrowDistance, 0);
+        flyoutArrowTexture:SetPoint("RIGHT", self, "RIGHT", arrowDistance, 0);
         SetClampedTextureRotation(flyoutArrowTexture, 90);
     elseif (direction == "DOWN") then
-        flyoutArrowTexture:SetPoint("BOTTOM", germ, "BOTTOM", 0, -arrowDistance);
+        flyoutArrowTexture:SetPoint("BOTTOM", self, "BOTTOM", 0, -arrowDistance);
         SetClampedTextureRotation(flyoutArrowTexture, 180);
     else
-        flyoutArrowTexture:SetPoint("TOP", germ, "TOP", 0, arrowDistance);
+        flyoutArrowTexture:SetPoint("TOP", self, "TOP", 0, arrowDistance);
         SetClampedTextureRotation(flyoutArrowTexture, 0);
     end
 end
@@ -373,25 +376,28 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnEnter(germ)
-    handleGermUpdateEvent(germ)
+    germ:handleGermUpdateEvent()
 end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnLeave(germ)
-    handleGermUpdateEvent(germ)
+    germ:handleGermUpdateEvent()
 end
 
 -- throttle OnUpdate because it fires as often as FPS and is very resource intensive
+-- TODO: abstract this into its own class/function
 local ON_UPDATE_TIMER_FREQUENCY = 1.5
 local onUpdateTimer = 0
 
+---@param germ Germ
 function handlers.OnUpdate(germ, elapsed)
     onUpdateTimer = onUpdateTimer + elapsed
     if onUpdateTimer < ON_UPDATE_TIMER_FREQUENCY then
         return
     end
     onUpdateTimer = 0
-    handleGermUpdateEvent(germ)
+    germ:handleGermUpdateEvent()
+    -- germ:updateAllBtnCooldownsEtc() -- nah, let the flyout do this.
 end
 
 ---@param germ Germ
@@ -404,14 +410,15 @@ function handlers.OnPreClick(germ, whichMouseButton, down)
     debug.trace:out("~",3, "OnPreClick()", "UFO_NAMES",UFO_NAMES, "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES, "UFO_PETS",UFO_PETS)
 end
 
+local oldGerm
+
 -- this is needed for the edge case of clicking on a different germ while the current one is still open
 -- in which case there is no OnShow event which is where the below usually happens
+---@param germ Germ
 function handlers.OnPostClick(germ, whichMouseButton, down)
-    ---@type FlyoutMenu
-    local flyoutMenu = germ.flyoutMenu
-    ---@param btn ButtonOnFlyoutMenu
-    flyoutMenu:forEachButton(function(btn)
-        --debug.trace:out("~",40, "btn updatery from Germ:OnPostClick()")
-        btn:updateCooldownsAndCountsAndStatesEtc()
-    end)
+    debug.trace:print("Germ:OnPostClick()",germ:getFlyoutId())
+    if oldGerm and oldGerm ~= germ then
+        germ:updateAllBtnCooldownsEtc() -- this is also done by GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow
+    end
+    oldGerm = germ
 end

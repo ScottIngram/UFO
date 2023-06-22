@@ -130,6 +130,11 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     end
 end
 
+---@param self ButtonOnFlyoutMenu
+function ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc(self)
+    self:updateCooldownsAndCountsAndStatesEtc()
+end
+
 function ButtonOnFlyoutMenu:updateCooldownsAndCountsAndStatesEtc()
     local btnDef = self:getDef()
     local spellId = btnDef and btnDef.spellId
@@ -137,9 +142,9 @@ function ButtonOnFlyoutMenu:updateCooldownsAndCountsAndStatesEtc()
         SpellFlyoutButton_UpdateState(self)
     end
 
-    self:updateUsable()
-    self:updateCooldown()
-    self:updateCount()
+        self:updateUsable()
+        self:updateCooldown()
+        self:updateCount()
 end
 
 function ButtonOnFlyoutMenu:updateUsable()
@@ -174,9 +179,10 @@ end
 
 function ButtonOnFlyoutMenu:updateCooldown()
     local btnDef = self:getDef()
+    local type = btnDef and btnDef.type
     local itemId = btnDef and btnDef.itemId
     local spellId = btnDef and btnDef.spellId
-    debug.trace:out("X",40,"updateCooldown() 1 ITEM","itemId",itemId, "spellId",spellId)
+    debug.trace:out("X",40,"updateCooldown() 1", "type",type, "itemId",itemId, "spellId",spellId)
 
     if exists(spellId) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
@@ -187,11 +193,11 @@ function ButtonOnFlyoutMenu:updateCooldown()
 
     -- for items, I copied and hacked Bliz's ActionButton_UpdateCooldown
     local start, duration, enable = 1, 1, true;
-    if itemId then
-        start, duration, enable = GetItemCooldown(itemId);
+    local id = btnDef and btnDef:getIdForBlizApi()
+    if id then
+        start, duration, enable = GetItemCooldown(id);
     end
 
-    local type = btnDef and btnDef.type
     debug.trace:out("X",5,"updateCooldown() 2 ITEM","type",type, "start",start, "duration",duration, "enable",enable )
 
     if self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL then
