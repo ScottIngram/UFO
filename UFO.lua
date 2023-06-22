@@ -4,7 +4,6 @@
 --[[
 
 TODO
-* put a ufo -> catalog button on the collections and macro panels too
 * replace existing icon picker with something closer to MacroManager / Weak Auras
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
@@ -13,6 +12,7 @@ TODO
 * BUG: Oops, I clobbered the frames on the germ flyouts
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 *
+* DONE: put a ufo -> catalog button on the collections and macro panels too
 * DONE: BUG: OnDragStart needs to accommodate when there is already something on the cursor
 * DONE: - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
 * DONE: BUG: macros sometimes(?) have the wrong image / tooltip
@@ -66,24 +66,6 @@ function EventHandlers:ADDON_LOADED(addonName)
         debug.trace:print("ADDON_LOADED", addonName)
     end
 
-    --[[
-    How many different ways can Bliz find to
-    make simple tasks that should share common, consistent procedures
-    instead require a myriad of inconsitent, poorly documented, unintuitive, incompatible code.
-    Unlike SpellBookFrame, the following two Bliz panels do not exist until the user opens them.
-    Thus, you can't refer to them in your UI XML as you can with SpellBookFrame.
-    So if you need to create any UI that depends on these non-existent bliz frames,
-    you must do so programatically in Lua.
-    And how do you know if these frames exist yet?
-    Is there an global event announcing the frame has been opened?  Nope.
-    Is there a hook for an OnShow script?  Not if the frame doesn't exist!  So, Nope again.
-    Is there a function in the API namespaces to force them into existence?  Nope.
-    (I've discovered MacroFrame_LoadUI() and CollectionsJournal_LoadUI() in the wow-ui-source)
-    BUT, if you happen to discover these frames are internal Bliz ADDONS that load on demand,
-    AND, know about the global ADDON_LOADED event
-    AND, can find the name of these addons... you find yourself here.
-    Fuck me with a chainsaw.
-    ]]
     if addonName == "Blizzard_Collections" then
         Catalog:createToggleButton(CollectionsJournal)
     end

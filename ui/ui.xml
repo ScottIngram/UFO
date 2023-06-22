@@ -266,48 +266,6 @@
         <CheckedTexture alphaMode="ADD" file="Interface\Buttons\CheckButtonHilight"/>
     </CheckButton>
 
-<!--
-    <Button name="UIUFO_BtnToToggleCatalog_OnSpellBookFrame" parent="SpellBookFrame" inherits="UIPanelButtonTemplate" frameStrata="HIGH" text="UFO">
-        <Size x="80" y="22"/>
-        <Anchors>
-            <Anchor point="RIGHT" relativePoint="LEFT" relativeTo="SpellBookFrameCloseButton" x="2" y="1" />
-        </Anchors>
-        <Scripts>
-            <OnClick function="GLOBAL_Any_BtnToToggleCatalog_OnClick"/>
-        </Scripts>
-    </Button>
-
-    This is where I would define the toggle buttons for the CollectionsJournal and MacroFrame,
-    just the same as I did above for the SpellBookFrame.
-
-    But in a stunning display of consistent inconsistency, the Bliz API / UI lifecycle MAKES THAT FUCKING IMPOSSIBLE.
-    Those frames don't exist yet.  Unlike the SpellBookFrame, they don't exist until the user opens them.
-
-    So, as usual, I must jump through a bunch of mandatory, undocumented hoops of stupidity to accomplish
-    the same thing but now using a completely different set of code.  Yay, thanks Bliz API.
-
-    I promise you, writing WoW addons has been the worst experience of my 30+ years as a professional programmer.
-
-    <Button name="UIUFO_BtnToToggleCatalog_OnCollectionsJournal" parent="CollectionsJournal" inherits="UIPanelButtonTemplate" frameStrata="HIGH" text="UFO">
-        <Size x="80" y="22"/>
-        <Anchors>
-            <Anchor point="RIGHT" relativePoint="LEFT" relativeTo="CollectionsJournalCloseButton" x="2" y="1" />
-        </Anchors>
-        <Scripts>
-            <OnClick function="GLOBAL_Any_BtnToToggleCatalog_OnClick"/>
-        </Scripts>
-    </Button>
-
-    <Button name="UIUFO_BtnToToggleCatalog_OnMacroFrame" parent="MacroFrame" inherits="UIPanelButtonTemplate" frameStrata="HIGH" text="UFO">
-        <Size x="80" y="22"/>
-        <Anchors>
-            <Anchor point="RIGHT" relativePoint="LEFT" relativeTo="MacroFrameCloseButton" x="2" y="1" />
-        </Anchors>
-        <Scripts>
-            <OnClick function="GLOBAL_Any_BtnToToggleCatalog_OnClick"/>
-        </Scripts>
-    </Button>
--->
     <Frame name="UIUFO_Catalog" parent="SpellBookFrame" frameStrata="MEDIUM" inherits="TranslucentFrameTemplate" hidden="true">
         <Size>
             <AbsDimension x="150" y="525"/>
