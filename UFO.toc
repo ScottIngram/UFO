@@ -9,6 +9,7 @@
 ## Notes: custom actionbar flyout menus
 
 utils\Wormhole.lua
+utils\Zebug.lua
 utils\Debug.lua
 utils\Config.lua
 constants.lua
