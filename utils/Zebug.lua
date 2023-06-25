@@ -155,6 +155,14 @@ function Zebug:stopColor()
     return "|r"
 end
 
+---@return Zebug -- IntelliJ-EmmyLua annotation
+function Zebug:setMethodName(methodName)
+    self.methodName = methodName
+    return self
+end
+
+Zebug.name = Zebug.setMethodName
+
 function Zebug:alert(msg)
     UIErrorsFrame:AddMessage(msg, 1.0, 0.1, 0.0)
     return self
@@ -162,9 +170,16 @@ end
 
 ---@return Zebug -- IntelliJ-EmmyLua annotation
 function Zebug:dump(...)
+    return self:dumpy("", ...)
+end
+
+---@return Zebug -- IntelliJ-EmmyLua annotation
+function Zebug:dumpy(label, ...)
     assert(isZebuggerObj(self), ERR_MSG)
     if self.isSilent then return end
+    self:out(20,"V", label)
     DevTools_Dump(...)
+    self:out(20,"^", label)
     return self
 end
 
@@ -186,14 +201,14 @@ function Zebug:line(indentWidth, ...)
     if self.isSilent then return end
     --if not self.caller then self.caller = getfenv(2) end
 
-    self:out(self.sharedData.indentChar, indentWidth, ...)
+    self:out(indentWidth, self.sharedData.indentChar, ...)
 
     self.caller = nil
     return self
 end
 
 ---@return Zebug -- IntelliJ-EmmyLua annotation
-function Zebug:out(indentChar, indentWidth, ...)
+function Zebug:out(indentWidth, indentChar, ...)
     assert(isZebuggerObj(self), ERR_MSG)
     if self.isSilent then return end
     --if not self.caller then self.caller = getfenv(2) end
@@ -240,16 +255,22 @@ function Zebug:identifyOutsideCaller()
     -- skip past the top four (1 = this function, 2 = getLabel, 3 = some other Zebug function, 4 = the first possible non-Zebug function)
     -- start looking at callers 3 layers away and work back until we find something non-Zebug
     local stack = debugstack(4,4,0)
-    local j, line, isZebug, file, n, funcName
+    local tmp = stack
+    local j, line, isZebug, isTail, file, n, funcName
     local count = 1
     while stack do
         _, j = string.find(stack, "\n")
         line = string.sub(stack, 1, j)
-        isZebug =  string.find(line, "Zebug.lua")
-        if isZebug then
+        isZebug = string.find(line, "Zebug.lua")
+        isTail = string.find(line, "tail call")
+        if isZebug or isTail then
             stack = string.sub(stack, j+1)
         else
             _,_, file, n, funcName = string.find(line,'([%w_]+)%.[^"]*"]:(%d+):%s*in function%s*.(.+).\n');
+            if not funcName then
+                print(tmp)
+                funcName = ""
+            end
             if string.find(funcName, "/") then
                 -- this is an anonymous function and funcName only contains file name and line number which we already know
                 funcName = nil
@@ -278,7 +299,11 @@ end
 
 function Zebug:getLabel()
     local file, n, func = self:identifyOutsideCaller()
-    return (file and (file..":") or "") .. (func and (func.."():") or "") .. (n or 0)
+    local name = self.methodName or func
+    name = (name and (name.."()~")) or ""
+    local lineNumber = (n and "["..n.."]") or ""
+    self.methodName = nil
+    return (file and (file..":") or "") .. name .. lineNumber
 end
 
 local function getName(obj, default)
