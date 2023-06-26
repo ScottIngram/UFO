@@ -12,7 +12,7 @@ local debug = Debug:new()
 
 ---@class FlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
----@field id number
+---@field id string
 ---@field isForGerm boolean
 ---@field isForCatalog boolean
 local FlyoutMenu = {
@@ -59,8 +59,8 @@ function FlyoutMenu:getId()
 end
 
 function FlyoutMenu:setId(flyoutId)
-    self.id = tonumber(flyoutId)
-    self.flyoutId = tonumber(flyoutId)
+    self.id = flyoutId
+    self.flyoutId = flyoutId
 end
 
 function FlyoutMenu:ensureId(flyoutId)
@@ -93,6 +93,7 @@ function FlyoutMenu:getDef(flyoutId)
 end
 
 -- TODO: merge updateForCatalog() and updateForGerm()
+---@param flyoutId string
 function FlyoutMenu:updateForCatalog(flyoutId)
     self:setId(flyoutId)
     self.direction = "RIGHT"

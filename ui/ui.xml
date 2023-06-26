@@ -170,14 +170,7 @@
                     <OnMouseUp>
                         self.texture:SetPoint("TOPLEFT", 0, 0);
                     </OnMouseUp>
-                    <OnClick>
-                        local dialog = StaticPopup_Show("UFO_CONFIRM_DELETE", self:GetParent().name);
-                        if dialog then
-                        dialog.flyoutId = self:GetParent().name
-                        else
-                        UIErrorsFrame:AddMessage(ERR_CLIENT_LOCKED_OUT, 1.0, 0.1, 0.1, 1.0)
-                        end
-                    </OnClick>
+                    <OnClick function="GLOBAL_UIUFO_CatalogFlyoutOptionsMouseOverDeleteButton_OnClick" />
                 </Scripts>
             </Button>
             <Button name="$parentEditButton" parentKey="EditButton" hidden="true">
@@ -208,15 +201,7 @@
                     <OnMouseUp>
                         self.texture:SetPoint("TOPLEFT", 0, 0);
                     </OnMouseUp>
-                    <OnClick>
-                        GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(self:GetParent());
-                        UIUFO_DetailerPopup:Show();
-                        UIUFO_DetailerPopup.isEdit = true;
-                        UIUFO_DetailerPopup.name = self:GetParent().name;
-                        local itemTexture = self:GetParent().icon:GetTexture()
-                        itemTexture = string.upper(string.sub(itemTexture, string.len("INTERFACE\\ICONS\\") + 1));
-                        GLOBAL_UIUFO_RecalculateDetailerPopup(itemTexture);
-                    </OnClick>
+                    <OnClick function="GLOBAL_UIUFO_CatalogFlyoutOptionsMouseOverEditButton_OnClick" />
                 </Scripts>
             </Button>
         </Frames>

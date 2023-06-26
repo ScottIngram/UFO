@@ -12,7 +12,7 @@
 
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-local zebug = Zebug:new(Zebug.OUTPUT.ALL)
+local zebug = Zebug:new(Zebug.OUTPUT.WARN)
 
 local debug = Debug:new()
 
@@ -211,24 +211,25 @@ function Germ:getBtnSlotIndex()
     return myActionBarBtnParent.action
 end
 
+---@return string
 function Germ:getFlyoutId()
     return self.flyoutId
 end
 
+---@param flyoutId string
 function Germ:setFlyoutId(flyoutId)
-    self.flyoutId = tonumber(flyoutId)
+    self.flyoutId = flyoutId
 end
 
 function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
     assertIsMethodOf(self, Germ)
-    zebug:line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "direction",direction)
+    zebug:line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "direction",direction, "FlyoutMenusDb.isInitialized", FlyoutMenusDb.isInitialized)
 
     local flyoutDef = FlyoutMenusDb:get(flyoutId)
     if not flyoutDef then
         -- because one toon can delete a flyout while other toons still have it on their bars
         local msg = "Flyout".. flyoutId .."no longer exists.  Removing it from your action bars."
         zebug.warn:print(msg)
-        zebug.warn:alert(msg)
         GermCommander:deletePlacement(btnSlotIndex)
         return
     end
@@ -331,13 +332,13 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnMouseUp(germ)
-    zebug.trace:print("name",germ:GetName())
+    zebug.trace:name("OnMouseUp"):print("name",germ:GetName())
     handlers.OnReceiveDrag(germ)
 end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnReceiveDrag(germ)
-    zebug.trace:print("name",germ:GetName())
+    zebug.trace:name("OnReceiveDrag"):print("name",germ:GetName())
     if isInCombatLockdown("Drag and drop") then return end
 
     local cursor = GetCursorInfo()
@@ -350,7 +351,7 @@ end
 function handlers.OnPickupAndDrag(germ)
     if (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
         if isInCombatLockdown("Drag and drop") then return end
-        zebug.trace:print("name",germ:GetName())
+        zebug.trace:name("OnPickupAndDrag"):print("name",germ:GetName())
 
         GermCommander:deletePlacement(germ:getBtnSlotIndex())
 
@@ -406,10 +407,10 @@ function handlers.OnPreClick(germ, whichMouseButton, down)
     local UFO_NAMES = germ:GetAttribute("UFO_NAMES")
     local UFO_BLIZ_TYPES = germ:GetAttribute("UFO_BLIZ_TYPES")
     local UFO_PETS  = germ:GetAttribute("UFO_PETS")
-    zebug.trace:line(30,"flyoutId",germ:getFlyoutId())
-    zebug.trace:print("flyoutId",germ:getFlyoutId(), "UFO_NAMES",UFO_NAMES)
-    zebug.trace:print("flyoutId",germ:getFlyoutId(), "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES)
-    zebug.trace:print("flyoutId",germ:getFlyoutId(), "UFO_PETS",UFO_PETS)
+    zebug.trace:name("OnPickupAndDrag"):line(30,"flyoutId",germ:getFlyoutId())
+    zebug.trace:name("OnPickupAndDrag"):print("flyoutId",germ:getFlyoutId(), "UFO_NAMES",UFO_NAMES)
+    zebug.trace:name("OnPickupAndDrag"):print("flyoutId",germ:getFlyoutId(), "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES)
+    zebug.trace:name("OnPickupAndDrag"):print("flyoutId",germ:getFlyoutId(), "UFO_PETS",UFO_PETS)
 end
 
 local oldGerm
@@ -418,7 +419,7 @@ local oldGerm
 -- in which case there is no OnShow event which is where the below usually happens
 ---@param germ Germ
 function handlers.OnPostClick(germ, whichMouseButton, down)
-    zebug.trace:print("flyoutId",germ:getFlyoutId())
+    zebug.trace:name("OnPostClick"):print("flyoutId",germ:getFlyoutId())
     if oldGerm and oldGerm ~= germ then
         germ:updateAllBtnCooldownsEtc() -- this is also done by GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow
     end

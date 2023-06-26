@@ -10,7 +10,7 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new()
+local zebug = Zebug:new()
 
 ---@class Catalog -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -18,6 +18,14 @@ local Catalog = {
     ufoType = "Catalog",
 }
 Ufo.Catalog = Catalog
+
+-------------------------------------------------------------------------------
+-- Constants
+-------------------------------------------------------------------------------
+
+STRIPE_COLOR = {r=0.9, g=0.9, b=1}
+DEFAULT_COLOR = NORMAL_FONT_COLOR -- Bliz global
+GREEN = GREEN_FONT_COLOR -- Bliz global
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -29,7 +37,7 @@ function Catalog:definePopupDialogWindow()
         text = L10N.CONFIRM_DELETE,
         button1 = YES,
         button2 = NO,
-        OnAccept = function (dialog) FlyoutMenusDb:delete(dialog.flyoutId); updateCatalog(); GermCommander:updateAll(); end,
+        OnAccept = function (dialog) FlyoutMenusDb:delete(dialog.flyoutId); Catalog:update(); GermCommander:updateAll(); end,
         OnCancel = function (dialog) end,
         hideOnEscape = 1,
         timeout = 0,
@@ -58,7 +66,7 @@ function Catalog:createToggleButton(blizFrame)
     end
     local xBtnName = blizFrameName .."CloseButton"
     local xBtnFrame = _G[xBtnName]
-    debug.trace:out(X,X,"Catalog:createToggleButton() HEAD", "parentName", blizFrameName, "xBtnName", xBtnName, "btnName",btnName)
+    zebug.trace:print("parentName", blizFrameName, "xBtnName", xBtnName, "btnName",btnName)
 
     btnFrame = CreateFrame("Button", btnName, blizFrame, "UIPanelButtonTemplate")
     btnFrame:SetSize(80,22)
@@ -84,7 +92,7 @@ function Catalog:toggle(clickedBtn, forceOpen)
         willCloseCatalog = false
     end
 
-    debug.trace:out(X,X,"Catalog:open()", "parentName", blizFrameName, "oldParent name", oldBlizFrame:GetName(), "isCatalogOpen",isCatalogOpen, "willMoveCatalog", willMoveCatalog, "willCloseCatalog", willCloseCatalog )
+    zebug.trace:print("parentName", blizFrameName, "oldParent name", oldBlizFrame:GetName(), "isCatalogOpen",isCatalogOpen, "willMoveCatalog", willMoveCatalog, "willCloseCatalog", willCloseCatalog )
 
     local xOffSet = 0
     if blizFrame == SpellBookFrame then
@@ -121,98 +129,108 @@ function Catalog:toggle(clickedBtn, forceOpen)
     end
 end
 
-function updateCatalog()
+function Catalog:update()
     local flyoutsCount = FlyoutMenusDb:howMany()
-    local numRows = flyoutsCount + 1
-    HybridScrollFrame_Update(UIUFO_CatalogScrollPane, numRows * EQUIPMENTSET_BUTTON_HEIGHT + 20, UIUFO_CatalogScrollPane:GetHeight())
+    local theAddButton = flyoutsCount + 1
+    local scrollPane = UIUFO_CatalogScrollPane
+    HybridScrollFrame_Update(scrollPane, theAddButton * EQUIPMENTSET_BUTTON_HEIGHT + 20, scrollPane:GetHeight())
+    local scrollOffset = HybridScrollFrame_GetOffset(scrollPane) -- how many buttons have scrolled up out of sight
+    local visibleBtnFrames = scrollPane.buttons -- how many buttons are actually onscreen (or almost onscreen)
+    local selectedIdx = scrollPane.selectedIdx
 
-    local scrollOffset = HybridScrollFrame_GetOffset(UIUFO_CatalogScrollPane)
-    local buttons = UIUFO_CatalogScrollPane.buttons
-    local selectedIdx = UIUFO_CatalogScrollPane.selectedIdx
+    zebug.trace:out(25,"[]", "flyoutsCount",flyoutsCount)
 
     ---@type FlyoutMenu
     local flyoutMenu = UIUFO_FlyoutMenuForCatalog
     flyoutMenu:Hide()
 
-    for i = 1, #buttons do
-        local pos = i+scrollOffset
-        if pos <= numRows then
-            local button = buttons[i]
-            buttons[i]:Show()
-            button:Enable()
+    for i = 1, #visibleBtnFrames do
+        ---@type number
+        local flyoutIndex = i+scrollOffset
+        local btnFrame = visibleBtnFrames[i]
+        if flyoutIndex <= theAddButton then
+            btnFrame:Show()
+            btnFrame:Enable()
 
-            if pos < numRows then
+            zebug:line(30,"i",i, "flyoutIndex",flyoutIndex)
+
+            if flyoutIndex < theAddButton then
                 -- Normal flyout button
-                button.name = pos
-                button.flyoutId = pos
-                button.text:SetText(pos);
-                button.text:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
+                local flyoutDef = FlyoutMenusDb:getByIndex(flyoutIndex)
+                ---@type string
+                local flyoutId = flyoutDef.id
+                zebug:print("i",i, "flyoutIndex",flyoutIndex, "flyoutId",flyoutId)
 
-                debug:out("U",3,"updateCatalog()", "pos",pos)
-                local flyoutMenuDef = FlyoutMenusDb:get(pos)
-                debug:out("U",3,"updateCatalog()", "pos",pos, "flyoutMenuDef", flyoutMenuDef)
-                local icon = flyoutMenuDef:getIcon()
+                btnFrame.name = flyoutIndex
+                btnFrame.label = flyoutIndex
+                btnFrame.flyoutId = flyoutId
+                btnFrame.text:SetText(flyoutIndex);
+                btnFrame.text:SetTextColor(DEFAULT_COLOR.r, DEFAULT_COLOR.g, DEFAULT_COLOR.b);
+
+                zebug:print("flyoutIndex",flyoutIndex, "btnFrame.flyoutId",btnFrame.flyoutId, "flyoutMenuDef",flyoutDef)
+                local icon = flyoutDef:getIcon()
 
                 if icon then
                     if(type(icon) == "number") then
-                        button.icon:SetTexture(icon);
+                        btnFrame.icon:SetTexture(icon);
                     else
-                        button.icon:SetTexture("INTERFACE\\ICONS\\".. icon);
+                        btnFrame.icon:SetTexture("INTERFACE\\ICONS\\".. icon);
                     end
                 else
-                    button.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+                    btnFrame.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
                 end
 
-                if selectedIdx and (pos == selectedIdx) then
-                    button.SelectedBar:Show()
-                    button.Arrow:Show()
-                    flyoutMenu.parent = button
-                    flyoutMenu:updateForCatalog(pos)
+                if selectedIdx and (flyoutIndex == selectedIdx) then
+                    btnFrame.SelectedBar:Show()
+                    btnFrame.Arrow:Show()
+                    flyoutMenu.parent = btnFrame
+                    flyoutMenu:updateForCatalog(flyoutId)
                     flyoutMenu:Show()
                 else
-                    button.SelectedBar:Hide()
-                    button.Arrow:Hide()
+                    btnFrame.SelectedBar:Hide()
+                    btnFrame.Arrow:Hide()
                 end
 
-                button.icon:SetSize(36, 36)
-                button.icon:SetPoint("LEFT", 4, 0)
+                btnFrame.icon:SetSize(36, 36)
+                btnFrame.icon:SetPoint("LEFT", 4, 0)
             else
                 -- This is the Add New button
-                button.name = nil
-                button.text:SetText(L10N.NEW_FLYOUT)
-                button.text:SetTextColor(GREEN_FONT_COLOR.r, GREEN_FONT_COLOR.g, GREEN_FONT_COLOR.b)
-                button.icon:SetTexture("Interface\\PaperDollInfoFrame\\Character-Plus")
-                button.icon:SetSize(30, 30)
-                button.icon:SetPoint("LEFT", 7, 0)
-                button.SelectedBar:Hide()
-                button.Arrow:Hide()
+                btnFrame.name = nil
+                btnFrame.label = nil
+                btnFrame.text:SetText(L10N.NEW_FLYOUT)
+                btnFrame.text:SetTextColor(GREEN.r, GREEN.g, GREEN.b)
+                btnFrame.icon:SetTexture("Interface\\PaperDollInfoFrame\\Character-Plus")
+                btnFrame.icon:SetSize(30, 30)
+                btnFrame.icon:SetPoint("LEFT", 7, 0)
+                btnFrame.SelectedBar:Hide()
+                btnFrame.Arrow:Hide()
             end
 
-            if (pos) == 1 then
-                buttons[i].BgTop:Show()
-                buttons[i].BgMiddle:SetPoint("TOP", buttons[i].BgTop, "BOTTOM")
+            if (flyoutIndex) == 1 then
+                btnFrame.BgTop:Show()
+                btnFrame.BgMiddle:SetPoint("TOP", btnFrame.BgTop, "BOTTOM")
             else
-                buttons[i].BgTop:Hide()
-                buttons[i].BgMiddle:SetPoint("TOP")
+                btnFrame.BgTop:Hide()
+                btnFrame.BgMiddle:SetPoint("TOP")
             end
 
-            if (pos) == numRows then
-                buttons[i].BgBottom:Show()
-                buttons[i].BgMiddle:SetPoint("BOTTOM", buttons[i].BgBottom, "TOP")
+            if (flyoutIndex) == theAddButton then
+                btnFrame.BgBottom:Show()
+                btnFrame.BgMiddle:SetPoint("BOTTOM", btnFrame.BgBottom, "TOP")
             else
-                buttons[i].BgBottom:Hide()
-                buttons[i].BgMiddle:SetPoint("BOTTOM")
+                btnFrame.BgBottom:Hide()
+                btnFrame.BgMiddle:SetPoint("BOTTOM")
             end
 
-            if (pos)%2 == 0 then
-                buttons[i].Stripe:SetTexture(STRIPE_COLOR.r, STRIPE_COLOR.g, STRIPE_COLOR.b)
-                buttons[i].Stripe:SetAlpha(0.1)
-                buttons[i].Stripe:Show()
+            if (flyoutIndex)%2 == 0 then
+                btnFrame.Stripe:SetTexture(STRIPE_COLOR.r, STRIPE_COLOR.g, STRIPE_COLOR.b)
+                btnFrame.Stripe:SetAlpha(0.1)
+                btnFrame.Stripe:Show()
             else
-                buttons[i].Stripe:Hide()
+                btnFrame.Stripe:Hide()
             end
         else
-            buttons[i]:Hide()
+            btnFrame:Hide()
         end
     end
 end
@@ -223,13 +241,13 @@ end
 
 function GLOBAL_UIUFO_CatalogScrollPane_OnLoad(scrollPane)
     HybridScrollFrame_OnLoad(scrollPane)
-    scrollPane.update = updateCatalog
+    scrollPane.update = Catalog.update
     HybridScrollFrame_CreateButtons(scrollPane, "UIUFO_CatalogFlyoutOptionsMouseOver")
 end
 
 function GLOBAL_UIUFO_CatalogScrollPane_OnShow(scrollPane)
     HybridScrollFrame_CreateButtons(scrollPane, "UIUFO_CatalogFlyoutOptionsMouseOver")
-    updateCatalog()
+    Catalog:update()
 end
 
 function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
@@ -238,8 +256,7 @@ function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
 end
 
 function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
-    local catalogFrame = UIUFO_Catalog
-    debug.trace:out("~",3,"UIUFO_BlizCompartment_OnClick","addonName",addonName, "whichMouseButton", whichMouseButton, "SpellBookFrame",SpellBookFrame)
+    zebug.trace:print("addonName",addonName, "whichMouseButton", whichMouseButton, "SpellBookFrame",SpellBookFrame)
 
     local anyOpenBlizFrame
     for blizFrame, _ in pairs(toggleBtns) do
@@ -255,7 +272,7 @@ function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
         anyOpenBlizFrame = SpellBookFrame
     end
 
-    debug.trace:dump(toggleBtns)
+    zebug.trace:dump(toggleBtns)
     local toggleBtn = toggleBtns[anyOpenBlizFrame]
     Catalog:toggle(toggleBtn, true)
 end
@@ -278,25 +295,27 @@ function GLOBAL_UIUFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
     UFO_CatalogScrollPane_DoUpdate(scrollPane)
 end
 
-function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(scrollPane, whichMouseButton, down)
-    if scrollPane.name and scrollPane.name ~= "" then
-        if UIUFO_CatalogScrollPane.selectedIdx == scrollPane.name then
-            UIUFO_CatalogScrollPane.selectedIdx = nil
+function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(editBtn, whichMouseButton, down)
+    local scrollPane = UIUFO_CatalogScrollPane
+    local popup = UIUFO_DetailerPopup
+    if editBtn.name and editBtn.name ~= "" then
+        if scrollPane.selectedIdx == editBtn.name then
+            scrollPane.selectedIdx = nil
         else
             PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)		-- inappropriately named, but a good sound.
-            UIUFO_CatalogScrollPane.selectedIdx = scrollPane.name
+            scrollPane.selectedIdx = editBtn.name
         end
-        updateCatalog()
-        UIUFO_DetailerPopup:Hide()
+        Catalog:update()
+        popup:Hide()
     else
         -- This is the "New" button
-        UIUFO_DetailerPopup:Show()
-        UIUFO_CatalogScrollPane.selectedIdx = nil
-        updateCatalog()
+        popup:Show()
+        scrollPane.selectedIdx = nil
+        Catalog:update()
     end
 end
 
-function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
+function UFO_CatalogScrollPane_DoUpdate(scrollPane)
     for i = 1, #scrollPane.buttons do
         local button = scrollPane.buttons[i]
         if button:IsMouseOver() then
@@ -314,4 +333,28 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)--
             button.HighlightBar:Hide()
         end
     end
+end
+
+function GLOBAL_UIUFO_CatalogFlyoutOptionsMouseOverDeleteButton_OnClick(deleteBtnFrame)
+    local parent = deleteBtnFrame:GetParent()
+    local popupLabel = parent.label
+    local dialog = StaticPopup_Show("UFO_CONFIRM_DELETE", popupLabel);
+    if dialog then
+        local flyoutId = parent.flyoutId
+        dialog.flyoutId = flyoutId
+    else
+        UIErrorsFrame:AddMessage(ERR_CLIENT_LOCKED_OUT, 1.0, 0.1, 0.1, 1.0)
+    end
+end
+
+function GLOBAL_UIUFO_CatalogFlyoutOptionsMouseOverEditButton_OnClick(editBtnFrame)
+    local parent = editBtnFrame:GetParent()
+    local popup = UIUFO_DetailerPopup
+    GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick(parent);
+    popup:Show();
+    popup.isEdit = true;
+    popup.flyoutId = parent.flyoutId;
+    local itemTexture = parent.icon:GetTexture()
+    itemTexture = string.upper(string.sub(itemTexture, string.len("INTERFACE\\ICONS\\") + 1));
+    GLOBAL_UIUFO_RecalculateDetailerPopup(itemTexture);
 end

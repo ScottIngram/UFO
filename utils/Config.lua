@@ -11,20 +11,53 @@ local debug = Ufo.Debug:new()
 local Config = {}
 Ufo.Config = Config
 
+-------------------------------------------------------------------------------
+-- Flyouts
+-------------------------------------------------------------------------------
+
 function Config:initializeFlyouts()
     if not UFO_SV_ACCOUNT then
-        UFO_SV_ACCOUNT = { flyouts = {} }
+        UFO_SV_ACCOUNT = { flyouts={}, n=0 }
     end
 end
 
-function Config:tmpNeoNuke()
+function Config:nuke_a1()
     UFO_SV_ACCOUNT.flyouts = {}
 end
 
--- the set of flyouts is shared between all toons on the account
-function Config:getFlyoutsConfig()
-    return UFO_SV_ACCOUNT.flyouts
+function Config:nuke_a2()
+    UFO_SV_ACCOUNT.n = 0
+    UFO_SV_ACCOUNT.flyouts_a2 = {}
+    UFO_SV_ACCOUNT.flyoutIds = {}
+    UFO_SV_ACCOUNT.flyoutXedni = {}
+    UFO_SV_TOON.placementsForAllSpecs_a2 = {}
+    UFO_SV_ACCOUNT.flyoutIndex = nil
+    UFO_SV_ACCOUNT.flyoutIdList = nil
+    UFO_SV_ACCOUNT.OLD_flyouts = nil
 end
+
+-- the set of flyouts is shared between all toons on the account
+function Config:getFlyoutDefs()
+    return UFO_SV_ACCOUNT.flyouts_a2
+end
+
+-- caches the computationally generated lookup index
+function Config:getflyoutIds()
+    return UFO_SV_ACCOUNT.flyoutIds
+end
+
+function Config:getFlyoutXedni()
+    return UFO_SV_ACCOUNT.flyoutXedni
+end
+
+function Config:nextN()
+    UFO_SV_ACCOUNT.n = (UFO_SV_ACCOUNT.n or 0) + 1
+    return UFO_SV_ACCOUNT.n
+end
+
+-------------------------------------------------------------------------------
+-- Placements
+-------------------------------------------------------------------------------
 
 function Config:initializePlacements()
     if not UFO_SV_TOON then
@@ -34,8 +67,14 @@ end
 
 -- the placement of flyouts on the action bars is stored separately for each toon
 function Config:getAllSpecsPlacementsConfig()
-    return UFO_SV_TOON.placementsForAllSpecs
+    return UFO_SV_TOON.placementsForAllSpecs_a2
 end
+
+-------------------------------------------------------------------------------
+-- Versioning
+-- In case I ever make changes to the data structure that breaks backwards compatibility,
+-- putting version info in the config will let me detect old configs and convert them to the new format.
+-------------------------------------------------------------------------------
 
 function Config:updateVersionId()
     UFO_SV_FLYOUTS.v = VERSION
