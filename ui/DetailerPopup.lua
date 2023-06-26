@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new(Zebug.OUTPUT.WARN)
+local debug = Debug:new()
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -99,15 +99,13 @@ end
 function GLOBAL_UIUFO_DetailerPopup_OnShow(detailerPopup)
     PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN)
     detailerPopup.name = nil
-    detailerPopup.flyoutId = nil
     detailerPopup.isEdit = false
     GLOBAL_UIUFO_RecalculateDetailerPopup()
 end
 
 function GLOBAL_UIUFO_DetailerPopup_OnHide(detailerPopup)
-    detailerPopup.name = nil
-    detailerPopup.flyoutId = nil
-    detailerPopup:SetSelection(true, nil)
+    UIUFO_DetailerPopup.name = nil
+    UIUFO_DetailerPopup:SetSelection(true, nil)
     --UIUFO_DetailerPopupEditBox:SetText("")
     FC_ICON_FILENAMES = nil
     collectgarbage()
@@ -120,24 +118,22 @@ function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pu
         iconTexture = getFlyoutIconInfo(popup.selectedIcon)
     end
 
-    local flyoutDef
+    local config
     if popup.isEdit then
         -- Modifying a flyout
-        flyoutDef = FlyoutMenusDb:get(popup.flyoutId)
+        config = FlyoutMenusDb:get(popup.name)
     else
         -- Saving a new flyout
-        flyoutDef = FlyoutMenusDb:appendNewOne()
-        zebug:dumpy("appendNewOne -> flyoutDef",flyoutDef)
+        config = FlyoutMenusDb:appendNewOne()
     end
-    zebug:print("popup.isEdit",popup.isEdit, "popup.flyoutId",popup.flyoutId, "flyoutDef",flyoutDef)
-    flyoutDef.icon = iconTexture
+    config.icon = iconTexture
     popup:Hide()
-    Catalog:update()
+    updateCatalog()
     GermCommander:updateAll()
 end
 
 function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(btnInCatalog)
-    local flyoutId = btnInCatalog.flyoutId
+    local flyoutId = btnInCatalog.name
     if exists(flyoutId) then
         FlyoutMenu:pickup(flyoutId)
     end
@@ -216,9 +212,7 @@ function refreshFlyoutIconInfo()
     local index = 2
 
     local popup = UIUFO_DetailerPopup
-    local name = popup.name
-    local flyoutId = popup.flyoutId
-    zebug.trace:print("name",name, "flyoutId",flyoutId)
+    local flyoutId = popup.name
     if flyoutId then
         local flyoutDef = FlyoutMenusDb:get(flyoutId)
         local btnDefs = flyoutDef:getAllButtonDefs()
