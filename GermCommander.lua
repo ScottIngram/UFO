@@ -66,6 +66,10 @@ local function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
     local germ = getGerm(btnSlotIndex)
     if not germ then
         germ = Germ.new(flyoutId, actionBarBtn)
+        if not germ then
+            -- a different toon could have deleted it and that's ok.
+            return
+        end
         rememberGerm(germ)
     end
     debug.trace:out("*",3,"bindFlyoutToActionBarSlot()","germ...",germ)
@@ -171,7 +175,7 @@ end
 
 function GermCommander:savePlacement(btnSlotIndex, flyoutId)
     btnSlotIndex = tonumber(btnSlotIndex)
-    flyoutId = tonumber(flyoutId)
+    flyoutId = FlyoutMenusDb:validateFlyoutId(flyoutId)
     self:getPlacementConfigForCurrentSpec()[btnSlotIndex] = flyoutId
 end
 
@@ -186,7 +190,7 @@ function GermCommander:deletePlacement(btnSlotIndex)
 end
 
 function GermCommander:nukeFlyout(flyoutId)
-    flyoutId = tonumber(flyoutId)
+    flyoutId = FlyoutMenusDb:validateFlyoutId(flyoutId)
     for i, allSpecsConfig in ipairs(self:getAllSpecsPlacementsConfig()) do
         for i, specConfig in ipairs(allSpecsConfig) do
             for btnSlotIndex, flyoutId2 in pairs(specConfig) do

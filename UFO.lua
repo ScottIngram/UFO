@@ -12,6 +12,7 @@ TODO
 * BUG: Oops, I clobbered the frames on the germ flyouts
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 *
+* DONE: bug: if one toon deletes a flyout causing the IDs of the subsequent ones to change by 1, then the other toons' configs are FUBAR
 * DONE: put a ufo -> catalog button on the collections and macro panels too
 * DONE: BUG: OnDragStart needs to accommodate when there is already something on the cursor
 * DONE: - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
@@ -47,7 +48,7 @@ local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new()
+local zebug = Zebug:new()
 
 -------------------------------------------------------------------------------
 -- Data
@@ -63,7 +64,7 @@ local EventHandlers = { }
 
 function EventHandlers:ADDON_LOADED(addonName)
     if addonName == ADDON_NAME then
-        debug.trace:print("ADDON_LOADED", addonName)
+        zebug.trace:print("ADDON_LOADED", addonName)
     end
 
     if addonName == "Blizzard_Collections" then
@@ -76,25 +77,28 @@ function EventHandlers:ADDON_LOADED(addonName)
 end
 
 function EventHandlers:PLAYER_LOGIN()
-    debug.trace:print("PLAYER_LOGIN")
-    debug.warn:print("v",VERSION,"loaded")
+    zebug.trace:print("PLAYER_LOGIN")
+    local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
+    local msg = ADDON_NAME .. " v"..version .. " loaded"
+    local colorMsg = GetClassColorObj("ROGUE"):WrapTextInColorCode(msg)
+    print(colorMsg)
 end
 
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
-    debug.trace:out("",1,"PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
+    zebug.trace:print("PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
     initalizeAddonStuff() -- moved this here from PLAYER_LOGIN() because the Bliz API was just generally shitting the bed
     GermCommander:updateAll() -- moved this here from PLAYER_LOGIN() because the Bliz API was misrepresenting the bar directions >:(
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
     if not isUfoInitialized then return end
-    debug.trace:out("",1,"ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
+    zebug.trace:print("ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
     GermCommander:handleActionBarSlotChanged(actionBarSlotId)
 end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
     if not isUfoInitialized then return end
-    debug.trace:print("PLAYER_SPECIALIZATION_CHANGED")
+    zebug.trace:print("PLAYER_SPECIALIZATION_CHANGED")
     GermCommander:updateAll()
 end
 
@@ -103,8 +107,6 @@ end
 -------------------------------------------------------------------------------
 
 function createEventListener(targetSelfAsProxy, eventHandlers)
-    debug.trace:print(ADDON_NAME .. " EventListener:Activate() ...")
-
     local dispatcher = function(listenerFrame, eventName, ...)
         -- ignore the listenerFrame and instead
         eventHandlers[eventName](targetSelfAsProxy, ...)
@@ -114,7 +116,7 @@ function createEventListener(targetSelfAsProxy, eventHandlers)
     eventListenerFrame:SetScript("OnEvent", dispatcher)
 
     for eventName, _ in pairs(eventHandlers) do
-        debug.trace:print("EventListener:activate() - registering " .. eventName)
+        zebug.trace:print("registering ",eventName)
         eventListenerFrame:RegisterEvent(eventName)
     end
 end
@@ -126,7 +128,7 @@ end
 function isInCombatLockdown(actionDescription)
     if InCombatLockdown() then
         local msg = actionDescription or "That action"
-        debug.warn:print(msg .. " is not allowed during combat.")
+        zebug.warn:print(msg .. " is not allowed during combat.")
         return true
     else
         return false
@@ -136,7 +138,7 @@ end
 function getIdForCurrentToon()
     local name, realm = UnitFullName("player") -- FU Bliz, realm is arbitrarily nil sometimes but not always
     realm = GetRealmName()
-    return name.." - "..realm
+    return name.."-"..realm
 end
 
 function getPetNameAndIcon(petGuid)
@@ -319,7 +321,8 @@ function initalizeAddonStuff()
     Catalog:createToggleButton(SpellBookFrame)
     isUfoInitialized = true
 
-    --FlyoutMenusDb:convertOldToNew()
+    --FlyoutMenusDb:convertFloFlyoutToUfoAlpha1()
+    FlyoutMenusDb:convertfoAlpha1ToUfoAlpha2()
 end
 
 -------------------------------------------------------------------------------

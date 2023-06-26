@@ -11,9 +11,10 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new()
+local zebug = Zebug:new(Zebug.OUTPUT.ALL)
 
 ---@class FlyoutMenuDef -- IntelliJ-EmmyLua annotation
+---@field id string A unique, immutable, permanent identifier.  This is not it's index in any array.
 ---@field name string
 ---@field icon string
 ---@field btns table
@@ -29,7 +30,7 @@ Ufo.FlyoutMenuDef = FlyoutMenuDef
 -- coerce the incoming table into a FlyoutMenuDef instance
 ---@return FlyoutMenuDef
 function FlyoutMenuDef:oneOfUs(self)
-    debug.trace:out("+",3,"FlyoutMenuDef:oneOfUs()", "self",self)
+    zebug.trace:setMethodName("oneOfUs"):print("self",self)
     if self.ufoType == FlyoutMenuDef.ufoType then
         return self
     end
@@ -62,8 +63,12 @@ end
 -- because privateData:_setCachedLists() is not visible to my IDE's autocomplete
 -- defining this redundant declaration here
 function FlyoutMenuDef:setCachedLists(lists)
-    debug.info:out("~",3, "FlyoutMenuDef.cacheLists()", "self.name",self.name, "lists",lists)
+    zebug.trace:print("self.name",self.name, "lists",lists)
     self:_setCachedLists(lists)
+end
+
+function FlyoutMenuDef:newId()
+    return Config:nextN() ..":".. getIdForCurrentToon() ..":".. (time()-1687736964)
 end
 
 function FlyoutMenuDef:howManyButtons()
@@ -71,16 +76,17 @@ function FlyoutMenuDef:howManyButtons()
 end
 
 function FlyoutMenuDef:forEachBtn(callback)
+    zebug.trace:out(20, "-", "self.btns",self.btns)
     assert(self.btns, "This instance of FlyoutMenuDef has no 'btns' field to coerce.")
 
     for i, buttonDef in ipairs(self.btns) do -- this must remain self.btns and NOT self:getAllButtonDefs() - otherwise infinite loop
-        debug.info:out(".",3,"FlyoutMenusDb:forEachBtn()", "i",i, "buttonDef", buttonDef)
+        zebug.trace:out(15,"-", "i",i, "buttonDef", buttonDef)
         callback(buttonDef, buttonDef, i) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
     end
 end
 
 function FlyoutMenuDef:getAllButtonDefs()
-    debug.info:out("C",3,"FlyoutMenuDef:getAllButtonDefs()...")
+    zebug.trace:print("self.alreadyCoercedMyButtons",self.alreadyCoercedMyButtons)
     if not self.alreadyCoercedMyButtons then
         self:forEachBtn(ButtonDef.oneOfUs)
         self:setAlreadyCoercedMyButtons()
@@ -119,11 +125,10 @@ end
 
 function FlyoutMenuDef:getIcon()
     if self.icon then return self.icon end
-    ---@type ButtonDef
     local btn1 = self:getButtonDef(1)
     if btn1 then
         local isMe = isClass(self, FlyoutMenuDef)
-        debug.trace:out("#",5,"FlyoutMenuDef:getIcon()","btn1",btn1, "isMe",isMe, "btn1.ufoType",btn1.ufoType, "btn1.getIcon",btn1.getIcon)
+        zebug.trace:print("btn1",btn1, "isMe",isMe, "btn1.ufoType",btn1.ufoType, "btn1.getIcon",btn1.getIcon)
         return btn1:getIcon()
     end
     return nil
@@ -131,18 +136,16 @@ end
 
 ---@return FlyoutMenuDef
 function FlyoutMenuDef:filterOutUnusable()
-    local debug = debug.trace:setHeader(X,"FlyoutMenuDef:filterOutUnusable()")
-    debug:line(10, "FlyoutMenuDef #", self.name)
+    zebug:print("self.name", self.name)
 
-    ---@type FlyoutMenuDef
     local usableFlyoutMenuDef = FlyoutMenuDef:new()
     ---@param btn ButtonDef
     for i, btn in ipairs(self:getAllButtonDefs()) do
         if btn:isUsable() then
-            debug:line(5, "can use", btn:getName())
+            zebug.trace:print("can use", btn:getName())
             usableFlyoutMenuDef:addButton(btn)
         else
-            debug:line(5, "CANNOT use", btn:getName())
+            zebug:print("CANNOT use", btn:getName())
         end
     end
     return usableFlyoutMenuDef
@@ -156,8 +159,8 @@ end
 function FlyoutMenuDef:asLists()
     local cache = self.cachedLists
     local isSame = cache == self
-    debug.info:out("~",3, "FlyoutMenuDef:asLists()", "cache 0",cache, "isSame",isSame, "self:howManyButtons()",self:howManyButtons())
-    debug.info:dump(cache)
+    zebug.trace:print("cache",cache, "isSame",isSame, "self:howManyButtons()",self:howManyButtons())
+    zebug.trace:dumpy("cache",cache)
     if cache then return cache end
     local lists = {
         blizTypes = {},
@@ -176,8 +179,7 @@ function FlyoutMenuDef:asLists()
         lists.petGuids [i] = btn.petGuid
         lists.macroIds [i] = btn.macroId
     end
-    debug.info:out("~",3, "FlyoutMenuDef:asLists()", "cache 1",lists)
-    debug.info:dump(lists)
+    zebug.trace:dumpy("lists",lists)
     self:setCachedLists(lists)
     return lists
 end

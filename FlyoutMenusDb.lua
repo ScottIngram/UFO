@@ -10,7 +10,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new()
+local zebug = Zebug:new(Zebug.OUTPUT.ALL)
 
 ---@class FlyoutMenusDb -- IntelliJ-EmmyLua annotation
 local FlyoutMenusDb = {
@@ -22,23 +22,36 @@ Ufo.FlyoutMenusDb = FlyoutMenusDb
 -- Methods
 -------------------------------------------------------------------------------
 
+local howMany
+
+local function invalidateCache()
+    howMany = nil
+end
+
+local function incrementHowMany()
+    howMany = howMany + 1
+    return howMany
+end
+
 function FlyoutMenusDb:howMany()
-    local flyouts = self:getAll()
-    return #flyouts
+    if howMany then return howMany end
+    howMany = 0
+    for _ in pairs(self:getAll()) do howMany = howMany + 1 end
+    return howMany
 end
 
 function FlyoutMenusDb:forEachFlyoutConfig(callback)
-    local allFlyouts = Config:getFlyoutsConfig()
-    for i, flyoutConfig in ipairs(allFlyouts) do
-        debug.info:out(".",3,"FlyoutMenusDb:forEachFlyoutConfig()", "i",i, "flyoutConfig",flyoutConfig)
-        callback(flyoutConfig,flyoutConfig) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
+    zebug.trace:out(25,"~")
+    for flyoutId, flyoutDef in pairs(Config:getFlyoutDefs()) do
+        zebug.trace:out(20,"~", "flyoutId",flyoutId, "--> flyoutDef", flyoutDef)
+        callback(flyoutDef, flyoutDef) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
     end
 end
 
 function FlyoutMenusDb:getAll()
-    debug.info:out("A",3,"FlyoutMenusDb:getAll()...")
-    local allFlyouts = Config:getFlyoutsConfig()
-    debug.info:out("A",3,"FlyoutMenusDb:getAll()", "allFlyouts", allFlyouts)
+    zebug.trace:out(30,"=")
+    local allFlyouts = Config:getFlyoutDefs()
+    zebug.trace:out(10,"=", "allFlyouts", allFlyouts, "self.isInitialized", self.isInitialized)
     if not self.isInitialized then
         FlyoutMenusDb:forEachFlyoutConfig(FlyoutMenuDef.oneOfUs)
         self.isInitialized = true
@@ -46,72 +59,150 @@ function FlyoutMenusDb:getAll()
     return allFlyouts
 end
 
----@return FlyoutMenuDef
-function FlyoutMenusDb:get(flyoutId)
-    flyoutId = tonumber(flyoutId)
-    assert(flyoutId, ADDON_NAME..": The flyoutId arg is empty.")
-    local config = self:getAll()
-    assert(config, ADDON_NAME..": Flyouts config structure is abnormal.")
-    local flyoutConfig = config[flyoutId]
-    debug.trace:out("B",3,"FlyoutMenusDb:get()", "flyoutConfig",flyoutConfig)
+local msgBeString = "Arg 'flyoutId' must be a string, not: "
+local frameStackSkip = 2 -- despite the implications of a numeric value, Lua doesn't recognize anything other than 1 or 2. ¯\_(ツ)_/¯
 
-    if not flyoutConfig then
-        debug.warn:print(flyoutConfig, "No config found for #"..flyoutId)
+---@param flyoutId string
+---@return string
+function FlyoutMenusDb:validateFlyoutId(flyoutId)
+    if type(flyoutId) ~= "string" then
+        error(msgBeString .. (flyoutId or "nil"), frameStackSkip)
+    end
+    if isEmpty(flyoutId) then
+        error("The flyoutId arg is empty." .. (flyoutId or "nil"), frameStackSkip)
+    end
+    return flyoutId
+end
+
+---@param flyoutId string
+---@return string
+function FlyoutMenusDb:reValidateFlyoutId(flyoutId)
+    local isNumber
+    local ok = pcall(function() isNumber = tonumber(flyoutId) end)
+    if isNumber then
+        error(msgBeString .. (flyoutId or "nil"), frameStackSkip)
+    end
+    return flyoutId
+end
+
+---@return FlyoutMenuDef
+---@param flyoutId string
+function FlyoutMenusDb:get(flyoutId)
+    zebug.trace:line(40)
+    flyoutId = self:validateFlyoutId(flyoutId)
+
+    ---@type FlyoutMenuDef
+    local flyoutDef = self:getAll()[flyoutId]
+    zebug.trace:print("flyoutId",flyoutId, "flyoutDef", flyoutDef)
+
+    if not flyoutDef then
+        -- double check that the incoming arg wasn't a number hiding in a string variable
+        flyoutId = self:reValidateFlyoutId(flyoutId)
+
+        -- Ok, the arg was ok, but, the flyout just isn't there.
+        -- Merely report it: don't throw it as an error.
+        -- Why?  Because a different toon could have deleted it and that's ok.
+        zebug.warn:print("FYI, No config found for #",flyoutId)
         return nil
     end
+    zebug.trace:print("flyoutConfig", flyoutDef, "flyoutDef.name",flyoutDef.name, "flyoutDef.id",flyoutDef.id )
 
-    return flyoutConfig
+    return flyoutDef
+end
+
+---@param flyoutIndex number
+function FlyoutMenusDb:getByIndex(flyoutIndex)
+    zebug.info:print("flyoutIndex",flyoutIndex)
+    if type(flyoutIndex) ~= "number" then
+        local isNumber
+        local ok = pcall(function() isNumber = tonumber(flyoutIndex) end)
+        if not isNumber then
+            error("Arg 'flyoutIndex' must be numeric, not: " .. (flyoutIndex or "nil"), 2)
+        end
+    end
+
+    local flyoutId = Config:getflyoutIds()[flyoutIndex]
+    zebug.info:print("flyoutIndex",flyoutIndex, "--> flyoutId",flyoutId)
+    return self:get(flyoutId)
 end
 
 ---@return FlyoutMenuDef
 function FlyoutMenusDb:appendNewOne()
-    local newFlyoutDef = FlyoutMenuDef:new()
-    local flyoutsConfig = self:getAll()
-    table.insert(flyoutsConfig, newFlyoutDef)
-    return newFlyoutDef
+    local newDef = FlyoutMenuDef:new()
+    newDef.id = newDef:newId() -- unlike germs, new flyouts in the catalog are given an ID because they are persisted to SAVED_VARs
+    self:add(newDef)
+    return newDef
 end
 
----@param flyoutMenuDef FlyoutMenuDef -- IntelliJ-EmmyLua annotation
-function FlyoutMenusDb:add(flyoutMenuDef)
-    table.insert(self:getAll(), flyoutMenuDef)
+---@param flyoutDef FlyoutMenuDef -- IntelliJ-EmmyLua annotation
+function FlyoutMenusDb:add(flyoutDef)
+    local flyoutId = flyoutDef.id
+    self:getAll()[flyoutId] = flyoutDef
+
+    -- keep the index and the reverse index in sync
+    local i = incrementHowMany()
+    Config:getflyoutIds()[i] = flyoutId
+    Config:getFlyoutXedni()[flyoutDef.id] = i
 end
 
+-- erases the flyout def
+-- compresses the index
+-- updates the index's reverse index (Xedni)
+---@param flyoutId string Unique, immutable ID.  This is not it's index in any array.
 function FlyoutMenusDb:delete(flyoutId)
-    local debug = debug.trace:setHeader("#","FlyoutMenusDb:delete")
-    if type(flyoutId) == "string" then flyoutId = tonumber(flyoutId) end
-    table.remove(self:getAll(), flyoutId)
-    -- shift references -- TODO: stop this.  Indices are not a precious resource.  And, this will get really complicated for mixing global & toon
+    flyoutId = self:validateFlyoutId(flyoutId)
+    local flyoutDefs = self:getAll()
+    local reverseIndex = Config:getFlyoutXedni() -- grab it before we erase it
+    local flyoutIndex = reverseIndex[flyoutId]
+
+    if not flyoutIndex then
+        error("Did not find an index for "..flyoutId)
+    end
+
+    -- remove it from the flyoutDefs and reverseIndex hash tables
+    zebug.trace:dumpy("flyoutDefs B4 delete", flyoutDefs)
+    flyoutDefs[flyoutId] = nil
+    zebug.trace:dumpy("flyoutDefs AFTER delete", flyoutDefs)
+
+    zebug.trace:dumpy("reverseIndex B4 delete", reverseIndex)
+    reverseIndex[flyoutId] = nil
+    zebug.trace:dumpy("reverseIndex B4 delete", reverseIndex)
+
+    -- remove it from some arbitrary point in the flyoutIds "array"
+    -- luckily, we have a reverse index array (Xedni) to find its index :-)
+
+    zebug.info:print("flyoutId",flyoutId, "removing at flyoutIndex", flyoutIndex)
+    local flyoutList = Config:getflyoutIds()
+
+    zebug.trace:dumpy("list B4 delete", flyoutList)
+    local mort = table.remove(flyoutList, flyoutIndex)
+    zebug.trace:dumpy("list AFTER delete", flyoutList)
+    zebug.trace:print("killed ->",mort)
+
+    invalidateCache()
+
+    -- remove it from every placement
     local placementsForEachSpec = GermCommander:getAllSpecsPlacementsConfig()
-    --debug:line(5, "flyoutId",flyoutId)
-    --debug:dump(placementsForEachSpec)
     for spec, placementsForSpec in pairs(placementsForEachSpec) do
-        debug:line(5, "flyoutId",flyoutId, "spec",spec)
+        zebug.trace:line(5, "flyoutId",flyoutId, "spec",spec)
         for btnSlotIndex, flyId in pairs(placementsForSpec) do
-            debug:line(5, "flyId",flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
+            zebug.trace:line(5, "flyId",flyId, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
             if flyId == flyoutId then
                 placementsForSpec[btnSlotIndex] = nil
-            elseif flyId > flyoutId then
-                placementsForSpec[btnSlotIndex] = flyId - 1
             end
         end
     end
 end
 
--- TODO: use this one instead?
--- converts the previous config format into the new one
----@param flyoutId number -- IntelliJ-EmmyLua annotation
-function FlyoutMenusDb:NEW_delete(flyoutId)
-    -- leave an empty placeholder
-    -- so the array stays an array of contiguous indices
-    -- and every flyout always keeps its original ID
-    self:getAll()[tonumber(flyoutId)] = false
-end
+-------------------------------------------------------------------------------
+-- Version migration: FloFlyout -> UFO alpha1
+-------------------------------------------------------------------------------
 
 -- TODO: delete after dev is done
-function FlyoutMenusDb:convertOldToNew()
-    debug.trace:out("+",40,"FlyoutMenusDb:convertOldToNew()")
+function FlyoutMenusDb:convertFloFlyoutToUfoAlpha1()
+    zebug.trace:line(40)
     local old = UFO_SV_ACCOUNT.OLD_flyouts
-    Config:tmpNeoNuke()
+    Config:nuke_a1()
 
     for i, oldFlyout in ipairs(old) do
         local neoFlyout = FlyoutMenuDef:new()
@@ -139,4 +230,45 @@ function FlyoutMenusDb:convertOldToNew()
             neoFlyout:addButton(btn)
         end
     end
+end
+
+-------------------------------------------------------------------------------
+-- Version migration: UFO alpha1 -> UFO alpha2
+-------------------------------------------------------------------------------
+
+local max = 3
+
+-- TODO: delete after dev is done
+function FlyoutMenusDb:convertfoAlpha1ToUfoAlpha2()
+    zebug.trace:line(40)
+    Config:nuke_a2()
+
+    local a1 = UFO_SV_ACCOUNT.flyouts
+    local a2 = UFO_SV_ACCOUNT.flyouts_a2
+    local i2 = UFO_SV_ACCOUNT.flyoutIds
+    local x2 = UFO_SV_ACCOUNT.flyoutXedni
+    local p1 = UFO_SV_TOON.placementsForAllSpecs
+    local p2 = UFO_SV_TOON.placementsForAllSpecs_a2
+
+    -- make a copy of the existing flyouts.  add the new ID into each.
+    for i, a1_flyoutDef in ipairs(a1) do
+        if i > max then break end
+        local a2_flyoutDef = deepcopy(a1_flyoutDef)
+        local id = FlyoutMenuDef:newId()
+        a2_flyoutDef.id = id
+        a2[id] = a2_flyoutDef
+        i2[i] = id
+        x2[id] = i
+    end
+
+    -- now fix the placements, translating each flyoutIndex into the new flyoutId
+    for specId, pDef in pairs(p1) do
+        p2[specId] = {}
+        for slotId, flyoutIndex in pairs(pDef) do
+            local flyoutId = i2[flyoutIndex]
+            p2[specId][slotId] = flyoutId
+        end
+    end
+
+    self.isInitialized = false -- the flag to trigger OO coercion in getAll()
 end
