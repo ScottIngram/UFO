@@ -24,7 +24,7 @@ Ufo.FlyoutMenusDb = FlyoutMenusDb
 
 local howMany
 
-local function invalidateCache()
+local function invalidateHowMany()
     howMany = nil
 end
 
@@ -121,7 +121,7 @@ function FlyoutMenusDb:getByIndex(flyoutIndex)
         end
     end
 
-    local flyoutId = Config:getflyoutIds()[flyoutIndex]
+    local flyoutId = Config:getOrderedFlyoutIds()[flyoutIndex]
     zebug.info:print("flyoutIndex",flyoutIndex, "--> flyoutId",flyoutId)
     return self:get(flyoutId)
 end
@@ -141,8 +141,8 @@ function FlyoutMenusDb:add(flyoutDef)
 
     -- keep the index and the reverse index in sync
     local i = incrementHowMany()
-    Config:getflyoutIds()[i] = flyoutId
-    Config:getFlyoutXedni()[flyoutDef.id] = i
+    Config:getOrderedFlyoutIds()[i] = flyoutId
+    self:getXedni()[flyoutDef.id] = i
 end
 
 -- erases the flyout def
@@ -152,34 +152,33 @@ end
 function FlyoutMenusDb:delete(flyoutId)
     flyoutId = self:validateFlyoutId(flyoutId)
     local flyoutDefs = self:getAll()
-    local reverseIndex = Config:getFlyoutXedni() -- grab it before we erase it
-    local flyoutIndex = reverseIndex[flyoutId]
-
-    if not flyoutIndex then
-        error("Did not find an index for "..flyoutId)
-    end
+    local xedni = self:getXedni()
+    local flyoutIndex = xedni[flyoutId] -- grab it before we erase it
 
     -- remove it from the flyoutDefs and reverseIndex hash tables
     zebug.trace:dumpy("flyoutDefs B4 delete", flyoutDefs)
     flyoutDefs[flyoutId] = nil
     zebug.trace:dumpy("flyoutDefs AFTER delete", flyoutDefs)
 
-    zebug.trace:dumpy("reverseIndex B4 delete", reverseIndex)
-    reverseIndex[flyoutId] = nil
-    zebug.trace:dumpy("reverseIndex B4 delete", reverseIndex)
+    if not flyoutIndex then
+        error("Did not find an index for "..flyoutId)
+    end
+    local isLastElement = (flyoutIndex == self:howMany())
+    if not isLastElement then
+        -- if we remove anything but the final element, then some/all of the reverse index is now off by 1.
+        self:invalidateXedni()
+    end
 
-    -- remove it from some arbitrary point in the flyoutIds "array"
+    -- remove it from some arbitrary point in the orderedFlyoutIds "array"
     -- luckily, we have a reverse index array (Xedni) to find its index :-)
-
     zebug.info:print("flyoutId",flyoutId, "removing at flyoutIndex", flyoutIndex)
-    local flyoutList = Config:getflyoutIds()
-
+    local flyoutList = Config:getOrderedFlyoutIds()
     zebug.trace:dumpy("list B4 delete", flyoutList)
     local mort = table.remove(flyoutList, flyoutIndex)
     zebug.trace:dumpy("list AFTER delete", flyoutList)
     zebug.trace:print("killed ->",mort)
 
-    invalidateCache()
+    invalidateHowMany()
 
     -- remove it from every placement
     local placementsForEachSpec = GermCommander:getAllSpecsPlacementsConfig()
@@ -192,6 +191,28 @@ function FlyoutMenusDb:delete(flyoutId)
             end
         end
     end
+end
+
+local xedni
+
+function FlyoutMenusDb:getXedni()
+    if not xedni then
+        xedni = {}
+        local ids = UFO_SV_ACCOUNT.orderedFlyoutIds
+        zebug.info:dumpy("orderedFlyoutIds",ids)
+        for i, id in ipairs(ids) do
+            zebug.trace:print("i",i, "id",id)
+            xedni[id] = i
+        end
+    end
+    return xedni
+end
+
+function FlyoutMenusDb:invalidateXedni()
+    -- If a flyout is added/deleted from anywhere but the end, then some/all of the reverse index is now off by 1.
+    -- Nuke it so that it will be rebuilt from scratch the next time it's needed.
+    -- Yes, I could have selectively corrected the incorrect values but it would be just as resource intensive and more prone to error.
+    xedni = nil
 end
 
 -------------------------------------------------------------------------------
@@ -236,7 +257,7 @@ end
 -- Version migration: UFO alpha1 -> UFO alpha2
 -------------------------------------------------------------------------------
 
-local max = 3
+local max = 99999
 
 -- TODO: delete after dev is done
 function FlyoutMenusDb:convertfoAlpha1ToUfoAlpha2()
@@ -245,8 +266,8 @@ function FlyoutMenusDb:convertfoAlpha1ToUfoAlpha2()
 
     local a1 = UFO_SV_ACCOUNT.flyouts
     local a2 = UFO_SV_ACCOUNT.flyouts_a2
-    local i2 = UFO_SV_ACCOUNT.flyoutIds
-    local x2 = UFO_SV_ACCOUNT.flyoutXedni
+    local i2 = UFO_SV_ACCOUNT.orderedFlyoutIds
+    --local x2 = UFO_SV_ACCOUNT.xedni
     local p1 = UFO_SV_TOON.placementsForAllSpecs
     local p2 = UFO_SV_TOON.placementsForAllSpecs_a2
 
@@ -258,7 +279,7 @@ function FlyoutMenusDb:convertfoAlpha1ToUfoAlpha2()
         a2_flyoutDef.id = id
         a2[id] = a2_flyoutDef
         i2[i] = id
-        x2[id] = i
+        --x2[id] = i
     end
 
     -- now fix the placements, translating each flyoutIndex into the new flyoutId

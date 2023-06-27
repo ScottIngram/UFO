@@ -5,7 +5,7 @@
 -------------------------------------------------------------------------------
 
 local ADDON_NAME, Ufo = ...
-local debug = Ufo.Debug:new()
+local zebug = Ufo.Zebug:new()
 
 ---@class Config -- IntelliJ-EmmyLua annotation
 local Config = {}
@@ -28,26 +28,22 @@ end
 function Config:nuke_a2()
     UFO_SV_ACCOUNT.n = 0
     UFO_SV_ACCOUNT.flyouts_a2 = {}
-    UFO_SV_ACCOUNT.flyoutIds = {}
-    UFO_SV_ACCOUNT.flyoutXedni = {}
+    UFO_SV_ACCOUNT.orderedFlyoutIds = {}
     UFO_SV_TOON.placementsForAllSpecs_a2 = {}
-    UFO_SV_ACCOUNT.flyoutIndex = nil
+    UFO_SV_ACCOUNT.xedni = nil
+    UFO_SV_ACCOUNT.flyoutXedni = nil
     UFO_SV_ACCOUNT.flyoutIdList = nil
     UFO_SV_ACCOUNT.OLD_flyouts = nil
 end
 
 -- the set of flyouts is shared between all toons on the account
 function Config:getFlyoutDefs()
-    return UFO_SV_ACCOUNT.flyouts_a2
+    return UFO_SV_ACCOUNT.flyouts
 end
 
 -- caches the computationally generated lookup index
-function Config:getflyoutIds()
-    return UFO_SV_ACCOUNT.flyoutIds
-end
-
-function Config:getFlyoutXedni()
-    return UFO_SV_ACCOUNT.flyoutXedni
+function Config:getOrderedFlyoutIds()
+    return UFO_SV_ACCOUNT.orderedFlyoutIds
 end
 
 function Config:nextN()

@@ -4,6 +4,7 @@
 --[[
 
 TODO
+* BUG: the empty btn sparkles on every OnUpdate
 * replace existing icon picker with something closer to MacroManager / Weak Auras
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
@@ -12,6 +13,7 @@ TODO
 * BUG: Oops, I clobbered the frames on the germ flyouts
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 *
+* DONE: BUG: deleting a flyout sometimes loses the guid
 * DONE: bug: if one toon deletes a flyout causing the IDs of the subsequent ones to change by 1, then the other toons' configs are FUBAR
 * DONE: put a ufo -> catalog button on the collections and macro panels too
 * DONE: BUG: OnDragStart needs to accommodate when there is already something on the cursor
@@ -322,7 +324,7 @@ function initalizeAddonStuff()
     isUfoInitialized = true
 
     --FlyoutMenusDb:convertFloFlyoutToUfoAlpha1()
-    FlyoutMenusDb:convertfoAlpha1ToUfoAlpha2()
+    --FlyoutMenusDb:convertfoAlpha1ToUfoAlpha2()
 end
 
 -------------------------------------------------------------------------------
