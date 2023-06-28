@@ -254,6 +254,7 @@ function GermCommander:getConfigForSpec(specId)
             placementsForAllSpecs[specId] = result
 
         end
+        placementsForAllSpecs[specId] = result
     end
     debug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 2",result)
     --debug:dump(result)
