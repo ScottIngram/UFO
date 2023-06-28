@@ -52,13 +52,14 @@ ADDON_VARS.Zebug = Zebug
 -------------------------------------------------------------------------------
 
 local DEFAULT_ZEBUG = OUTPUT.WARN
+
 local ERR_MSG = "ZEBUGGER SYNTAX ERROR: invoke as zebug.info:func() not zebug.info.func()"
 local PREFIX = "<" .. ADDON_NAME .. ">"
 local DEFAULT_INDENT_CHAR = "#"
 local DEFAULT_INDENT_WIDTH = 0
 
 local COLORS = { }
-COLORS[OUTPUT.TRACE] = GetClassColorObj("MAGE")
+COLORS[OUTPUT.TRACE] = GetClassColorObj("WARRIOR")
 COLORS[OUTPUT.INFO]  = GetClassColorObj("MONK")
 COLORS[OUTPUT.WARN]  = GetClassColorObj("ROGUE")
 COLORS[OUTPUT.ERROR] = GetClassColorObj("DEATHKNIGHT")
@@ -177,9 +178,9 @@ end
 function Zebug:dumpy(label, ...)
     assert(isZebuggerObj(self), ERR_MSG)
     if self.isSilent then return end
-    self:out(20,"V", label)
+    self:out(20,"V", label, "VVVVVVVVVV")
     DevTools_Dump(...)
-    self:out(20,"^", label)
+    self:out(20,"^", label, "^^^^^^^^^^")
     return self
 end
 
