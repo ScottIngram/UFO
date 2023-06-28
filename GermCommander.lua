@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new()
+local zebug = Zebug:new()
 
 ---@class GermCommander -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -72,7 +72,7 @@ local function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
         end
         rememberGerm(germ)
     end
-    debug.trace:out("*",3,"bindFlyoutToActionBarSlot()","germ...",germ)
+    zebug.trace:print("bindFlyoutToActionBarSlot()","germ...",germ)
     germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
 end
 
@@ -101,8 +101,7 @@ end
 -------------------------------------------------------------------------------
 
 function GermCommander:updateAll()
-    local debug = debug.info:setHeader("-","GermCommander:updateAll()")
-    debug:line(20)
+    zebug:line(20)
     if isInCombatLockdown("Reconfiguring") then return end
 
     clearGerms()
@@ -111,14 +110,14 @@ function GermCommander:updateAll()
     --debug:dump(placements)
     for btnSlotIndex, flyoutId in pairs(placements) do
         local isThere = doesFlyoutExist(flyoutId)
-        debug:line(5, "flyoutId",flyoutId, "isThere", isThere)
+        zebug:line(5, "flyoutId",flyoutId, "isThere", isThere)
         if isThere then
             bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
         else
             -- because one toon can delete a flyout while other toons still have it on their bars
-            debug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETING!")
+            zebug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETING!")
             GermCommander:deletePlacement(btnSlotIndex)
-            debug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETED!!!")
+            zebug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETED!!!")
         end
     end
 end
@@ -137,6 +136,7 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
     local existingFlyoutId = getFlyoutIdForSlot(btnSlotIndex)
 
     local type, macroId = GetActionInfo(btnSlotIndex)
+    zebug.trace:print("existingFlyoutId",existingFlyoutId, "type",type, "macroId",macroId)
     if not type then
         return
     end
@@ -176,6 +176,7 @@ end
 function GermCommander:savePlacement(btnSlotIndex, flyoutId)
     btnSlotIndex = tonumber(btnSlotIndex)
     flyoutId = FlyoutMenusDb:validateFlyoutId(flyoutId)
+    zebug.info:print("btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId)
     self:getPlacementConfigForCurrentSpec()[btnSlotIndex] = flyoutId
 end
 
@@ -183,8 +184,8 @@ function GermCommander:deletePlacement(btnSlotIndex)
     btnSlotIndex = tonumber(btnSlotIndex)
     local placementConfigForCurrentSpec = self:getPlacementConfigForCurrentSpec()
     local flyoutId = self:getPlacementConfigForCurrentSpec()[btnSlotIndex]
-    debug.info:out("%",5,"GermCommander:deletePlacement() DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyoutId, "placementConfigForCurrentSpec -->")
-    debug.info:dump(placementConfigForCurrentSpec)
+    zebug.info:print("GermCommander:deletePlacement() DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyoutId, "placementConfigForCurrentSpec -->")
+    zebug.trace:dumpy("placementConfigForCurrentSpec", placementConfigForCurrentSpec)
     -- the germ UI Frame stays in place but is now empty
     placementConfigForCurrentSpec[btnSlotIndex] = nil
 end
@@ -206,14 +207,14 @@ end
 function GermCommander:recordCurrentSpec()
     local hasChanged
     local newSpec = getSpecId()
-    debug.trace:out("+",5,"recordCurrentSpec()", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+    zebug.trace:print("recordCurrentSpec()", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
     if currentSpec ~= newSpec then
         previousSpec = currentSpec
         currentSpec = newSpec
-        debug.trace:out("+",5,"REASSIGNED->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+        zebug.trace:print("REASSIGNED->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
         hasChanged = true
     else
-        debug.trace:out("+",5,"unchanged ->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+        zebug.trace:print("unchanged ->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
         hasChanged = false
     end
     return hasChanged
@@ -235,28 +236,25 @@ function GermCommander:getPlacementConfigForCurrentSpec()
 end
 
 function GermCommander:getConfigForSpec(specId)
-    local debug = debug.trace:setHeader("+","GermCommander:getConfigForSpec()")
     -- the placement of flyouts on the action bars changes from spec to spec
     local placementsForAllSpecs = GermCommander:getAllSpecsPlacementsConfig()
     assert(placementsForAllSpecs, ADDON_NAME..": Oops!  placements config is nil")
 
     local result = placementsForAllSpecs[specId]
     -- is this a never-before-encountered spec? - if so, initialze its config
-    debug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1",result)
+    zebug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1",result)
     if not result then -- TODO: identify empty OR nil
         if not previousSpec or specId == previousSpec then
-            debug:out(7, "blanking specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
+            zebug:print("blanking specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
             result = {}
         else
             -- initialize the new config based on the old one
             result = deepcopy(self:getConfigForSpec(previousSpec))
-            debug:line(7, "COPYING specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "initialConfig", "result 1b",result)
-            placementsForAllSpecs[specId] = result
-
+            zebug:line(7, "COPYING specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "initialConfig", "result 1b",result)
         end
         placementsForAllSpecs[specId] = result
     end
-    debug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 2",result)
+    zebug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 2",result)
     --debug:dump(result)
     return result
 end
