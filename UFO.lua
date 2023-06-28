@@ -4,6 +4,8 @@
 --[[
 
 TODO
+* BUG: when a macro is added or deleted (from the Bliz macro editor) then all of the macro IDs shift by 1 FUBARing the macro IDs in UFO
+* optimize xedni - don't throw away the whole thing - for flyoutId = deleted index to howMany { flyout[flyoutId]-- }
 * BUG: the empty btn sparkles on every OnUpdate
 * replace existing icon picker with something closer to MacroManager / Weak Auras
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
@@ -325,6 +327,8 @@ function initalizeAddonStuff()
 
     --FlyoutMenusDb:convertFloFlyoutToUfoAlpha1()
     --FlyoutMenusDb:convertfoAlpha1ToUfoAlpha2()
+    --FlyoutMenusDb:convertfoAlpha1PlacementsToUfoAlpha2()
+
 end
 
 -------------------------------------------------------------------------------

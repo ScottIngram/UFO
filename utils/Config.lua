@@ -57,8 +57,13 @@ end
 
 function Config:initializePlacements()
     if not UFO_SV_TOON then
-        UFO_SV_TOON = { placementsForAllSpecs = {} }
+        UFO_SV_TOON = { placementsForAllSpecs_a2 = {} }
     end
+    -- TMP
+    if not UFO_SV_TOON.placementsForAllSpecs_a2 then
+        UFO_SV_TOON.placementsForAllSpecs_a2 = {}
+    end
+
 end
 
 -- the placement of flyouts on the action bars is stored separately for each toon

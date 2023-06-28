@@ -102,7 +102,7 @@ function FlyoutMenusDb:get(flyoutId)
         -- Ok, the arg was ok, but, the flyout just isn't there.
         -- Merely report it: don't throw it as an error.
         -- Why?  Because a different toon could have deleted it and that's ok.
-        zebug.warn:print("FYI, No config found for #",flyoutId)
+        zebug.warn:print("FYI, No config found for #",flyoutId) -- TODO - only report the first occurrence of any specific flyoutId
         return nil
     end
     zebug.trace:print("flyoutConfig", flyoutDef, "flyoutDef.name",flyoutDef.name, "flyoutDef.id",flyoutDef.id )
@@ -292,4 +292,20 @@ function FlyoutMenusDb:convertfoAlpha1ToUfoAlpha2()
     end
 
     self.isInitialized = false -- the flag to trigger OO coercion in getAll()
+end
+
+function FlyoutMenusDb:convertfoAlpha1PlacementsToUfoAlpha2()
+    local p1 = UFO_SV_TOON.placementsForAllSpecs
+    local p2 = UFO_SV_TOON.placementsForAllSpecs_a2
+    local i2 = UFO_SV_ACCOUNT.orderedFlyoutIds
+
+    -- now fix the placements, translating each flyoutIndex into the new flyoutId
+    for specId, pDef in pairs(p1) do
+        p2[specId] = {}
+        for slotId, flyoutIndex in pairs(pDef) do
+            local flyoutId = i2[flyoutIndex]
+            zebug.error:print("flyoutIndex",flyoutIndex, "flyoutId",flyoutId)
+            p2[specId][slotId] = flyoutId
+        end
+    end
 end
