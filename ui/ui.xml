@@ -55,6 +55,15 @@
             <CheckButton name="$parentButton18" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="18" />
             <CheckButton name="$parentButton19" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="19" />
             <CheckButton name="$parentButton20" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="20" />
+            <CheckButton name="$parentButton21" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="21" />
+            <CheckButton name="$parentButton22" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="22" />
+            <CheckButton name="$parentButton23" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="23" />
+            <CheckButton name="$parentButton24" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="24" />
+            <CheckButton name="$parentButton25" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="25" />
+            <CheckButton name="$parentButton26" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="26" />
+            <CheckButton name="$parentButton27" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="27" />
+            <CheckButton name="$parentButton28" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="28" />
+            <CheckButton name="$parentButton30" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="30" />
         </Frames>
         <Scripts>
             <OnShow function="GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow"/>
