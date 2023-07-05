@@ -388,7 +388,7 @@ end
 -- throttle OnUpdate because it fires as often as FPS and is very resource intensive
 -- TODO: abstract this into its own class/function
 local ON_UPDATE_TIMER_FREQUENCY = 1.5
-local onUpdateTimer = 0
+local onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
 
 ---@param germ Germ
 function handlers.OnUpdate(germ, elapsed)
@@ -398,7 +398,7 @@ function handlers.OnUpdate(germ, elapsed)
     end
     onUpdateTimer = 0
     germ:handleGermUpdateEvent()
-    -- germ:updateAllBtnCooldownsEtc() -- nah, let the flyout do this.
+    germ:updateAllBtnCooldownsEtc() -- nah, let the flyout do this.
 end
 
 ---@param germ Germ
@@ -411,6 +411,7 @@ function handlers.OnPreClick(germ, whichMouseButton, down)
     zebug.trace:name("OnPickupAndDrag"):print("flyoutId",germ:getFlyoutId(), "UFO_NAMES",UFO_NAMES)
     zebug.trace:name("OnPickupAndDrag"):print("flyoutId",germ:getFlyoutId(), "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES)
     zebug.trace:name("OnPickupAndDrag"):print("flyoutId",germ:getFlyoutId(), "UFO_PETS",UFO_PETS)
+    onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
 end
 
 local oldGerm
