@@ -12,6 +12,10 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 local zebug = Zebug:new(Zebug.OUTPUT.WARN)
 
+-------------------------------------------------------------------------------
+-- Class: FlyoutMenusDb
+-------------------------------------------------------------------------------
+
 ---@class FlyoutMenusDb -- IntelliJ-EmmyLua annotation
 local FlyoutMenusDb = {
     isInitialized = false
@@ -19,25 +23,19 @@ local FlyoutMenusDb = {
 Ufo.FlyoutMenusDb = FlyoutMenusDb
 
 -------------------------------------------------------------------------------
--- Methods
+-- Class: Xedni
 -------------------------------------------------------------------------------
 
-local howMany
+---@class Xedni -- IntelliJ-EmmyLua annotation
+local Xedni = { }
 
-local function invalidateHowMany()
-    howMany = nil
-end
-
-local function incrementHowMany()
-    howMany = howMany + 1
-    return howMany
-end
+-------------------------------------------------------------------------------
+-- FlyoutMenusDb Methods
+-------------------------------------------------------------------------------
 
 function FlyoutMenusDb:howMany()
-    if howMany then return howMany end
-    howMany = 0
-    for _ in pairs(self:getAll()) do howMany = howMany + 1 end
-    return howMany
+    local list = Config:getOrderedFlyoutIds()
+    return #list
 end
 
 function FlyoutMenusDb:forEachFlyoutConfig(callback)
@@ -140,9 +138,10 @@ function FlyoutMenusDb:add(flyoutDef)
     self:getAll()[flyoutId] = flyoutDef
 
     -- keep the index and the reverse index in sync
-    local i = incrementHowMany()
-    Config:getOrderedFlyoutIds()[i] = flyoutId
-    self:getXedni()[flyoutDef.id] = i
+    local list = Config:getOrderedFlyoutIds()
+    local i = #list + 1
+    list[i] = flyoutId
+    Xedni:get()[flyoutDef.id] = i
 end
 
 -- erases the flyout def
@@ -152,7 +151,7 @@ end
 function FlyoutMenusDb:delete(flyoutId)
     flyoutId = self:validateFlyoutId(flyoutId)
     local flyoutDefs = self:getAll()
-    local xedni = self:getXedni()
+    local xedni = Xedni:get()
     local flyoutIndex = xedni[flyoutId] -- grab it before we erase it
 
     -- remove it from the flyoutDefs and reverseIndex hash tables
@@ -160,25 +159,16 @@ function FlyoutMenusDb:delete(flyoutId)
     flyoutDefs[flyoutId] = nil
     zebug.trace:dumpy("flyoutDefs AFTER delete", flyoutDefs)
 
-    if not flyoutIndex then
-        error("Did not find an index for "..flyoutId)
-    end
-    local isLastElement = (flyoutIndex == self:howMany())
-    if not isLastElement then
-        -- if we remove anything but the final element, then some/all of the reverse index is now off by 1.
-        self:invalidateXedni()
-    end
-
     -- remove it from some arbitrary point in the orderedFlyoutIds "array"
     -- luckily, we have a reverse index array (Xedni) to find its index :-)
     zebug.info:print("flyoutId",flyoutId, "removing at flyoutIndex", flyoutIndex)
     local flyoutList = Config:getOrderedFlyoutIds()
-    zebug.trace:dumpy("list B4 delete", flyoutList)
+    zebug.info:dumpy("list B4 delete", flyoutList)
     local mort = table.remove(flyoutList, flyoutIndex)
-    zebug.trace:dumpy("list AFTER delete", flyoutList)
-    zebug.trace:print("killed ->",mort)
+    zebug.info:dumpy("list AFTER delete", flyoutList)
+    zebug.info:print("killed ->",mort)
 
-    invalidateHowMany()
+    Xedni:moveOrRemove(flyoutId)
 
     -- remove it from every placement
     local placementsForEachSpec = GermCommander:getAllSpecsPlacementsConfig()
@@ -193,26 +183,46 @@ function FlyoutMenusDb:delete(flyoutId)
     end
 end
 
-local xedni
-
-function FlyoutMenusDb:getXedni()
-    if not xedni then
-        xedni = {}
+---@return table
+function Xedni:get()
+    if not Xedni.lookup then
+        Xedni.lookup = {}
         local ids = UFO_SV_ACCOUNT.orderedFlyoutIds
         zebug.info:dumpy("orderedFlyoutIds",ids)
         for i, id in ipairs(ids) do
             zebug.trace:print("i",i, "id",id)
-            xedni[id] = i
+            Xedni.lookup[id] = i
         end
     end
-    return xedni
+    return Xedni.lookup
 end
 
-function FlyoutMenusDb:invalidateXedni()
-    -- If a flyout is added/deleted from anywhere but the end, then some/all of the reverse index is now off by 1.
-    -- Nuke it so that it will be rebuilt from scratch the next time it's needed.
-    -- Yes, I could have selectively corrected the incorrect values but it would be just as resource intensive and more prone to error.
-    xedni = nil
+-- corrects the Xedni after a change in the flyout ordering.
+-- call this only after the other maps have been changed
+---@param instigatingFlyoutId string
+function Xedni:moveOrRemove(instigatingFlyoutId)
+    local indicesMap = Xedni.lookup
+    local instigatingIndex = indicesMap[instigatingFlyoutId]
+
+    zebug.info:dumpy("Xedni B4 alteration", indicesMap)
+
+    -- remove the entry
+    indicesMap[instigatingFlyoutId] = nil
+
+    -- If a flyout is added/deleted from anywhere but the end,
+    -- then some/all of the reverse index is now off by 1.
+    local orderedIds = Config:getOrderedFlyoutIds()
+    local size = #orderedIds
+
+    -- go through the remaining entries and lookup their new index
+    local start = instigatingIndex -- if start > size then the instigating action was deleting the last entry
+    for i=start, size do
+        local flyoutId = orderedIds[i]
+        zebug.info:print("flyoutId", instigatingFlyoutId, "index", instigatingIndex, "start",start, "resetting flyoutId",flyoutId, "to i",i)
+        indicesMap[flyoutId] = i
+    end
+
+    zebug.info:dumpy("Xedni AFTER alteration", indicesMap)
 end
 
 -------------------------------------------------------------------------------

@@ -142,9 +142,9 @@ function ButtonOnFlyoutMenu:updateCooldownsAndCountsAndStatesEtc()
         SpellFlyoutButton_UpdateState(self)
     end
 
-        self:updateUsable()
-        self:updateCooldown()
-        self:updateCount()
+    self:updateUsable()
+    self:updateCooldown()
+    self:updateCount()
 end
 
 function ButtonOnFlyoutMenu:updateUsable()
