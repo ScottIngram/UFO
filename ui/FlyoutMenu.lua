@@ -95,6 +95,7 @@ end
 -- TODO: merge updateForCatalog() and updateForGerm()
 ---@param flyoutId string
 function FlyoutMenu:updateForCatalog(flyoutId)
+    self.enableTwinkle = true
     self:setId(flyoutId)
     local dir = "RIGHT"
     self.direction = dir

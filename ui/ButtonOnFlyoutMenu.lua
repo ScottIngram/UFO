@@ -192,13 +192,6 @@ function ButtonOnFlyoutMenu:updateCooldown()
     end
 
     -- for items, I copied and hacked Bliz's ActionButton_UpdateCooldown
-    local start, duration, enable = 1, 1, true;
-    local id = btnDef and btnDef:getIdForBlizApi()
-    if id then
-        start, duration, enable = GetItemCooldown(id);
-    end
-
-    debug.trace:out("X",5,"updateCooldown() 2 ITEM","type",type, "start",start, "duration",duration, "enable",enable )
 
     if self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL then
         self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
@@ -208,7 +201,23 @@ function ButtonOnFlyoutMenu:updateCooldown()
     end
 
     local modRate = 1.0;
-    CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
+    local start, duration, enable = 0, 0.75, true;
+    local id = btnDef and btnDef:getIdForBlizApi()
+    if id then
+        start, duration, enable = GetItemCooldown(id);
+        CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
+    else
+        -- without an id, this must be the empty placeholder slot.  Make it sparkle.  Once.
+        local p = self:GetParent()
+        if p.enableTwinkle then
+            p.enableTwinkle = false
+            start = GetTime()
+            CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
+        end
+    end
+
+    debug.trace:out("X",5,"updateCooldown() 2 ITEM","type",type, "start",start, "duration",duration, "enable",enable )
+
 end
 
 function ButtonOnFlyoutMenu:updateCount()
