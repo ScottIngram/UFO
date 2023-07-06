@@ -239,11 +239,12 @@ function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self:setFlyoutId(flyoutId)
 
-    local icon = flyoutDef:getIcon()
-    self:setIcon(icon)
-
     -- discard any buttons that the toon can't ever use
     local usableFlyout = flyoutDef:filterOutUnusable()
+
+    -- set the Germ's icon so that it reflects only USABLE buttons
+    local icon = usableFlyout:getIcon()
+    self:setIcon(icon)
 
     -- attach string representations of the buttons
     -- because Blizzard "secure" templates don't let us attach the actual array
