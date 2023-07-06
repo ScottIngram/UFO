@@ -327,9 +327,9 @@ function initalizeAddonStuff()
     Catalog:createToggleButton(SpellBookFrame)
     isUfoInitialized = true
 
-    --FlyoutMenusDb:convertFloFlyoutToUfoAlpha1()
-    --FlyoutMenusDb:convertfoAlpha1ToUfoAlpha2()
-    --FlyoutMenusDb:convertfoAlpha1PlacementsToUfoAlpha2()
+    --FlyoutDefsDb:convertFloFlyoutToUfoAlpha1()
+    --FlyoutDefsDb:convertfoAlpha1ToUfoAlpha2()
+    --FlyoutDefsDb:convertfoAlpha1PlacementsToUfoAlpha2()
 
 end
 

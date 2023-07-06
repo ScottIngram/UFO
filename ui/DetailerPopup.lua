@@ -123,10 +123,10 @@ function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pu
     local flyoutDef
     if popup.isEdit then
         -- Modifying a flyout
-        flyoutDef = FlyoutMenusDb:get(popup.flyoutId)
+        flyoutDef = FlyoutDefsDb:get(popup.flyoutId)
     else
         -- Saving a new flyout
-        flyoutDef = FlyoutMenusDb:appendNewOne()
+        flyoutDef = FlyoutDefsDb:appendNewOne()
         zebug:dumpy("appendNewOne -> flyoutDef",flyoutDef)
     end
     zebug:print("popup.isEdit",popup.isEdit, "popup.flyoutId",popup.flyoutId, "flyoutDef",flyoutDef)
@@ -220,7 +220,7 @@ function refreshFlyoutIconInfo()
     local flyoutId = popup.flyoutId
     zebug.trace:print("name",name, "flyoutId",flyoutId)
     if flyoutId then
-        local flyoutDef = FlyoutMenusDb:get(flyoutId)
+        local flyoutDef = FlyoutDefsDb:get(flyoutId)
         local btnDefs = flyoutDef:getAllButtonDefs()
         ---@param btnDef ButtonDef
         for i, btnDef in ipairs(btnDefs) do

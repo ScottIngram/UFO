@@ -84,7 +84,7 @@ local function clearGerms()
 end
 
 local function doesFlyoutExist(flyoutId)
-    local flyoutConf = FlyoutMenusDb:get(flyoutId)
+    local flyoutConf = FlyoutDefsDb:get(flyoutId)
     return flyoutConf and true or false
 end
 
@@ -175,7 +175,7 @@ end
 
 function GermCommander:savePlacement(btnSlotIndex, flyoutId)
     btnSlotIndex = tonumber(btnSlotIndex)
-    flyoutId = FlyoutMenusDb:validateFlyoutId(flyoutId)
+    flyoutId = FlyoutDefsDb:validateFlyoutId(flyoutId)
     zebug.info:print("btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId)
     self:getPlacementConfigForCurrentSpec()[btnSlotIndex] = flyoutId
 end
@@ -191,7 +191,7 @@ function GermCommander:deletePlacement(btnSlotIndex)
 end
 
 function GermCommander:nukeFlyout(flyoutId)
-    flyoutId = FlyoutMenusDb:validateFlyoutId(flyoutId)
+    flyoutId = FlyoutDefsDb:validateFlyoutId(flyoutId)
     for i, allSpecsConfig in ipairs(self:getAllSpecsPlacementsConfig()) do
         for i, specConfig in ipairs(allSpecsConfig) do
             for btnSlotIndex, flyoutId2 in pairs(specConfig) do

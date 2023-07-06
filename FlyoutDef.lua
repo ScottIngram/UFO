@@ -1,4 +1,4 @@
--- FlyoutMenuDef
+-- FlyoutDef
 -- a flyout menu definition
 -- data for a single flyout object, its spells/pets/macros/items/etc.  and methods for manipulating that data
 -- is currently a collection if parallel lists, each containing one param for each button in the menu
@@ -13,25 +13,25 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 local zebug = Zebug:new(Zebug.OUTPUT.WARN)
 
----@class FlyoutMenuDef -- IntelliJ-EmmyLua annotation
+---@class FlyoutDef -- IntelliJ-EmmyLua annotation
 ---@field id string A unique, immutable, permanent identifier.  This is not it's index in any array.
 ---@field name string
 ---@field icon string
 ---@field btns table
-local FlyoutMenuDef = {
-    ufoType = "FlyoutMenuDef",
+local FlyoutDef = {
+    ufoType = "FlyoutDef",
 }
-Ufo.FlyoutMenuDef = FlyoutMenuDef
+Ufo.FlyoutDef = FlyoutDef
 
 -------------------------------------------------------------------------------
 -- Methods
 -------------------------------------------------------------------------------
 
--- coerce the incoming table into a FlyoutMenuDef instance
----@return FlyoutMenuDef
-function FlyoutMenuDef:oneOfUs(self)
+-- coerce the incoming table into a FlyoutDef instance
+---@return FlyoutDef
+function FlyoutDef:oneOfUs(self)
     zebug.trace:setMethodName("oneOfUs"):print("self",self)
-    if self.ufoType == FlyoutMenuDef.ufoType then
+    if self.ufoType == FlyoutDef.ufoType then
         return self
     end
 
@@ -43,8 +43,8 @@ function FlyoutMenuDef:oneOfUs(self)
     function privateData:_setCachedLists(lists) privateData.cachedLists = lists end
     function privateData:setAlreadyCoercedMyButtons() privateData.alreadyCoercedMyButtons = true end
 
-    -- tie the privateData table to the FlyoutMenuDef class definition
-    setmetatable(privateData, { __index = FlyoutMenuDef })
+    -- tie the privateData table to the FlyoutDef class definition
+    setmetatable(privateData, { __index = FlyoutDef })
     -- tie the "self" instance to the privateData table (which in turn is tied to  the class)
     setmetatable(self, { __index = privateData })
     return self
@@ -52,32 +52,32 @@ end
 
 local flyoutIndex = 1
 
----@return FlyoutMenuDef
-function FlyoutMenuDef:new()
+---@return FlyoutDef
+function FlyoutDef:new()
     local self = { btns = {} } -- I tried putting self.btns = {} into oneOfUs() but then they failed to persist out to SAVED_VARIABLES :-/
     self.name = flyoutIndex
     flyoutIndex = flyoutIndex + 1
-    return FlyoutMenuDef:oneOfUs(self)
+    return FlyoutDef:oneOfUs(self)
 end
 
 -- because privateData:_setCachedLists() is not visible to my IDE's autocomplete
 -- defining this redundant declaration here
-function FlyoutMenuDef:setCachedLists(lists)
+function FlyoutDef:setCachedLists(lists)
     zebug.trace:print("self.name",self.name, "lists",lists)
     self:_setCachedLists(lists)
 end
 
-function FlyoutMenuDef:newId()
+function FlyoutDef:newId()
     return Config:nextN() ..":".. getIdForCurrentToon() ..":".. (time()-1687736964)
 end
 
-function FlyoutMenuDef:howManyButtons()
+function FlyoutDef:howManyButtons()
     return #self.btns
 end
 
-function FlyoutMenuDef:forEachBtn(callback)
+function FlyoutDef:forEachBtn(callback)
     zebug.trace:out(20, "-", "self.btns",self.btns)
-    assert(self.btns, "This instance of FlyoutMenuDef has no 'btns' field to coerce.")
+    assert(self.btns, "This instance of FlyoutDef has no 'btns' field to coerce.")
 
     for i, buttonDef in ipairs(self.btns) do -- this must remain self.btns and NOT self:getAllButtonDefs() - otherwise infinite loop
         zebug.trace:out(15,"-", "i",i, "buttonDef", buttonDef)
@@ -85,7 +85,7 @@ function FlyoutMenuDef:forEachBtn(callback)
     end
 end
 
-function FlyoutMenuDef:getAllButtonDefs()
+function FlyoutDef:getAllButtonDefs()
     zebug.trace:print("self.alreadyCoercedMyButtons",self.alreadyCoercedMyButtons)
     if not self.alreadyCoercedMyButtons then
         self:forEachBtn(ButtonDef.oneOfUs)
@@ -95,25 +95,25 @@ function FlyoutMenuDef:getAllButtonDefs()
 end
 
 ---@return ButtonDef
-function FlyoutMenuDef:getButtonDef(i)
+function FlyoutDef:getButtonDef(i)
     return self:getAllButtonDefs()[tonumber(i)]
 end
 
 ---@param buttonDef ButtonDef
-function FlyoutMenuDef:addButton(buttonDef)
+function FlyoutDef:addButton(buttonDef)
     table.insert(self.btns, buttonDef)
     self:setCachedLists(nil)
 end
 
 ---@param i number
 ---@param buttonDef ButtonDef
-function FlyoutMenuDef:replaceButton(i, buttonDef)
+function FlyoutDef:replaceButton(i, buttonDef)
     self.btns[tonumber(i)] = buttonDef
     self:setCachedLists(nil)
 end
 
 -- removes a button an moves the rest down a notch
-function FlyoutMenuDef:removeButton(removeAtIndex)
+function FlyoutDef:removeButton(removeAtIndex)
     local howManyButtons = self:howManyButtons()
     self:forEachBtn(function(buttonDef, buttonDef, i)
         if i >= removeAtIndex and i <= howManyButtons then
@@ -123,32 +123,32 @@ function FlyoutMenuDef:removeButton(removeAtIndex)
     end)
 end
 
-function FlyoutMenuDef:getIcon()
+function FlyoutDef:getIcon()
     if self.icon then return self.icon end
     local btn1 = self:getButtonDef(1)
     if btn1 then
-        local isMe = isClass(self, FlyoutMenuDef)
+        local isMe = isClass(self, FlyoutDef)
         zebug.trace:print("btn1",btn1, "isMe",isMe, "btn1.ufoType",btn1.ufoType, "btn1.getIcon",btn1.getIcon)
         return btn1:getIcon()
     end
     return nil
 end
 
----@return FlyoutMenuDef
-function FlyoutMenuDef:filterOutUnusable()
+---@return FlyoutDef
+function FlyoutDef:filterOutUnusable()
     zebug:print("self.name", self.name)
 
-    local usableFlyoutMenuDef = FlyoutMenuDef:new()
+    local usableFlyoutDef = FlyoutDef:new()
     ---@param btn ButtonDef
     for i, btn in ipairs(self:getAllButtonDefs()) do
         if btn:isUsable() then
             zebug.trace:print("can use", btn:getName())
-            usableFlyoutMenuDef:addButton(btn)
+            usableFlyoutDef:addButton(btn)
         else
             zebug:print("CANNOT use", btn:getName())
         end
     end
-    return usableFlyoutMenuDef
+    return usableFlyoutDef
 end
 
 function table.inserty(t, val)
@@ -156,7 +156,7 @@ function table.inserty(t, val)
 end
 
 ---@return table
-function FlyoutMenuDef:asLists()
+function FlyoutDef:asLists()
     local cache = self.cachedLists
     local isSame = cache == self
     zebug.trace:print("cache",cache, "isSame",isSame, "self:howManyButtons()",self:howManyButtons())

@@ -68,7 +68,7 @@ Ufo.ButtonDef = ButtonDef
 -- coerce the incoming table into a ButtonDef instance
 ---@return ButtonDef
 function ButtonDef:oneOfUs(self)
-    debug.trace:out("'",3,"FlyoutMenuDef:oneOfUs()", "self",self)
+    debug.trace:out("'",3,"FlyoutDef:oneOfUs()", "self",self)
     if self.ufoType == ButtonDef.ufoType then
         -- it's already "one of us" so nothing needs to be done.
         return self

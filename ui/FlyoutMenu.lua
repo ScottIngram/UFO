@@ -80,16 +80,16 @@ function FlyoutMenu:pickup(flyoutId)
 
     flyoutId = self:ensureId(flyoutId)
 
-    local flyoutConf = FlyoutMenusDb:get(flyoutId)
+    local flyoutConf = FlyoutDefsDb:get(flyoutId)
     local icon = flyoutConf:getIcon()
     local proxy = GermCommander:newGermProxy(flyoutId, icon)
     PickupMacro(proxy)
 end
 
----@return FlyoutMenuDef
+---@return FlyoutDef
 function FlyoutMenu:getDef(flyoutId)
     flyoutId = self:ensureId(flyoutId)
-    return FlyoutMenusDb:get(flyoutId)
+    return FlyoutDefsDb:get(flyoutId)
 end
 
 -- TODO: merge updateForCatalog() and updateForGerm()

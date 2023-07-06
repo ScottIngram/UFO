@@ -37,7 +37,7 @@ function Catalog:definePopupDialogWindow()
         text = L10N.CONFIRM_DELETE,
         button1 = YES,
         button2 = NO,
-        OnAccept = function (dialog) FlyoutMenusDb:delete(dialog.flyoutId); Catalog:update(); GermCommander:updateAll(); end,
+        OnAccept = function (dialog) FlyoutDefsDb:delete(dialog.flyoutId); Catalog:update(); GermCommander:updateAll(); end,
         OnCancel = function (dialog) end,
         hideOnEscape = 1,
         timeout = 0,
@@ -130,7 +130,7 @@ function Catalog:toggle(clickedBtn, forceOpen)
 end
 
 function Catalog:update()
-    local flyoutsCount = FlyoutMenusDb:howMany()
+    local flyoutsCount = FlyoutDefsDb:howMany()
     local theAddButton = flyoutsCount + 1
     local scrollPane = UIUFO_CatalogScrollPane
     HybridScrollFrame_Update(scrollPane, theAddButton * EQUIPMENTSET_BUTTON_HEIGHT + 20, scrollPane:GetHeight())
@@ -156,7 +156,7 @@ function Catalog:update()
 
             if flyoutIndex < theAddButton then
                 -- Normal flyout button
-                local flyoutDef = FlyoutMenusDb:getByIndex(flyoutIndex)
+                local flyoutDef = FlyoutDefsDb:getByIndex(flyoutIndex)
                 ---@type string
                 local flyoutId = flyoutDef.id
                 zebug:print("i",i, "flyoutIndex",flyoutIndex, "flyoutId",flyoutId)
@@ -167,7 +167,7 @@ function Catalog:update()
                 btnFrame.text:SetText(flyoutIndex);
                 btnFrame.text:SetTextColor(DEFAULT_COLOR.r, DEFAULT_COLOR.g, DEFAULT_COLOR.b);
 
-                zebug:print("flyoutIndex",flyoutIndex, "btnFrame.flyoutId",btnFrame.flyoutId, "flyoutMenuDef",flyoutDef)
+                zebug:print("flyoutIndex",flyoutIndex, "btnFrame.flyoutId",btnFrame.flyoutId, "flyoutDef",flyoutDef)
                 local icon = flyoutDef:getIcon()
 
                 if icon then

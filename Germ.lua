@@ -137,7 +137,7 @@ local snippet_Germ_Click = [=[
 
 function Germ.new(flyoutId, actionBarBtn)
     assertIsFunctionOf(flyoutId,Germ)
-    local flyoutConf = FlyoutMenusDb:get(flyoutId)
+    local flyoutConf = FlyoutDefsDb:get(flyoutId)
     if not flyoutConf then return end -- because one toon can delete a flyout while other toons still have it on their bars
     local name = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
     ---@type Germ
@@ -223,9 +223,9 @@ end
 
 function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
     assertIsMethodOf(self, Germ)
-    zebug:line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "direction",direction, "FlyoutMenusDb.isInitialized", FlyoutMenusDb.isInitialized)
+    zebug:line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "direction",direction, "FlyoutDefsDb.isInitialized", FlyoutDefsDb.isInitialized)
 
-    local flyoutDef = FlyoutMenusDb:get(flyoutId)
+    local flyoutDef = FlyoutDefsDb:get(flyoutId)
     if not flyoutDef then
         -- because one toon can delete a flyout while other toons still have it on their bars
         local msg = "Flyout".. flyoutId .."no longer exists.  Removing it from your action bars."
