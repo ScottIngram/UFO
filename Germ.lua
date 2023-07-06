@@ -234,7 +234,7 @@ function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
         return
     end
 
-    self.direction    = direction
+    self.direction            = direction
     self.btnSlotIndex = btnSlotIndex
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self:setFlyoutId(flyoutId)
@@ -422,7 +422,7 @@ local oldGerm
 function handlers.OnPostClick(germ, whichMouseButton, down)
     zebug.trace:name("OnPostClick"):print("flyoutId",germ:getFlyoutId())
     if oldGerm and oldGerm ~= germ then
-        germ:updateAllBtnCooldownsEtc() -- this is also done by GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow
+        germ:updateAllBtnCooldownsEtc()
     end
     oldGerm = germ
 end

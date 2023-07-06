@@ -66,8 +66,8 @@
             <CheckButton name="$parentButton30" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="30" />
         </Frames>
         <Scripts>
-            <OnShow function="GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow"/>
-            <OnHide function="GLOBAL_UIUFO_FlyoutMenuForGerm_OnHide"/>
+            <OnShow function="GLOBAL_UIUFO_FlyoutMenu_OnShow"/>
+            <OnHide function="GLOBAL_UIUFO_FlyoutMenu_OnHide"/>
         </Scripts>
     </Frame>
 

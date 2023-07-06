@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new()
+local zebug = Zebug:new()
 
 ---@class FlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -96,7 +96,8 @@ end
 ---@param flyoutId string
 function FlyoutMenu:updateForCatalog(flyoutId)
     self:setId(flyoutId)
-    self.direction = "RIGHT"
+    local dir = "RIGHT"
+    self.direction = dir
 
     local prevButton = nil;
     local numButtons = 0;
@@ -116,8 +117,7 @@ function FlyoutMenu:updateForCatalog(flyoutId)
             btnFrame:setIconTexture(nil)
         end
 
-        btnFrame:updateCooldownsAndCountsAndStatesEtc()
-        btnFrame:setGeometry(self.direction, prevButton)
+        btnFrame:setGeometry(dir, prevButton)
 
         prevButton = btnFrame
         numButtons = i
@@ -138,21 +138,18 @@ function FlyoutMenu:updateForCatalog(flyoutId)
     end
 
     self:ClearAllPoints()
-    self:SetFrameStrata("DIALOG")
-    self:setGeometry()
 
-    if self.direction == "UP" or self.direction == "DOWN" then
-        self:SetWidth(prevButton:GetWidth())
-        self:SetHeight((prevButton:GetHeight()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
-    else
-        self:SetHeight(prevButton:GetHeight())
-        self:SetWidth((prevButton:GetWidth()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
-    end
+    -- assuming dir == RIGHT
+    self:SetPoint("LEFT", self.parent, "RIGHT");
+    self:SetHeight(prevButton:GetHeight())
+    self:SetWidth((prevButton:GetWidth()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
+
+    self:setBorderGeometry()
 end
 
 ---@param germ Germ
 function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
-    debug.trace:setHeader("~","FlyoutMenu:updateForGerm()")
+    self.direction = germ.direction
 
     germ:SetChecked(not germ:GetChecked())
 
@@ -161,40 +158,36 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
     local flyoutDef = self:getDef(flyoutId)
     local usableFlyout = flyoutDef:filterOutUnusable()
     local buttonFrames = { self:GetChildren() }
-    local firstThing = table.remove(buttonFrames, 1) -- this is the non-button UI element "Background" from ui.xml
-     debug.trace:line(3,"firstThing", firstThing)
-     debug.trace:dump(firstThing)
+    table.remove(buttonFrames, 1) -- this is the non-button UI element "Background" from ui.xml
 
     ---@param btnFrame ButtonOnFlyoutMenu
     for i, btnFrame in ipairs(buttonFrames) do
         local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef)
-        debug.trace:line(3, "i",i, "btnDef", btnDef)
+        zebug.trace:print("i",i, "btnDef", btnDef)
 
         if btnDef then
-            debug.trace:line(5, "i",i, "spellId",btnDef.spellId, "type", btnDef.type)
+            zebug.trace:print("i",i, "spellId",btnDef.spellId, "type", btnDef.type)
             btnFrame:setIconTexture( btnDef:getIcon() )
             btnFrame:setGeometry(self.direction)
+        else
+            break
         end
-        btnFrame:updateCooldownsAndCountsAndStatesEtc()
     end
 
-    self:setGeometry()
+    self:setBorderGeometry()
 end
 
-function FlyoutMenu:setGeometry()
+function FlyoutMenu:setBorderGeometry()
     local distance = 3
-
-    self:SetBorderColor(0.7, 0.7, 0.7);
-    self:SetBorderSize(47);
+    local dir = self.direction
 
     self.Background.End:ClearAllPoints()
     self.Background.Start:ClearAllPoints()
     self.Background.VerticalMiddle:ClearAllPoints()
     self.Background.HorizontalMiddle:ClearAllPoints()
 
-    if (self.direction == "UP") then
-        self:SetPoint("BOTTOM", self.parent, "TOP");
+    if (dir == "UP") then
         self.Background.End:SetPoint("TOP", 0, SPELLFLYOUT_INITIAL_SPACING);
         SetClampedTextureRotation(self.Background.End, 0);
         SetClampedTextureRotation(self.Background.VerticalMiddle, 0);
@@ -202,11 +195,10 @@ function FlyoutMenu:setGeometry()
         SetClampedTextureRotation(self.Background.Start, 0);
         self.Background.HorizontalMiddle:Hide();
         self.Background.VerticalMiddle:Show();
-        self.Background.VerticalMiddle:ClearAllPoints();
+        --self.Background.VerticalMiddle:ClearAllPoints();
         self.Background.VerticalMiddle:SetPoint("TOP", self.Background.End, "BOTTOM");
         self.Background.VerticalMiddle:SetPoint("BOTTOM", 0, distance);
-    elseif (self.direction == "DOWN") then
-        self:SetPoint("TOP", self.parent, "BOTTOM");
+    elseif (dir == "DOWN") then
         self.Background.End:SetPoint("BOTTOM", 0, -SPELLFLYOUT_INITIAL_SPACING);
         SetClampedTextureRotation(self.Background.End, 180);
         SetClampedTextureRotation(self.Background.VerticalMiddle, 180);
@@ -214,11 +206,10 @@ function FlyoutMenu:setGeometry()
         SetClampedTextureRotation(self.Background.Start, 180);
         self.Background.HorizontalMiddle:Hide();
         self.Background.VerticalMiddle:Show();
-        self.Background.VerticalMiddle:ClearAllPoints();
+        --self.Background.VerticalMiddle:ClearAllPoints();
         self.Background.VerticalMiddle:SetPoint("BOTTOM", self.Background.End, "TOP");
         self.Background.VerticalMiddle:SetPoint("TOP", 0, -distance);
-    elseif (self.direction == "LEFT") then
-        self:SetPoint("RIGHT", self.parent, "LEFT");
+    elseif (dir == "LEFT") then
         self.Background.End:SetPoint("LEFT", -SPELLFLYOUT_INITIAL_SPACING, 0);
         SetClampedTextureRotation(self.Background.End, 270);
         SetClampedTextureRotation(self.Background.HorizontalMiddle, 180);
@@ -226,11 +217,10 @@ function FlyoutMenu:setGeometry()
         SetClampedTextureRotation(self.Background.Start, 270);
         self.Background.VerticalMiddle:Hide();
         self.Background.HorizontalMiddle:Show();
-        self.Background.HorizontalMiddle:ClearAllPoints();
+        --self.Background.HorizontalMiddle:ClearAllPoints();
         self.Background.HorizontalMiddle:SetPoint("LEFT", self.Background.End, "RIGHT");
         self.Background.HorizontalMiddle:SetPoint("RIGHT", -distance, 0);
-    elseif (self.direction == "RIGHT") then
-        self:SetPoint("LEFT", self.parent, "RIGHT");
+    elseif (dir == "RIGHT") then
         self.Background.End:SetPoint("RIGHT", SPELLFLYOUT_INITIAL_SPACING, 0);
         SetClampedTextureRotation(self.Background.End, 90);
         SetClampedTextureRotation(self.Background.HorizontalMiddle, 0);
@@ -238,10 +228,12 @@ function FlyoutMenu:setGeometry()
         SetClampedTextureRotation(self.Background.Start, 90);
         self.Background.VerticalMiddle:Hide();
         self.Background.HorizontalMiddle:Show();
-        self.Background.HorizontalMiddle:ClearAllPoints();
+        --self.Background.HorizontalMiddle:ClearAllPoints();
         self.Background.HorizontalMiddle:SetPoint("RIGHT", self.Background.End, "LEFT");
         self.Background.HorizontalMiddle:SetPoint("LEFT", distance, 0);
     end
+    self:SetBorderColor(0.7, 0.7, 0.7);
+    self:SetBorderSize(47);
 end
 
 -------------------------------------------------------------------------------
@@ -281,13 +273,12 @@ function GLOBAL_UIUFO_FlyoutMenu_OnUpdate(flyoutMenu, elapsed)
     end
     onUpdateTimer = 0
 
-    debug.trace:out(X,X,"GLOBAL_UIUFO_FlyoutMenu_OnUpdate()")
+    zebug.trace:print("elapsed",elapsed)
     flyoutMenu:updateAllBtnCooldownsEtc()
 end
 
 ---@param flyoutMenu FlyoutMenu
-function GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow(flyoutMenu)
-    debug.trace:out("/",20,"GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow")
+function GLOBAL_UIUFO_FlyoutMenu_OnShow(flyoutMenu)
     local originalEventsRegistered = flyoutMenu.eventsRegistered -- SpellFlyout_OnShow will reset this so snapshot it
     SpellFlyout_OnShow(flyoutMenu) -- call Blizzard handler
     flyoutMenu:updateAllBtnCooldownsEtc()
@@ -303,8 +294,7 @@ function GLOBAL_UIUFO_FlyoutMenuForGerm_OnShow(flyoutMenu)
     end
 end
 
-function GLOBAL_UIUFO_FlyoutMenuForGerm_OnHide(flyoutMenu)
-    debug.trace:out("|",20,"GLOBAL_UIUFO_FlyoutMenuForGerm_OnHide")
+function GLOBAL_UIUFO_FlyoutMenu_OnHide(flyoutMenu)
     if (flyoutMenu.eventsRegistered == true) then
         -- supplement SpellFlyout_OnHide() with extra events specifically for items
         flyoutMenu:UnregisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
@@ -314,6 +304,6 @@ function GLOBAL_UIUFO_FlyoutMenuForGerm_OnHide(flyoutMenu)
 end
 
 function FlyoutMenu:updateAllBtnCooldownsEtc()
-    debug.trace:print("FlyoutMenu:updateAllBtnCooldownsEtc()",self:getId())
+    zebug.trace:print("self:getId()",self:getId())
     self:forEachButton(ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc)
 end

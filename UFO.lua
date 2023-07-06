@@ -12,9 +12,9 @@ TODO
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
 * use ACE Lib/DataBroker so Titan Panel and other addons can open the UFO catalog
 * question: can I use GetItemSpell(itemId) to simplify my code ?
-* BUG: Oops, I clobbered the frames on the germ flyouts
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 *
+* DONE: BUG: Oops, I clobbered the frames on the germ flyouts
 * DONE: change onupdate to always happen on initial open
 * DONE: optimize xedni - don't throw away the whole thing - for flyoutId = deleted index to howMany { flyout[flyoutId]-- }
 * DONE: BUG: deleting a flyout sometimes loses the guid
