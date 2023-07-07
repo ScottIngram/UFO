@@ -108,6 +108,13 @@ function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
     GermCommander:updateAll()
 end
 
+
+function EventHandlers:UPDATE_MACROS()
+    if not isUfoInitialized then return end
+    zebug.trace:print("UPDATE_MACROS")
+    analyzeMacroUpdate()
+end
+
 -------------------------------------------------------------------------------
 -- Event Handler Registration
 -------------------------------------------------------------------------------
@@ -310,6 +317,166 @@ end
 
 function assertIsMethodOf(firstArg, class)
     assert(isClass(firstArg, class), ADDON_NAME..": Um... it's var:foo() not var.foo()")
+end
+
+-------------------------------------------------------------------------------
+-- Macro Monitor and Reactor
+-------------------------------------------------------------------------------
+
+local nMacros
+local macrosMap
+local macrosIndex
+
+-- if the user changes the macros:
+---- renames a macro which could change the alphabetical ordering of all macros and thus their IDs.
+------ no, a good programmer would never allow the ID to change like that but yes, the Bliz code is really dumb.
+---- Adds or removes one which again could change how many and thus shift their IDs up or down.  Again, stupid.
+-- So, thanks to a macro's ID being very fluid and utterly unreliable, I get to compensate for this terrible design.  Thanks yet again, Bliz!
+
+function analyzeMacroUpdate()
+    -- The Bliz API helpfully informs me that something, anything, who knows what,
+    -- but yes macro related might have just happened.  Figure out WTF it was.
+
+    if Ufo.thatWasMe then
+        -- the event was caused by an action of this addon and as such we shall ignore it
+        zebug.trace:print("ignoring proxy draggable creation/death")
+        Ufo.thatWasMe = false
+        return
+    end
+
+    local nGlobal, nPerChar = GetNumMacros()
+    local n = nGlobal + nPerChar
+
+    -- initialze and exit
+    if not nMacros then
+        zebug.trace:print("initialze and exit")
+        nMacros = n
+        macrosIndex = indexMacros()
+        return
+    end
+
+    if n == nMacros then
+        -- did any macro names change?
+        local renamedMacro = findChangedMacroName()
+        if renamedMacro then
+            -- update it wherever it exists in any flyout
+            zebug.trace:dumpy("renamedMacro",renamedMacro)
+            renameMacro(renamedMacro)
+        else
+            zebug.trace:print("no macro changes")
+        end
+    else
+        if n > nMacros then
+            -- a macro was added
+            -- potentially remap the macro entries in every flyout
+            zebug.trace:print("a macro was ADDED", nMacros, "---",n)
+            remapMacros()
+        elseif n < nMacros then
+            -- a macro was deleted
+            -- remove it wherever it exists in any flyouts
+            -- potentially remap the macro entries in every flyout
+            zebug.trace:print("a macro was DELETED", nMacros, "---",n)
+            remapMacros("find and kill some as yet unknown (thanks bliz!) deleted macro")
+        end
+
+        nMacros = n
+    end
+end
+
+function indexMacros(callback)
+    local map = {}
+    local index = {}
+    local funcResult
+
+    function doIndex(start,stop)
+        for i = start, stop do
+            local name, _, _ = GetMacroInfo(i)
+            if callback then
+                local result = callback(i, name)
+                if result then return result end
+            else
+                map[name] = i
+                index[i] = name
+            end
+        end
+        return nil
+    end
+
+    -- macros are grouped as
+    -- account-wide 1 to 120
+    -- toon-specific >120
+    local nGlobal, nPerChar = GetNumMacros()
+
+    -- scan macros for account
+    funcResult = doIndex(1, nGlobal)
+    zebug.error:print(funcResult)
+    if funcResult then return funcResult end
+
+    -- scan macros for toon
+    funcResult = doIndex(1 + MAX_GLOBAL_MACRO_ID, nPerChar + MAX_GLOBAL_MACRO_ID)
+    zebug.error:print(funcResult)
+    if funcResult then return funcResult end
+
+    return index
+end
+
+-- after we've determined that the number of macros has not changed
+-- we can safely assume they are all in the same positions as before and that their IDs are also the same as before.
+-- So, let's see if a macro was given a new name.
+function findChangedMacroName()
+    -- define a callback to do the detail work inside indexMacros()
+    function findChange(i, currentName)
+        local oldName = macrosIndex[i]
+        if oldName ~= currentName then
+            return {
+                id = i,
+                name = currentName,
+                oldName = oldName,
+                found = true,
+            }
+        end
+    end
+
+    local renamedMacro = indexMacros(findChange)
+    if renamedMacro and renamedMacro.found == true then
+        return renamedMacro
+    end
+    return nil
+end
+
+---@param renamedMacro table
+function renameMacro(renamedMacro)
+    local m = renamedMacro
+    zebug.info:line(25, "id",m.id, "name",m.name, "was", m.oldName)
+
+    -- START OUTER LOOP
+    ---@param flyoutDef FlyoutDef
+    FlyoutDefsDb:forEachFlyoutConfig(
+            function(flyoutDef)
+                zebug.info:line(20, "flyout ID",flyoutDef.id)
+
+                -- START INNER LOOP
+                ---@param btnDef ButtonDef
+                flyoutDef:forEachBtn(
+                    function(btnDef, _, i)
+                        if btnDef.macroId then
+                            zebug.info:line(15, "i",i, "btn macroId",btnDef.macroId, "btn name",btnDef.name)
+                        end
+                        if btnDef.macroId == m.id then
+                            zebug.warn:line(10,"FOUND UFO entry for macro #",m.id, "changing name from ",m.oldName, "to", m.name)
+                            btnDef.name = m.name
+                            macrosIndex[m.id] = m.name
+                        end
+                    end
+                )
+                -- END INNER LOOP
+            end
+    )
+    -- END OUTER LOOP
+end
+
+function remapMacros(killFlag)
+
 end
 
 -------------------------------------------------------------------------------

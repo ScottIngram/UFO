@@ -122,10 +122,23 @@ function GermCommander:updateAll()
     end
 end
 
+local toonSpecific = true
+
 function GermCommander:newGermProxy(flyoutId, icon)
+    self:deleteProxy()
+    return self:createProxy(flyoutId, icon)
+end
+
+function GermCommander:deleteProxy()
+    Ufo.thatWasMe = true
     DeleteMacro(PROXY_MACRO_NAME)
+end
+
+function GermCommander:createProxy(flyoutId, icon)
+    Ufo.thatWasMe = true
     local macroText = flyoutId
-    return CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText, nil, nil)
+    return CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText, toonSpecific)
+
 end
 
 -- Responds to event: ACTIONBAR_SLOT_CHANGED
@@ -144,7 +157,7 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
     local droppedFlyoutId = self:getFlyoutIdFromGermProxy(type, macroId)
     if droppedFlyoutId then
         self:savePlacement(btnSlotIndex, droppedFlyoutId)
-        DeleteMacro(PROXY_MACRO_NAME)
+        self:deleteProxy()
         configChanged = true
     end
 

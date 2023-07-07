@@ -364,7 +364,7 @@ function handlers.OnPickupAndDrag(germ)
             if droppedFlyoutId then
                 -- the user is dragging a UFO
                 GermCommander:savePlacement(btnSlotIndex, droppedFlyoutId)
-                DeleteMacro(PROXY_MACRO_NAME)
+                GermCommander:deleteProxy()
             else
                 -- the user is just dragging a normal Bliz spell/item/etc.
                 PlaceAction(btnSlotIndex)
