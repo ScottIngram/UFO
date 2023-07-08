@@ -236,6 +236,28 @@ function exists(s)
     return not isEmpty(s)
 end
 
+function deleteFromArray(array, killTester)
+    local j = 1
+    local modified = false
+
+    for i=1,#array do
+        if (killTester(array, i, j)) then
+            array[i] = nil
+            modified = true
+        else
+            -- Move i's kept value to j's position, if it's not already there.
+            if (i ~= j) then
+                array[j] = array[i]
+                array[i] = nil
+            end
+            j = j + 1 -- Increment position of where we'll place the next kept value.
+        end
+    end
+
+    return modified
+end
+
+
 -- convert data structures into JSON-like strings
 -- useful for injecting tables into secure functions because SFs don't allow tables
 function serialize(val, name, skipnewlines, depth)
@@ -324,8 +346,8 @@ end
 -------------------------------------------------------------------------------
 
 local nMacros
-local macrosMap
 local macrosIndex
+local macrosMap
 
 -- if the user changes the macros:
 ---- renames a macro which could change the alphabetical ordering of all macros and thus their IDs.
@@ -351,7 +373,11 @@ function analyzeMacroUpdate()
     if not nMacros then
         zebug.trace:print("initialze and exit")
         nMacros = n
-        macrosIndex = indexMacros()
+        macrosMap = {}
+        macrosIndex = forEveryMacro(function(i, name, index, map)
+            index[i] = name
+            macrosMap[name] = i
+        end)
         return
     end
 
@@ -367,37 +393,36 @@ function analyzeMacroUpdate()
         end
     else
         if n > nMacros then
-            -- a macro was added
-            -- potentially remap the macro entries in every flyout
+            -- a macro was added.
+            -- we don't know which one, its id, or its name.  Thanks Bliz!
+            -- all we know is that every other macro ID may have been shifted up.  Becoz dumbfucks.
+            -- potentially remap every macro id in every flyout
             zebug.trace:print("a macro was ADDED", nMacros, "---",n)
-            remapMacros()
+            remapEveryMacroIdInEveryBtnInEveryFlyout()
         elseif n < nMacros then
             -- a macro was deleted
-            -- remove it wherever it exists in any flyouts
-            -- potentially remap the macro entries in every flyout
+            -- we don't know which one, its id, or its name.  Thanks Bliz!
+            -- all we know is that every other macro ID may have been shifted up.  Becoz dumbfucks.
+            -- potentially remap every macro id in every flyout
+            -- remove it wherever it existed in any flyouts
             zebug.trace:print("a macro was DELETED", nMacros, "---",n)
-            remapMacros("find and kill some as yet unknown (thanks bliz!) deleted macro")
+            deleteMacroAndThenRemapEveryMacroIdInEveryBtnInEveryFlyout()
         end
 
         nMacros = n
     end
 end
 
-function indexMacros(callback)
-    local map = {}
+function forEveryMacro(callback)
     local index = {}
+    local map = {}
     local funcResult
 
     function doIndex(start,stop)
         for i = start, stop do
             local name, _, _ = GetMacroInfo(i)
-            if callback then
-                local result = callback(i, name)
-                if result then return result end
-            else
-                map[name] = i
-                index[i] = name
-            end
+            local result = callback(i, name, index, map)
+            if result then return result end
         end
         return nil
     end
@@ -417,6 +442,7 @@ function indexMacros(callback)
     zebug.error:print(funcResult)
     if funcResult then return funcResult end
 
+    zebug.error:print("index is",index)
     return index
 end
 
@@ -437,11 +463,21 @@ function findChangedMacroName()
         end
     end
 
-    local renamedMacro = indexMacros(findChange)
+    local renamedMacro = forEveryMacro(findChange)
     if renamedMacro and renamedMacro.found == true then
         return renamedMacro
     end
     return nil
+end
+
+function forEveryFlyoutBtn(callback)
+    ---@param flyoutDef FlyoutDef
+    FlyoutDefsDb:forEachFlyoutDef(
+        function(flyoutDef)
+            zebug.info:line(20, "flyout ID",flyoutDef.id)
+            flyoutDef:forEachBtn(callback)
+        end
+    )
 end
 
 ---@param renamedMacro table
@@ -449,34 +485,94 @@ function renameMacro(renamedMacro)
     local m = renamedMacro
     zebug.info:line(25, "id",m.id, "name",m.name, "was", m.oldName)
 
-    -- START OUTER LOOP
-    ---@param flyoutDef FlyoutDef
-    FlyoutDefsDb:forEachFlyoutConfig(
-            function(flyoutDef)
-                zebug.info:line(20, "flyout ID",flyoutDef.id)
+    function rename(btnDef, _, i)
+        if btnDef.macroId then
+            zebug.info:line(15, "i",i, "btn macroId",btnDef.macroId, "btn name",btnDef.name)
+        end
+        if btnDef.macroId == m.id then
+            zebug.warn:line(10,"FOUND UFO entry for macro #",m.id, "changing name from ",m.oldName, "to", m.name)
+            btnDef.name = m.name
+            macrosIndex[m.id] = m.name
+        end
+    end
 
-                -- START INNER LOOP
-                ---@param btnDef ButtonDef
-                flyoutDef:forEachBtn(
-                    function(btnDef, _, i)
-                        if btnDef.macroId then
-                            zebug.info:line(15, "i",i, "btn macroId",btnDef.macroId, "btn name",btnDef.name)
-                        end
-                        if btnDef.macroId == m.id then
-                            zebug.warn:line(10,"FOUND UFO entry for macro #",m.id, "changing name from ",m.oldName, "to", m.name)
-                            btnDef.name = m.name
-                            macrosIndex[m.id] = m.name
-                        end
-                    end
-                )
-                -- END INNER LOOP
-            end
-    )
-    -- END OUTER LOOP
+    forEveryFlyoutBtn(rename)
 end
 
-function remapMacros(killFlag)
+function remapEveryMacroIdInEveryBtnInEveryFlyout()
+    -- when a macro is ADDED then the UFO flyouts don't care
+    -- they don't have any data for it and thus don't need updated.
+    -- But, the macro index
 
+
+end
+
+function deleteMacroAndThenRemapEveryMacroIdInEveryBtnInEveryFlyout()
+    zebug.info:line(25)
+    local deletedMacro
+    local shiftItsMacroId
+    local mapCopy
+
+    -- fix the macro index.
+    -- identify which macro was deleted.
+    function recreateIndexAndIdentifyTheMissingMacro(i, currentName, index, map)
+        -- try to figure out which macro was deleted
+        local oldName = macrosIndex[i]
+        -- assume that the FIRST macro with a different name than before is THE added/deleted macro
+        if oldName ~= currentName then
+            deletedMacro = {
+                id = i,
+                name = currentName,
+                oldName = oldName,
+                found = true,
+            }
+
+            -- every subsequent macro has been shifted to a new slot.
+            -- modify the macro ID by 1 via an inner loop, then exit the outer loop
+            forEveryFlyoutBtn(function(btnDef, _, i)
+                -- is this btn a macro?
+                if btnDef.type == ButtonType.MACRO then
+                    zebug.info:line(15, "i",i, "btnDef macroId",btnDef.macroId, "btnDef name",btnDef.name)
+                    -- TODO - consider account VS toon... all toon macros > any account macro
+                    if btnDef.macroId == deletedMacro.id then
+                        zebug.warn:line(10,"IGNORING deleted macro ID", deletedMacro.id, "name ",btnDef.name)
+
+                    elseif btnDef.macroId > deletedMacro.id then
+                        local newMacroId = btnDef.macroId - 1
+                        zebug.warn:line(10,"deleted macro ID", deletedMacro.id, "FOUND UFO entry for macro ",btnDef.name, "changing macro ID from", btnDef.macroId, "to", newMacroId)
+                        btnDef.macroId = newMacroId
+                    end
+                end
+            end)
+
+            -- delete the macro from every flyout
+            ---@param flyoutDef FlyoutDef
+            FlyoutDefsDb:forEachFlyoutDef(function(flyoutDef)
+                zebug.info:print("flyoutId",flyoutDef.flyoutId)
+                flyoutDef:batchDeleteBtns(function(array, i)
+                    ---@type ButtonDef
+                    local btnDef = array[i]
+                    if btnDef.type == ButtonType.MACRO then
+                        local die = btnDef.macroId == deletedMacro.id
+                        zebug.info:print("flyoutId",flyoutDef.flyoutId, "macroId",btnDef.macroId, "deletedMacro.id",deletedMacro.id, "die",die)
+                        return die
+                    end
+                end)
+            end)
+
+            return true -- signal "the dishes are done, man!"
+        end
+
+        -- becoz potentially every macro is in a different slot,
+        -- we must completely rebuild our now FUBAR index.  Thanks Bliz!
+        index[i] = name
+        map[name] = i
+        mapCopy = map -- export the fresh new map to the outer scope
+    end
+
+    -- finally, now that the logic is all defined above, pull the trigger!
+    macrosIndex = forEveryMacro(recreateIndexAndIdentifyTheMissingMacro)
+    macrosMap = mapCopy -- ug, sorry for relying on side-effects
 end
 
 -------------------------------------------------------------------------------

@@ -38,7 +38,7 @@ function FlyoutDefsDb:howMany()
     return #list
 end
 
-function FlyoutDefsDb:forEachFlyoutConfig(callback)
+function FlyoutDefsDb:forEachFlyoutDef(callback)
     zebug.trace:out(25,"~")
     for flyoutId, flyoutDef in pairs(Config:getFlyoutDefs()) do
         zebug.trace:out(20,"~", "flyoutId",flyoutId, "--> flyoutDef", flyoutDef)
@@ -51,7 +51,7 @@ function FlyoutDefsDb:getAll()
     local allFlyouts = Config:getFlyoutDefs()
     zebug.trace:out(10,"=", "allFlyouts", allFlyouts, "self.isInitialized", self.isInitialized)
     if not self.isInitialized then
-        FlyoutDefsDb:forEachFlyoutConfig(FlyoutDef.oneOfUs)
+        FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.oneOfUs)
         self.isInitialized = true
     end
     return allFlyouts

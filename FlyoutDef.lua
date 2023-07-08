@@ -81,7 +81,15 @@ function FlyoutDef:forEachBtn(callback)
 
     for i, buttonDef in ipairs(self.btns) do -- this must remain self.btns and NOT self:getAllButtonDefs() - otherwise infinite loop
         zebug.trace:out(15,"-", "i",i, "buttonDef", buttonDef)
-        callback(buttonDef, buttonDef, i) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
+        callback(buttonDef, buttonDef, i, self) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
+    end
+end
+
+---@param killTester function
+function FlyoutDef:batchDeleteBtns(killTester)
+    local modified = deleteFromArray(self.btns, killTester)
+    if modified then
+        self:setCachedLists(nil)
     end
 end
 
