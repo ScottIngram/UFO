@@ -11,7 +11,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new(Zebug.OUTPUT.WARN)
+local zebug = Zebug:new()
 
 ---@class FlyoutDef -- IntelliJ-EmmyLua annotation
 ---@field id string A unique, immutable, permanent identifier.  This is not it's index in any array.
@@ -75,13 +75,25 @@ function FlyoutDef:howManyButtons()
     return #self.btns
 end
 
+---@param callback function if the function returns true, then, that means it did something that requires the caches to be nuked
 function FlyoutDef:forEachBtn(callback)
-    zebug.trace:out(20, "-", "self.btns",self.btns)
+    local i = Xedni:getFlyoutDef(self.id)
+    zebug.info:out(20, "-", "i", i, "id",self.id, "self.btns",self.btns)
     assert(self.btns, "This instance of FlyoutDef has no 'btns' field to coerce.")
 
-    for i, buttonDef in ipairs(self.btns) do -- this must remain self.btns and NOT self:getAllButtonDefs() - otherwise infinite loop
-        zebug.trace:out(15,"-", "i",i, "buttonDef", buttonDef)
-        callback(buttonDef, buttonDef, i, self) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
+    local invalidateCaches = false
+    ---@param buttonDef ButtonDef
+    for j, buttonDef in ipairs(self.btns) do -- this must remain self.btns and NOT self:getAllButtonDefs() - otherwise infinite loop
+        zebug.trace:out(15,"-", "i", i, "btn #", j, "buttonDef.name", buttonDef.name)
+        local killCache = callback(buttonDef, buttonDef, j, self) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
+        if killCache then
+            zebug.trace:out(10,"-", "i", i, "btn #", j, "buttonDef.name", buttonDef.name, "sent signal to INVALIDATE Caches")
+            buttonDef:invalidateCache()
+            invalidateCaches = true
+        end
+    end
+    if invalidateCaches then
+        self:setCachedLists(nil)
     end
 end
 
@@ -156,6 +168,9 @@ function FlyoutDef:filterOutUnusable()
             zebug:print("CANNOT use", btn:getName())
         end
     end
+    usableFlyoutDef.name = self.name
+    usableFlyoutDef.icon = self.icon
+    usableFlyoutDef.setAlreadyCoercedMyButtons() -- because the source btns have already been coerced
     return usableFlyoutDef
 end
 

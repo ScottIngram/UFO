@@ -76,7 +76,7 @@ local function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
     germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
 end
 
-local function clearGerms()
+local function closeAllGerms()
     for name, germ in pairs(germs) do
         germ:Hide()
         UnregisterStateDriver(germ, "visibility")
@@ -104,7 +104,7 @@ function GermCommander:updateAll()
     zebug:line(20)
     if isInCombatLockdown("Reconfiguring") then return end
 
-    clearGerms()
+    closeAllGerms()
     local placements = self:getPlacementConfigForCurrentSpec()
     --debug:line(5, "getPlacementConfigForCurrentSpec",placements, " --->")
     --debug:dump(placements)
@@ -122,8 +122,6 @@ function GermCommander:updateAll()
     end
 end
 
-local toonSpecific = true
-
 function GermCommander:newGermProxy(flyoutId, icon)
     self:deleteProxy()
     return self:createProxy(flyoutId, icon)
@@ -134,11 +132,12 @@ function GermCommander:deleteProxy()
     DeleteMacro(PROXY_MACRO_NAME)
 end
 
+local toonSpecific = false
+
 function GermCommander:createProxy(flyoutId, icon)
     Ufo.thatWasMe = true
     local macroText = flyoutId
     return CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText, toonSpecific)
-
 end
 
 -- Responds to event: ACTIONBAR_SLOT_CHANGED
@@ -175,6 +174,7 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
     end
 end
 
+-- TODO: extract the owner
 function GermCommander:getFlyoutIdFromGermProxy(type, macroId)
     local flyoutId
     if type == "macro" then
@@ -255,7 +255,7 @@ function GermCommander:getConfigForSpec(specId)
 
     local result = placementsForAllSpecs[specId]
     -- is this a never-before-encountered spec? - if so, initialze its config
-    zebug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1",result)
+    zebug.trace:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1",result)
     if not result then -- TODO: identify empty OR nil
         if not previousSpec or specId == previousSpec then
             zebug:print("blanking specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
@@ -267,7 +267,7 @@ function GermCommander:getConfigForSpec(specId)
         end
         placementsForAllSpecs[specId] = result
     end
-    zebug:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 2",result)
+    zebug.trace:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 2",result)
     --debug:dump(result)
     return result
 end

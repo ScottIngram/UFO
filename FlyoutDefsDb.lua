@@ -10,7 +10,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new(Zebug.OUTPUT.WARN)
+local zebug = Zebug:new()
 
 -------------------------------------------------------------------------------
 -- Class: FlyoutDefsDb
@@ -28,6 +28,7 @@ Ufo.FlyoutDefsDb = FlyoutDefsDb
 
 ---@class Xedni -- IntelliJ-EmmyLua annotation
 local Xedni = { }
+Ufo.Xedni = Xedni
 
 -------------------------------------------------------------------------------
 -- FlyoutDefsDb Methods
@@ -40,7 +41,8 @@ end
 
 function FlyoutDefsDb:forEachFlyoutDef(callback)
     zebug.trace:out(25,"~")
-    for flyoutId, flyoutDef in pairs(Config:getFlyoutDefs()) do
+    for i, flyoutId in ipairs(Config:getOrderedFlyoutIds()) do
+        local flyoutDef = FlyoutDefsDb:get(flyoutId)
         zebug.trace:out(20,"~", "flyoutId",flyoutId, "--> flyoutDef", flyoutDef)
         callback(flyoutDef, flyoutDef) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
     end
@@ -49,9 +51,11 @@ end
 function FlyoutDefsDb:getAll()
     zebug.trace:out(30,"=")
     local allFlyouts = Config:getFlyoutDefs()
-    zebug.trace:out(10,"=", "allFlyouts", allFlyouts, "self.isInitialized", self.isInitialized)
-    if not self.isInitialized then
+    zebug.trace:out(10,"=", "allFlyouts", allFlyouts, "self.isInitialized", self.isInitialized, "self.infiniteLoopStopper",self.infiniteLoopStopper)
+    if not self.isInitialized and not self.infiniteLoopStopper then
+        self.infiniteLoopStopper = true
         FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.oneOfUs)
+        self.infiniteLoopStopper = false
         self.isInitialized = true
     end
     return allFlyouts
@@ -195,6 +199,10 @@ function Xedni:get()
         end
     end
     return Xedni.lookup
+end
+
+function Xedni:getFlyoutDef(flyoutId)
+    return self:get()[flyoutId]
 end
 
 -- corrects the Xedni after a change in the flyout ordering.

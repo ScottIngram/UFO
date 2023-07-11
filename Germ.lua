@@ -12,9 +12,7 @@
 
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-local zebug = Zebug:new(Zebug.OUTPUT.WARN)
-
-local debug = Debug:new()
+local zebug = Zebug:new()
 
 ---@class Germ -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -152,7 +150,7 @@ function Germ.new(flyoutId, actionBarBtn)
 end
 
 function Germ:updateAllBtnCooldownsEtc()
-    zebug.trace:print(self:getFlyoutId())
+    --zebug.trace:print(self:getFlyoutId())
     self.flyoutMenu:updateAllBtnCooldownsEtc()
 end
 

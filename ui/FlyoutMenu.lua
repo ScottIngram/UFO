@@ -103,6 +103,7 @@ function FlyoutMenu:updateForCatalog(flyoutId)
     local prevButton = nil;
     local numButtons = 0;
     local flyoutDef = self:getDef()
+    zebug.trace:dumpy("flyoutDef",flyoutDef)
     local n = flyoutDef:howManyButtons()
     local rows = n+1 -- one extra for an empty space
 
@@ -157,6 +158,7 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
     local flyoutId = germ:getFlyoutId()
     self:setId(flyoutId)
     local flyoutDef = self:getDef(flyoutId)
+    zebug.trace:dumpy("flyoutDef",flyoutDef)
     local usableFlyout = flyoutDef:filterOutUnusable()
     local buttonFrames = { self:GetChildren() }
     table.remove(buttonFrames, 1) -- this is the non-button UI element "Background" from ui.xml
@@ -165,10 +167,10 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
     for i, btnFrame in ipairs(buttonFrames) do
         local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef)
-        zebug.trace:print("i",i, "btnDef", btnDef)
+        --zebug.trace:print("i",i, "btnDef", btnDef)
 
         if btnDef then
-            zebug.trace:print("i",i, "spellId",btnDef.spellId, "type", btnDef.type)
+            zebug.trace:print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
             btnFrame:setIconTexture( btnDef:getIcon() )
             btnFrame:setGeometry(self.direction)
         else

@@ -5,7 +5,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new()
+local zebug = Zebug:new()
 
 -------------------------------------------------------------------------------
 -- ButtonType
@@ -30,16 +30,17 @@ Ufo.ButtonType = ButtonType
 -- maps my types into Bliz types.
 -------------------------------------------------------------------------------
 ---@class BlizApiFieldDef -- IntelliJ-EmmyLua annotation
+---@field pickerUpper function the Bliz API that can load the mouse pointer
 ---@field typeForBliz ButtonType
----@field key string
+---@field key string which field should be used as the ID
 local BlizApiFieldDef = {
-    [ButtonType.SPELL] = { typeForBliz = ButtonType.SPELL, },
-    [ButtonType.MOUNT] = { typeForBliz = ButtonType.SPELL, },
-    [ButtonType.ITEM ] = { typeForBliz = ButtonType.ITEM,  },
-    [ButtonType.TOY  ] = { typeForBliz = ButtonType.ITEM,  },
-    [ButtonType.PET  ] = { typeForBliz = ButtonType.PET, key = "petGuid" },
-    [ButtonType.MACRO] = { typeForBliz = ButtonType.MACRO, },
-    [ButtonType.SNAFU] = { typeForBliz = ButtonType.SPELL, key = "mountId" },
+    [ButtonType.SPELL] = { pickerUpper = PickupSpell, typeForBliz = ButtonType.SPELL, },
+    [ButtonType.MOUNT] = { pickerUpper = PickupSpell, typeForBliz = ButtonType.SPELL, },
+    [ButtonType.ITEM ] = { pickerUpper = PickupItem,  typeForBliz = ButtonType.ITEM,  },
+    [ButtonType.TOY  ] = { pickerUpper = PickupItem,  typeForBliz = ButtonType.ITEM,  },
+    [ButtonType.MACRO] = { pickerUpper = PickupMacro, typeForBliz = ButtonType.MACRO --[[, key = "name"]] },
+    [ButtonType.SNAFU] = { pickerUpper = nil,         typeForBliz = ButtonType.SPELL, key = "mountId" },
+    [ButtonType.PET  ] = { pickerUpper = C_PetJournal.PickupPet, typeForBliz = ButtonType.PET, key = "petGuid" },
 }
 Ufo.BlizApiFieldDef = BlizApiFieldDef
 
@@ -68,10 +69,10 @@ Ufo.ButtonDef = ButtonDef
 -- coerce the incoming table into a ButtonDef instance
 ---@return ButtonDef
 function ButtonDef:oneOfUs(self)
-    debug.trace:out("'",3,"FlyoutDef:oneOfUs()", "self",self)
+    zebug.trace:print("self",self)
     if self.ufoType == ButtonDef.ufoType then
         -- it's already "one of us" so nothing needs to be done.
-        return self
+        return
     end
 
     -- create a table to store stuff that we do NOT want persisted out to SAVED_VARIABLES
@@ -83,12 +84,34 @@ function ButtonDef:oneOfUs(self)
     setmetatable(privateData, { __index = ButtonDef })
     -- tie the "self" instance to the privateData table (which in turn is tied to  the class)
     setmetatable(self, { __index = privateData })
-    return self
 end
 
 ---@return ButtonDef
 function ButtonDef:new()
-    return ButtonDef:oneOfUs({})
+    local self = {}
+    ButtonDef:oneOfUs(self)
+    return self
+end
+
+function ButtonDef:invalidateCache()
+    zebug.trace:line(75)
+    self.name = nil
+    self:setIdForBlizApi(nil)
+end
+
+function ButtonDef:whatsMyBlizApiIdField()
+    assert(self.type, "can't discern ID key without a type.")
+    local blizDef = BlizApiFieldDef[self.type]
+    local type    = blizDef.typeForBliz
+    local idKey   = blizDef.key or (type .."Id") -- spellId or itemId or petGuid or etcId
+    return idKey
+end
+
+function ButtonDef:redefine(id, name)
+    self:invalidateCache()
+    local idKey = self:whatsMyBlizApiIdField()
+    self[idKey] = id
+    self.name   = name
 end
 
 -- A few different types of buttons share Bliz APIs.
@@ -99,16 +122,10 @@ function ButtonDef:getIdForBlizApi()
     if self.idForBlizApis then
         return self.idForBlizApis
     end
-    if not self.type then
-        -- if there is no type, there can't be a typeForBliz
-        return
-    end
 
-    local blizDef     = BlizApiFieldDef[self.type]
-    local typeForBliz = blizDef.typeForBliz
-    local idKey       = blizDef.key or (typeForBliz.."Id") -- spellId or itemId or petGuid or etcId
+    local idKey = self:whatsMyBlizApiIdField()
     local happyBlizId = self[idKey]
-    --debug:out(X,X,"ButtonDef:getIdForBlizApi()", "self.type",self.type, "typeForBliz",typeForBliz, "idKey",idKey, "happyBlizId",happyBlizId)
+    zebug.info:print("self.type",self.type, "idKey",idKey, "happyBlizId",happyBlizId)
     self:setIdForBlizApi(happyBlizId) -- cache the result to save processing cycles on repeated calls
     return happyBlizId
 end
@@ -132,7 +149,8 @@ function ButtonDef:isUsable()
         local m = PlayerHasToy(id)
         return m or n > 0
     elseif t == ButtonType.MACRO then
-        return isMacroGlobal(id) or getIdForCurrentToon() == self.macroOwner
+        zebug.info:print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
+        return isMacroGlobal(self.macroId) or getIdForCurrentToon() == self.macroOwner
     end
 end
 
@@ -144,8 +162,12 @@ function ButtonDef:getIcon()
     elseif t == ButtonType.ITEM or t == ButtonType.TOY then
         return GetItemIcon(id)
     elseif t == ButtonType.MACRO then
-        local _, texture, _ = GetMacroInfo(id)
-        return texture
+        if canThisToonUse(self) then
+            local _, texture, _ = GetMacroInfo(id)
+            return texture
+        else
+            return "Interface\\Icons\\" .. DEFAULT_ICON
+        end
     elseif t == ButtonType.PET then
         local _, icon = getPetNameAndIcon(id)
         return icon
@@ -166,19 +188,25 @@ function ButtonDef:getName()
     elseif t == ButtonType.TOY then
         self.name =  GetItemInfo(id)
     elseif t == ButtonType.MACRO then
-        self.name =  GetMacroInfo(id)
+        self.name =  GetMacroInfo(self.macroId)
     elseif t == ButtonType.PET then
         self.name =  getPetNameAndIcon(id)
     else
-        debug:print("ButtonDef:getName() Unknown type:",t)
+        zebug.warn:print("Unknown type:",t)
     end
 
     return self.name
 end
 
+function trim1(s)
+    if not s then return nil end
+    return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
 function ButtonDef:getToolTipSetter()
     local type = self.type
     local id = self:getIdForBlizApi()
+    zebug.info:line(20,"id",id)
 
     local tooltipSetter
     if type == ButtonType.SPELL or type == ButtonType.MOUNT then
@@ -188,17 +216,33 @@ function ButtonDef:getToolTipSetter()
     elseif type == ButtonType.PET then
         tooltipSetter = GameTooltip.SetCompanionPet
     elseif type == ButtonType.MACRO then
-        tooltipSetter = function(zelf, macroId)
-            local name, _, _ = GetMacroInfo(macroId)
+        -- START FUNC
+        tooltipSetter = function(zelf, Cache1macroId)
+            local upToDateId = self:getIdForBlizApi()
+            local macroId = self.macroId
+            local i_name, _, i_body = GetMacroInfo(macroId)
+            local n_name, _, n_body = GetMacroInfo(self.name)
             if not macroId then macroId = "NiL" end
-            debug.info:out(X,X,"ButtonType:getToolTipSetter() ButtonType.MACRO !", "macroId",macroId)
-            return zelf:SetText("Macro: ".. macroId .." " .. (name or "UNKNOWN"))
+            zebug.info:print("MACRO! macroId",macroId, "cached1",Cache1macroId,"cahced2",upToDateId, "btnDef name",self.name, "i_name",i_name, "n_name",n_name, "i_body", trim1(i_body), "n_body",trim1(n_body))
+            zebug.trace:dumpy("self",self)
+            local text
+            if canThisToonUse(self) then
+                text = "Macro: ".. macroId .." " .. (i_name or "UNKNOWN")
+            else
+                text = "Toon Macro for " .. self.macroOwner
+            end
+            return zelf:SetText(text)
         end
+        -- END FUNC
     end
 
     if tooltipSetter and id then
         return function()
-            return tooltipSetter(GameTooltip, id)
+            -- because Bliz doesn't understand the concept of immutable IDs
+            -- and Bliz allows macro IDs to shift will-fucking-nilly
+            -- we must always refresh the ID
+            local upToDateId = self:getIdForBlizApi()
+            return tooltipSetter(GameTooltip, upToDateId)
         end
     end
 
@@ -227,9 +271,9 @@ function ButtonDef:readToolTipForToyType()
 
     -- scan the text in the tooltip
     for i, ttLine in ipairs(ttData.lines) do
-        debug.trace:out(")",10,"parseToolTipForType()", "ttLine.leftText",ttLine.leftText)
+        zebug.trace:print("ttLine.leftText",ttLine.leftText)
         if ttLine.leftText == L10N.TOY then
-            debug.trace:out(")",30,"TOY !!!")
+            zebug.trace:out(")",30,"TOY !!!")
             return true
         end
     end
@@ -242,7 +286,7 @@ function ButtonDef:getFromCursor()
     ---@type ButtonDef
     local btnDef = ButtonDef:new()
     local type, c1, c2, c3 = GetCursorInfo() -- c1 is usually the ID; c2 is sometimes a tooltip;
-    debug.trace:out(">",5,"getFromCursor()", "type",type, "c1",c1, "c2",c2, "c3",c3)
+    zebug.trace:print("type",type, "c1",c1, "c2",c2, "c3",c3)
 
     btnDef.type = type
     if type == ButtonType.SPELL then
@@ -256,7 +300,7 @@ function ButtonDef:getFromCursor()
             btnDef.spellId = Ufo.pickedUpMount.spellId
             btnDef.mountId = Ufo.pickedUpMount.mountId
         else
-            debug.warn:print("Sorry, the Blizzard API provided bad data for this mount.")
+            zebug.warn:print("Sorry, the Blizzard API provided bad data for this mount.")
         end
     elseif type == ButtonType.MOUNT then
         local name, spellId = C_MountJournal.GetMountInfoByID(c1)
@@ -271,7 +315,8 @@ function ButtonDef:getFromCursor()
     elseif type == ButtonType.MACRO then
         btnDef.macroId = c1
         if not isMacroGlobal(c1) then
-            btnDef.macroOwner = getIdForCurrentToon()
+            btnDef.macroOwner = (Ufo.pickedUpBtn and Ufo.pickedUpBtn.macroOwner) or getIdForCurrentToon()
+            Ufo.pickedUpBtn = nil
         end
     elseif type == ButtonType.PET then
         btnDef.petGuid = c1
@@ -291,23 +336,21 @@ end
 
 function ButtonDef:pickupToCursor()
     local type = self.type
+    local id = self:getIdForBlizApi()
+    local pickup = BlizApiFieldDef[type].pickerUpper
 
-    debug.trace:out("<",5,"ButtonOnFlyoutMenu:pickup", "actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId)
+    zebug.trace:print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId)
 
+    -- TODO: consolidate these 2 cases
     if type == ButtonType.MOUNT then
-        -- set a global variable because the Bliz API is broken
+        -- set a global variable because the Bliz API is broken.  Gasp!  Shocking, I know!
         Ufo.pickedUpMount = {
             mountId = self.mountId,
             spellId = self.spellId
         }
-        PickupSpell(self.spellId)
-    elseif type == ButtonType.SPELL then
-        PickupSpell(self.spellId)
-    elseif type == ButtonType.ITEM or type == ButtonType.TOY then
-        PickupItem(self.itemId)
     elseif type == ButtonType.MACRO then
-        PickupMacro(self.macroId)
-    elseif type == ButtonType.PET then
-        C_PetJournal.PickupPet(self.petGuid)
+        Ufo.pickedUpBtn = self
     end
+
+    pickup(id)
 end

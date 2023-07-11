@@ -4,6 +4,7 @@
 --[[
 
 TODO
+* BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
 * BUG: when a macro is added or deleted (from the Bliz macro editor) then all of the macro IDs shift by 1 FUBARing the macro IDs in UFO
 * BUG: the empty btn sparkles on every OnUpdate
 * FEATURE: export/import - look at MacroManager for the [link] code.
@@ -70,8 +71,15 @@ local EventHandlers = { }
 
 function EventHandlers:ADDON_LOADED(addonName)
     if addonName == ADDON_NAME then
-        zebug.trace:print("ADDON_LOADED", addonName)
+        zebug.trace:print("Heard event: ADDON_LOADED", addonName)
     end
+
+    -- Add the [UFO] button to the Pet/Mount/Etc window and the Macro window.
+    -- But, we can't do that until those windows exist.
+    -- They are created by Bliz's built-in addons.
+    -- Inexplicably, Bliz doesn't necessarily load its own addons before it starts calling user addons.
+    -- So, we have to write anti-GOTCHA! code to compensate for yet another example of Bliz's bad decisions.
+    -- Why bad?  Otherwise, we could have simply created the [UFO] buttons in the XML
 
     if addonName == "Blizzard_Collections" then
         Catalog:createToggleButton(CollectionsJournal)
@@ -83,7 +91,7 @@ function EventHandlers:ADDON_LOADED(addonName)
 end
 
 function EventHandlers:PLAYER_LOGIN()
-    zebug.trace:print("PLAYER_LOGIN")
+    zebug.trace:print("Heard event: PLAYER_LOGIN")
     local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
     local msg = ADDON_NAME .. " v"..version .. " loaded"
     local colorMsg = GetClassColorObj("ROGUE"):WrapTextInColorCode(msg)
@@ -91,27 +99,26 @@ function EventHandlers:PLAYER_LOGIN()
 end
 
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
-    zebug.trace:print("PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
+    zebug.trace:print("Heard event: PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
     initalizeAddonStuff() -- moved this here from PLAYER_LOGIN() because the Bliz API was just generally shitting the bed
     GermCommander:updateAll() -- moved this here from PLAYER_LOGIN() because the Bliz API was misrepresenting the bar directions >:(
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
     if not isUfoInitialized then return end
-    zebug.trace:print("ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
+    zebug.trace:print("Heard event: ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
     GermCommander:handleActionBarSlotChanged(actionBarSlotId)
 end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
     if not isUfoInitialized then return end
-    zebug.trace:print("PLAYER_SPECIALIZATION_CHANGED")
+    zebug.trace:print("Heard event: PLAYER_SPECIALIZATION_CHANGED")
     GermCommander:updateAll()
 end
 
-
 function EventHandlers:UPDATE_MACROS()
     if not isUfoInitialized then return end
-    zebug.trace:print("UPDATE_MACROS")
+    zebug.trace:line(40,"Heard event: UPDATE_MACROS")
     analyzeMacroUpdate()
 end
 
@@ -241,7 +248,7 @@ function deleteFromArray(array, killTester)
     local modified = false
 
     for i=1,#array do
-        if (killTester(array, i, j)) then
+        if (killTester(array[i])) then
             array[i] = nil
             modified = true
         else
@@ -345,7 +352,6 @@ end
 -- Macro Monitor and Reactor
 -------------------------------------------------------------------------------
 
-local nMacros
 local macrosIndex
 local macrosMap
 
@@ -363,68 +369,53 @@ function analyzeMacroUpdate()
         -- the event was caused by an action of this addon and as such we shall ignore it
         zebug.trace:print("ignoring proxy draggable creation/death")
         Ufo.thatWasMe = false
-        return
+        return -- EXIT
     end
 
-    local nGlobal, nPerChar = GetNumMacros()
-    local n = nGlobal + nPerChar
-
-    -- initialze and exit
-    if not nMacros then
+    if not macrosIndex then
+        -- initialze and exit
         zebug.trace:print("initialze and exit")
-        nMacros = n
+        macrosIndex = {}
         macrosMap = {}
-        macrosIndex = forEveryMacro(function(i, name, index, map)
-            index[i] = name
+        forEveryMacro(function(i, name)
+            macrosIndex[i] = name
             macrosMap[name] = i
         end)
-        return
+        --zebug.trace:dumpy("INIT macrosMap",macrosMap)
+        --zebug.trace:dumpy("INIT macrosIndex",macrosIndex)
+
+        return -- EXIT
     end
 
-    if n == nMacros then
-        -- did any macro names change?
-        local renamedMacro = findChangedMacroName()
-        if renamedMacro then
-            -- update it wherever it exists in any flyout
-            zebug.trace:dumpy("renamedMacro",renamedMacro)
-            renameMacro(renamedMacro)
-        else
-            zebug.trace:print("no macro changes")
-        end
+    -- analyze and act
+    local delta = didAnyMacroChange()
+    if delta then
+        zebug.trace:dumpy("delta",delta)
+        zebug.info:print("initiating macro sync")
+        syncFlyoutButtonsWithMacros(delta)
+        macrosMap = delta.macrosMap
+        macrosIndex = delta.macrosIndex
+        zebug.info:line(50,"triggering global updates!")
+        Catalog:update()
+        GermCommander:updateAll()
     else
-        if n > nMacros then
-            -- a macro was added.
-            -- we don't know which one, its id, or its name.  Thanks Bliz!
-            -- all we know is that every other macro ID may have been shifted up.  Becoz dumbfucks.
-            -- potentially remap every macro id in every flyout
-            zebug.trace:print("a macro was ADDED", nMacros, "---",n)
-            remapEveryMacroIdInEveryBtnInEveryFlyout()
-        elseif n < nMacros then
-            -- a macro was deleted
-            -- we don't know which one, its id, or its name.  Thanks Bliz!
-            -- all we know is that every other macro ID may have been shifted up.  Becoz dumbfucks.
-            -- potentially remap every macro id in every flyout
-            -- remove it wherever it existed in any flyouts
-            zebug.trace:print("a macro was DELETED", nMacros, "---",n)
-            deleteMacroAndThenRemapEveryMacroIdInEveryBtnInEveryFlyout()
-        end
-
-        nMacros = n
+        zebug.trace:print("no macro changes")
     end
+
 end
 
 function forEveryMacro(callback)
-    local index = {}
-    local map = {}
     local funcResult
 
-    function doIndex(start,stop)
+    function scanMacrosBetween(start, stop)
+        zebug.trace:line(30,"SCANNING start",start, "stop",stop)
         for i = start, stop do
             local name, _, _ = GetMacroInfo(i)
-            local result = callback(i, name, index, map)
+            zebug.trace:print("scanned i",i, "name",name)
+            if not name then return end -- stop when we run out of macros
+            local result = callback(i, name)
             if result then return result end
         end
-        return nil
     end
 
     -- macros are grouped as
@@ -432,147 +423,253 @@ function forEveryMacro(callback)
     -- toon-specific >120
     local nGlobal, nPerChar = GetNumMacros()
 
-    -- scan macros for account
-    funcResult = doIndex(1, nGlobal)
-    zebug.error:print(funcResult)
+    -- ACCOUNT macros scan
+    zebug.trace:line(30,"ACCOUNT macros scan. 1",nGlobal)
+    funcResult = scanMacrosBetween(1, nGlobal)
     if funcResult then return funcResult end
 
-    -- scan macros for toon
-    funcResult = doIndex(1 + MAX_GLOBAL_MACRO_ID, nPerChar + MAX_GLOBAL_MACRO_ID)
-    zebug.error:print(funcResult)
+    -- TOON macros scan
+    local toonStart = 1 + MAX_GLOBAL_MACRO_ID
+    local toonStop  = nPerChar + MAX_GLOBAL_MACRO_ID
+    zebug.trace:line(30,"TOON macros scan",toonStart, toonStop)
+    funcResult = scanMacrosBetween(toonStart, toonStop)
     if funcResult then return funcResult end
-
-    zebug.error:print("index is",index)
-    return index
 end
 
--- after we've determined that the number of macros has not changed
--- we can safely assume they are all in the same positions as before and that their IDs are also the same as before.
--- So, let's see if a macro was given a new name.
-function findChangedMacroName()
-    -- define a callback to do the detail work inside indexMacros()
-    function findChange(i, currentName)
-        local oldName = macrosIndex[i]
-        if oldName ~= currentName then
-            return {
-                id = i,
-                name = currentName,
-                oldName = oldName,
-                found = true,
-            }
+function didAnyMacroChange()
+    local oldNames = macrosMap
+    local oldMacrosIndex = macrosIndex
+
+    local newNames = {}
+    local newMacrosIndex = {}
+    forEveryMacro(function(i, name)
+        newNames[name] = i
+        newMacrosIndex[i] = name
+    end)
+
+    -- search all previous macro NAMES and find one that vanished
+    local missingName
+    local oldIndex
+    for i, oldName in pairs(oldMacrosIndex) do
+        --zebug.trace:print("scanning for obsolete macros.  i",i, "name",oldName, "still exists",newNames[oldName])
+        if not newNames[oldName] then
+            zebug.info:print("FOUND! DELETED macro.  i",i, "name",oldName)
+            oldIndex = i
+            missingName = oldName
+            break
         end
     end
 
-    local renamedMacro = forEveryMacro(findChange)
-    if renamedMacro and renamedMacro.found == true then
-        return renamedMacro
+    -- search all new macro NAMES and find one that didn't exist before
+    local addedName
+    local newIndex
+    for i, newName in pairs(newMacrosIndex) do -- can't use ipairs because there is a gap between account macro IDs and toon macro IDs
+        --zebug.trace:print("scanning for new macros.  i",i, "name",newName, "exists",oldNames[newName])
+        if not oldNames[newName] then
+            zebug.info:print("FOUND! NEW macro.  i",i, "name",newName)
+            newIndex = i
+            addedName = newName
+            break
+        end
     end
-    return nil
+
+    local oldN = #oldMacrosIndex
+    local newN = #newMacrosIndex
+    local sameNumberOfMacros  = (oldN == newN)
+    local someNameChanged     = (missingName and addedName) and true or false
+    local someMacroDeleted    = (missingName and (not addedName)) and true or false
+    local newMacroAdded       = (addedName and (not missingName)) and true or false
+    local didRenamedMacroMove = someNameChanged and (oldIndex ~= newIndex)
+    local somethingChanged    = someNameChanged or newMacroAdded or someMacroDeleted
+
+    return somethingChanged and {
+        sameNumberOfMacros  = sameNumberOfMacros,
+        someNameChanged     = someNameChanged,
+        didRenamedMacroMove = didRenamedMacroMove,
+        newMacroAdded       = newMacroAdded,
+        someMacroDeleted    = someMacroDeleted,
+        oldN      = oldN,
+        oldIndex  = oldIndex,
+        oldName   = missingName,
+        newN      = newN,
+        newIndex  = newIndex,
+        newName   = addedName,
+        macrosMap = newNames,
+        macrosIndex = newMacrosIndex,
+    }
 end
 
-function forEveryFlyoutBtn(callback)
+function forEveryButtonOnEveryFlyout(callback)
     ---@param flyoutDef FlyoutDef
     FlyoutDefsDb:forEachFlyoutDef(
         function(flyoutDef)
-            zebug.info:line(20, "flyout ID",flyoutDef.id)
+            zebug.trace:setMethodName("forEveryButtonOnEveryFlyout"):line(20, "flyout ID",flyoutDef.id)
             flyoutDef:forEachBtn(callback)
         end
     )
 end
 
----@param renamedMacro table
-function renameMacro(renamedMacro)
-    local m = renamedMacro
-    zebug.info:line(25, "id",m.id, "name",m.name, "was", m.oldName)
+-- when comparing two macros, they must both be ACCOUNT wide or both be TOON specific.  Never mix them together
+function comparable(aMacroId, bMacroId)
+    if aMacroId <= MAX_GLOBAL_MACRO_ID then
+        return bMacroId <= MAX_GLOBAL_MACRO_ID
+    else
+        return bMacroId > MAX_GLOBAL_MACRO_ID
+    end
+end
 
-    function rename(btnDef, _, i)
-        if btnDef.macroId then
-            zebug.info:line(15, "i",i, "btn macroId",btnDef.macroId, "btn name",btnDef.name)
-        end
-        if btnDef.macroId == m.id then
-            zebug.warn:line(10,"FOUND UFO entry for macro #",m.id, "changing name from ",m.oldName, "to", m.name)
-            btnDef.name = m.name
-            macrosIndex[m.id] = m.name
-        end
+---@param flyoutDef FlyoutDef
+---@param btnDef ButtonDef
+function redefineMacro(flyoutDef, btnDef, delta)
+    if btnDef.macroId == delta.oldIndex or btnDef.name == delta.oldName then
+        zebug.info:print("macro name/ID change for flyout",flyoutDef.id,  "RENAMING old",delta.oldName, "new",delta.newName, "RENUMBERING old",delta.oldIndex, "new",delta.newIndex)
+        btnDef:redefine(delta.newIndex, delta.newName)
+        return true
+    end
+    return false
+end
+
+-- TODO: move to ButtonDef.lua
+---@param btnDef ButtonDef
+function canThisToonUse(btnDef)
+    if isMacroGlobal(btnDef.macroId) then
+        return true
     end
 
-    forEveryFlyoutBtn(rename)
+    local owner = btnDef.macroOwner
+    local me = getIdForCurrentToon()
+    if owner == me then
+        return true
+    end
+
+    return false
 end
 
-function remapEveryMacroIdInEveryBtnInEveryFlyout()
-    -- when a macro is ADDED then the UFO flyouts don't care
-    -- they don't have any data for it and thus don't need updated.
-    -- But, the macro index
+---@class TypeOfDelta
+local TypeOfDelta = {
+    MOVE   = { shiftBy = 0 },
+    ADD    = { shiftBy = 1 },
+    DELETE = { shiftBy = -1 },
+}
 
+---@return function
+---@param TypeOfDelta TypeOfDelta
+function makeMoverFunc(typeOfDelta, initialPos, destinationPos)
+    -- every macro with an ID between the old and new locations of the moved macro have also moved
+    -- if the macro moved to an earlier spot, the ones before its original spot but after its new spot get bumped UP by 1
+    -- if the macro moved to a later spot, the ones after its original spot but before its new spot get bumped DOWN by 1
+    -- Example: abcDe -> aDbce -- In addition to the "D" moving, so have the "b" and "c", while "a" remains at 1 and "e" at 5.
+    local floorId, ceilingId, shiftBy
 
+    if typeOfDelta == TypeOfDelta.MOVE then
+        local movedUp = initialPos < destinationPos
+        if movedUp then
+            floorId   = initialPos
+            ceilingId = destinationPos
+            shiftBy   = -1
+        else
+            floorId   = destinationPos
+            ceilingId = initialPos
+            shiftBy   = 1
+        end
+    else
+        floorId = initialPos
+        ceilingId = 9999
+        shiftBy = typeOfDelta.shiftBy
+    end
+    zebug.trace:print("making mover to shift by", shiftBy)
+
+    -- FUNC START
+    ---@param btnDef ButtonDef
+    ---@param flyoutDef FlyoutDef
+    local mover = function(btnDef, _, i, flyoutDef)
+        if comparable(initialPos, btnDef.macroId) and btnDef.macroId >= floorId and btnDef.macroId <= ceilingId then
+            if not canThisToonUse(btnDef) then return end
+            local newId = btnDef.macroId + shiftBy
+            zebug.info:setMethodName("MACRO MOVER"):print("macro ID SHIFT for flyout",flyoutDef.id, "btn #",i, "name",btnDef.name, "shifting ID",btnDef.macroId, "by", shiftBy)
+            btnDef.macroId = newId
+            return true -- signal "we did something"
+        end
+    end
+    -- FUNC END
+
+    return mover
 end
 
-function deleteMacroAndThenRemapEveryMacroIdInEveryBtnInEveryFlyout()
-    zebug.info:line(25)
-    local deletedMacro
-    local shiftItsMacroId
-    local mapCopy
+---@param macroDelta table
+function syncFlyoutButtonsWithMacros(delta)
+    ---@type function
+    local remapper
 
-    -- fix the macro index.
-    -- identify which macro was deleted.
-    function recreateIndexAndIdentifyTheMissingMacro(i, currentName, index, map)
-        -- try to figure out which macro was deleted
-        local oldName = macrosIndex[i]
-        -- assume that the FIRST macro with a different name than before is THE added/deleted macro
-        if oldName ~= currentName then
-            deletedMacro = {
-                id = i,
-                name = currentName,
-                oldName = oldName,
-                found = true,
-            }
+    if delta.someNameChanged then
+        -- RENAMED
+        if delta.didRenamedMacroMove then
+            -- AND MOVED
+            zebug.info:print("renamed AND moved.  oldName",delta.oldName, "newName",delta.newName, "oldIndex",delta.oldIndex, "newIndex",delta.newIndex)
+            local mover = makeMoverFunc(TypeOfDelta.MOVE, delta.oldIndex, delta.newIndex)
 
-            -- every subsequent macro has been shifted to a new slot.
-            -- modify the macro ID by 1 via an inner loop, then exit the outer loop
-            forEveryFlyoutBtn(function(btnDef, _, i)
-                -- is this btn a macro?
+            -- FUNC START
+            remapper = function(btnDef, _, i, flyoutDef)
+                -- rename the specific macro
+                local didSomething = redefineMacro(flyoutDef, btnDef, delta)
+
+                -- move other macros up or down as needed
+                if not didSomething then
+                    didSomething = mover(btnDef, _, i, flyoutDef)
+                end
+
+                return didSomething
+            end
+            -- FUNC END
+        else
+            -- RENAMED but stayed in its original position
+            zebug.info:print("renamed  oldName",delta.oldName, "newName",delta.newName)
+            remapper = function(btnDef, _, _, flyoutDef)
+                return redefineMacro(flyoutDef, btnDef, delta)
+            end
+        end
+    elseif delta.newMacroAdded then
+        -- ADDED
+        zebug.info:print("ADDED newName",delta.newName, "at pos",delta.newIndex)
+        remapper = makeMoverFunc(TypeOfDelta.ADD, delta.newIndex)
+    elseif delta.someMacroDeleted then
+        -- DELETED
+        zebug.info:print("DELETED newName",delta.oldName, "from pos",delta.oldIndex)
+        remapper = makeMoverFunc(TypeOfDelta.DELETE, delta.oldIndex)
+
+        -- delete the macro from every flyout.
+        -- it's safe to do this immediately even before we've adjusted the other buttons
+        ---@param flyoutDef FlyoutDef
+        FlyoutDefsDb:forEachFlyoutDef(function(flyoutDef)
+            ---@param btnDef ButtonDef
+            flyoutDef:batchDeleteBtns(function(btnDef)
                 if btnDef.type == ButtonType.MACRO then
-                    zebug.info:line(15, "i",i, "btnDef macroId",btnDef.macroId, "btnDef name",btnDef.name)
-                    -- TODO - consider account VS toon... all toon macros > any account macro
-                    if btnDef.macroId == deletedMacro.id then
-                        zebug.warn:line(10,"IGNORING deleted macro ID", deletedMacro.id, "name ",btnDef.name)
+                    if not canThisToonUse(btnDef, delta.oldIndex) then return end -- don't delete non-account macros owned by other toons
 
-                    elseif btnDef.macroId > deletedMacro.id then
-                        local newMacroId = btnDef.macroId - 1
-                        zebug.warn:line(10,"deleted macro ID", deletedMacro.id, "FOUND UFO entry for macro ",btnDef.name, "changing macro ID from", btnDef.macroId, "to", newMacroId)
-                        btnDef.macroId = newMacroId
-                    end
+                    local killIt = btnDef.macroId == delta.oldIndex
+                    zebug.info:setMethodName("syncFlyoutButtonsWithMacros:CALLBACK"):print("flyoutId",flyoutDef.flyoutId, "macroId",btnDef.macroId, "deletedMacro.id",delta.oldIndex, "killIt", killIt)
+                    return killIt
                 end
             end)
-
-            -- delete the macro from every flyout
-            ---@param flyoutDef FlyoutDef
-            FlyoutDefsDb:forEachFlyoutDef(function(flyoutDef)
-                zebug.info:print("flyoutId",flyoutDef.flyoutId)
-                flyoutDef:batchDeleteBtns(function(array, i)
-                    ---@type ButtonDef
-                    local btnDef = array[i]
-                    if btnDef.type == ButtonType.MACRO then
-                        local die = btnDef.macroId == deletedMacro.id
-                        zebug.info:print("flyoutId",flyoutDef.flyoutId, "macroId",btnDef.macroId, "deletedMacro.id",deletedMacro.id, "die",die)
-                        return die
-                    end
-                end)
-            end)
-
-            return true -- signal "the dishes are done, man!"
-        end
-
-        -- becoz potentially every macro is in a different slot,
-        -- we must completely rebuild our now FUBAR index.  Thanks Bliz!
-        index[i] = name
-        map[name] = i
-        mapCopy = map -- export the fresh new map to the outer scope
+        end)
     end
 
-    -- finally, now that the logic is all defined above, pull the trigger!
-    macrosIndex = forEveryMacro(recreateIndexAndIdentifyTheMissingMacro)
-    macrosMap = mapCopy -- ug, sorry for relying on side-effects
+    -- FUNC START
+    ---@param btnDef ButtonDef
+    ---@param flyoutDef FlyoutDef
+    ---@return boolean true if an action was performed
+    local compositeFunc = function(btnDef, _, i, flyoutDef)
+        if btnDef.type == ButtonType.MACRO then
+            local didSomething = remapper(btnDef, _, i, flyoutDef)
+            return didSomething
+        end
+        return false -- signal "nothing happened"
+    end
+    -- FUNC END
+
+    -- now that we've defined what operations should be performed
+    -- perform those ops on every stupid button
+    forEveryButtonOnEveryFlyout(compositeFunc)
 end
 
 -------------------------------------------------------------------------------
