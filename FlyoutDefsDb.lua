@@ -36,7 +36,7 @@ Ufo.Xedni = Xedni
 
 function FlyoutDefsDb:howMany()
     local list = Config:getOrderedFlyoutIds()
-    return #list
+    return list and #list or 0
 end
 
 function FlyoutDefsDb:forEachFlyoutDef(callback)

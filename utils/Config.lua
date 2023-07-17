@@ -17,7 +17,7 @@ Ufo.Config = Config
 
 function Config:initializeFlyouts()
     if not UFO_SV_ACCOUNT then
-        UFO_SV_ACCOUNT = { flyouts={}, n=0 }
+        UFO_SV_ACCOUNT = { flyouts={}, n=0, orderedFlyoutIds={} }
     end
 end
 
