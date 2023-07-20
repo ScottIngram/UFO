@@ -5,8 +5,6 @@
 
 TODO
 * BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
-* BUG: when a macro is added or deleted (from the Bliz macro editor) then all of the macro IDs shift by 1 FUBARing the macro IDs in UFO
-* BUG: the empty btn sparkles on every OnUpdate
 * FEATURE: export/import - look at MacroManager for the [link] code.
 * FEATURE: replace existing icon picker with something closer to MacroManager / Weak Auras
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
@@ -15,6 +13,8 @@ TODO
 * question: can I use GetItemSpell(itemId) to simplify my code ?
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 *
+* DONE: BUG: when a macro is added or deleted (from the Bliz macro editor) then all of the macro IDs shift by 1 FUBARing the macro IDs in UFO
+* DONE: BUG: the empty btn sparkles on every OnUpdate
 * DONE: BUG: Oops, I clobbered the frames on the germ flyouts
 * DONE: change onupdate to always happen on initial open
 * DONE: optimize xedni - don't throw away the whole thing - for flyoutId = deleted index to howMany { flyout[flyoutId]-- }
