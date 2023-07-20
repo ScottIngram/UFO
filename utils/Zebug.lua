@@ -174,13 +174,16 @@ function Zebug:dump(...)
     return self:dumpy("", ...)
 end
 
+local DOWN_ARROW = ".....vvvvvVVVVVvvvvv....."
+local UP_ARROW   = "`````^^^^^AAAAA^^^^^`````"
+
 ---@return Zebug -- IntelliJ-EmmyLua annotation
 function Zebug:dumpy(label, ...)
     assert(isZebuggerObj(self), ERR_MSG)
     if self.isSilent then return end
-    self:out(20,"V", label, "VVVVVVVVVV")
+    self:out(2,DOWN_ARROW, label, DOWN_ARROW)
     DevTools_Dump(...)
-    self:out(20,"^", label, "^^^^^^^^^^")
+    self:out(2,UP_ARROW, label, UP_ARROW)
     return self
 end
 
