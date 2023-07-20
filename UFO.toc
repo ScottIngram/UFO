@@ -19,6 +19,7 @@ FlyoutDef.lua
 ButtonDef.lua
 Germ.lua
 GermCommander.lua
+MacroShitShow.lua
 UFO.lua
 ui\FlyoutMenu.lua
 ui\ButtonOnFlyoutMenu.lua
