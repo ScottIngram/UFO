@@ -30,56 +30,9 @@ local currentSpec
 -- Private Functions
 -------------------------------------------------------------------------------
 
-local function getGerm(btnSlotIndex)
-    return germs[btnSlotIndex]
-end
-
----@param germ Germ -- IntelliJ-EmmyLua annotation
-local function rememberGerm(germ)
-    local btnSlotIndex = germ:getBtnSlotIndex()
-    germs[btnSlotIndex] = germ
-end
-
--- TODO: refactor -  actionBarBtn to the Germ
-local function bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
-    -- examine the action/bonus/multi bar
-    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
-    local actionBarDef = BLIZ_BAR_METADATA[barNum]
-    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum) -- in case Blizzard adds more bars, complain here clearly.
-    local actionBarName = actionBarDef.name
-    local visibleIf = actionBarDef.visibleIf
-
-    -- examine the button
-    local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
-    if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
-    local actionBarBtnName = actionBarName .. "Button" .. btnNum
-    local actionBarBtn = _G[actionBarBtnName] -- grab the button object from Blizzard's GLOBAL dumping ground
-
-    -- ask the bar instance what direction to fly
-    local barObj = actionBarBtn and actionBarBtn.bar
-    local direction = barObj and barObj:GetSpellFlyoutDirection() or "UP" -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
-
-    --local foo = btnObj and "FOUND" or "NiL"
-    --print ("###--->>> ffUniqueId =", ffUniqueId, "barNum =",barNum, "btnSlotIndex = ", btnSlotIndex, "btnObj =",foo, "blizBarName = ",blizBarName,  "btnName =",btnName,  "btnNum =",btnNum, "direction =",direction, "visibleIf =", visibleIf)
-
-    ---@type Germ
-    local germ = getGerm(btnSlotIndex)
-    if not germ then
-        germ = Germ.new(flyoutId, actionBarBtn)
-        if not germ then
-            -- a different toon could have deleted it and that's ok.
-            return
-        end
-        rememberGerm(germ)
-    end
-    zebug.trace:print("bindFlyoutToActionBarSlot()","germ...",germ)
-    germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
-end
-
 local function closeAllGerms()
     for name, germ in pairs(germs) do
         germ:Hide()
-        UnregisterStateDriver(germ, "visibility")
     end
 end
 
@@ -101,25 +54,38 @@ end
 -------------------------------------------------------------------------------
 
 function GermCommander:updateAll()
-    zebug:line(20)
+    zebug.trace:line(20)
     if isInCombatLockdown("Reconfiguring") then return end
 
     closeAllGerms()
+
     local placements = self:getPlacementConfigForCurrentSpec()
-    --debug:line(5, "getPlacementConfigForCurrentSpec",placements, " --->")
-    --debug:dump(placements)
     for btnSlotIndex, flyoutId in pairs(placements) do
         local isThere = doesFlyoutExist(flyoutId)
-        zebug:line(5, "flyoutId",flyoutId, "isThere", isThere)
+        zebug.trace:line(5, "flyoutId",flyoutId, "isThere", isThere)
         if isThere then
-            bindFlyoutToActionBarSlot(flyoutId, btnSlotIndex)
+            local germ = self:recallGerm(btnSlotIndex)
+            if not germ then
+                germ = Germ.new(flyoutId, btnSlotIndex)
+                self:saveGerm(germ)
+            end
+            germ:update()
         else
             -- because one toon can delete a flyout while other toons still have it on their bars
-            zebug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETING!")
+            zebug.warn:print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
             GermCommander:deletePlacement(btnSlotIndex)
-            zebug:line(5, "flyoutId",flyoutId, "doesFlyoutExists()","NOPE!!! DELETED!!!")
         end
     end
+end
+
+function GermCommander:recallGerm(btnSlotIndex)
+    return germs[btnSlotIndex]
+end
+
+---@param germ Germ -- IntelliJ-EmmyLua annotation
+function GermCommander:saveGerm(germ)
+    local btnSlotIndex = germ:getBtnSlotIndex()
+    germs[btnSlotIndex] = germ
 end
 
 function GermCommander:newGermProxy(flyoutId, icon)

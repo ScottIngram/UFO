@@ -40,6 +40,8 @@ function FlyoutDef:oneOfUs(self)
     local privateData = {
         alreadyCoercedMyButtons = false,
     }
+    function privateData:_setUsableFlyoutDef(usableFlyoutDef) privateData.usableFlyoutDef = usableFlyoutDef end
+    function privateData:_setCachedStrLists(strLists) privateData.cachedStrLists = strLists end
     function privateData:_setCachedLists(lists) privateData.cachedLists = lists end
     function privateData:setAlreadyCoercedMyButtons() privateData.alreadyCoercedMyButtons = true end
 
@@ -65,6 +67,8 @@ end
 function FlyoutDef:setCachedLists(lists)
     zebug.trace:print("self.name",self.name, "lists",lists)
     self:_setCachedLists(lists)
+    self:_setCachedStrLists(nil) -- always clear the stringy copy when the base changes
+    self:_setUsableFlyoutDef(nil) -- always clear the filtered copy when the base changes
 end
 
 function FlyoutDef:newId()
@@ -158,6 +162,11 @@ end
 function FlyoutDef:filterOutUnusable()
     zebug:print("self.name", self.name)
 
+    if self.usableFlyoutDef then
+        zebug.trace:print("returning chached usableFlyoutDef")
+        return self.usableFlyoutDef
+    end
+
     local usableFlyoutDef = FlyoutDef:new()
     ---@param btn ButtonDef
     for i, btn in ipairs(self:getAllButtonDefs()) do
@@ -171,6 +180,7 @@ function FlyoutDef:filterOutUnusable()
     usableFlyoutDef.name = self.name
     usableFlyoutDef.icon = self.icon
     usableFlyoutDef.setAlreadyCoercedMyButtons() -- because the source btns have already been coerced
+    self:_setUsableFlyoutDef(usableFlyoutDef)
     return usableFlyoutDef
 end
 
@@ -205,4 +215,25 @@ function FlyoutDef:asLists()
     zebug.trace:dumpy("lists",lists)
     self:setCachedLists(lists)
     return lists
+end
+
+function FlyoutDef:asStrLists()
+    local cache = self.cachedStrLists
+    if cache then return cache end
+
+    local asLists = self:asLists()
+
+    local asStrLists = {
+        spellIds  = fknJoin(asLists.spellIds),
+        names     = fknJoin(asLists.names),
+        blizTypes = fknJoin(asLists.blizTypes),
+        petGuids  = fknJoin(asLists.petGuids),
+    }
+
+    zebug.trace:print("UFO_NAMES",      asStrLists.names)
+    zebug.trace:print("UFO_BLIZ_TYPES", asStrLists.blizTypes)
+    zebug.trace:print("UFO_PETS",       asStrLists.petGuids)
+
+    self.cachedStrLists = asStrLists
+    return asStrLists
 end

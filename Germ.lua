@@ -133,20 +133,53 @@ local snippet_Germ_Click = [=[
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
-function Germ.new(flyoutId, actionBarBtn)
+function Germ.new(flyoutId, btnSlotIndex)
     assertIsFunctionOf(flyoutId,Germ)
-    local flyoutConf = FlyoutDefsDb:get(flyoutId)
-    if not flyoutConf then return end -- because one toon can delete a flyout while other toons still have it on their bars
-    local name = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
+
+    -- which action/bonus/multi bar are we on?
+    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
+    local actionBarDef = BLIZ_BAR_METADATA[barNum]
+    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum) -- in case Blizzard adds more bars, complain here clearly.
+
+    -- which of the bar's many buttons are we tied to?
+    local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
+    if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
+    local actionBarName    = actionBarDef.name
+    local actionBarBtnName = actionBarName .. "Button" .. btnNum
+    local actionBarBtn     = _G[actionBarBtnName] -- grab the button object from Blizzard's GLOBAL dumping ground
+    local myName           = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
+
     ---@type Germ
-    local protoGerm = CreateFrame("CheckButton", name, actionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
+    local protoGerm = CreateFrame("CheckButton", myName, actionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
+
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
     local self = deepcopy(Germ, protoGerm)
-    self.flyoutId = flyoutId
-    self.flyoutMenu = UIUFO_FlyoutMenuForGerm -- the one UI object is reused by every germ
-    --self:setHandlers()
+
+    -- initialize my fields, handlers, etc.
+    self.btnSlotIndex = btnSlotIndex
+    self.action       = btnSlotIndex -- used deep inside the Bliz APIs
+    self.flyoutId     = flyoutId
+    self.flyoutMenu   = UIUFO_FlyoutMenuForGerm -- the one UI object is reused by every germ
+    self:setHandlers()
+
+    if actionBarDef.visibleIf then
+        -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
+        self.visibleIf = actionBarDef.visibleIf
+        local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. self.visibleIf
+        RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
+    end
+
     return self
+end
+
+function Germ:getDirection()
+    -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
+    -- ask the bar instance what direction to fly
+    local myActionBarBtnParent = self:GetParent()
+    local barObj = myActionBarBtnParent.bar
+    local direction = barObj:GetSpellFlyoutDirection()
+    return direction or "UP"
 end
 
 function Germ:updateAllBtnCooldownsEtc()
@@ -177,7 +210,7 @@ function Germ:setHandlers()
     self:SetFrameLevel(100)
     self:SetToplevel(true)
 
-    self:SetAttribute("flyoutDirection", self.direction)
+    self:SetAttribute("flyoutDirection", self:getDirection())
     self:SetFrameRef("UIUFO_FlyoutMenuForGerm", UIUFO_FlyoutMenuForGerm)
 
     -- TODO: these only need to be set when the germ is first created.
@@ -219,9 +252,11 @@ function Germ:setFlyoutId(flyoutId)
     self.flyoutId = flyoutId
 end
 
-function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
+function Germ:update()
     assertIsMethodOf(self, Germ)
-    zebug:line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "direction",direction, "FlyoutDefsDb.isInitialized", FlyoutDefsDb.isInitialized)
+    local flyoutId = self.flyoutId
+    local btnSlotIndex = self.btnSlotIndex
+    zebug.trace:line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
 
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     if not flyoutDef then
@@ -232,11 +267,6 @@ function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
         return
     end
 
-    self.direction            = direction
-    self.btnSlotIndex = btnSlotIndex
-    self.action       = btnSlotIndex -- used deep inside the Bliz APIs
-    self:setFlyoutId(flyoutId)
-
     -- discard any buttons that the toon can't ever use
     local usableFlyout = flyoutDef:filterOutUnusable()
 
@@ -246,25 +276,14 @@ function Germ:redefine(flyoutId, btnSlotIndex, direction, visibleIf)
 
     -- attach string representations of the buttons
     -- because Blizzard "secure" templates don't let us attach the actual array
-    local asLists = usableFlyout:asLists()
-    self:SetAttribute("UFO_SPELL_IDS", fknJoin(asLists.spellIds))
-    self:SetAttribute("UFO_NAMES", fknJoin(asLists.names))
-    self:SetAttribute("UFO_BLIZ_TYPES", fknJoin(asLists.blizTypes))
-    self:SetAttribute("UFO_PETS", fknJoin(asLists.petGuids))
+    local asStrLists = usableFlyout:asStrLists()
 
-    local UFO_NAMES = self:GetAttribute("UFO_NAMES")
-    local UFO_BLIZ_TYPES = self:GetAttribute("UFO_BLIZ_TYPES")
-    local UFO_PETS  = self:GetAttribute("UFO_PETS")
-    zebug:print("UFO_NAMES",UFO_NAMES)
-    zebug:print("UFO_BLIZ_TYPES",UFO_BLIZ_TYPES)
-    zebug:print("UFO_PETS",UFO_PETS)
+    self:SetAttribute("UFO_SPELL_IDS",  asStrLists.spellIds)
+    self:SetAttribute("UFO_NAMES",      asStrLists.names)
+    self:SetAttribute("UFO_BLIZ_TYPES", asStrLists.blizTypes)
+    self:SetAttribute("UFO_PETS",       asStrLists.petGuids)
 
-    self:setHandlers() -- TODO: move this into self:new() and rework bindFlyoutToActionBarSlot() so it give more info to :new()
-
-    if visibleIf then
-        local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. visibleIf
-        RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
-    else
+    if not self.visibleIf then
         self:Show()
     end
 end

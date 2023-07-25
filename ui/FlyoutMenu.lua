@@ -151,7 +151,7 @@ end
 
 ---@param germ Germ
 function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
-    self.direction = germ.direction
+    self.direction = germ:getDirection()
 
     germ:SetChecked(not germ:GetChecked())
 
