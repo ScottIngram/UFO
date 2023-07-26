@@ -21,27 +21,11 @@ function Config:initializeFlyouts()
     end
 end
 
-function Config:nuke_a1()
-    UFO_SV_ACCOUNT.flyouts = {}
-end
-
-function Config:nuke_a2()
-    UFO_SV_ACCOUNT.n = 0
-    UFO_SV_ACCOUNT.flyouts_a2 = {}
-    UFO_SV_ACCOUNT.orderedFlyoutIds = {}
-    UFO_SV_TOON.placementsForAllSpecs_a2 = {}
-    UFO_SV_ACCOUNT.xedni = nil
-    UFO_SV_ACCOUNT.flyoutXedni = nil
-    UFO_SV_ACCOUNT.flyoutIdList = nil
-    UFO_SV_ACCOUNT.OLD_flyouts = nil
-end
-
 -- the set of flyouts is shared between all toons on the account
 function Config:getFlyoutDefs()
     return UFO_SV_ACCOUNT.flyouts
 end
 
--- caches the computationally generated lookup index
 function Config:getOrderedFlyoutIds()
     return UFO_SV_ACCOUNT.orderedFlyoutIds
 end
@@ -57,18 +41,13 @@ end
 
 function Config:initializePlacements()
     if not UFO_SV_TOON then
-        UFO_SV_TOON = { placementsForAllSpecs_a2 = {} }
+        UFO_SV_TOON = { placementsForAllSpecs = {} }
     end
-    -- TMP
-    if not UFO_SV_TOON.placementsForAllSpecs_a2 then
-        UFO_SV_TOON.placementsForAllSpecs_a2 = {}
-    end
-
 end
 
 -- the placement of flyouts on the action bars is stored separately for each toon
 function Config:getAllSpecsPlacementsConfig()
-    return UFO_SV_TOON.placementsForAllSpecs_a2
+    return UFO_SV_TOON.placementsForAllSpecs
 end
 
 -------------------------------------------------------------------------------
