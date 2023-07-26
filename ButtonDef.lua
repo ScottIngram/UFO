@@ -162,7 +162,7 @@ function ButtonDef:getIcon()
     elseif t == ButtonType.ITEM or t == ButtonType.TOY then
         return GetItemIcon(id)
     elseif t == ButtonType.MACRO then
-        if canThisToonUse(self) then
+        if self:isUsable() then
             local _, texture, _ = GetMacroInfo(id)
             return texture
         else
@@ -226,7 +226,7 @@ function ButtonDef:getToolTipSetter()
             zebug.info:print("MACRO! macroId",macroId, "cached1",Cache1macroId,"cahced2",upToDateId, "btnDef name",self.name, "i_name",i_name, "n_name",n_name, "i_body", trim1(i_body), "n_body",trim1(n_body))
             zebug.trace:dumpy("self",self)
             local text
-            if canThisToonUse(self) then
+            if self:isUsable() then
                 text = "Macro: ".. macroId .." " .. (i_name or "UNKNOWN")
             else
                 text = "Toon Macro for " .. self.macroOwner

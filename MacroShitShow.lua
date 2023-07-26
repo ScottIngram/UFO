@@ -200,22 +200,6 @@ function redefineMacro(flyoutDef, btnDef, delta)
     return false
 end
 
--- TODO: move to ButtonDef.lua
----@param btnDef ButtonDef
-function canThisToonUse(btnDef)
-    if isMacroGlobal(btnDef.macroId) then
-        return true
-    end
-
-    local owner = btnDef.macroOwner
-    local me = getIdForCurrentToon()
-    if owner == me then
-        return true
-    end
-
-    return false
-end
-
 ---@class TypeOfDelta
 local TypeOfDelta = {
     MOVE   = { shiftBy = 0 },
@@ -255,7 +239,7 @@ function makeMoverFunc(typeOfDelta, initialPos, destinationPos)
     ---@param flyoutDef FlyoutDef
     local mover = function(btnDef, _, i, flyoutDef)
         if comparable(initialPos, btnDef.macroId) and btnDef.macroId >= floorId and btnDef.macroId <= ceilingId then
-            if not canThisToonUse(btnDef) then return end
+            if not btnDef:isUsable() then return end
             local newId = btnDef.macroId + shiftBy
             zebug.info:setMethodName("MACRO MOVER"):print("macro ID SHIFT for flyout",flyoutDef.id, "btn #",i, "name",btnDef.name, "shifting ID",btnDef.macroId, "by", shiftBy)
             btnDef.macroId = newId
@@ -315,7 +299,7 @@ function syncFlyoutButtonsWithMacros(delta)
             ---@param btnDef ButtonDef
             flyoutDef:batchDeleteBtns(function(btnDef)
                 if btnDef.type == ButtonType.MACRO then
-                    if not canThisToonUse(btnDef, delta.oldIndex) then return end -- don't delete non-account macros owned by other toons
+                    if not btnDef:isUsable() then return end -- don't delete non-account macros owned by other toons
 
                     local killIt = btnDef.macroId == delta.oldIndex
                     zebug.info:setMethodName("syncFlyoutButtonsWithMacros:CALLBACK"):print("flyoutId",flyoutDef.flyoutId, "macroId",btnDef.macroId, "deletedMacro.id",delta.oldIndex, "killIt", killIt)
