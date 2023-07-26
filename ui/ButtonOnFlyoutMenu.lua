@@ -122,7 +122,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     ClearCursor()
     GermCommander:updateAll()
     flyoutMenu:updateForCatalog(flyoutId)
-    Ufo.pickedUpMount = nil
+    Ufo.pickedUpBtn = nil
 
     debug.trace:out(X,X,"ButtonOnFlyoutMenu:onReceiveDragAddIt()", "oldBtnDef",oldBtnDef)
     if oldBtnDef then

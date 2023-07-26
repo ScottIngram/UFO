@@ -295,10 +295,8 @@ function ButtonDef:getFromCursor()
         -- this is an abnormal result containing a useless ID which isn't accepted by any API.  Not helpful.
         -- It's caused when the mouse pointer is loaded via Bliz's API PickupSpell(withTheSpellIdOfSomeMount)
         -- This is a workaround to Bliz's API and retrieves a usable ID from my secret stash created when the user grabbed the mount.
-        if Ufo.pickedUpMount then
-            btnDef.type = ButtonType.MOUNT
-            btnDef.spellId = Ufo.pickedUpMount.spellId
-            btnDef.mountId = Ufo.pickedUpMount.mountId
+        if Ufo.pickedUpBtn then
+            btnDef = Ufo.pickedUpBtn
         else
             zebug.warn:print("Sorry, the Blizzard API provided bad data for this mount.")
         end
@@ -316,7 +314,6 @@ function ButtonDef:getFromCursor()
         btnDef.macroId = c1
         if not isMacroGlobal(c1) then
             btnDef.macroOwner = (Ufo.pickedUpBtn and Ufo.pickedUpBtn.macroOwner) or getIdForCurrentToon()
-            Ufo.pickedUpBtn = nil
         end
     elseif type == ButtonType.PET then
         btnDef.petGuid = c1
@@ -331,6 +328,8 @@ function ButtonDef:getFromCursor()
         btnDef:getName()
     end
 
+    Ufo.pickedUpBtn = nil
+
     return btnDef
 end
 
@@ -338,19 +337,9 @@ function ButtonDef:pickupToCursor()
     local type = self.type
     local id = self:getIdForBlizApi()
     local pickup = BlizApiFieldDef[type].pickerUpper
+    Ufo.pickedUpBtn = self
 
     zebug.trace:print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId)
-
-    -- TODO: consolidate these 2 cases
-    if type == ButtonType.MOUNT then
-        -- set a global variable because the Bliz API is broken.  Gasp!  Shocking, I know!
-        Ufo.pickedUpMount = {
-            mountId = self.mountId,
-            spellId = self.spellId
-        }
-    elseif type == ButtonType.MACRO then
-        Ufo.pickedUpBtn = self
-    end
 
     pickup(id)
 end
