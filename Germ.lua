@@ -213,8 +213,6 @@ function Germ:setHandlers()
     self:SetAttribute("flyoutDirection", self:getDirection())
     self:SetFrameRef("UIUFO_FlyoutMenuForGerm", UIUFO_FlyoutMenuForGerm)
 
-    -- TODO: these only need to be set when the germ is first created.
-    -- TODO: find a way to eliminate the need for OnUpdate
     self:SetScript("OnUpdate",      handlers.OnUpdate)
     self:SetScript("OnEnter",       handlers.OnEnter)
     self:SetScript("OnLeave",       handlers.OnLeave)

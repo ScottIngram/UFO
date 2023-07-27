@@ -114,7 +114,7 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
     local existingFlyoutId = getFlyoutIdForSlot(btnSlotIndex)
 
     local type, macroId = GetActionInfo(btnSlotIndex)
-    zebug.trace:print("existingFlyoutId",existingFlyoutId, "type",type, "macroId",macroId)
+    zebug.info:print("existingFlyoutId",existingFlyoutId, "type",type, "macroId",macroId)
     if not type then
         return
     end
@@ -138,6 +138,16 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
     if configChanged then
         self:updateAll()
     end
+end
+
+function GermCommander:isDraggingProxy()
+    return self:getFlyoutIdFromCursor() and true or false
+end
+
+function GermCommander:getFlyoutIdFromCursor()
+    local type, macroId = GetCursorInfo()
+    zebug.trace:print("type",type,"macroId",macroId, "isMacro",type == "macro")
+    return GermCommander:getFlyoutIdFromGermProxy(type, macroId)
 end
 
 -- TODO: extract the owner

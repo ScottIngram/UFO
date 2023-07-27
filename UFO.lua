@@ -5,6 +5,7 @@
 
 TODO
 * BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
+* FEATURE: reorder flyouts in the catalog
 * FEATURE: export/import - look at MacroManager for the [link] code.
 * FEATURE: replace existing icon picker with something closer to MacroManager / Weak Auras
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
@@ -120,6 +121,13 @@ function EventHandlers:UPDATE_MACROS()
     if not isUfoInitialized then return end
     zebug.trace:line(40,"Heard event: UPDATE_MACROS")
     MacroShitShow:analyzeMacroUpdate()
+end
+
+function EventHandlers:CURSOR_CHANGED()
+    if not isUfoInitialized then return end
+    zebug.trace:line(40,"Heard event: CURSOR_CHANGED")
+    -- this event happens before ACTIONBAR_SLOT_CHANGED which needs the proxy -- TODO: find a workaround
+    --Catalog:clearProxyOnCursosChange()
 end
 
 -------------------------------------------------------------------------------
@@ -264,6 +272,40 @@ function deleteFromArray(array, killTester)
     return modified
 end
 
+function moveElementInArray(array, oldPos, newPos)
+    if oldPos == newPos then return false end
+
+    zebug.info:line(80)
+    -- iterate through the array in whichever direction will encounter the oldPos first and newPos last
+    -- ahhh, I feel like I'm writing C code again... flashback to 1994... I'm old :-/
+    local forward = oldPos < newPos
+    local start = forward and 1 or #array
+    local last  = forward and #array or 1
+    local inc   = forward and 1 or -1
+    local shift = forward and -1 or 1
+
+    local nomad = array[oldPos]
+    zebug.info:print("moving",nomad, "from", oldPos, "to",newPos)
+    zebug.info:dumpy("ORIGINAL array", array)
+
+    local inMoverMode
+    for i=start,last,inc do
+        if i == oldPos then
+            inMoverMode = true
+        elseif i == newPos then
+            array[i] = nomad
+            zebug.info:dumpy("shifted array", array)
+            return true
+        end
+
+        if inMoverMode then
+            array[i] = array[i + inc]
+        end
+    end
+
+    return true
+end
+
 
 -- convert data structures into JSON-like strings
 -- useful for injecting tables into secure functions because SFs don't allow tables
@@ -362,6 +404,15 @@ function initalizeAddonStuff()
     ButtonDef:registerToolTipRecorder()
     Catalog:createToggleButton(SpellBookFrame)
     isUfoInitialized = true
+
+--[[
+    local x = {1,2,3,4,5,6,7,8,9}
+    moveElementInArray(x, 3, 6)
+    moveElementInArray(x, 6, 3)
+    moveElementInArray(x, 9, 1)
+    moveElementInArray(x, 3, 2)
+    moveElementInArray(x, 2, 3)
+]]
 
     --FlyoutDefsDb:convertFloFlyoutToUfoAlpha1()
     --FlyoutDefsDb:convertfoAlpha1ToUfoAlpha2()

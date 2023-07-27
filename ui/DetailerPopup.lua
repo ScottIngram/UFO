@@ -136,13 +136,6 @@ function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pu
     GermCommander:updateAll()
 end
 
-function GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart(btnInCatalog)
-    local flyoutId = btnInCatalog.flyoutId
-    if exists(flyoutId) then
-        FlyoutMenu:pickup(flyoutId)
-    end
-end
-
 function GLOBAL_UIUFO_CatalogPopupBtn_OnClick(btn, whichMouseButton, down)
     local popup = btn:GetParent()
     local offset = FauxScrollFrame_GetOffset(UIUFO_DetailerPopupScrollFrame) or 0

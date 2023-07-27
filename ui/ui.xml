@@ -85,7 +85,7 @@
         </Scripts>
     </Frame>
 
-    <Button name="UIUFO_CatalogFlyoutOptionsMouseOver" virtual="true">
+    <Button name="UIUFO_CatalogFlyoutButton" virtual="true">
         <Size x="103" y="44"/>
         <Anchors>
             <Anchor point="LEFT" x="2" y="0"/>
@@ -164,6 +164,7 @@
                     </Layer>
                 </Layers>
                 <Scripts>
+                    <OnShow function="GLOBAL_UIUFO_CatalogFlyoutOptionsButtonsMouseOver_OnShow" />
                     <OnEnter>
                         self.texture:SetAlpha(1.0);
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -179,7 +180,7 @@
                     <OnMouseUp>
                         self.texture:SetPoint("TOPLEFT", 0, 0);
                     </OnMouseUp>
-                    <OnClick function="GLOBAL_UIUFO_CatalogFlyoutOptionsMouseOverDeleteButton_OnClick" />
+                    <OnClick function="GLOBAL_UIUFO_CatalogFlyoutButtonDeleteButton_OnClick" />
                 </Scripts>
             </Button>
             <Button name="$parentEditButton" parentKey="EditButton" hidden="true">
@@ -195,6 +196,7 @@
                     </Layer>
                 </Layers>
                 <Scripts>
+                    <OnShow function="GLOBAL_UIUFO_CatalogFlyoutOptionsButtonsMouseOver_OnShow" />
                     <OnEnter>
                         self.texture:SetAlpha(1.0);
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -210,18 +212,20 @@
                     <OnMouseUp>
                         self.texture:SetPoint("TOPLEFT", 0, 0);
                     </OnMouseUp>
-                    <OnClick function="GLOBAL_UIUFO_CatalogFlyoutOptionsMouseOverEditButton_OnClick" />
+                    <OnClick function="GLOBAL_UIUFO_CatalogFlyoutButtonEditButton_OnClick" />
                 </Scripts>
             </Button>
         </Frames>
         <Scripts>
+            <OnEnter function="GLOBAL_UIUFO_CatalogFlyoutButton_OnEnter" />
+            <OnLeave function="GLOBAL_UIUFO_CatalogFlyoutButton_OnLeave" />
             <OnLoad>
                 self:RegisterForDrag("LeftButton");
                 SetClampedTextureRotation(self.BgBottom, 180);
                 SetClampedTextureRotation(self.Arrow, 90);
             </OnLoad>
-            <OnClick function="GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnClick" />
-            <OnDragStart function="GLOBAL_UIUFO_CatalogFlyoutOptionsDetailerBtn_OnDragStart" />
+            <OnClick function="GLOBAL_UIUFO_CatalogFlyoutOptionsButton_OnClick" />
+            <OnDragStart function="GLOBAL_UIUFO_CatalogFlyoutButton_OnDragStart" />
         </Scripts>
         <NormalTexture name="$parentIcon" parentKey="icon">
             <Size>

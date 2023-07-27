@@ -185,6 +185,20 @@ function FlyoutDefsDb:delete(flyoutId)
     end
 end
 
+function FlyoutDefsDb:move(flyoutId, destinationIndex)
+    local xedni = Xedni:get()
+    local flyoutIndex = xedni[flyoutId]
+    local flyoutList = Config:getOrderedFlyoutIds()
+    local moved = moveElementInArray(flyoutList, flyoutIndex, destinationIndex)
+    if moved then
+        Xedni:nuke() -- TODO: do something more elegant than erasing the old one
+    end
+end
+
+function Xedni:nuke()
+    Xedni.lookup = nil
+end
+
 ---@return table
 function Xedni:get()
     if not Xedni.lookup then
