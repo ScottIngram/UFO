@@ -69,7 +69,7 @@ function GermCommander:updateAll()
                 germ = Germ.new(flyoutId, btnSlotIndex)
                 self:saveGerm(germ)
             end
-            germ:update()
+            germ:update(flyoutId)
         else
             -- because one toon can delete a flyout while other toons still have it on their bars
             zebug.warn:print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
@@ -78,6 +78,7 @@ function GermCommander:updateAll()
     end
 end
 
+---@return Germ
 function GermCommander:recallGerm(btnSlotIndex)
     return germs[btnSlotIndex]
 end

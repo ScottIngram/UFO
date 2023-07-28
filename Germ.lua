@@ -250,9 +250,8 @@ function Germ:setFlyoutId(flyoutId)
     self.flyoutId = flyoutId
 end
 
-function Germ:update()
+function Germ:update(flyoutId)
     assertIsMethodOf(self, Germ)
-    local flyoutId = self.flyoutId
     local btnSlotIndex = self.btnSlotIndex
     zebug.trace:line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
 
