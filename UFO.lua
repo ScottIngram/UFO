@@ -5,15 +5,18 @@
 
 TODO
 * BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
-* FEATURE: reorder flyouts in the catalog
+* FEATURE: support various action bar addons
 * FEATURE: export/import - look at MacroManager for the [link] code.
 * FEATURE: replace existing icon picker with something closer to MacroManager / Weak Auras
+* BUG: canUse filter doesn't respect faction restricted pets / mounts
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
 * use ACE Lib/DataBroker so Titan Panel and other addons can open the UFO catalog
 * question: can I use GetItemSpell(itemId) to simplify my code ?
+* BUG: edit-mode -> change direction doesn't automatically update existing germs
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 *
+* DONE: FEATURE: reorder flyouts in the catalog
 * DONE: BUG: when a macro is added or deleted (from the Bliz macro editor) then all of the macro IDs shift by 1 FUBARing the macro IDs in UFO
 * DONE: BUG: the empty btn sparkles on every OnUpdate
 * DONE: BUG: Oops, I clobbered the frames on the germ flyouts
@@ -150,7 +153,7 @@ function createEventListener(targetSelfAsProxy, eventHandlers)
 end
 
 -------------------------------------------------------------------------------
--- Random stuff - TODO: tidy up
+-- Utility Functions
 -------------------------------------------------------------------------------
 
 function isInCombatLockdown(actionDescription)
@@ -170,9 +173,8 @@ function getIdForCurrentToon()
 end
 
 function getPetNameAndIcon(petGuid)
-    --print("getPetNameAndIcon(): petGuid =",petGuid)
-    local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, tradable, unique, obtainable = C_PetJournal.GetPetInfoByPetID(petGuid)
-    --print("getPetNameAndIcon(): petGuid =",petGuid, "| name =", name, "| icon =", icon)
+    --local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, tradable, unique, obtainable = C_PetJournal.GetPetInfoByPetID(petGuid)
+    local _, _, _, _, _, _, _, name, icon = C_PetJournal.GetPetInfoByPetID(petGuid)
     return name, icon
 end
 
@@ -185,15 +187,11 @@ end
 function fknJoin(array)
     array = array or {}
     local n = lastIndex(array)
-    --print ("OOOOO fknJoin() n =",n, "| array -->")
-    --DevTools_Dump(array)
     local omfgDumbAssLanguage = {}
     for i=1,n,1 do
-        --print("$$$$$ fknJoin() i =",i, "| array[",i,"] =",array[i])
         omfgDumbAssLanguage[i] = array[i] or EMPTY_ELEMENT
     end
     local result = strjoin(DELIMITER,unpack(omfgDumbAssLanguage,1,n)) or ""
-    --print("$$$$= fknJoin() #omfgDumbAssLanguage =",#omfgDumbAssLanguage, "result =",result)
     return result
 end
 
@@ -223,10 +221,6 @@ function stripEmptyElements(table)
     end
     return table
 end
-
--------------------------------------------------------------------------------
--- Utility Functions
--------------------------------------------------------------------------------
 
 function deepcopy(src, target)
     local orig_type = type(src)
@@ -282,7 +276,6 @@ function moveElementInArray(array, oldPos, newPos)
     local start = forward and 1 or #array
     local last  = forward and #array or 1
     local inc   = forward and 1 or -1
-    local shift = forward and -1 or 1
 
     local nomad = array[oldPos]
     zebug.info:print("moving",nomad, "from", oldPos, "to",newPos)
@@ -305,7 +298,6 @@ function moveElementInArray(array, oldPos, newPos)
 
     return true
 end
-
 
 -- convert data structures into JSON-like strings
 -- useful for injecting tables into secure functions because SFs don't allow tables
@@ -403,21 +395,8 @@ function initalizeAddonStuff()
     FlyoutMenu:initializeOnClickHandlersForFlyouts()
     ButtonDef:registerToolTipRecorder()
     Catalog:createToggleButton(SpellBookFrame)
+
     isUfoInitialized = true
-
---[[
-    local x = {1,2,3,4,5,6,7,8,9}
-    moveElementInArray(x, 3, 6)
-    moveElementInArray(x, 6, 3)
-    moveElementInArray(x, 9, 1)
-    moveElementInArray(x, 3, 2)
-    moveElementInArray(x, 2, 3)
-]]
-
-    --FlyoutDefsDb:convertFloFlyoutToUfoAlpha1()
-    --FlyoutDefsDb:convertfoAlpha1ToUfoAlpha2()
-    --FlyoutDefsDb:convertfoAlpha1PlacementsToUfoAlpha2()
-
 end
 
 -------------------------------------------------------------------------------
