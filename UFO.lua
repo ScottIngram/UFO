@@ -20,6 +20,7 @@ TODO
 * BUG: edit-mode -> change direction doesn't automatically update existing germs
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 *
+* DONE: FEATURE: support ElvUI
 * DONE: FEATURE: support Bartender4
 * DONE: FEATURE: reorder flyouts in the catalog
 * DONE: BUG: when a macro is added or deleted (from the Bliz macro editor) then all of the macro IDs shift by 1 FUBARing the macro IDs in UFO
@@ -393,7 +394,8 @@ end
 
 local SUPPORTED_ADDONS = {
     BARTENDER4 = {
-        getParent = function(btnSlotIndex)
+        getParent = function(btnBarInfo)
+            local btnSlotIndex = btnBarInfo.btnSlotIndex
             local name = "BT4Button" .. btnSlotIndex
             local parent = _G["BT4Button" .. btnSlotIndex]
             parent.GetName = function() return name end
@@ -402,6 +404,19 @@ local SUPPORTED_ADDONS = {
         end,
         getDirection = function(parent)
             return parent.config.flyoutDirection
+        end,
+    },
+    ELVUI = {
+        getParent = function(btnBarInfo)
+            local btnSlotIndex = btnBarInfo.btnSlotIndex
+            local barName =  ELVUI .."_Bar".. btnBarInfo.barNum
+            local btnName = barName .."Button"..  btnBarInfo.btnNum
+            local parent = _G[btnName]
+            zebug.trace:name("ELVUI:getParent"):print("btnSlotIndex",btnSlotIndex, "barNum",btnBarInfo.barNum, "barName",barName, "btnName",btnName, "parent",parent)
+            return parent
+        end,
+        getDirection = function(parent)
+            return parent.db.flyoutDirection
         end,
     },
 }

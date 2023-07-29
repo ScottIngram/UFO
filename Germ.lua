@@ -135,26 +135,20 @@ local snippet_Germ_Click = [=[
 
 function Germ.new(flyoutId, btnSlotIndex)
     assertIsFunctionOf(flyoutId,Germ)
+    local actionBarBtn, myName
 
     -- which action/bonus/multi bar are we on?
-    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
-    local actionBarDef = BLIZ_BAR_METADATA[barNum]
-    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum) -- in case Blizzard adds more bars, complain here clearly.
-
-    -- which of the bar's many buttons are we tied to?
-    local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
-    if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
-    local actionBarName    = actionBarDef.name
-    local actionBarBtnName = actionBarName .. "Button" .. btnNum
-    local actionBarBtn     = _G[actionBarBtnName] -- grab the button object from Blizzard's GLOBAL dumping ground
-    local myName           = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
+    local btnBarInfo = extract(btnSlotIndex)
 
     if Ufo.thirdPartyAddon then
-        actionBarBtn = Ufo.thirdPartyAddon.getParent(btnSlotIndex)
+        actionBarBtn = Ufo.thirdPartyAddon.getParent(btnBarInfo)
         myName = GERM_UI_NAME_PREFIX .. "For" .. actionBarBtn:GetName()
+    else
+        actionBarBtn = _G[btnBarInfo.actionBarBtnName]
+        myName = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
     end
 
-    zebug.info:print("visibleIf",actionBarDef.visibleIf, "barNum",barNum, "btnNum",btnNum, "actionBarName",actionBarName, "parent",actionBarBtn:GetName(), "myName",myName)
+    zebug.trace:print("visibleIf",btnBarInfo.actionBarDef.visibleIf, "barNum",btnBarInfo.actionBarDef.barNum, "btnNum",btnBarInfo.actionBarDef.btnNum, "actionBarName",btnBarInfo.actionBarDef.actionBarName, "parent",actionBarBtn:GetName(), "myName",myName)
 
     ---@type Germ
     local protoGerm = CreateFrame("CheckButton", myName, actionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
@@ -170,14 +164,33 @@ function Germ.new(flyoutId, btnSlotIndex)
     self.flyoutMenu   = UIUFO_FlyoutMenuForGerm -- the one UI object is reused by every germ
     self:setHandlers()
 
-    if actionBarDef.visibleIf then
+    if btnBarInfo.actionBarDef.visibleIf then
         -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
-        self.visibleIf = actionBarDef.visibleIf
+        self.visibleIf = btnBarInfo.actionBarDef.visibleIf
         local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. self.visibleIf
         RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
     end
 
     return self
+end
+
+function extract(btnSlotIndex)
+    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
+    local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
+    if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
+    local actionBarDef = BLIZ_BAR_METADATA[barNum]
+    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum) -- in case Blizzard adds more bars, complain here clearly.
+    local actionBarName    = actionBarDef.name
+    local actionBarBtnName = actionBarName .. "Button" .. btnNum
+
+    return {
+        btnSlotIndex = btnSlotIndex,
+        barNum = barNum,
+        btnNum = btnNum,
+        actionBarDef = actionBarDef,
+        actionBarName = actionBarName,
+        actionBarBtnName = actionBarBtnName,
+    }
 end
 
 function Germ:getDirection()
@@ -247,9 +260,7 @@ function Germ:setIcon(icon)
 end
 
 function Germ:getBtnSlotIndex()
-    local myActionBarBtnParent = self:GetParent()
-    assert(myActionBarBtnParent, ADDON_NAME..": Um, this germ has no parent?!")
-    return myActionBarBtnParent.btnSlotIndex
+    return self.btnSlotIndex
 end
 
 ---@return string

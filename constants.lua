@@ -42,3 +42,4 @@ CONSUMABLE = "Consumable"
 DEFAULT_ICON = "INV_Misc_QuestionMark"
 
 BARTENDER4 = "Bartender4"
+ELVUI = "ElvUI"
