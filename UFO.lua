@@ -397,6 +397,7 @@ local SUPPORTED_ADDONS = {
             local name = "BT4Button" .. btnSlotIndex
             local parent = _G["BT4Button" .. btnSlotIndex]
             parent.GetName = function() return name end
+            parent.btnSlotIndex = btnSlotIndex
             return parent
         end,
         getDirection = function(parent)

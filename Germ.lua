@@ -249,7 +249,7 @@ end
 function Germ:getBtnSlotIndex()
     local myActionBarBtnParent = self:GetParent()
     assert(myActionBarBtnParent, ADDON_NAME..": Um, this germ has no parent?!")
-    return myActionBarBtnParent.action
+    return myActionBarBtnParent.btnSlotIndex
 end
 
 ---@return string
