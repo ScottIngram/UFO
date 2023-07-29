@@ -4,7 +4,11 @@
 --[[
 
 TODO
+* FEATURE: support ElvUI
 * BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
+* BUG: fix the funky macro picker blank spaces
+* BUG: fix empty (unusable) flyouts showing remnants from previously opened flyout
+* BUG: if a toon edits a flyout containing buttons they can't use, the buttons go bye-bye.
 * FEATURE: support various action bar addons
 * FEATURE: export/import - look at MacroManager for the [link] code.
 * FEATURE: replace existing icon picker with something closer to MacroManager / Weak Auras
@@ -16,6 +20,7 @@ TODO
 * BUG: edit-mode -> change direction doesn't automatically update existing germs
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 *
+* DONE: FEATURE: support Bartender4
 * DONE: FEATURE: reorder flyouts in the catalog
 * DONE: BUG: when a macro is added or deleted (from the Bliz macro editor) then all of the macro IDs shift by 1 FUBARing the macro IDs in UFO
 * DONE: BUG: the empty btn sparkles on every OnUpdate
@@ -383,11 +388,65 @@ function assertIsMethodOf(firstArg, class)
 end
 
 -------------------------------------------------------------------------------
+-- 3rd-Party Addon Support
+-------------------------------------------------------------------------------
+
+local SUPPORTED_ADDONS = {
+    BARTENDER4 = {
+        getParent = function(btnSlotIndex)
+            local name = "BT4Button" .. btnSlotIndex
+            local parent = _G["BT4Button" .. btnSlotIndex]
+            parent.GetName = function() return name end
+            return parent
+        end,
+        getDirection = function(parent)
+            return parent.config.flyoutDirection
+        end,
+    },
+}
+
+function findSupportedAddons()
+    for addon, methods in pairs(SUPPORTED_ADDONS) do
+        if IsAddOnLoaded(addon) then
+            Ufo.thirdPartyAddon = methods
+            break
+        end
+    end
+end
+
+-- if I go nuts and really abstract this to the max
+--[[
+local BLIZ_METHODS = {
+    getParent = function(btnSlotIndex)
+        local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
+        local actionBarDef = BLIZ_BAR_METADATA[barNum]
+        local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
+        if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
+        local actionBarName    = actionBarDef.name
+        local actionBarBtnName = actionBarName .. "Button" .. btnNum
+
+        -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
+        self.visibleIf = actionBarDef.visibleIf
+        local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. self.visibleIf
+        RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
+
+        return _G[actionBarBtnName] -- grab the button object from Blizzard's GLOBAL dumping ground
+    end,
+    getDirection = function(parent)
+        return parent.config.flyoutDirection
+    end,
+}
+]]
+
+
+-------------------------------------------------------------------------------
 -- Addon Lifecycle
 -------------------------------------------------------------------------------
 
 function initalizeAddonStuff()
     if isUfoInitialized then return end
+
+    findSupportedAddons()
 
     Catalog:definePopupDialogWindow()
     Config:initializeFlyouts()

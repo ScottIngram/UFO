@@ -40,3 +40,5 @@ DELIMITER = "\a"
 EMPTY_ELEMENT = "\t" -- strjoin skips "" as if they were nil, but "" isn't treated as nil. omfg Lua, get it together.
 CONSUMABLE = "Consumable"
 DEFAULT_ICON = "INV_Misc_QuestionMark"
+
+BARTENDER4 = "Bartender4"

@@ -149,6 +149,13 @@ function Germ.new(flyoutId, btnSlotIndex)
     local actionBarBtn     = _G[actionBarBtnName] -- grab the button object from Blizzard's GLOBAL dumping ground
     local myName           = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
 
+    if Ufo.thirdPartyAddon then
+        actionBarBtn = Ufo.thirdPartyAddon.getParent(btnSlotIndex)
+        myName = GERM_UI_NAME_PREFIX .. "For" .. actionBarBtn:GetName()
+    end
+
+    zebug.info:print("visibleIf",actionBarDef.visibleIf, "barNum",barNum, "btnNum",btnNum, "actionBarName",actionBarName, "parent",actionBarBtn:GetName(), "myName",myName)
+
     ---@type Germ
     local protoGerm = CreateFrame("CheckButton", myName, actionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
 
@@ -176,10 +183,15 @@ end
 function Germ:getDirection()
     -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
     -- ask the bar instance what direction to fly
-    local myActionBarBtnParent = self:GetParent()
-    local barObj = myActionBarBtnParent.bar
-    local direction = barObj:GetSpellFlyoutDirection()
-    return direction or "UP"
+    local direction = "UP" -- default
+    local parent = self:GetParent()
+    if Ufo.thirdPartyAddon then
+        direction = Ufo.thirdPartyAddon.getDirection(parent)
+    else
+        direction = parent.bar:GetSpellFlyoutDirection()
+    end
+
+    return direction
 end
 
 function Germ:updateAllBtnCooldownsEtc()
@@ -253,7 +265,7 @@ end
 function Germ:update(flyoutId)
     assertIsMethodOf(self, Germ)
     local btnSlotIndex = self.btnSlotIndex
-    zebug.trace:line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex)
+    zebug.trace:line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName())
 
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     if not flyoutDef then
