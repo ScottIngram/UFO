@@ -174,6 +174,7 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
             btnFrame:setIconTexture( btnDef:getIcon() )
             btnFrame:setGeometry(self.direction)
         else
+            btnFrame:setIconTexture(DEFAULT_ICON)
             break
         end
     end
