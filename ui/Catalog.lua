@@ -460,5 +460,5 @@ function GLOBAL_UIUFO_CatalogFlyoutButtonEditButton_OnClick(editBtnFrame)
     popup.flyoutId = parent.flyoutId;
     local itemTexture = parent.icon:GetTexture()
     itemTexture = string.upper(string.sub(itemTexture, string.len("INTERFACE\\ICONS\\") + 1));
-    GLOBAL_UIUFO_RecalculateDetailerPopup(itemTexture);
+    initDetailerPopup(itemTexture);
 end

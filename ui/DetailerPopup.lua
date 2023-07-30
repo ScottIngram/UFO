@@ -18,14 +18,14 @@ local NUM_FLYOUT_ICONS_SHOWN = 15
 local NUM_FLYOUT_ICONS_PER_ROW = 5
 local NUM_FLYOUT_ICON_ROWS = 3
 local FLYOUT_ICON_ROW_HEIGHT = 36
-local FC_ICON_FILENAMES = {}
+local FC_ICON_FILENAMES
 
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting DetailerPopup XML Callbacks
 -------------------------------------------------------------------------------
 
 function GLOBAL_UIUFO_DetailerPopup_Update()
-    refreshFlyoutIconInfo()
+    initIconList()
 
     local popup = UIUFO_DetailerPopup
     local buttons = popup.buttons
@@ -36,7 +36,7 @@ function GLOBAL_UIUFO_DetailerPopup_Update()
         local button = buttons[i]
         index = (offset * NUM_FLYOUT_ICONS_PER_ROW) + i
         if index <= #FC_ICON_FILENAMES then
-            texture = getFlyoutIconInfo(index)
+            texture = getIcon(index)
 
             if(type(texture) == "number") then
                 button.icon:SetTexture(texture);
@@ -101,7 +101,7 @@ function GLOBAL_UIUFO_DetailerPopup_OnShow(detailerPopup)
     detailerPopup.name = nil
     detailerPopup.flyoutId = nil
     detailerPopup.isEdit = false
-    GLOBAL_UIUFO_RecalculateDetailerPopup()
+    initDetailerPopup()
 end
 
 function GLOBAL_UIUFO_DetailerPopup_OnHide(detailerPopup)
@@ -117,7 +117,7 @@ function GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(okayBtn, whichMouseButton, pu
     local popup = okayBtn:GetParent()
     local iconTexture
     if popup.selectedIcon ~= 1 then
-        iconTexture = getFlyoutIconInfo(popup.selectedIcon)
+        iconTexture = getIcon(popup.selectedIcon)
     end
 
     local flyoutDef
@@ -150,7 +150,7 @@ function GLOBAL_UIUFO_CatalogPopupBtn_OnClick(btn, whichMouseButton, down)
     end
 end
 
-function GLOBAL_UIUFO_RecalculateDetailerPopup(iconTexture)
+function initDetailerPopup(iconTexture)
     local popup = UIUFO_DetailerPopup;
 
     if iconTexture then
@@ -166,13 +166,13 @@ function GLOBAL_UIUFO_RecalculateDetailerPopup(iconTexture)
     To do this, we need to find the current set (by icon) and move the offset of the UIUFO_DetailerPopup
     to display it. Issue ID: 171220
     ]]
-    refreshFlyoutIconInfo()
+    initIconList()
     local totalItems = #FC_ICON_FILENAMES
     local texture, _
     if popup.selectedTexture then
         local foundIndex = nil
         for index=1, totalItems do
-            texture = getFlyoutIconInfo(index)
+            texture = getIcon(index)
             if texture == popup.selectedTexture then
                 foundIndex = index
                 break
@@ -199,44 +199,17 @@ end
 -- Functions Supporting DetailerPopup UI
 -------------------------------------------------------------------------------
 
---[[
-RefreshFlyoutIconInfo() counts how many uniquely textured spells the player has in the current flyout.
-And tries to make the first few icons in the popup picker be the same as the buttons on the flyout ???
-]]
-function refreshFlyoutIconInfo()
+function initIconList()
+    if FC_ICON_FILENAMES then
+        return
+    end
+
     FC_ICON_FILENAMES = {}
     FC_ICON_FILENAMES[1] = "INV_MISC_QUESTIONMARK"
-    local index = 2
-
-    local popup = UIUFO_DetailerPopup
-    local name = popup.name
-    local flyoutId = popup.flyoutId
-    zebug.trace:print("name",name, "flyoutId",flyoutId)
-    if flyoutId then
-        local flyoutDef = FlyoutDefsDb:get(flyoutId)
-        local btnDefs = flyoutDef:getAllButtonDefs()
-        ---@param btnDef ButtonDef
-        for i, btnDef in ipairs(btnDefs) do
-            local icon = btnDef:getIcon()
-            if icon then
-                FC_ICON_FILENAMES[index] = gsub( strupper(icon), "INTERFACE\\ICONS\\", "" )
-                if FC_ICON_FILENAMES[index] then
-                    index = index + 1
-                    for j=1, (index-1) do
-                        if FC_ICON_FILENAMES[index] == FC_ICON_FILENAMES[j] then
-                            FC_ICON_FILENAMES[index] = nil
-                            index = index - 1
-                            break
-                        end
-                    end
-                end
-            end
-        end
-    end
     GetLooseMacroIcons(FC_ICON_FILENAMES)
     GetMacroIcons(FC_ICON_FILENAMES)
 end
 
-function getFlyoutIconInfo(index)
+function getIcon(index)
     return FC_ICON_FILENAMES[index]
 end

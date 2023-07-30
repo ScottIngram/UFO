@@ -6,7 +6,6 @@
 TODO
 * BUG: macro shitshow nil error on delete
 * BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
-* BUG: fix the funky macro picker blank spaces
 * BUG: fix empty (unusable) flyouts showing remnants from previously opened flyout
 * BUG: if a toon edits a flyout containing buttons they can't use, the buttons go bye-bye.
 * FEATURE: support various action bar addons
@@ -20,6 +19,7 @@ TODO
 * BUG: edit-mode -> change direction doesn't automatically update existing germs
 * BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 *
+* DONE: BUG: fix the funky macro picker blank spaces
 * DONE: FEATURE: support ElvUI
 * DONE: FEATURE: support Bartender4
 * DONE: FEATURE: reorder flyouts in the catalog
