@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local debug = Debug:new()
+local zebug = Zebug:new()
 
 ---@class ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -86,22 +86,43 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
 
     ---@type FlyoutMenu
     local flyoutFrame = self:GetParent()
-    if flyoutFrame.isForCatalog then
-        local isDragging = GetCursorInfo()
-        if isDragging then
-            self:onReceiveDragAddIt()
-            return
-        end
-
-        self:getDef():pickupToCursor()
-        local flyoutId = flyoutFrame:getId()
-        local flyoutDef = FlyoutDefsDb:get(flyoutId)
-        flyoutDef:removeButton(self:getId())
-        self:setDef(nil)
-        flyoutFrame:updateForCatalog(flyoutId)
-        GermCommander:updateAll()
+    if not flyoutFrame.isForCatalog then
+        return
     end
+
+    local isDragging = GetCursorInfo()
+    if isDragging then
+        self:onReceiveDragAddIt()
+        return
+    end
+
+    local btnDef = self:getDef()
+    if self:abortIfUnusable(btnDef) then
+        return
+    end
+
+    btnDef:pickupToCursor()
+    local flyoutId = flyoutFrame:getId()
+    local flyoutDef = FlyoutDefsDb:get(flyoutId)
+    flyoutDef:removeButton(self:getId())
+    self:setDef(nil)
+    flyoutFrame:updateForCatalog(flyoutId)
+    GermCommander:updateAll()
 end
+
+---@param btnDef ButtonDef
+function ButtonOnFlyoutMenu:abortIfUnusable(btnDef)
+    if (not btnDef) or btnDef:isUsable() then
+        return false
+    end
+
+    local name = btnDef:getName()
+    local msg = name .. " " .. Ufo.L10N.CAN_NOT_MOVE
+    zebug.warn:alert(msg)
+    zebug.warn:print(msg)
+    return true
+end
+
 
 function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     local flyoutMenu = self:getParent()
@@ -109,7 +130,12 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
 
     local crsDef = ButtonDef:getFromCursor()
     if not crsDef then
-        debug.warn:print("Sorry, unsupported type:", Ufo.unknownType)
+        zebug.warn:print("Sorry, unsupported type:", Ufo.unknownType)
+        return
+    end
+
+    local btnDef = self:getDef()
+    if self:abortIfUnusable(btnDef) then
         return
     end
 
@@ -124,7 +150,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     flyoutMenu:updateForCatalog(flyoutId)
     Ufo.pickedUpBtn = nil
 
-    debug.trace:out(X,X,"ButtonOnFlyoutMenu:onReceiveDragAddIt()", "oldBtnDef",oldBtnDef)
+    zebug.trace:print("oldBtnDef",oldBtnDef)
     if oldBtnDef then
         oldBtnDef:pickupToCursor()
     end
@@ -164,7 +190,7 @@ function ButtonOnFlyoutMenu:updateUsable()
             end
         end
 
-        debug.trace:out("#",5,"updateUsable()", "isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
+        zebug.trace:print("isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
     end
 
     local iconFrame = self:getIconFrame();
@@ -182,11 +208,11 @@ function ButtonOnFlyoutMenu:updateCooldown()
     local type = btnDef and btnDef.type
     local itemId = btnDef and btnDef.itemId
     local spellId = btnDef and btnDef.spellId
-    debug.trace:out("X",40,"updateCooldown() 1", "type",type, "itemId",itemId, "spellId",spellId)
+    zebug.trace:print("type",type, "itemId",itemId, "spellId",spellId)
 
     if exists(spellId) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
-        debug.trace:out("X",20,"updateCooldown() SPELL", "spellId",spellId)
+        zebug.trace:print("spellId",spellId)
         SpellFlyoutButton_UpdateCooldown(self)
         return
     end
@@ -216,7 +242,7 @@ function ButtonOnFlyoutMenu:updateCooldown()
         end
     end
 
-    debug.trace:out("X",5,"updateCooldown() 2 ITEM","type",type, "start",start, "duration",duration, "enable",enable )
+    zebug.trace:print("type",type, "start",start, "duration",duration, "enable",enable )
 
 end
 
@@ -228,7 +254,7 @@ function ButtonOnFlyoutMenu:updateCount()
     if not hasItem then
         local spellId = btnDef and btnDef.spellId
         if exists(spellId) then
-            debug.trace:out("X",5,"UFO_UpdateCount 0... deferring to SpellFlyoutButton_UpdateCount ", "spellID",self.spellID)
+            zebug.trace:out("spellID",self.spellID)
             -- use Bliz's built-in handler for the stuff it understands, ie, not items
             SpellFlyoutButton_UpdateCount(self)
             return
@@ -243,7 +269,7 @@ function ButtonOnFlyoutMenu:updateCount()
     local includeCharges = true
     local count = GetItemCount(itemId, includeBank, includeCharges)
     local tooMany = ( count > (self.maxDisplayCount or 9999 ) )
-    debug.trace:out("X",5,"UFO_UpdateCount 1 ", "itemId",itemId, "hasItem",hasItem, "name",name, "itemType",itemType, "max",self.maxDisplayCount, "count",count, "tooMany",tooMany)
+    zebug.trace:print("itemId",itemId, "hasItem",hasItem, "name",name, "itemType",itemType, "max",self.maxDisplayCount, "count",count, "tooMany",tooMany)
 
     local max = self.maxDisplayCount or 9999
     if count > max then
@@ -324,7 +350,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip(self)
         if not self:getParent().isForCatalog then
             local btnId = self:getId()
             local flyoutId = self:getParent():getId()
-            debug.info:out(X,X,"GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip()", "No btnDef found for flyoutId",flyoutId, "btnId",btnId)
+            zebug.info:print("No btnDef found for flyoutId",flyoutId, "btnId",btnId)
         end
         return
     end

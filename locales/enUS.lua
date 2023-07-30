@@ -7,3 +7,4 @@ Ufo.Wormhole(Ufo.L10N) -- Lua voodoo magic that replaces the current Global name
 CONFIRM_DELETE = "Are you sure you want to delete the flyout set %s?"
 NEW_FLYOUT = "New\nFlyout"
 TOY = "Toy"
+CAN_NOT_MOVE = "cannot be used, moved, or removed by this toon."
