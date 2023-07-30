@@ -30,9 +30,9 @@ local currentSpec
 -- Private Functions
 -------------------------------------------------------------------------------
 
-local function closeAllGerms()
+local function hideAllGerms()
     for name, germ in pairs(germs) do
-        germ:Hide()
+        germ:myHide()
     end
 end
 
@@ -54,15 +54,15 @@ end
 -------------------------------------------------------------------------------
 
 function GermCommander:updateAll()
-    zebug.trace:line(20)
+    zebug.trace:line(40)
     if isInCombatLockdown("Reconfiguring") then return end
 
-    closeAllGerms()
+    hideAllGerms() -- this is only required because we sledge hammer all the germs every time.
 
     local placements = self:getPlacementConfigForCurrentSpec()
     for btnSlotIndex, flyoutId in pairs(placements) do
         local isThere = doesFlyoutExist(flyoutId)
-        zebug.trace:line(5, "flyoutId",flyoutId, "isThere", isThere)
+        zebug.trace:line(5, "btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId, "isThere", isThere)
         if isThere then
             local germ = self:recallGerm(btnSlotIndex)
             if not germ then
@@ -115,12 +115,16 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
     local existingFlyoutId = getFlyoutIdForSlot(btnSlotIndex)
 
     local type, macroId = GetActionInfo(btnSlotIndex)
-    zebug.info:print("existingFlyoutId",existingFlyoutId, "type",type, "macroId",macroId)
     if not type then
         return
     end
 
     local droppedFlyoutId = self:getFlyoutIdFromGermProxy(type, macroId)
+
+    if droppedFlyoutId or existingFlyoutId then
+        zebug.info:print("btnSlotIndex",btnSlotIndex, "existingFlyoutId",existingFlyoutId, "type",type, "macroId",macroId, "droppedFlyoutId",droppedFlyoutId)
+    end
+
     if droppedFlyoutId then
         self:savePlacement(btnSlotIndex, droppedFlyoutId)
         self:deleteProxy()
@@ -132,7 +136,7 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
         FlyoutMenu:pickup(existingFlyoutId)
         if not configChanged then
             GermCommander:deletePlacement(btnSlotIndex)
-            configChanged = true
+            --configChanged = true
         end
     end
 
@@ -172,12 +176,12 @@ end
 
 function GermCommander:deletePlacement(btnSlotIndex)
     btnSlotIndex = tonumber(btnSlotIndex)
-    local placementConfigForCurrentSpec = self:getPlacementConfigForCurrentSpec()
-    local flyoutId = self:getPlacementConfigForCurrentSpec()[btnSlotIndex]
-    zebug.info:print("GermCommander:deletePlacement() DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyoutId, "placementConfigForCurrentSpec -->")
-    zebug.trace:dumpy("placementConfigForCurrentSpec", placementConfigForCurrentSpec)
+    local placements = self:getPlacementConfigForCurrentSpec()
+    local flyoutId = placements[btnSlotIndex]
+    zebug.info:print("GermCommander:deletePlacement() DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyoutId)
+    zebug.trace:dumpy("BEFORE placements", placements)
     -- the germ UI Frame stays in place but is now empty
-    placementConfigForCurrentSpec[btnSlotIndex] = nil
+    placements[btnSlotIndex] = nil
 end
 
 function GermCommander:nukeFlyout(flyoutId)

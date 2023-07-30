@@ -82,7 +82,7 @@ end
 ---@param callback function if the function returns true, then, that means it did something that requires the caches to be nuked
 function FlyoutDef:forEachBtn(callback)
     local i = Xedni:getFlyoutDef(self.id)
-    zebug.info:out(20, "-", "i", i, "id",self.id, "self.btns",self.btns)
+    zebug.trace:out(20, "-", "i", i, "id",self.id, "self.btns",self.btns)
     assert(self.btns, "This instance of FlyoutDef has no 'btns' field to coerce.")
 
     local invalidateCaches = false

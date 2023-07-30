@@ -307,7 +307,6 @@ function GLOBAL_UIUFO_CatalogFlyoutButton_OnEnter(btnInCatalog)
 end
 
 function GLOBAL_UIUFO_CatalogFlyoutButton_OnDragStart(btnInCatalog)
-    zebug.info:dumpy("btnInCatalog",btnInCatalog)
     local flyoutId = btnInCatalog.flyoutId
     flyoutIndexOnTheMouse = btnInCatalog.flyoutIndex
     if exists(flyoutId) then

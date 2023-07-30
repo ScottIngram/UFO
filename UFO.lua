@@ -4,7 +4,7 @@
 --[[
 
 TODO
-* FEATURE: support ElvUI
+* BUG: macro shitshow nil error on delete
 * BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
 * BUG: fix the funky macro picker blank spaces
 * BUG: fix empty (unusable) flyouts showing remnants from previously opened flyout

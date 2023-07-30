@@ -138,17 +138,17 @@ function Germ.new(flyoutId, btnSlotIndex)
     local actionBarBtn, myName
 
     -- which action/bonus/multi bar are we on?
-    local btnBarInfo = extract(btnSlotIndex)
+    local b = extractBarBtnInfo(btnSlotIndex)
 
     if Ufo.thirdPartyAddon then
-        actionBarBtn = Ufo.thirdPartyAddon.getParent(btnBarInfo)
+        actionBarBtn = Ufo.thirdPartyAddon.getParent(b)
         myName = GERM_UI_NAME_PREFIX .. "For" .. actionBarBtn:GetName()
     else
-        actionBarBtn = _G[btnBarInfo.actionBarBtnName]
+        actionBarBtn = _G[b.actionBarBtnName]
         myName = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
     end
 
-    zebug.trace:print("visibleIf",btnBarInfo.actionBarDef.visibleIf, "barNum",btnBarInfo.actionBarDef.barNum, "btnNum",btnBarInfo.actionBarDef.btnNum, "actionBarName",btnBarInfo.actionBarDef.actionBarName, "parent",actionBarBtn:GetName(), "myName",myName)
+    zebug.trace:print("visibleIf", b.visibleIf, "barNum", b.barNum, "btnNum", b.btnNum, "actionBarName", b.actionBarName, "parent",actionBarBtn:GetName(), "myName",myName)
 
     ---@type Germ
     local protoGerm = CreateFrame("CheckButton", myName, actionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
@@ -162,19 +162,29 @@ function Germ.new(flyoutId, btnSlotIndex)
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self.flyoutId     = flyoutId
     self.flyoutMenu   = UIUFO_FlyoutMenuForGerm -- the one UI object is reused by every germ
+    self.visibleIf    = b.visibleIf
     self:setHandlers()
-
-    if btnBarInfo.actionBarDef.visibleIf then
-        -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
-        self.visibleIf = btnBarInfo.actionBarDef.visibleIf
-        local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. self.visibleIf
-        RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
-    end
+    self:setVisibility()
 
     return self
 end
 
-function extract(btnSlotIndex)
+function Germ:setVisibility()
+    if self.visibleIf then
+        -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
+        local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. self.visibleIf
+        RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
+    else
+        self:Show()
+    end
+end
+
+function Germ:myHide()
+    self:Hide()
+    UnregisterStateDriver(self, "visibility")
+end
+
+function extractBarBtnInfo(btnSlotIndex)
     local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
     local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
     if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
@@ -190,6 +200,7 @@ function extract(btnSlotIndex)
         actionBarDef = actionBarDef,
         actionBarName = actionBarName,
         actionBarBtnName = actionBarBtnName,
+        visibleIf = actionBarDef.visibleIf,
     }
 end
 
@@ -303,9 +314,7 @@ function Germ:update(flyoutId)
     self:SetAttribute("UFO_BLIZ_TYPES", asStrLists.blizTypes)
     self:SetAttribute("UFO_PETS",       asStrLists.petGuids)
 
-    if not self.visibleIf then
-        self:Show()
-    end
+    self:setVisibility() -- TODO: remove after we stop sledge hammering all the germs every time
 end
 
 function Germ:handleGermUpdateEvent()
@@ -389,7 +398,7 @@ end
 function handlers.OnPickupAndDrag(germ)
     if (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
         if isInCombatLockdown("Drag and drop") then return end
-        zebug.trace:name("OnPickupAndDrag"):print("name",germ:GetName())
+        zebug.info:name("OnPickupAndDrag"):print("name",germ:GetName())
 
         GermCommander:deletePlacement(germ:getBtnSlotIndex())
 
@@ -397,7 +406,7 @@ function handlers.OnPickupAndDrag(germ)
         if type then
             local btnSlotIndex = germ:getBtnSlotIndex()
             local droppedFlyoutId = GermCommander:getFlyoutIdFromGermProxy(type, macroId)
-            zebug.trace:print("droppedFlyoutId",droppedFlyoutId, "btnSlotIndex",btnSlotIndex)
+            zebug.info:print("droppedFlyoutId",droppedFlyoutId, "btnSlotIndex",btnSlotIndex)
             if droppedFlyoutId then
                 -- the user is dragging a UFO
                 GermCommander:savePlacement(btnSlotIndex, droppedFlyoutId)

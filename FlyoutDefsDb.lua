@@ -112,7 +112,7 @@ end
 
 ---@param flyoutIndex number
 function FlyoutDefsDb:getByIndex(flyoutIndex)
-    zebug.info:print("flyoutIndex",flyoutIndex)
+    zebug.trace:print("flyoutIndex",flyoutIndex)
     if type(flyoutIndex) ~= "number" then
         local isNumber
         local ok = pcall(function() isNumber = tonumber(flyoutIndex) end)
@@ -122,7 +122,7 @@ function FlyoutDefsDb:getByIndex(flyoutIndex)
     end
 
     local flyoutId = Config:getOrderedFlyoutIds()[flyoutIndex]
-    zebug.info:print("flyoutIndex",flyoutIndex, "--> flyoutId",flyoutId)
+    zebug.trace:print("flyoutIndex",flyoutIndex, "--> flyoutId",flyoutId)
     return self:get(flyoutId)
 end
 
@@ -204,7 +204,7 @@ function Xedni:get()
     if not Xedni.lookup then
         Xedni.lookup = {}
         local ids = UFO_SV_ACCOUNT.orderedFlyoutIds
-        zebug.info:dumpy("orderedFlyoutIds",ids)
+        zebug.trace:dumpy("orderedFlyoutIds",ids)
         for i, id in ipairs(ids) do
             zebug.trace:print("i",i, "id",id)
             Xedni.lookup[id] = i

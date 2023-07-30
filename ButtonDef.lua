@@ -125,7 +125,7 @@ function ButtonDef:getIdForBlizApi()
 
     local idKey = self:whatsMyBlizApiIdField()
     local happyBlizId = self[idKey]
-    zebug.info:print("self.type",self.type, "idKey",idKey, "happyBlizId",happyBlizId)
+    zebug.trace:print("self.type",self.type, "idKey",idKey, "happyBlizId",happyBlizId)
     self:setIdForBlizApi(happyBlizId) -- cache the result to save processing cycles on repeated calls
     return happyBlizId
 end
