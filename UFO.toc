@@ -14,6 +14,7 @@ utils\Debug.lua
 utils\Config.lua
 constants.lua
 locales\index.xml
+ThirdPartyAddonSupport.lua
 FlyoutDefsDb.lua
 FlyoutDef.lua
 ButtonDef.lua

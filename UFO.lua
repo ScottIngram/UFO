@@ -389,94 +389,13 @@ function assertIsMethodOf(firstArg, class)
 end
 
 -------------------------------------------------------------------------------
--- 3rd-Party Addon Support
--------------------------------------------------------------------------------
-
-local warned = false
-
-local SUPPORTED_ADDONS = {
-    BARTENDER4 = {
-        name = BARTENDER4,
-        getParent = function(btnBarInfo)
-            local btnSlotIndex = btnBarInfo.btnSlotIndex
-            local name = "BT4Button" .. btnSlotIndex
-            local parent = _G[name]
-            zebug.trace:name("BARTENDER4:getParent"):print("btnSlotIndex",btnSlotIndex, "name",name, "parent",parent)
-            if parent then
-                -- poor-man's polymorphism
-                parent.GetName = function() return name end
-                parent.btnSlotIndex = btnSlotIndex
-            else
-                if not warned then
-                    print(zebug.error:colorize(L10N.BARTENDER_BAR_DISABLED))
-                    warned = true
-                end
-            end
-            return parent
-        end,
-        getDirection = function(parent)
-            return parent.config.flyoutDirection
-        end,
-    },
-    ELVUI = {
-        name = ELVUI,
-        getParent = function(btnBarInfo)
-            local btnSlotIndex = btnBarInfo.btnSlotIndex
-            local barName =  ELVUI .."_Bar".. btnBarInfo.barNum
-            local btnName = barName .."Button"..  btnBarInfo.btnNum
-            local parent = _G[btnName]
-            local zebugger = parent and zebug.trace or zebug.error
-            zebugger:name("ELVUI:getParent"):print("btnSlotIndex",btnSlotIndex, "barNum",btnBarInfo.barNum, "barName",barName, "btnName",btnName, "parent",parent)
-            return parent
-        end,
-        getDirection = function(parent)
-            return parent.db.flyoutDirection
-        end,
-    },
-}
-
-function findSupportedAddons()
-    for addon, methods in pairs(SUPPORTED_ADDONS) do
-        if IsAddOnLoaded(addon) then
-            Ufo.thirdPartyAddon = methods
-            break
-        end
-    end
-end
-
--- if I go nuts and really abstract this to the max
---[[
-local BLIZ_METHODS = {
-    getParent = function(btnSlotIndex)
-        local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
-        local actionBarDef = BLIZ_BAR_METADATA[barNum]
-        local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
-        if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
-        local actionBarName    = actionBarDef.name
-        local actionBarBtnName = actionBarName .. "Button" .. btnNum
-
-        -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
-        self.visibleIf = actionBarDef.visibleIf
-        local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. self.visibleIf
-        RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
-
-        return _G[actionBarBtnName] -- grab the button object from Blizzard's GLOBAL dumping ground
-    end,
-    getDirection = function(parent)
-        return parent.config.flyoutDirection
-    end,
-}
-]]
-
-
--------------------------------------------------------------------------------
 -- Addon Lifecycle
 -------------------------------------------------------------------------------
 
 function initalizeAddonStuff()
     if isUfoInitialized then return end
 
-    findSupportedAddons()
+    ThirdPartyAddonSupport:detectSupportedAddons()
 
     Catalog:definePopupDialogWindow()
     Config:initializeFlyouts()

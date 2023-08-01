@@ -133,28 +133,12 @@ local snippet_Germ_Click = [=[
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
-function Germ.new(flyoutId, btnSlotIndex)
+function Germ.new(flyoutId, btnSlotIndex, parent)
     assertIsFunctionOf(flyoutId,Germ)
-    local actionBarBtn, myName
-
-    -- which action/bonus/multi bar are we on?
-    local b = extractBarBtnInfo(btnSlotIndex)
-
-    if Ufo.thirdPartyAddon then
-        actionBarBtn = Ufo.thirdPartyAddon.getParent(b)
-        if not actionBarBtn then
-            return nil
-        end
-        myName = GERM_UI_NAME_PREFIX .. "For" .. actionBarBtn:GetName()
-    else
-        actionBarBtn = _G[b.actionBarBtnName]
-        myName = GERM_UI_NAME_PREFIX .. actionBarBtn:GetName()
-    end
-
-    zebug.trace:print("visibleIf", b.visibleIf, "barNum", b.barNum, "btnNum", b.btnNum, "actionBarName", b.actionBarName, "parent",actionBarBtn:GetName(), "myName",myName)
+    local myName = GERM_UI_NAME_PREFIX .. "On" .. parent:GetName()
 
     ---@type Germ
-    local protoGerm = CreateFrame("CheckButton", myName, actionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
+    local protoGerm = CreateFrame("CheckButton", myName, parent, "ActionButtonTemplate, SecureHandlerClickTemplate")
 
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
@@ -165,7 +149,7 @@ function Germ.new(flyoutId, btnSlotIndex)
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self.flyoutId     = flyoutId
     self.flyoutMenu   = UIUFO_FlyoutMenuForGerm -- the one UI object is reused by every germ
-    self.visibleIf    = b.visibleIf
+    self.visibleIf    = parent.visibleIf -- I set this inside GermCommander:getActionBarBtn()
     self:setHandlers()
     self:setVisibility()
 
@@ -187,38 +171,12 @@ function Germ:myHide()
     UnregisterStateDriver(self, "visibility")
 end
 
-function extractBarBtnInfo(btnSlotIndex)
-    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
-    local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
-    if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
-    local actionBarDef = BLIZ_BAR_METADATA[barNum]
-    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum) -- in case Blizzard adds more bars, complain here clearly.
-    local actionBarName    = actionBarDef.name
-    local actionBarBtnName = actionBarName .. "Button" .. btnNum
-
-    return {
-        btnSlotIndex = btnSlotIndex,
-        barNum = barNum,
-        btnNum = btnNum,
-        actionBarDef = actionBarDef,
-        actionBarName = actionBarName,
-        actionBarBtnName = actionBarBtnName,
-        visibleIf = actionBarDef.visibleIf,
-    }
-end
-
 function Germ:getDirection()
     -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
     -- ask the bar instance what direction to fly
     local direction = "UP" -- default
     local parent = self:GetParent()
-    if Ufo.thirdPartyAddon then
-        direction = Ufo.thirdPartyAddon.getDirection(parent)
-    else
-        direction = parent.bar:GetSpellFlyoutDirection()
-    end
-
-    return direction
+    return parent.bar:GetSpellFlyoutDirection()
 end
 
 function Germ:updateAllBtnCooldownsEtc()
