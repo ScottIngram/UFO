@@ -142,6 +142,9 @@ function Germ.new(flyoutId, btnSlotIndex)
 
     if Ufo.thirdPartyAddon then
         actionBarBtn = Ufo.thirdPartyAddon.getParent(b)
+        if not actionBarBtn then
+            return nil
+        end
         myName = GERM_UI_NAME_PREFIX .. "For" .. actionBarBtn:GetName()
     else
         actionBarBtn = _G[b.actionBarBtnName]

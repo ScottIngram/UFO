@@ -392,14 +392,26 @@ end
 -- 3rd-Party Addon Support
 -------------------------------------------------------------------------------
 
+local warned = false
+
 local SUPPORTED_ADDONS = {
     BARTENDER4 = {
+        name = BARTENDER4,
         getParent = function(btnBarInfo)
             local btnSlotIndex = btnBarInfo.btnSlotIndex
             local name = "BT4Button" .. btnSlotIndex
-            local parent = _G["BT4Button" .. btnSlotIndex]
-            parent.GetName = function() return name end
-            parent.btnSlotIndex = btnSlotIndex
+            local parent = _G[name]
+            zebug.trace:name("BARTENDER4:getParent"):print("btnSlotIndex",btnSlotIndex, "name",name, "parent",parent)
+            if parent then
+                -- poor-man's polymorphism
+                parent.GetName = function() return name end
+                parent.btnSlotIndex = btnSlotIndex
+            else
+                if not warned then
+                    print(zebug.error:colorize(L10N.BARTENDER_BAR_DISABLED))
+                    warned = true
+                end
+            end
             return parent
         end,
         getDirection = function(parent)
@@ -407,12 +419,14 @@ local SUPPORTED_ADDONS = {
         end,
     },
     ELVUI = {
+        name = ELVUI,
         getParent = function(btnBarInfo)
             local btnSlotIndex = btnBarInfo.btnSlotIndex
             local barName =  ELVUI .."_Bar".. btnBarInfo.barNum
             local btnName = barName .."Button"..  btnBarInfo.btnNum
             local parent = _G[btnName]
-            zebug.trace:name("ELVUI:getParent"):print("btnSlotIndex",btnSlotIndex, "barNum",btnBarInfo.barNum, "barName",barName, "btnName",btnName, "parent",parent)
+            local zebugger = parent and zebug.trace or zebug.error
+            zebugger:name("ELVUI:getParent"):print("btnSlotIndex",btnSlotIndex, "barNum",btnBarInfo.barNum, "barName",barName, "btnName",btnName, "parent",parent)
             return parent
         end,
         getDirection = function(parent)
