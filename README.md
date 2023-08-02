@@ -1,13 +1,37 @@
 # UFO - Universal FlyOut
 
-A World of Warcraft addon.
+A World of Warcraft addon - beta 1 release
 
-UFO lets you create custom actionbar flyout menus similar to the ones Blizzard provides for collections of similar spells such as mage portals & teleports, warlock demons, dragonriding abilities, etc.  However, in addition to just spells, UFO also supports:
+UFO lets you create custom actionbar flyout menus similar to the built-in ones for mage portals, warlock demons, dragonriding abilities, etc.  But with UFO, you can include anything you want:
 
+* Spells
 * Items
 * Mounts
 * Pets
 * Macros
-* And yes, Spells
+* Trade skill Windows
+* More? Let me know!
 
-Many thanks to [Sébastien Desvignes](https://github.com/Boboseb) and his addon [FloFlyout](https://www.curseforge.com/wow/addons/floflyout) which was the basis for all my work here.
+UFO adds a flyout catalog UI onto the side of various panels (Spellbook, Macros, Collections) to let you create and organize multiple flyouts.  These can be shared between all characters on your account.
+
+From there, you can drag your flyouts onto your action bars.  Each toon keeps their own distinct record of which flyouts are on which bars.  Furthermore, placements are stored per spec and automatically change when you change your spec.
+
+### 3rd-Party Addon Support
+
+There is limited (let's call it beta) support for a few action bar addons:
+* Bartender4
+* ElvUI
+* [Request more](https://github.com/ScottIngram/Ufo/issues/new?labels=3rd+party+addon)
+
+### FAQ:
+
+* **Q:** What if one toon places an ability / item / etc. only they can use onto a flyout shared with other toons?
+* **A:** A flyout on the actionbars will only show buttons that are usable by the current toon.  However, in the catalog, all buttons will be visible.  
+
+
+* **Q:** Do I have to set up my flyouts over and over for each spec?
+* **A:** The first time you change to a different spec, UFO will initialize it using your current flyout positions.  From that point, they are separate and can be changed independently.
+
+### Acknowledgements
+
+Many thanks to [Sébastien Desvignes](https://github.com/Boboseb) and his addon [FloFlyout](https://www.curseforge.com/wow/addons/floflyout) which was the basis for my work here.
