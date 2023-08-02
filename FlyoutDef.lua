@@ -103,7 +103,8 @@ end
 
 ---@param killTester function
 function FlyoutDef:batchDeleteBtns(killTester)
-    local modified = deleteFromArray(self.btns, killTester)
+    local btns = self:getAllButtonDefs()
+    local modified = deleteFromArray(btns, killTester)
     if modified then
         self:setCachedLists(nil)
     end
