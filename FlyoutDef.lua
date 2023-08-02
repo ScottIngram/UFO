@@ -16,7 +16,8 @@ local zebug = Zebug:new()
 ---@class FlyoutDef -- IntelliJ-EmmyLua annotation
 ---@field id string A unique, immutable, permanent identifier.  This is not it's index in any array.
 ---@field name string
----@field icon string
+---@field icon string user chosen icon
+---@field fallbackIcon string in absence of the icon field, this is used when the Bliz UI fails to load all the necessary icons on login (usually pets and toys)
 ---@field btns table
 local FlyoutDef = {
     ufoType = "FlyoutDef",
@@ -154,7 +155,12 @@ function FlyoutDef:getIcon()
     if btn1 then
         local isMe = isClass(self, FlyoutDef)
         zebug.trace:print("btn1",btn1, "isMe",isMe, "btn1.ufoType",btn1.ufoType, "btn1.getIcon",btn1.getIcon)
-        return btn1:getIcon()
+        local icon = btn1:getIcon()
+        if icon then
+            -- compensate for the Bliz UI bug where not all icons have been loaded at the moment of login
+            self.fallbackIcon = icon
+        end
+        return icon
     end
     return nil
 end
@@ -180,6 +186,7 @@ function FlyoutDef:filterOutUnusable()
     end
     usableFlyoutDef.name = self.name
     usableFlyoutDef.icon = self.icon
+    usableFlyoutDef.fallbackIcon = self.fallbackIcon
     usableFlyoutDef.setAlreadyCoercedMyButtons() -- because the source btns have already been coerced
     self:_setUsableFlyoutDef(usableFlyoutDef)
     return usableFlyoutDef

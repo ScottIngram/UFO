@@ -259,7 +259,7 @@ function Germ:update(flyoutId)
     local usableFlyout = flyoutDef:filterOutUnusable()
 
     -- set the Germ's icon so that it reflects only USABLE buttons
-    local icon = usableFlyout:getIcon() or DEFAULT_ICON
+    local icon = usableFlyout:getIcon() or flyoutDef.fallbackIcon or DEFAULT_ICON
     self:setIcon(icon)
 
     -- attach string representations of the buttons
