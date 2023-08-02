@@ -97,6 +97,7 @@ function EventHandlers:ADDON_LOADED(addonName)
 
     if addonName == "Blizzard_MacroUI" then
         Catalog:createToggleButton(MacroFrame)
+        MacroShitShow:analyzeMacroUpdate()
     end
 end
 
