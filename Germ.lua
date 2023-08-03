@@ -337,7 +337,10 @@ end
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnMouseUp(germ)
     zebug.trace:name("OnMouseUp"):print("name",germ:GetName())
-    handlers.OnReceiveDrag(germ)
+    local isDragging = GetCursorInfo()
+    if isDragging then
+        handlers.OnReceiveDrag(germ)
+    end
 end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
