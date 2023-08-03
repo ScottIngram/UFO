@@ -118,10 +118,12 @@ function Catalog:toggle(clickedBtn, forceOpen)
     end
 
     if willMoveCatalog then
+        catalogFrame:Hide()
         SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth() +150)
         catalogFrame:SetParent(blizFrame)
-        catalogFrame:SetPoint("TOPLEFT", blizFrameName, "TOPRIGHT", xOffSet, -15)
-        catalogFrame:SetPoint("BOTTOMLEFT", blizFrameName, "BOTTOMRIGHT", xOffSet, -5)
+        catalogFrame:ClearAllPoints() -- required to avoid error: Action[SetPoint] failed because[SetPoint would result in anchor family connection]
+        catalogFrame:SetPoint("TOPLEFT", blizFrame, "TOPRIGHT", xOffSet, -15)
+        catalogFrame:SetPoint("BOTTOMLEFT", blizFrame, "BOTTOMRIGHT", xOffSet, -5)
     end
 
     if not willCloseCatalog then
@@ -147,7 +149,7 @@ function Catalog:update()
 
     local flyoutIdOnTheMouse = GermCommander:getFlyoutIdFromCursor()
     local isDragging = flyoutIdOnTheMouse and btnUnderTheMouse
-    local hoverIndex = isDragging and tonumber(btnUnderTheMouse.flyoutIndex)
+    local hoverIndex = isDragging and tonumber(btnUnderTheMouse.flyoutIndex) -- this can be nil if hovering over the Add+ button
 
     zebug.trace:print("flyoutsCount",flyoutsCount, "flyoutIdOnTheMouse", flyoutIdOnTheMouse, "newMouseOver", btnUnderTheMouse and btnUnderTheMouse.flyoutIndex, "isDragging",isDragging )
 
