@@ -426,12 +426,12 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)
     for i = 1, #scrollPane.buttons do
         local button = scrollPane.buttons[i]
         if button:IsMouseOver() then
-            if button.name then
-                button.DeleteButton:Show()
-                button.EditButton:Show()
-            else
+            if button.name == ADD_BUTTON_NAME then
                 button.DeleteButton:Hide()
                 button.EditButton:Hide()
+            else
+                button.DeleteButton:Show()
+                button.EditButton:Show()
             end
             button.HighlightBar:Show()
         else
