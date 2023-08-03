@@ -139,11 +139,13 @@ end
 function ButtonDef:isUsable()
     local t = self.type
     local id = self:getIdForBlizApi()
+    zebug.trace:print("name", self.name, "type",t, "spellId", self.spellId, "id",id)
     if t == ButtonType.MOUNT or t == ButtonType.PET or t == ButtonType.TOY then
         -- TODO: figure out how to find a mount
         return true -- GetMountInfoByID(mountId)
     elseif t == ButtonType.SPELL then
-        return IsSpellKnown(id)
+        --zebug.trace:print("IsSpellKnownOrOverridesKnown",IsSpellKnownOrOverridesKnown(id))
+        return IsSpellKnownOrOverridesKnown(id)
     elseif t == ButtonType.ITEM then
         local n = GetItemCount(id)
         local m = PlayerHasToy(id)
