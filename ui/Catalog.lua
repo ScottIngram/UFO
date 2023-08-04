@@ -288,6 +288,26 @@ function Catalog:clearProxyAndCursor()
     ClearCursor()
 end
 
+function Catalog:open()
+    local anyOpenBlizFrame
+    for blizFrame, _ in pairs(toggleBtns) do
+        if blizFrame:IsShown() then
+            if not anyOpenBlizFrame then
+                anyOpenBlizFrame = blizFrame
+            end
+        end
+    end
+
+    if not anyOpenBlizFrame then
+        ToggleSpellBook("spell")
+        anyOpenBlizFrame = SpellBookFrame
+    end
+
+    zebug.trace:dump(toggleBtns)
+    local toggleBtn = toggleBtns[anyOpenBlizFrame]
+    Catalog:toggle(toggleBtn, true)
+end
+
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting Catalog XML Callbacks
 -------------------------------------------------------------------------------
@@ -351,24 +371,7 @@ end
 
 function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
     zebug.trace:print("addonName",addonName, "whichMouseButton", whichMouseButton, "SpellBookFrame",SpellBookFrame)
-
-    local anyOpenBlizFrame
-    for blizFrame, _ in pairs(toggleBtns) do
-        if blizFrame:IsShown() then
-            if not anyOpenBlizFrame then
-                anyOpenBlizFrame = blizFrame
-            end
-        end
-    end
-
-    if not anyOpenBlizFrame then
-        ToggleSpellBook("spell")
-        anyOpenBlizFrame = SpellBookFrame
-    end
-
-    zebug.trace:dump(toggleBtns)
-    local toggleBtn = toggleBtns[anyOpenBlizFrame]
-    Catalog:toggle(toggleBtn, true)
+    Catalog:open()
 end
 
 function GLOBAL_Any_BtnToToggleCatalog_OnClick(anyBtnToToggleCatalog)

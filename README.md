@@ -1,6 +1,6 @@
 # UFO - Universal FlyOut
 
-A World of Warcraft addon - beta 1 release
+A World of Warcraft addon - beta 2 release
 
 UFO lets you create custom actionbar flyout menus similar to the built-in ones for mage portals, warlock demons, dragonriding abilities, etc.  But with UFO, you can include anything you want:
 
@@ -25,12 +25,21 @@ There is limited (let's call it beta) support for a few action bar addons:
 
 ### FAQ:
 
-* **Q:** What if one toon places an ability / item / etc. only they can use onto a flyout shared with other toons?
-* **A:** A flyout on the actionbars will only show buttons that are usable by the current toon.  However, in the catalog, all buttons will be visible.  
+**Q:** How do I open UFO?  
+**A:** Any of the following will open the UFO Catalog where you can create and organize your custom flyouts:
+* Type `/ufo`
+* Click the [UFO] button in the upper right corner of the 
+  * Spellbook
+  * Collections Panel
+  * Macros Panel
+* Click "UFO" in the Addon Compartment (the new menu Blizzard added in Dragonflight to the upper right corner of the minimap).
 
+**Q:** What if one toon places an ability / item / etc. only they can use onto a flyout shared with other toons?  
+**A:** A flyout on the actionbars will only show buttons that are usable by the current toon.  However, in the catalog, all buttons will be visible.  
 
-* **Q:** Do I have to set up my flyouts over and over for each spec?
-* **A:** The first time you change to a different spec, UFO will initialize it using your current flyout positions.  From that point, they are separate and can be changed independently.
+**Q:** Do I have to set up my flyouts over and over for each spec?  
+**A:** The first time you change to a different spec, UFO will initialize it using your current flyout positions.  From that point, they are separate and can be changed independently.
+
 
 ### Acknowledgements
 

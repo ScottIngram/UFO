@@ -389,6 +389,11 @@ function assertIsMethodOf(firstArg, class)
     assert(isClass(firstArg, class), ADDON_NAME..": Um... it's var:foo() not var.foo()")
 end
 
+function registerSlashCmd()
+    _G.SLASH_UFO1 = "/ufo"
+    SlashCmdList["UFO"] = Catalog.open
+end
+
 -------------------------------------------------------------------------------
 -- Addon Lifecycle
 -------------------------------------------------------------------------------
@@ -398,6 +403,7 @@ function initalizeAddonStuff()
 
     ThirdPartyAddonSupport:detectSupportedAddons()
 
+    registerSlashCmd()
     Catalog:definePopupDialogWindow()
     Config:initializeFlyouts()
     Config:initializePlacements()
