@@ -42,7 +42,7 @@ end
 function FlyoutMenu:forEachButton(handler)
     for i, button in ipairs({self:GetChildren()}) do
         if button:GetObjectType() == "CheckButton" then
-            handler(button)
+            handler(button,i)
         end
     end
 end
@@ -169,7 +169,7 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
     table.remove(buttonFrames, 1) -- this is the non-button UI element "Background" from ui.xml
 
     ---@param btnFrame ButtonOnFlyoutMenu
-    for i, btnFrame in ipairs(buttonFrames) do
+    self:forEachButton(function(btnFrame, i)
         local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef)
         --zebug.trace:print("i",i, "btnDef", btnDef)
@@ -180,9 +180,9 @@ function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
             btnFrame:setGeometry(self.direction)
         else
             btnFrame:setIconTexture(DEFAULT_ICON)
-            break
+            return
         end
-    end
+    end)
 
     self:setBorderGeometry()
 end
