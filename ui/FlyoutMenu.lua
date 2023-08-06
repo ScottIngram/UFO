@@ -47,11 +47,16 @@ function FlyoutMenu:forEachButton(handler)
     end
 end
 
-function FlyoutMenu:initializeOnClickHandlersForFlyouts()
-    UIUFO_FlyoutMenuForGerm:forEachButton(function(button)
+local isInitialized = false
+
+function FlyoutMenu:initializeOnClickHandlers()
+    if isInitialized or not self.isForGerm then return end
+
+    self:forEachButton(function(button)
         SecureHandlerWrapScript(button, "OnClick", button, "self:GetParent():Hide()")
     end)
-    UIUFO_FlyoutMenuForCatalog.isForCatalog = true
+
+    isInitialized = true
 end
 
 function FlyoutMenu:getId()
@@ -262,6 +267,7 @@ function GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad(flyoutMenu)
 
     -- initialize fields
     FlyoutMenu:oneOfUs(flyoutMenu)
+    Catalog.flyoutMenu = flyoutMenu
     flyoutMenu.isForCatalog = true
 end
 

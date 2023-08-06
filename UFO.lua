@@ -407,7 +407,6 @@ function initalizeAddonStuff()
     Catalog:definePopupDialogWindow()
     Config:initializeFlyouts()
     Config:initializePlacements()
-    FlyoutMenu:initializeOnClickHandlersForFlyouts()
     ButtonDef:registerToolTipRecorder()
     Catalog:createToggleButton(SpellBookFrame)
 

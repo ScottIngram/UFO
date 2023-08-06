@@ -142,16 +142,22 @@ function Germ.new(flyoutId, btnSlotIndex, parent)
 
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
+    ---@type Germ
     local self = deepcopy(Germ, protoGerm)
+
+    ---@type FlyoutMenu
+    local flyoutMenu = UIUFO_FlyoutMenuForGerm
 
     -- initialize my fields, handlers, etc.
     self.btnSlotIndex = btnSlotIndex
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self.flyoutId     = flyoutId
-    self.flyoutMenu   = UIUFO_FlyoutMenuForGerm -- the one UI object is reused by every germ
+    self.flyoutMenu   = flyoutMenu -- the one UI object is reused by every germ
     self.visibleIf    = parent.visibleIf -- I set this inside GermCommander:getActionBarBtn()
     self:setHandlers()
     self:setVisibility()
+
+    flyoutMenu:initializeOnClickHandlers()
 
     return self
 end
