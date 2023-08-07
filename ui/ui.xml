@@ -35,37 +35,38 @@
                     <KeyValue key="ignoreInlayout" value="true" type="boolean"/>
                 </KeyValues>
             </Frame>
-            <CheckButton name="$parentButton1" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="1" />
-            <CheckButton name="$parentButton2" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="2" />
-            <CheckButton name="$parentButton3" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="3" />
-            <CheckButton name="$parentButton4" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="4" />
-            <CheckButton name="$parentButton5" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="5" />
-            <CheckButton name="$parentButton6" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="6" />
-            <CheckButton name="$parentButton7" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="7" />
-            <CheckButton name="$parentButton8" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="8" />
-            <CheckButton name="$parentButton9" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="9" />
-            <CheckButton name="$parentButton10" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="10" />
-            <CheckButton name="$parentButton11" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="11" />
-            <CheckButton name="$parentButton12" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="12" />
-            <CheckButton name="$parentButton13" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="13" />
-            <CheckButton name="$parentButton14" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="14" />
-            <CheckButton name="$parentButton15" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="15" />
-            <CheckButton name="$parentButton16" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="16" />
-            <CheckButton name="$parentButton17" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="17" />
-            <CheckButton name="$parentButton18" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="18" />
-            <CheckButton name="$parentButton19" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="19" />
-            <CheckButton name="$parentButton20" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="20" />
-            <CheckButton name="$parentButton21" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="21" />
-            <CheckButton name="$parentButton22" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="22" />
-            <CheckButton name="$parentButton23" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="23" />
-            <CheckButton name="$parentButton24" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="24" />
-            <CheckButton name="$parentButton25" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="25" />
-            <CheckButton name="$parentButton26" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="26" />
-            <CheckButton name="$parentButton27" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="27" />
-            <CheckButton name="$parentButton28" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="28" />
-            <CheckButton name="$parentButton30" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="30" />
+            <CheckButton name="$parent_Button1" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="1" />
+            <CheckButton name="$parent_Button2" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="2" />
+            <CheckButton name="$parent_Button3" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="3" />
+            <CheckButton name="$parent_Button4" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="4" />
+            <CheckButton name="$parent_Button5" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="5" />
+            <CheckButton name="$parent_Button6" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="6" />
+            <CheckButton name="$parent_Button7" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="7" />
+            <CheckButton name="$parent_Button8" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="8" />
+            <CheckButton name="$parent_Button9" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="9" />
+            <CheckButton name="$parent_Button10" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="10" />
+            <CheckButton name="$parent_Button11" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="11" />
+            <CheckButton name="$parent_Button12" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="12" />
+            <CheckButton name="$parent_Button13" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="13" />
+            <CheckButton name="$parent_Button14" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="14" />
+            <CheckButton name="$parent_Button15" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="15" />
+            <CheckButton name="$parent_Button16" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="16" />
+            <CheckButton name="$parent_Button17" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="17" />
+            <CheckButton name="$parent_Button18" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="18" />
+            <CheckButton name="$parent_Button19" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="19" />
+            <CheckButton name="$parent_Button20" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="20" />
+            <CheckButton name="$parent_Button21" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="21" />
+            <CheckButton name="$parent_Button22" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="22" />
+            <CheckButton name="$parent_Button23" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="23" />
+            <CheckButton name="$parent_Button24" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="24" />
+            <CheckButton name="$parent_Button25" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="25" />
+            <CheckButton name="$parent_Button26" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="26" />
+            <CheckButton name="$parent_Button27" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="27" />
+            <CheckButton name="$parent_Button28" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="28" />
+            <CheckButton name="$parent_Button30" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="30" />
         </Frames>
         <Scripts>
+            <OnUpdate function="GLOBAL_UIUFO_FlyoutMenu_OnUpdate"/>
             <OnShow function="GLOBAL_UIUFO_FlyoutMenu_OnShow"/>
             <OnHide function="GLOBAL_UIUFO_FlyoutMenu_OnHide"/>
         </Scripts>
@@ -74,14 +75,12 @@
     <Frame name="UIUFO_FlyoutMenuForGerm" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
         <Scripts>
             <OnLoad function="GLOBAL_UIUFO_FlyoutMenuForGerm_OnLoad"/>
-            <OnUpdate function="GLOBAL_UIUFO_FlyoutMenu_OnUpdate"/>
         </Scripts>
     </Frame>
 
     <Frame name="UIUFO_FlyoutMenuForCatalog" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
         <Scripts>
             <OnLoad function="GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad"/>
-            <OnUpdate function="GLOBAL_UIUFO_FlyoutMenu_OnUpdate"/>
         </Scripts>
     </Frame>
 

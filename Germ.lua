@@ -38,11 +38,12 @@ local snippet_Germ_Click = [=[
 	local DELIMITER = "]=]..DELIMITER..[=["
 	local EMPTY_ELEMENT = "]=]..EMPTY_ELEMENT..[=["
 	local germ = self
-	local flyoutMenu = germ:GetFrameRef("UIUFO_FlyoutMenuForGerm")
+	local flyoutMenu = germ:GetFrameRef("flyoutMenu")
 	local direction = germ:GetAttribute("flyoutDirection")
 	local prevBtn = nil;
 
-	if flyoutMenu:IsShown() and flyoutMenu:GetParent() == germ then
+    local doCloseFlyout = flyoutMenu:GetAttribute("doCloseFlyout")
+	if doCloseFlyout then
 		flyoutMenu:Hide()
 		return
     end
@@ -64,9 +65,13 @@ local snippet_Germ_Click = [=[
     local pets      = table.new(strsplit(DELIMITER, germ:GetAttribute("UFO_PETS")  or ""))
 
     local uiButtons = table.new(flyoutMenu:GetChildren())
-    table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
+    if uiButtons[1]:GetObjectType() ~= "CheckButton" then
+        table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
+    end
+
     for i, btn in ipairs(uiButtons) do
         if typeList[i] then
+            --print("SNIPPET... i:",i, "btn:",btn:GetName())
             btn:ClearAllPoints()
 
             local parent = prevBtn or "$parent"
@@ -135,7 +140,7 @@ local snippet_Germ_Click = [=[
 
 function Germ.new(flyoutId, btnSlotIndex, parent)
     assertIsFunctionOf(flyoutId,Germ)
-    local myName = GERM_UI_NAME_PREFIX .. "On" .. parent:GetName()
+    local myName = GERM_UI_NAME_PREFIX .. "On_" .. parent:GetName()
 
     ---@type Germ
     local protoGerm = CreateFrame("CheckButton", myName, parent, "ActionButtonTemplate, SecureHandlerClickTemplate")
@@ -145,21 +150,34 @@ function Germ.new(flyoutId, btnSlotIndex, parent)
     ---@type Germ
     local self = deepcopy(Germ, protoGerm)
 
-    ---@type FlyoutMenu
-    local flyoutMenu = UIUFO_FlyoutMenuForGerm
-
     -- initialize my fields, handlers, etc.
     self.btnSlotIndex = btnSlotIndex
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self.flyoutId     = flyoutId
-    self.flyoutMenu   = flyoutMenu -- the one UI object is reused by every germ
     self.visibleIf    = parent.visibleIf -- I set this inside GermCommander:getActionBarBtn()
+
+    -- FlyoutMenu
+    self:initFlyoutMenu()
+    self.flyoutMenu:initializeCloseOnClick()
+
+    -- anti-taint / protected environment / secure BS
+    self:SetAttribute("flyoutDirection", self:getDirection())
+    self:SetFrameRef("flyoutMenu", self.flyoutMenu)
+
     self:setHandlers()
     self:setVisibility()
 
-    flyoutMenu:initializeOnClickHandlers()
-
     return self
+end
+
+function Germ:initFlyoutMenu()
+    if Config.opts.supportCombat then
+        self.flyoutMenu = FlyoutMenu.new(self)
+        self.flyoutMenu:updateForGerm(self)
+    else
+        self.flyoutMenu = UIUFO_FlyoutMenuForGerm
+    end
+    self.flyoutMenu.isForGerm = true
 end
 
 function Germ:setVisibility()
@@ -213,9 +231,7 @@ function Germ:setHandlers()
     self:SetFrameLevel(100)
     self:SetToplevel(true)
 
-    self:SetAttribute("flyoutDirection", self:getDirection())
-    self:SetFrameRef("UIUFO_FlyoutMenuForGerm", UIUFO_FlyoutMenuForGerm)
-
+    -- handlers
     self:SetScript("OnUpdate",      handlers.OnUpdate)
     self:SetScript("OnEnter",       handlers.OnEnter)
     self:SetScript("OnLeave",       handlers.OnLeave)
@@ -271,11 +287,11 @@ function Germ:update(flyoutId)
     -- attach string representations of the buttons
     -- because Blizzard "secure" templates don't let us attach the actual array
     local asStrLists = usableFlyout:asStrLists()
-
     self:SetAttribute("UFO_SPELL_IDS",  asStrLists.spellIds)
     self:SetAttribute("UFO_NAMES",      asStrLists.names)
     self:SetAttribute("UFO_BLIZ_TYPES", asStrLists.blizTypes)
     self:SetAttribute("UFO_PETS",       asStrLists.petGuids)
+    self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
 
     self:setVisibility() -- TODO: remove after we stop sledge hammering all the germs every time
 end
@@ -283,9 +299,8 @@ end
 function Germ:handleGermUpdateEvent()
     -- Update border and determine arrow position
     local arrowDistance;
-    -- Update border
     local isMouseOverButton = GetMouseFocus() == self;
-    local isFlyoutShown = UIUFO_FlyoutMenuForGerm and UIUFO_FlyoutMenuForGerm:IsShown() and UIUFO_FlyoutMenuForGerm:GetParent() == self;
+    local isFlyoutShown = self.flyoutMenu:IsShown()
     if isFlyoutShown or isMouseOverButton then
         self.FlyoutBorderShadow:Show();
         arrowDistance = 5;
@@ -416,15 +431,31 @@ end
 
 ---@param germ Germ
 function handlers.OnPreClick(germ, whichMouseButton, down)
-    germ.flyoutMenu:updateForGerm(germ, whichMouseButton, down)
-    local UFO_NAMES = germ:GetAttribute("UFO_NAMES")
-    local UFO_BLIZ_TYPES = germ:GetAttribute("UFO_BLIZ_TYPES")
-    local UFO_PETS  = germ:GetAttribute("UFO_PETS")
-    zebug.trace:name("OnPickupAndDrag"):line(30,"flyoutId",germ:getFlyoutId())
-    zebug.trace:name("OnPickupAndDrag"):print("flyoutId",germ:getFlyoutId(), "UFO_NAMES",UFO_NAMES)
-    zebug.trace:name("OnPickupAndDrag"):print("flyoutId",germ:getFlyoutId(), "UFO_BLIZ_TYPES",UFO_BLIZ_TYPES)
-    zebug.trace:name("OnPickupAndDrag"):print("flyoutId",germ:getFlyoutId(), "UFO_PETS",UFO_PETS)
+    germ:SetChecked(germ:GetChecked())
     onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
+
+    local flyoutMenu = germ.flyoutMenu
+    local isShown = flyoutMenu:IsShown()
+    local doCloseFlyout
+
+    if flyoutMenu.isSharedByAllGerms then
+        local otherGerm = flyoutMenu:GetParent()
+        local isFromSameGerm = otherGerm == germ
+        zebug.trace:print("germ",germ:GetName(), "otherGerm", otherGerm:GetName(), "isFromSameGerm", isFromSameGerm, "isShown",isShown)
+
+        if isFromSameGerm then
+            doCloseFlyout = isShown
+        else
+            doCloseFlyout = false
+        end
+
+        germ.flyoutMenu:updateForGerm(germ)
+    else
+        doCloseFlyout = isShown
+    end
+
+    flyoutMenu:SetAttribute("doCloseFlyout", doCloseFlyout)
+    zebug.trace:print("doCloseFlyout",doCloseFlyout)
 end
 
 local oldGerm

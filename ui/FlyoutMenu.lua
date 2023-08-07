@@ -34,29 +34,58 @@ function FlyoutMenu:oneOfUs(fomu)
     return deepcopy(self, fomu)
 end
 
+function FlyoutMenu.new(germ)
+    local myName = germ:GetName() .. "_FlyoutMenu"
+    local protoSelf = CreateFrame("Frame", myName, germ, "UIUFO_FlyoutMenuTemplate")
+    ---@type FlyoutMenu
+    local self = FlyoutMenu:oneOfUs(protoSelf)
+    doBlizOnLoad(self)
+    return self
+end
+
 ---@return ButtonOnFlyoutMenu
 function FlyoutMenu:getButtonFrame(i)
-    return _G[ self:GetName().."Button"..i ]
+    return _G[ self:GetName().."_Button"..i ]
+end
+
+function FlyoutMenu:getBtnKids()
+    -- eliminate the non-button UI element "Background" defined in ui.xml
+    -- sometimes (during combat) it's already excluded from GetChildren() so... we have to jump through extra hoops
+    local btnKids = self.btnKids
+    if not btnKids then
+        btnKids = { self:GetChildren() }
+        if btnKids[1]:GetObjectType() ~= "CheckButton" then
+            table.remove(btnKids, 1)
+        end
+        self.btnKids = btnKids
+    end
+    return btnKids
 end
 
 function FlyoutMenu:forEachButton(handler)
-    for i, button in ipairs({self:GetChildren()}) do
+    for i, button in ipairs(self:getBtnKids()) do
         if button:GetObjectType() == "CheckButton" then
             handler(button,i)
         end
     end
 end
 
-local isInitialized = false
-
-function FlyoutMenu:initializeOnClickHandlers()
-    if isInitialized or not self.isForGerm then return end
+function FlyoutMenu:initializeCloseOnClick()
+    if self.isCloserInitialized or not self.isForGerm then return end
 
     self:forEachButton(function(button)
-        SecureHandlerWrapScript(button, "OnClick", button, "self:GetParent():Hide()")
+        SecureHandlerWrapScript(button, "OnClick", button, [=[
+        local flyoutMenu = self:GetParent()
+        local germ = flyoutMenu:GetParent()
+        local doClose = germ:GetAttribute("doCloseOnClick")
+        if doClose then
+            flyoutMenu:Hide()
+        end
+]=]
+        )
     end)
 
-    isInitialized = true
+    self.isCloserInitialized = true
 end
 
 function FlyoutMenu:getId()
@@ -155,24 +184,20 @@ function FlyoutMenu:updateForCatalog(flyoutId)
 end
 
 ---@param germ Germ
-function FlyoutMenu:updateForGerm(germ, whichMouseButton, down)
+function FlyoutMenu:updateForGerm(germ)
+    self:SetParent(germ)
     self.direction = germ:getDirection()
-
-    germ:SetChecked(not germ:GetChecked())
-
     local flyoutId = germ:getFlyoutId()
     self:setId(flyoutId)
     local flyoutDef = self:getDef(flyoutId)
     zebug.trace:dumpy("flyoutDef",flyoutDef)
     local usableFlyout = flyoutDef:filterOutUnusable()
-    local buttonFrames = { self:GetChildren() }
-    table.remove(buttonFrames, 1) -- this is the non-button UI element "Background" from ui.xml
 
     ---@param btnFrame ButtonOnFlyoutMenu
     self:forEachButton(function(btnFrame, i)
         local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef)
-        --zebug.trace:print("i",i, "btnDef", btnDef)
+        zebug.trace:print("i",i, "btnDef", btnDef)
 
         if btnDef then
             zebug.trace:print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
@@ -245,26 +270,31 @@ function FlyoutMenu:setBorderGeometry()
     self:SetBorderSize(47);
 end
 
+---@param flyoutMenu FlyoutMenu
+function doBlizOnLoad(flyoutMenu)
+    SpellFlyout_OnLoad(flyoutMenu)
+end
+
+
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutMenu XML Callbacks
 -------------------------------------------------------------------------------
 
 ---@param flyoutMenu FlyoutMenu
 function GLOBAL_UIUFO_FlyoutMenuForGerm_OnLoad(flyoutMenu)
-    -- call Blizzard handler
-    SpellFlyout_OnLoad(flyoutMenu)
-
+    doBlizOnLoad(flyoutMenu)
+    zebug.info:name("ForGerm_OnLoad"):print("flyoutMenu",flyoutMenu:GetName())
     -- initialize fields
     FlyoutMenu:oneOfUs(flyoutMenu)
-    Germ.flyoutMenu = flyoutMenu
+    Germ.flyoutMenu = flyoutMenu -- not used anywhere?
     flyoutMenu.isForGerm = true
+    flyoutMenu.isSharedByAllGerms = true
 end
 
 ---@param flyoutMenu FlyoutMenu
 function GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad(flyoutMenu)
-    -- call Blizzard handler
-    SpellFlyout_OnLoad(flyoutMenu)
-
+    doBlizOnLoad(flyoutMenu)
+    zebug.error:name("ForCatalog_OnLoad"):print("flyoutMenu",flyoutMenu:GetName())
     -- initialize fields
     FlyoutMenu:oneOfUs(flyoutMenu)
     Catalog.flyoutMenu = flyoutMenu

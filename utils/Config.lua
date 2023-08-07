@@ -7,8 +7,19 @@
 local ADDON_NAME, Ufo = ...
 local zebug = Ufo.Zebug:new()
 
+---@class Options -- IntelliJ-EmmyLua annotation
+---@field supportCombat boolean
+---@field doCloseOnClick boolean close the flyout after the user clicks one of its buttons
+local Options = {
+    supportCombat = true,
+    doCloseOnClick =true,
+}
+
 ---@class Config -- IntelliJ-EmmyLua annotation
-local Config = {}
+---@field opts Options
+local Config = {
+    opts = Options
+}
 Ufo.Config = Config
 
 -------------------------------------------------------------------------------
