@@ -37,7 +37,7 @@ local BlizApiFieldDef = {
     [ButtonType.SPELL] = { pickerUpper = PickupSpell, typeForBliz = ButtonType.SPELL, },
     [ButtonType.MOUNT] = { pickerUpper = PickupSpell, typeForBliz = ButtonType.SPELL, },
     [ButtonType.ITEM ] = { pickerUpper = PickupItem,  typeForBliz = ButtonType.ITEM,  },
-    [ButtonType.TOY  ] = { pickerUpper = PickupItem,  typeForBliz = ButtonType.ITEM,  },
+    [ButtonType.TOY  ] = { pickerUpper = PickupItem,  typeForBliz = ButtonType.TOY, key = "itemId"  },
     [ButtonType.MACRO] = { pickerUpper = PickupMacro, typeForBliz = ButtonType.MACRO --[[, key = "name"]] },
     [ButtonType.SNAFU] = { pickerUpper = nil,         typeForBliz = ButtonType.SPELL, key = "mountId" },
     [ButtonType.PET  ] = { pickerUpper = C_PetJournal.PickupPet, typeForBliz = ButtonType.PET, key = "petGuid" },
@@ -208,13 +208,15 @@ end
 function ButtonDef:getToolTipSetter()
     local type = self.type
     local id = self:getIdForBlizApi()
-    zebug.info:line(20,"id",id)
+    zebug.info:line(20, "type",type, "id",id)
 
     local tooltipSetter
     if type == ButtonType.SPELL or type == ButtonType.MOUNT then
         tooltipSetter = GameTooltip.SetSpellByID
-    elseif type == ButtonType.ITEM or type == ButtonType.TOY then
+    elseif type == ButtonType.ITEM then
         tooltipSetter = GameTooltip.SetItemByID
+    elseif type == ButtonType.TOY then
+        tooltipSetter = GameTooltip.SetToyByItemID
     elseif type == ButtonType.PET then
         tooltipSetter = GameTooltip.SetCompanionPet
     elseif type == ButtonType.MACRO then
