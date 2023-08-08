@@ -173,7 +173,6 @@ end
 function Germ:initFlyoutMenu()
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu.new(self)
-        self.flyoutMenu:updateForGerm(self)
     else
         self.flyoutMenu = UIUFO_FlyoutMenuForGerm
     end
@@ -283,6 +282,8 @@ function Germ:update(flyoutId)
     -- set the Germ's icon so that it reflects only USABLE buttons
     local icon = usableFlyout:getIcon() or flyoutDef.fallbackIcon or DEFAULT_ICON
     self:setIcon(icon)
+
+    self.flyoutMenu:updateForGerm(self)
 
     -- attach string representations of the buttons
     -- because Blizzard "secure" templates don't let us attach the actual array
