@@ -45,6 +45,7 @@ local snippet_Germ_Click = [=[
     local doCloseFlyout = flyoutMenu:GetAttribute("doCloseFlyout")
 	if doCloseFlyout then
 		flyoutMenu:Hide()
+		flyoutMenu:SetAttribute("doCloseFlyout", false)
 		return
     end
 
@@ -130,6 +131,8 @@ local snippet_Germ_Click = [=[
     end
 
     flyoutMenu:Show()
+    flyoutMenu:SetAttribute("doCloseFlyout", true)
+
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
     --flyoutMenu:AddToAutoHide(germ)
 ]=]
@@ -436,25 +439,24 @@ function handlers.OnPreClick(germ, whichMouseButton, down)
     onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
 
     local flyoutMenu = germ.flyoutMenu
+    if not flyoutMenu.isSharedByAllGerms then return end
+
+    --if isInCombatLockdown("Open/Close") then return end
+
     local isShown = flyoutMenu:IsShown()
     local doCloseFlyout
 
-    if flyoutMenu.isSharedByAllGerms then
-        local otherGerm = flyoutMenu:GetParent()
-        local isFromSameGerm = otherGerm == germ
-        zebug.trace:print("germ",germ:GetName(), "otherGerm", otherGerm:GetName(), "isFromSameGerm", isFromSameGerm, "isShown",isShown)
+    local otherGerm = flyoutMenu:GetParent()
+    local isFromSameGerm = otherGerm == germ
+    zebug.trace:print("germ",germ:GetName(), "otherGerm", otherGerm:GetName(), "isFromSameGerm", isFromSameGerm, "isShown",isShown)
 
-        if isFromSameGerm then
-            doCloseFlyout = isShown
-        else
-            doCloseFlyout = false
-        end
-
-        germ.flyoutMenu:updateForGerm(germ)
-    else
+    if isFromSameGerm then
         doCloseFlyout = isShown
+    else
+        doCloseFlyout = false
     end
 
+    germ.flyoutMenu:updateForGerm(germ)
     flyoutMenu:SetAttribute("doCloseFlyout", doCloseFlyout)
     zebug.trace:print("doCloseFlyout",doCloseFlyout)
 end

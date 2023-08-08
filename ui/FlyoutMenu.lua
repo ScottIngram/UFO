@@ -80,6 +80,7 @@ function FlyoutMenu:initializeCloseOnClick()
         local doClose = germ:GetAttribute("doCloseOnClick")
         if doClose then
             flyoutMenu:Hide()
+            flyoutMenu:SetAttribute("doCloseFlyout", false)
         end
 ]=]
         )
@@ -146,7 +147,7 @@ function FlyoutMenu:updateForCatalog(flyoutId)
         local btnDef = flyoutDef:getButtonDef(i)
         if btnDef then
             btnFrame:setDef(btnDef)
-            btnFrame:setIconTexture( btnDef:getIcon() ) -- TODO: do this automatically as part of setDef() ?
+            btnFrame:setIconTexture( btnDef:getIcon() )
         else
             -- the empty slot on the end
             btnFrame:setDef(nil)
