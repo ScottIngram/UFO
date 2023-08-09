@@ -84,8 +84,9 @@ end
 function FlyoutDef:forEachBtn(callback)
     local i = Xedni:getFlyoutDef(self.id)
     zebug.trace:out(20, "-", "i", i, "id",self.id, "self.btns",self.btns)
-    assert(self.btns, "This instance of FlyoutDef has no 'btns' field to coerce.")
+    assert(self.btns, "This instance of FlyoutDef has no 'btns' field.")
 
+    self:ensureCoerced()
     local invalidateCaches = false
     ---@param buttonDef ButtonDef
     for j, buttonDef in ipairs(self.btns) do -- this must remain self.btns and NOT self:getAllButtonDefs() - otherwise infinite loop
@@ -113,11 +114,17 @@ end
 
 function FlyoutDef:getAllButtonDefs()
     zebug.trace:print("self.alreadyCoercedMyButtons",self.alreadyCoercedMyButtons)
+    self:ensureCoerced()
+    return self.btns
+end
+
+function FlyoutDef:ensureCoerced()
     if not self.alreadyCoercedMyButtons then
-        self:forEachBtn(ButtonDef.oneOfUs)
+        for i, buttonDef in ipairs(self.btns) do
+            ButtonDef:oneOfUs(buttonDef)
+        end
         self:setAlreadyCoercedMyButtons()
     end
-    return self.btns
 end
 
 ---@return ButtonDef
