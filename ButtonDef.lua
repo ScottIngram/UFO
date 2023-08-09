@@ -135,21 +135,21 @@ function ButtonDef:getTypeForBlizApi()
     return blizApiFieldDef.typeForBliz
 end
 
--- TODO: fix bug - lack of rage / runic power / etc produces a false false response
 function ButtonDef:isUsable()
     local t = self.type
     local id = self:getIdForBlizApi()
     zebug.trace:print("name", self.name, "type",t, "spellId", self.spellId, "id",id)
-    if t == ButtonType.MOUNT or t == ButtonType.PET or t == ButtonType.TOY then
+    if t == ButtonType.MOUNT or t == ButtonType.PET then
         -- TODO: figure out how to find a mount
         return true -- GetMountInfoByID(mountId)
+    elseif t == ButtonType.TOY then
+        return PlayerHasToy(id)
     elseif t == ButtonType.SPELL then
         --zebug.trace:print("IsSpellKnownOrOverridesKnown",IsSpellKnownOrOverridesKnown(id))
         return IsSpellKnownOrOverridesKnown(id)
     elseif t == ButtonType.ITEM then
         local n = GetItemCount(id)
-        local m = PlayerHasToy(id)
-        return m or n > 0
+        return n > 0
     elseif t == ButtonType.MACRO then
         zebug.info:print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
         return isMacroGlobal(self.macroId) or getIdForCurrentToon() == self.macroOwner
