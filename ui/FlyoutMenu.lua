@@ -295,7 +295,7 @@ end
 ---@param flyoutMenu FlyoutMenu
 function GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad(flyoutMenu)
     doBlizOnLoad(flyoutMenu)
-    zebug.error:name("ForCatalog_OnLoad"):print("flyoutMenu",flyoutMenu:GetName())
+    zebug.info:name("ForCatalog_OnLoad"):print("flyoutMenu",flyoutMenu:GetName())
     -- initialize fields
     FlyoutMenu:oneOfUs(flyoutMenu)
     Catalog.flyoutMenu = flyoutMenu

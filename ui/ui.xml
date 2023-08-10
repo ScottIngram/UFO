@@ -311,7 +311,7 @@
         </Frames>
     </Frame>
 
-    <Frame name="UIUFO_DetailerPopup" hidden="true" parent="UIUFO_Catalog">
+    <Frame name="OLD_UIUFO_DetailerPopup" hidden="true" parent="UIUFO_Catalog">
         <Size x="297" y="206"/>
         <Anchors>
             <Anchor point="LEFT" relativePoint="RIGHT"/>
@@ -460,6 +460,31 @@
             <OnShow function="GLOBAL_UIUFO_DetailerPopup_OnShow"/>
             <OnHide function="GLOBAL_UIUFO_DetailerPopup_OnHide"/>
         </Scripts>
+    </Frame>
+
+
+    <Script>
+        LoadAddOn("Blizzard_MacroUI")
+        UfoMacroMixin = CreateFromMixins(MacroPopupFrameMixin, GLOBAL_UfoMacroPopupFrameMixin)
+    </Script>
+
+    <Frame
+            name="UIUFO_DetailerPopup"
+            mixin="UfoMacroMixin"
+            inherits="IconSelectorPopupFrameTemplate"
+            toplevel="true"
+            frameStrata="HIGH"
+            parent="UIUFO_Catalog"
+            movable="true"
+            enableMouse="true"
+            hidden="true"
+    >
+        <Anchors>
+            <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="0" y="5"/>
+        </Anchors>
+        <KeyValues>
+            <KeyValue key="editBoxHeaderText" value="Booga !!!" type="global"/>
+        </KeyValues>
     </Frame>
 
 </Ui>

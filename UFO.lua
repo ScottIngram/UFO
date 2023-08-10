@@ -96,6 +96,7 @@ function EventHandlers:ADDON_LOADED(addonName)
     end
 
     if addonName == "Blizzard_MacroUI" then
+        zebug.error:print("Heard event: ADDON_LOADED", addonName)
         Catalog:createToggleButton(MacroFrame)
         MacroShitShow:analyzeMacroUpdate()
     end
@@ -409,6 +410,8 @@ function initalizeAddonStuff()
     Config:initializePlacements()
     ButtonDef:registerToolTipRecorder()
     Catalog:createToggleButton(SpellBookFrame)
+
+    --LoadAddOn("Blizzard_MacroUI")
 
     isUfoInitialized = true
 end
