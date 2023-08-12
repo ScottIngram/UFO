@@ -84,7 +84,7 @@
         </Scripts>
     </Frame>
 
-    <Button name="UIUFO_CatalogFlyoutButton" virtual="true">
+    <Button name="UIUFO_CatalogEntry" virtual="true">
         <Size x="103" y="44"/>
         <Anchors>
             <Anchor point="LEFT" x="2" y="0"/>
@@ -163,7 +163,7 @@
                     </Layer>
                 </Layers>
                 <Scripts>
-                    <OnShow function="GLOBAL_UIUFO_CatalogFlyoutOptionsButtonsMouseOver_OnShow" />
+                    <OnShow function="GLOBAL_UIUFO_CatalogEntryButtonsMouseOver_OnShow" />
                     <OnEnter>
                         self.texture:SetAlpha(1.0);
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -179,7 +179,7 @@
                     <OnMouseUp>
                         self.texture:SetPoint("TOPLEFT", 0, 0);
                     </OnMouseUp>
-                    <OnClick function="GLOBAL_UIUFO_CatalogFlyoutButtonDeleteButton_OnClick" />
+                    <OnClick function="GLOBAL_UIUFO_CatalogEntryDeleteButton_OnClick" />
                 </Scripts>
             </Button>
             <Button name="$parentEditButton" parentKey="EditButton" hidden="true">
@@ -195,7 +195,7 @@
                     </Layer>
                 </Layers>
                 <Scripts>
-                    <OnShow function="GLOBAL_UIUFO_CatalogFlyoutOptionsButtonsMouseOver_OnShow" />
+                    <OnShow function="GLOBAL_UIUFO_CatalogEntryButtonsMouseOver_OnShow" />
                     <OnEnter>
                         self.texture:SetAlpha(1.0);
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -211,20 +211,20 @@
                     <OnMouseUp>
                         self.texture:SetPoint("TOPLEFT", 0, 0);
                     </OnMouseUp>
-                    <OnClick function="GLOBAL_UIUFO_CatalogFlyoutButtonEditButton_OnClick" />
+                    <OnClick function="GLOBAL_UIUFO_CatalogEntryEditButton_OnClick" />
                 </Scripts>
             </Button>
         </Frames>
         <Scripts>
-            <OnEnter function="GLOBAL_UIUFO_CatalogFlyoutButton_OnEnter" />
-            <OnLeave function="GLOBAL_UIUFO_CatalogFlyoutButton_OnLeave" />
+            <OnEnter function="GLOBAL_UIUFO_CatalogEntry_OnEnter" />
+            <OnLeave function="GLOBAL_UIUFO_CatalogEntry_OnLeave" />
             <OnLoad>
                 self:RegisterForDrag("LeftButton");
                 SetClampedTextureRotation(self.BgBottom, 180);
                 SetClampedTextureRotation(self.Arrow, 90);
             </OnLoad>
-            <OnClick function="GLOBAL_UIUFO_CatalogFlyoutOptionsButton_OnClick" />
-            <OnDragStart function="GLOBAL_UIUFO_CatalogFlyoutButton_OnDragStart" />
+            <OnClick function="GLOBAL_UIUFO_CatalogEntryButton_OnClick" />
+            <OnDragStart function="GLOBAL_UIUFO_CatalogEntry_OnDragStart" />
         </Scripts>
         <NormalTexture name="$parentIcon" parentKey="icon">
             <Size>
@@ -239,31 +239,6 @@
             </Anchors>
         </NormalTexture>
     </Button>
-
-    <CheckButton name="UIUFO_CatalogPopupBtnTemplate" inherits="SimplePopupButtonTemplate" virtual="true">
-        <Scripts>
-            <OnLoad>
-                local name = self:GetName();
-                self.icon = _G[name .. "Icon"];
-                self.name = _G[name .. "Name"];
-            </OnLoad>
-            <OnClick function="GLOBAL_UIUFO_CatalogPopupBtn_OnClick" />
-        </Scripts>
-        <NormalTexture name="$parentIcon" nonBlocking="true">
-            <Size>
-                <AbsDimension x="36" y="36"/>
-            </Size>
-            <Anchors>
-                <Anchor point="CENTER">
-                    <Offset>
-                        <AbsDimension x="0" y="-1"/>
-                    </Offset>
-                </Anchor>
-            </Anchors>
-        </NormalTexture>
-        <HighlightTexture alphaMode="ADD" file="Interface\Buttons\ButtonHilight-Square"/>
-        <CheckedTexture alphaMode="ADD" file="Interface\Buttons\CheckButtonHilight"/>
-    </CheckButton>
 
     <Frame name="UIUFO_Catalog" parent="SpellBookFrame" frameStrata="MEDIUM" inherits="TranslucentFrameTemplate" hidden="true">
         <Size>
@@ -311,166 +286,14 @@
         </Frames>
     </Frame>
 
-    <Frame name="OLD_UIUFO_DetailerPopup" hidden="true" parent="UIUFO_Catalog">
-        <Size x="297" y="206"/>
-        <Anchors>
-            <Anchor point="LEFT" relativePoint="RIGHT"/>
-        </Anchors>
-        <Layers>
-            <Layer level="BACKGROUND" textureSubLevel="-8">
-                <Texture name="$parentBg" parentKey="Bg">
-                    <Anchors>
-                        <Anchor point="TOPLEFT"  x="10" y="-10"/>
-                        <Anchor point="BOTTOMRIGHT"  x="-10" y="42"/>
-                    </Anchors>
-                    <Color r="0" g="0" b="0" a="0.65"/>
-                </Texture>
-            </Layer>
-            <Layer level="BACKGROUND">
-                <Texture name="$parentTopLeftCorner" inherits="Dialog-BorderTopLeft">
-                    <Anchors>
-                        <Anchor point="TOPLEFT">
-                            <Offset x="1" y="0"/>
-                        </Anchor>
-                    </Anchors>
-                </Texture>
-                <Texture name="$parentTopRightCorner" inherits="Dialog-BorderTopRight">
-                    <Anchors>
-                        <Anchor point="TOPRIGHT">
-                            <Offset x="-1" y="0"/>
-                        </Anchor>
-                    </Anchors>
-                </Texture>
-                <Texture name="$parentTopBorder" inherits="Dialog-BorderTop">
-                    <Anchors>
-                        <Anchor point="TOPLEFT" relativeTo="$parentTopLeftCorner" relativePoint="TOPRIGHT"  x="0" y="-1"/>
-                        <Anchor point="TOPRIGHT" relativeTo="$parentTopRightCorner" relativePoint="TOPLEFT"  x="0" y="-1"/>
-                    </Anchors>
-                </Texture>
-                <Texture name="$parentBottomLeftCorner" file="Interface\MacroFrame\MacroPopup-BotLeft">
-                    <Size x="256" y="64"/>
-                    <Anchors>
-                        <Anchor point="TOPLEFT">
-                            <Offset x="0" y="-164"/>
-                        </Anchor>
-                    </Anchors>
-                </Texture>
-                <Texture name="$parentBottomRightCorner" file="Interface\MacroFrame\MacroPopup-BotRight">
-                    <Size x="64" y="64"/>
-                    <Anchors>
-                        <Anchor point="TOPLEFT">
-                            <Offset x="256" y="-164"/>
-                        </Anchor>
-                    </Anchors>
-                </Texture>
-                <Texture name="$parentLeftBorder" inherits="Dialog-BorderLeft">
-                    <Anchors>
-                        <Anchor point="TOPLEFT" relativeTo="$parentTopLeftCorner" relativePoint="BOTTOMLEFT" x="1" y="0"/>
-                        <Anchor point="BOTTOMLEFT" relativeTo="$parentBottomLeftCorner" relativePoint="TOPLEFT" x="1" y="0"/>
-                    </Anchors>
-                </Texture>
-                <Texture name="$parentRightBorder" inherits="Dialog-BorderRight">
-                    <Anchors>
-                        <Anchor point="TOPRIGHT" relativeTo="$parentTopRightCorner" relativePoint="BOTTOMRIGHT"/>
-                        <Anchor point="BOTTOMRIGHT" relativeTo="$parentBottomRightCorner" relativePoint="TOPRIGHT"/>
-                    </Anchors>
-                </Texture>
-            </Layer>
-            <Layer level="ARTWORK">
-                <FontString inherits="GameFontHighlightSmall" text="MACRO_POPUP_CHOOSE_ICON" name="$parentChooseIconText">
-                    <Anchors>
-                        <Anchor point="TOPLEFT">
-                            <Offset x="24" y="-19"/>
-                        </Anchor>
-                    </Anchors>
-                </FontString>
-            </Layer>
-        </Layers>
-        <Frames>
-            <ScrollFrame name="$parentScrollFrame" inherits="FauxScrollFrameTemplate">
-                <Size>
-                    <AbsDimension x="296" y="151"/>
-                </Size>
-                <Anchors>
-                    <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
-                        <Offset>
-                            <AbsDimension x="-39" y="-17"/>
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-                <Layers>
-                    <Layer level="BACKGROUND">
-                        <Texture file="Interface\ClassTrainerFrame\UI-ClassTrainer-ScrollBar">
-                            <Size x="30" y="120"/>
-                            <Anchors>
-                                <Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
-                                    <Offset x="-3" y="2"/>
-                                </Anchor>
-                            </Anchors>
-                            <TexCoords left="0" right="0.46875" top="0.0234375" bottom="0.9609375"/>
-                        </Texture>
-                        <Texture file="Interface\ClassTrainerFrame\UI-ClassTrainer-ScrollBar">
-                            <Size x="30" y="79"/>
-                            <Anchors>
-                                <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">
-                                    <Offset x="-3" y="-2"/>
-                                </Anchor>
-                            </Anchors>
-                            <TexCoords left="0.53125" right="1.0" top="0.3828125" bottom="1.0"/>
-                        </Texture>
-                    </Layer>
-                </Layers>
-                <Scripts>
-                    <OnVerticalScroll>
-                        FauxScrollFrame_OnVerticalScroll(self, offset, 36, GLOBAL_UIUFO_DetailerPopup_Update);
-                    </OnVerticalScroll>
-                </Scripts>
-            </ScrollFrame>
-            <Button name="$parentCancelBtn" inherits="UIPanelButtonTemplate" text="CANCEL">
-                <Size x="78" y="22"/>
-                <Anchors>
-                    <Anchor point="BOTTOMRIGHT">
-                        <Offset x="-11" y="13"/>
-                    </Anchor>
-                </Anchors>
-                <Scripts>
-                    <OnClick>
-                        self:GetParent():Hide();
-                        PlaySound(SOUNDKIT.GS_TITLE_OPTION_OK);
-                    </OnClick>
-                </Scripts>
-            </Button>
-            <Button name="$parentOkayBtn" inherits="UIPanelButtonTemplate" text="OKAY">
-                <Size x="78" y="22"/>
-                <Anchors>
-                    <Anchor point="BOTTOMRIGHT" relativeTo="$parentCancelBtn" relativePoint="BOTTOMLEFT">
-                        <Offset x="-2" y="0"/>
-                    </Anchor>
-                </Anchors>
-                <Scripts>
-                    <OnClick>
-                        GLOBAL_UIUFO_DetailerPopupOkayBtn_OnClick(self, button, pushed);
-                        PlaySound(SOUNDKIT.GS_TITLE_OPTION_OK);
-                    </OnClick>
-                </Scripts>
-            </Button>
-        </Frames>
-        <Scripts>
-            <OnLoad function="GLOBAL_UIUFO_DetailerPopup_OnLoad"/>
-            <OnShow function="GLOBAL_UIUFO_DetailerPopup_OnShow"/>
-            <OnHide function="GLOBAL_UIUFO_DetailerPopup_OnHide"/>
-        </Scripts>
-    </Frame>
-
-
     <Script>
         LoadAddOn("Blizzard_MacroUI")
-        UfoMacroMixin = CreateFromMixins(MacroPopupFrameMixin, GLOBAL_UfoMacroPopupFrameMixin)
+        UfoIconPickerMixin = CreateFromMixins(IconSelectorPopupFrameTemplateMixin, MacroPopupFrameMixin, GLOBAL_IconPicker)
     </Script>
 
     <Frame
-            name="UIUFO_DetailerPopup"
-            mixin="UfoMacroMixin"
+            name="UIUFO_IconPicker"
+            mixin="UfoIconPickerMixin"
             inherits="IconSelectorPopupFrameTemplate"
             toplevel="true"
             frameStrata="HIGH"
@@ -483,7 +306,7 @@
             <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="0" y="5"/>
         </Anchors>
         <KeyValues>
-            <KeyValue key="editBoxHeaderText" value="Booga !!!" type="global"/>
+            <KeyValue key="editBoxHeaderText" value="GEARSETS_POPUP_TEXT" type="global"/>
         </KeyValues>
     </Frame>
 

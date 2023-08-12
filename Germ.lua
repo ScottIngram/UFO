@@ -352,6 +352,19 @@ function Germ:handleGermUpdateEvent()
     end
 end
 
+function Germ:setToolTip()
+    local flyoutDef = FlyoutDefsDb:get(self.flyoutId)
+    local label = flyoutDef.name or flyoutDef.id
+
+    if GetCVar("UberTooltips") == "1" then
+        GameTooltip_SetDefaultAnchor(GameTooltip, self)
+    else
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+    end
+
+    GameTooltip:SetText(label)
+end
+
 -------------------------------------------------------------------------------
 -- Handlers
 --
@@ -409,6 +422,7 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnEnter(germ)
+    germ:setToolTip()
     germ:handleGermUpdateEvent()
 end
 

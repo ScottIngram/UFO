@@ -159,40 +159,6 @@ function initDetailerPopup(iconTexture)
         popup:SetSelection(false, 1)
     end
 
-    --[[
-    Scroll and ensure that any selected equipment shows up in the list.
-    When we first press "save", we want to make sure any selected equipment set shows up in the list, so that
-    the user can just make his changes and press Okay to overwrite.
-    To do this, we need to find the current set (by icon) and move the offset of the UIUFO_DetailerPopup
-    to display it. Issue ID: 171220
-    ]]
-    initIconList()
-    local totalItems = #FC_ICON_FILENAMES
-    local texture, _
-    if popup.selectedTexture then
-        local foundIndex = nil
-        for index=1, totalItems do
-            texture = getIcon(index)
-            if texture == popup.selectedTexture then
-                foundIndex = index
-                break
-            end
-        end
-        if foundIndex == nil then
-            foundIndex = 1
-        end
-        -- now make it so we always display at least NUM_FLYOUT_ICON_ROWS of data
-        local offsetnumIcons = floor((totalItems-1)/NUM_FLYOUT_ICONS_PER_ROW)
-        local offset = floor((foundIndex-1) / NUM_FLYOUT_ICONS_PER_ROW)
-        offset = offset + min((NUM_FLYOUT_ICON_ROWS-1), offsetnumIcons-offset) - (NUM_FLYOUT_ICON_ROWS-1)
-        if foundIndex<=NUM_FLYOUT_ICONS_SHOWN then
-            offset = 0			--Equipment all shows at the same place.
-        end
-        FauxScrollFrame_OnVerticalScroll(UIUFO_DetailerPopupScrollFrame, offset*FLYOUT_ICON_ROW_HEIGHT, FLYOUT_ICON_ROW_HEIGHT, nil);
-    else
-        FauxScrollFrame_OnVerticalScroll(UIUFO_DetailerPopupScrollFrame, 0, FLYOUT_ICON_ROW_HEIGHT, nil);
-    end
-    GLOBAL_UIUFO_DetailerPopup_Update()
 end
 
 -------------------------------------------------------------------------------

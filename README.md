@@ -18,10 +18,11 @@ From there, you can drag your flyouts onto your action bars.  Each toon keeps th
 
 ### 3rd-Party Addon Support
 
-There is limited (let's call it beta) support for a few action bar addons:
-* Bartender4
-* ElvUI
-* [Request more](https://github.com/ScottIngram/Ufo/issues/new?labels=3rd+party+addon)
+There is limited (let's call it beta) support for a few action bar and other addons:
+* [Bartender4](https://www.curseforge.com/wow/addons/bartender4)
+* [ElvUI](https://tukui.org/elvui)
+* [LargerMacroIconSelection](https://www.curseforge.com/wow/addons/larger-macro-icon-selection)
+* Want more? [[Make a request]](https://github.com/ScottIngram/Ufo/issues/new?labels=3rd+party+addon)
 
 ### FAQ:
 
@@ -37,8 +38,8 @@ There is limited (let's call it beta) support for a few action bar addons:
 **Q:** What if one toon places an ability / item / etc. only they can use onto a flyout shared with other toons?  
 **A:** A flyout on the actionbars will only show buttons that are usable by the current toon.  However, in the catalog, all buttons will be visible.  
 
-**Q:** Do I have to set up my flyouts over and over for each spec?  
-**A:** The first time you change to a different spec, UFO will initialize it using your current flyout positions.  From that point, they are separate and can be changed independently.
+**Q:** Do I have to set up my flyouts on the action bars over and over for each spec?  
+**A:** The first time you change to a different spec, UFO will copy  your current flyout positions to the new spec.  From that point, they are separate and must be changed independently.
 
 
 ### Acknowledgements

@@ -100,6 +100,10 @@ function EventHandlers:ADDON_LOADED(addonName)
         Catalog:createToggleButton(MacroFrame)
         MacroShitShow:analyzeMacroUpdate()
     end
+
+    if addonName == "LargerMacroIconSelection" then
+        supportLargerMacroIconSelection()
+    end
 end
 
 function EventHandlers:PLAYER_LOGIN()
@@ -395,6 +399,18 @@ function registerSlashCmd()
     SlashCmdList["UFO"] = Catalog.open
 end
 
+local isLargerMacroIconSelectionInitialized
+
+function supportLargerMacroIconSelection()
+    if isLargerMacroIconSelectionInitialized then return end
+    local isLoaded = IsAddOnLoaded("LargerMacroIconSelection")
+    zebug.trace:print("isLoaded", isLoaded, "LargerMacroIconSelection",LargerMacroIconSelection)
+    if isLoaded then
+        LargerMacroIconSelection:Initialize(UIUFO_IconPicker)
+        isLargerMacroIconSelectionInitialized = true
+    end
+end
+
 -------------------------------------------------------------------------------
 -- Addon Lifecycle
 -------------------------------------------------------------------------------
@@ -403,6 +419,7 @@ function initalizeAddonStuff()
     if isUfoInitialized then return end
 
     ThirdPartyAddonSupport:detectSupportedAddons()
+    supportLargerMacroIconSelection()
 
     registerSlashCmd()
     Catalog:definePopupDialogWindow()
