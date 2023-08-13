@@ -428,10 +428,11 @@ function GLOBAL_UIUFO_CatalogEntryButton_OnClick(btnInCatalog, whichMouseButton,
         Catalog:update()
         PlaySound(1202) -- PutDownCloth_Leather01
     else
-        if scrollPane.selectedIdx == btnInCatalog.flyoutIndex then
+        local isSameRow = scrollPane.selectedIdx == btnInCatalog.flyoutIndex
+        if isSameRow and not IconPicker:IsShown() then
             scrollPane.selectedIdx = nil
         else
-            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)		-- inappropriately named, but a good sound.
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
             scrollPane.selectedIdx = btnInCatalog.flyoutIndex
         end
         IconPicker:Hide()
