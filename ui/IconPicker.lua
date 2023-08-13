@@ -83,19 +83,24 @@ function IconPicker:CancelButton_OnClick()
 end
 
 function IconPicker:OkayButton_OnClick()
-    local txt = self.BorderBox.IconSelectorEditBox:GetText();
+    local name      = self.BorderBox.IconSelectorEditBox:GetText()
     local iconIndex = self.IconSelector:GetSelectedIndex()
-    local icon = iconIndex and self:GetIconByIndex(iconIndex)
+    local icon      = iconIndex and self:GetIconByIndex(iconIndex)
     if icon == DEFAULT_ICON_FULL or icon == DEFAULT_ICON_FULL_CAPS then
         icon = nil
     end
 
     local flyoutId = self.flyoutId
-    local flyoutDef = FlyoutDefsDb:get(flyoutId)
-    flyoutDef.name = txt
-    flyoutDef.icon = icon
+    if flyoutId then
+        local flyoutDef = FlyoutDefsDb:get(flyoutId)
+        flyoutDef.name = name
+        flyoutDef.icon = icon
+    else
+        Catalog:addNewFlyout(name, icon)
+    end
 
-    zebug.info:print("txt",txt, "iconIndex",iconIndex, "icon",icon, "flyoutId",flyoutId, "flyoutDef",flyoutDef)
+    zebug.info:print("txt", name, "iconIndex",iconIndex, "icon",icon, "flyoutId",flyoutId)
+
     self:Hide()
     Catalog:update()
 end

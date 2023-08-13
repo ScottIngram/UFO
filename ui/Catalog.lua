@@ -322,13 +322,25 @@ function Catalog:setToolTip(btnInCatalog)
     local flyoutDef = FlyoutDefsDb:get(btnInCatalog.flyoutId)
     local label = flyoutDef.name or flyoutDef.id
 
-    if false and GetCVar("UberTooltips") == "1" then
+    if GetCVar("UberTooltips") == "1" then
         GameTooltip_SetDefaultAnchor(GameTooltip, btnInCatalog)
     else
         GameTooltip:SetOwner(btnInCatalog, "ANCHOR_LEFT")
     end
 
     GameTooltip:SetText(label)
+end
+
+function Catalog:addNewFlyout(name, icon)
+    zebug.info:print("name", name, "icon",icon)
+
+    local flyoutDef = FlyoutDefsDb:appendNewOne()
+
+    flyoutDef.name = name
+    flyoutDef.icon = icon
+
+    Catalog:update()
+    GermCommander:updateAll()
 end
 
 -------------------------------------------------------------------------------
