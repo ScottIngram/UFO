@@ -23,7 +23,7 @@ Ufo.ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 
 -- can't do my usual metatable magic because (I think) the Bliz UI objects already have.
 -- so, instead, just copy all of my methods onto the Bliz UI object
-function ButtonOnFlyoutMenu.oneOfUs(btnOnFlyout)
+function ButtonOnFlyoutMenu:oneOfUs(btnOnFlyout)
     -- merge the Bliz ActionButton object
     -- with this class's methods, functions, etc
     deepcopy(ButtonOnFlyoutMenu, btnOnFlyout)
@@ -326,7 +326,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(self)
     self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
 
     -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
-    ButtonOnFlyoutMenu.oneOfUs(self)
+    ButtonOnFlyoutMenu:oneOfUs(self)
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation

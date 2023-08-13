@@ -85,7 +85,7 @@
     </Frame>
 
     <Button name="UIUFO_CatalogEntry" virtual="true">
-        <Size x="103" y="44"/>
+        <Size x="115" y="44"/>
         <Anchors>
             <Anchor point="LEFT" x="2" y="0"/>
         </Anchors>
@@ -121,7 +121,7 @@
             </Layer>
             <Layer level="ARTWORK">
                 <FontString name="$parentText" inherits="GameFontNormalLeft" parentKey="text">
-                    <Size x="98" y="38"/>
+                    <Size x="50" y="38"/>
                     <Anchors>
                         <Anchor point="LEFT" x="44"/>
                     </Anchors>

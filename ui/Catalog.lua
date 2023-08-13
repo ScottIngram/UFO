@@ -234,7 +234,11 @@ function Catalog:update()
                     btnFrame.Arrow:Show()
                     flyoutMenu.parent = btnFrame
                     flyoutMenu:updateForCatalog(flyoutId)
-                    flyoutMenu:Show()
+                    if UIUFO_IconPicker:IsShown() then
+                        flyoutMenu:Hide()
+                    else
+                        flyoutMenu:Show()
+                    end
                 else
                     btnFrame.SelectedBar:Hide()
                     btnFrame.Arrow:Hide()
@@ -308,12 +312,32 @@ function Catalog:open()
     Catalog:toggle(toggleBtn, true)
 end
 
+function Catalog:selectRow(row)
+    zebug.warn:print("row", row)
+    UIUFO_CatalogScrollPane.selectedIdx = row
+    Catalog:update()
+end
+
+function Catalog:setToolTip(btnInCatalog)
+    local flyoutDef = FlyoutDefsDb:get(btnInCatalog.flyoutId)
+    local label = flyoutDef.name or flyoutDef.id
+
+    if false and GetCVar("UberTooltips") == "1" then
+        GameTooltip_SetDefaultAnchor(GameTooltip, btnInCatalog)
+    else
+        GameTooltip:SetOwner(btnInCatalog, "ANCHOR_LEFT")
+    end
+
+    GameTooltip:SetText(label)
+end
+
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting Catalog XML Callbacks
 -------------------------------------------------------------------------------
 
 function GLOBAL_UIUFO_CatalogEntry_OnLeave(btnInCatalog)
     zebug.info:print("leaving button", btnInCatalog.flyoutIndex)
+    GameTooltip_Hide()
     btnUnderTheMouse = nil
     Catalog:update()
 end
@@ -325,6 +349,8 @@ function GLOBAL_UIUFO_CatalogEntry_OnEnter(btnInCatalog)
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
         zebug.info:print("entering button with drag", btnInCatalog.flyoutIndex, "flyoutId", flyoutId)
     end
+
+    Catalog:setToolTip(btnInCatalog)
     btnUnderTheMouse = btnInCatalog
     Catalog:update()
 end
@@ -386,13 +412,11 @@ end
 function GLOBAL_UIUFO_CatalogEntryButton_OnClick(btnInCatalog, whichMouseButton, down)
     zebug.info:name("GLOBAL_UIUFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
     local scrollPane = UIUFO_CatalogScrollPane
-    local popup = UIUFO_IconPicker
 
-    if btnInCatalog.name == ADD_BUTTON_NAME then
-        popup:Show()
-        scrollPane.selectedIdx = nil
-        Catalog:update()
-    elseif btnInCatalog.name == LANDING_BUTTON_NAME then
+    if ADD_BUTTON_NAME == btnInCatalog.name then
+        Catalog:selectRow(nil)
+        UIUFO_IconPicker:open()
+    elseif LANDING_BUTTON_NAME == btnInCatalog.name then
         local flyoutIdOnTheMouse = GermCommander:getFlyoutIdFromCursor()
         local isDragging = flyoutIdOnTheMouse and btnUnderTheMouse
         zebug.info:name("GLOBAL_UIUFO_CatalogEntryButton_OnClick"):print("flyoutIdOnTheMouse",flyoutIdOnTheMouse, "isDragging",isDragging)
@@ -410,8 +434,8 @@ function GLOBAL_UIUFO_CatalogEntryButton_OnClick(btnInCatalog, whichMouseButton,
             PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)		-- inappropriately named, but a good sound.
             scrollPane.selectedIdx = btnInCatalog.flyoutIndex
         end
+        UIUFO_IconPicker:Hide()
         Catalog:update()
-        popup:Hide()
     end
 end
 
@@ -456,26 +480,12 @@ function GLOBAL_UIUFO_CatalogEntryDeleteButton_OnClick(deleteBtnFrame)
     end
 end
 
-function GLOBAL_UIUFO_CatalogEntryEditButton_OnClick(editBtnFrame)
-    local btnInCatalog = editBtnFrame:GetParent()
-    local iconPicker = UIUFO_IconPicker
-    --GLOBAL_UIUFO_CatalogEntryButton_OnClick(btnInCatalog);
-    UIUFO_FlyoutMenuForCatalog:Hide()
-    iconPicker:Show();
-    iconPicker.isEdit = true;
-    iconPicker.flyoutId = btnInCatalog.flyoutId;
-    local flyoutDef = FlyoutDefsDb:get(btnInCatalog.flyoutId)
-    local icon = flyoutDef.icon
+function GLOBAL_UIUFO_CatalogEntryEditButton_OnClick(editBtn)
+    local btnInCatalog = editBtn:GetParent()
+    UIUFO_IconPicker:open(btnInCatalog)
+    Catalog:selectRow(btnInCatalog.flyoutIndex)
 
-    local itemTexture = btnInCatalog.icon:GetTexture()
+    -- example code for getting the displayed icon as set by the 1st button on the flyout
+    --local itemTexture = btnInCatalog.icon:GetTexture()
     --itemTexture = string.upper(string.sub(itemTexture, string.len("INTERFACE\\ICONS\\") + 1));
-
-    --zebug.warn:line(70,"UIUFO_IconPicker")
-    --zebug.error:dumpKeys(UIUFO_IconPicker)
-    --zebug.warn:line(70,"IconPickerMixin")
-    --zebug.warn:dumpKeys(IconPickerMixin)
-    --zebug.warn:line(70,"UIUFO_IconPicker.IconSelector")
-    --zebug.error:dumpKeys(UIUFO_IconPicker.IconSelector)
-
-    IconPicker:open(btnInCatalog.name, icon)
 end
