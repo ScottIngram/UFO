@@ -288,7 +288,7 @@
 
     <Script>
         LoadAddOn("Blizzard_MacroUI")
-        UfoIconPickerMixin = CreateFromMixins(IconSelectorPopupFrameTemplateMixin, MacroPopupFrameMixin, GLOBAL_IconPicker)
+        UfoIconPickerMixin = CreateFromMixins(IconSelectorPopupFrameTemplateMixin, MacroPopupFrameMixin, GLOBAL_IconPickerMixin)
     </Script>
 
     <Frame

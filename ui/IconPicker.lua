@@ -19,7 +19,7 @@ local IconPicker = {
 Ufo.IconPicker = IconPicker
 
 -- export to the global namespace (via ExportToGlobal) so it's available to ui.xml
-GLOBAL_IconPicker = IconPicker
+GLOBAL_IconPickerMixin = IconPicker
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -27,6 +27,12 @@ GLOBAL_IconPicker = IconPicker
 
 local alreadyPlayedSoundViaOnShow
 local isAlreadyOpenForFlyoutId
+
+function IconPicker:init()
+    -- replace self with the fully amalgamated / instantiated mixin version so that "self" has all methods available
+    Ufo.IconPicker = UIUFO_IconPicker
+    IconPicker = UIUFO_IconPicker
+end
 
 function IconPicker:open(btnInCatalog)
     local flyoutId = btnInCatalog and btnInCatalog.flyoutId
@@ -44,7 +50,7 @@ function IconPicker:open(btnInCatalog)
         self.flyoutId = flyoutId
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
         icon = flyoutDef.icon or DEFAULT_ICON_FULL
-        i = UIUFO_IconPicker:GetIndexOfIcon(icon)
+        i = self:GetIndexOfIcon(icon)
         name = flyoutDef.name
     else
         self.flyoutId = nil

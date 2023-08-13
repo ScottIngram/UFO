@@ -427,8 +427,7 @@ function initalizeAddonStuff()
     Config:initializePlacements()
     ButtonDef:registerToolTipRecorder()
     Catalog:createToggleButton(SpellBookFrame)
-
-    --LoadAddOn("Blizzard_MacroUI")
+    IconPicker:init()
 
     isUfoInitialized = true
 end

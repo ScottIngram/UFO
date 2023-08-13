@@ -234,7 +234,7 @@ function Catalog:update()
                     btnFrame.Arrow:Show()
                     flyoutMenu.parent = btnFrame
                     flyoutMenu:updateForCatalog(flyoutId)
-                    if UIUFO_IconPicker:IsShown() then
+                    if IconPicker:IsShown() then
                         flyoutMenu:Hide()
                     else
                         flyoutMenu:Show()
@@ -313,7 +313,7 @@ function Catalog:open()
 end
 
 function Catalog:selectRow(row)
-    zebug.warn:print("row", row)
+    zebug.info:print("row", row)
     UIUFO_CatalogScrollPane.selectedIdx = row
     Catalog:update()
 end
@@ -382,7 +382,7 @@ function GLOBAL_UIUFO_CatalogScrollPane_OnShow(scrollPane)
 end
 
 function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
-    UIUFO_IconPicker:Hide()
+    IconPicker:Hide()
     UIUFO_FlyoutMenuForCatalog:Hide()
 end
 
@@ -415,7 +415,7 @@ function GLOBAL_UIUFO_CatalogEntryButton_OnClick(btnInCatalog, whichMouseButton,
 
     if ADD_BUTTON_NAME == btnInCatalog.name then
         Catalog:selectRow(nil)
-        UIUFO_IconPicker:open()
+        IconPicker:open()
     elseif LANDING_BUTTON_NAME == btnInCatalog.name then
         local flyoutIdOnTheMouse = GermCommander:getFlyoutIdFromCursor()
         local isDragging = flyoutIdOnTheMouse and btnUnderTheMouse
@@ -434,7 +434,7 @@ function GLOBAL_UIUFO_CatalogEntryButton_OnClick(btnInCatalog, whichMouseButton,
             PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)		-- inappropriately named, but a good sound.
             scrollPane.selectedIdx = btnInCatalog.flyoutIndex
         end
-        UIUFO_IconPicker:Hide()
+        IconPicker:Hide()
         Catalog:update()
     end
 end
@@ -482,7 +482,7 @@ end
 
 function GLOBAL_UIUFO_CatalogEntryEditButton_OnClick(editBtn)
     local btnInCatalog = editBtn:GetParent()
-    UIUFO_IconPicker:open(btnInCatalog)
+    IconPicker:open(btnInCatalog)
     Catalog:selectRow(btnInCatalog.flyoutIndex)
 
     -- example code for getting the displayed icon as set by the 1st button on the flyout
