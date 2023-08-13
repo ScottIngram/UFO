@@ -231,13 +231,14 @@ function Catalog:update()
                 -- Highlight the selected Flyout
                 if selectedIdx and (row == selectedIdx) then
                     btnFrame.SelectedBar:Show()
-                    btnFrame.Arrow:Show()
                     flyoutMenu.parent = btnFrame
                     flyoutMenu:updateForCatalog(flyoutId)
                     if IconPicker:IsShown() then
                         flyoutMenu:Hide()
+                        btnFrame.Arrow:Hide()
                     else
                         flyoutMenu:Show()
+                        --btnFrame.Arrow:Show() -- meh, who needs the arrow.  just easts up space
                     end
                 else
                     btnFrame.SelectedBar:Hide()

@@ -85,7 +85,7 @@
     </Frame>
 
     <Button name="UIUFO_CatalogEntry" virtual="true">
-        <Size x="115" y="44"/>
+        <Size x="105" y="44"/>
         <Anchors>
             <Anchor point="LEFT" x="2" y="0"/>
         </Anchors>
@@ -143,7 +143,7 @@
                         <AbsDimension x="38" y="16"/>
                     </Size>
                     <Anchors>
-                        <Anchor point="RIGHT"/>
+                        <Anchor point="RIGHT" x="5" y="0"/>
                     </Anchors>
                     <TexCoords left="0.15625" right="0.84375" top="0" bottom="0.5"/>
                 </Texture>
@@ -155,7 +155,7 @@
                     <AbsDimension x="14" y="14"/>
                 </Size>
                 <Anchors>
-                    <Anchor point="BOTTOMRIGHT" x="-18" y="2"/>
+                    <Anchor point="BOTTOMRIGHT" x="-4" y="7"/>
                 </Anchors>
                 <Layers>
                     <Layer level="ARTWORK">
