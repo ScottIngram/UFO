@@ -172,6 +172,8 @@ function Catalog:update()
                 -- insert the PLUS button at the bottom
                 btnFrame.name = ADD_BUTTON_NAME
                 btnFrame.label = nil
+                btnFrame.flyoutIndex = row
+                btnFrame.flyoutId = nil
                 btnFrame.text:SetText(L10N.NEW_FLYOUT)
                 btnFrame.text:SetTextColor(GREEN.r, GREEN.g, GREEN.b)
                 btnFrame.icon:SetTexture("Interface\\PaperDollInfoFrame\\Character-Plus")
@@ -183,6 +185,8 @@ function Catalog:update()
                 -- insert a LANDING TARGET for the user to drop the flyout they're dragging
                 btnFrame.name = LANDING_BUTTON_NAME
                 btnFrame.label = nil
+                btnFrame.flyoutIndex = row
+                btnFrame.flyoutId = nil
                 btnFrame.text:SetText(row)
                 btnFrame.text:SetTextColor(BLUE.r, BLUE.g, BLUE.b)
                 btnFrame.icon:SetTexture("Interface\\Buttons\\ButtonHilight-SquareQuickslot")
@@ -194,7 +198,7 @@ function Catalog:update()
                 -- if the user is moving a flyout to a new position in the catalog
                 -- then offset the other flyouts to make room for it
                 local flyoutIndex = row -- default to the actual row
-                if hoverIndex then
+                if hoverIndex and hoverIndex ~= theAddButton then
                     zebug.trace:print("row",row, "hoverIndex",hoverIndex, "flyoutIndexOnTheMouse",flyoutIndexOnTheMouse)
                     if row > hoverIndex and row <= flyoutIndexOnTheMouse then
                         flyoutIndex = row - 1
@@ -320,7 +324,10 @@ function Catalog:selectRow(row)
 end
 
 function Catalog:setToolTip(btnInCatalog)
-    local flyoutDef = FlyoutDefsDb:get(btnInCatalog.flyoutId)
+    local flyoutId = btnInCatalog.flyoutId
+    if not flyoutId then return end
+
+    local flyoutDef = FlyoutDefsDb:get(flyoutId)
     local label = flyoutDef.name or flyoutDef.id
 
     if GetCVar("UberTooltips") == "1" then
