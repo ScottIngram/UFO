@@ -96,7 +96,6 @@ function EventHandlers:ADDON_LOADED(addonName)
     end
 
     if addonName == "Blizzard_MacroUI" then
-        zebug.error:print("Heard event: ADDON_LOADED", addonName)
         Catalog:createToggleButton(MacroFrame)
         MacroShitShow:analyzeMacroUpdate()
     end
