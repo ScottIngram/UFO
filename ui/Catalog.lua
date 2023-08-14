@@ -198,7 +198,7 @@ function Catalog:update()
                 -- if the user is moving a flyout to a new position in the catalog
                 -- then offset the other flyouts to make room for it
                 local flyoutIndex = row -- default to the actual row
-                if hoverIndex and hoverIndex ~= theAddButton then
+                if hoverIndex and hoverIndex ~= theAddButton and flyoutIndexOnTheMouse then
                     zebug.trace:print("row",row, "hoverIndex",hoverIndex, "flyoutIndexOnTheMouse",flyoutIndexOnTheMouse)
                     if row > hoverIndex and row <= flyoutIndexOnTheMouse then
                         flyoutIndex = row - 1

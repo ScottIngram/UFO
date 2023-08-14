@@ -398,7 +398,8 @@ function handlers.OnPickupAndDrag(germ)
         if isInCombatLockdown("Drag and drop") then return end
         zebug.info:name("OnPickupAndDrag"):print("name",germ:GetName())
 
-        GermCommander:deletePlacement(germ:getBtnSlotIndex())
+        local btnSlotIndex = germ:getBtnSlotIndex()
+        GermCommander:deletePlacement(btnSlotIndex)
 
         local type, macroId = GetCursorInfo()
         if type then
@@ -407,12 +408,13 @@ function handlers.OnPickupAndDrag(germ)
             zebug.info:print("droppedFlyoutId",droppedFlyoutId, "btnSlotIndex",btnSlotIndex)
             if droppedFlyoutId then
                 -- the user is dragging a UFO
-                GermCommander:savePlacement(btnSlotIndex, droppedFlyoutId)
-                GermCommander:deleteProxy()
+                GermCommander:dropUfoOntoActionBar(btnSlotIndex, droppedFlyoutId)
             else
                 -- the user is just dragging a normal Bliz spell/item/etc.
                 PlaceAction(btnSlotIndex)
             end
+        else
+            GermCommander:clearUfoPlaceholderFromActionBar(btnSlotIndex)
         end
 
         FlyoutMenu:pickup(germ.flyoutId)

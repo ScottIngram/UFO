@@ -146,14 +146,32 @@ function GermCommander:extractBarBtnInfo(btnSlotIndex)
     }
 end
 
+function GermCommander:pickupPlaceHolder()
+    Ufo.thatWasMe = true
+    local name = KEEPER_MACRO_NAME
+    local exists = GetMacroInfo(name)
+    if not exists then
+        local icon = C_AddOns.GetAddOnMetadata(ADDON_NAME, "IconTexture")
+        zebug.info:print("name",name, "icon",icon, "KEEPER_MACRO_TEXT", KEEPER_MACRO_TEXT)
+        CreateMacro(name, icon, KEEPER_MACRO_TEXT)
+    end
+    PickupMacro(name)
+end
+
 function GermCommander:newGermProxy(flyoutId, icon)
     self:deleteProxy()
     return self:createProxy(flyoutId, icon)
 end
 
+local retainScrollPosition = true
+
 function GermCommander:deleteProxy()
     Ufo.thatWasMe = true
     DeleteMacro(PROXY_MACRO_NAME)
+    -- workaround Bliz bug
+    if MacroFrame:IsShown() then
+        MacroFrame:Update(retainScrollPosition)
+    end
 end
 
 local toonSpecific = false
@@ -168,6 +186,12 @@ end
 -- Check if this event was caused by dragging a flyout out of the Catalog and dropping it onto an actionbar.
 -- The targeted slot could: be empty; already have a different germ (or the same one); anything else.
 function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
+    if Ufo.droppedUfoOntoActionBar then
+        -- we triggered this event ourselves elsewhere and don't need to do anything more
+        Ufo.droppedUfoOntoActionBar = false
+        return
+    end
+
     local configChanged
     local existingFlyoutId = getFlyoutIdForSlot(btnSlotIndex)
 
@@ -183,8 +207,7 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
     end
 
     if droppedFlyoutId then
-        self:savePlacement(btnSlotIndex, droppedFlyoutId)
-        self:deleteProxy()
+        GermCommander:dropUfoOntoActionBar(btnSlotIndex, droppedFlyoutId)
         configChanged = true
     end
 
@@ -315,3 +338,22 @@ function GermCommander:getAllSpecsPlacementsConfig()
     local foo = Config:getAllSpecsPlacementsConfig()
     return foo
 end
+
+function GermCommander:dropUfoOntoActionBar(btnSlotIndex, flyoutId)
+    self:savePlacement(btnSlotIndex, flyoutId)
+    self:deleteProxy()
+    if Config.opts.usePlaceHolders then
+        Ufo.droppedUfoOntoActionBar = true
+        self:pickupPlaceHolder()
+        PlaceAction(btnSlotIndex)
+    end
+end
+
+function GermCommander:clearUfoPlaceholderFromActionBar(btnSlotIndex)
+    if Config.opts.usePlaceHolders then
+        -- pickup whatever it is onto the mouse cursor.
+        -- assume it's a UFO placeholder.  assume the cursor will be cleared later
+        PickupAction(btnSlotIndex)
+    end
+end
+

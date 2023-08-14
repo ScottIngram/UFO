@@ -11,8 +11,9 @@ local zebug = Ufo.Zebug:new()
 ---@field supportCombat boolean
 ---@field doCloseOnClick boolean close the flyout after the user clicks one of its buttons
 local Options = {
-    supportCombat = true,
-    doCloseOnClick =true,
+    supportCombat   = true,
+    doCloseOnClick  = true,
+    usePlaceHolders = true,
 }
 
 ---@class Config -- IntelliJ-EmmyLua annotation

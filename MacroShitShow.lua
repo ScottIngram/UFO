@@ -36,6 +36,7 @@ function MacroShitShow:analyzeMacroUpdate()
     -- The Bliz API helpfully informs me that something, anything, who knows what,
     -- but yes macro related might have just happened.  Figure out WTF it was.
 
+    zebug.info:print("Ufo.thatWasMe",Ufo.thatWasMe)
     if Ufo.thatWasMe then
         -- the event was caused by an action of this addon and as such we shall ignore it
         zebug.trace:print("ignoring proxy draggable creation/death")
