@@ -23,6 +23,8 @@ local Config = {
 }
 Ufo.Config = Config
 
+local opts = Config.opts
+
 -------------------------------------------------------------------------------
 -- Flyouts
 -------------------------------------------------------------------------------
@@ -61,6 +63,33 @@ end
 function Config:getAllSpecsPlacementsConfig()
     return UFO_SV_TOON.placementsForAllSpecs
 end
+
+-------------------------------------------------------------------------------
+-- Configuration Menu UI
+-------------------------------------------------------------------------------
+
+function Config:getOpts()
+    self.initializeOptsMemory()
+    return Config.opts
+end
+
+function Config:initializeOptsMemory()
+    if not UFO_SV_ACCOUNT.opts then
+        UFO_SV_ACCOUNT.opts = Options
+    end
+end
+
+local optionsMenu = {
+
+}
+
+function Config:initializeOptionsMenu()
+    --local db = LibStub("AceDB-3.0"):New("ImmersiveFade", defaults)
+    --options.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(db)
+    LibStub("AceConfig-3.0"):RegisterOptionsTable(ADDON_NAME, optionsMenu, { "ifade", "immersivefade" })
+    LibStub("AceConfigDialog-3.0"):AddToBlizOptions(ADDON_NAME, Ufo.myName)
+end
+
 
 -------------------------------------------------------------------------------
 -- Versioning

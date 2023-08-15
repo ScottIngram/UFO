@@ -405,6 +405,8 @@ end
 function initalizeAddonStuff()
     if isUfoInitialized then return end
 
+    Ufo.myName = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Title")
+
     MacroShitShow:init()
     GermCommander:delayedAsynchronousConditionalDeleteProxy()
     ThirdPartyAddonSupport:detectSupportedAddons()
