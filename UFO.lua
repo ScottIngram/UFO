@@ -4,14 +4,16 @@
 --[[
 
 TODO
+* BUG: deleting a flyout removes the germ but leaves the placeholder macro
+* FEATURE: use AceConfig-3.0
 * FEATURE: export/import - look at MacroManager for the [link] code.
 * BUG: canUse filter doesn't respect faction restricted pets / mounts
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
-* use ACE Lib/DataBroker so Titan Panel and other addons can open the UFO catalog
 * question: can I use GetItemSpell(itemId) to simplify my code ?
 * BUG: edit-mode -> change direction doesn't automatically update existing germs
 *
+* DONE: BUG: yet another macro tracking bug thanks to Blizzard_MacroUI snafu
 * DONE: BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
 * DONE: BUG: macro shitshow nil error on delete
 * DONE: FEATURE: replace existing icon picker with something closer to MacroManager / Weak Auras
@@ -84,10 +86,7 @@ function EventHandlers:ADDON_LOADED(addonName)
 
     -- Add the [UFO] button to the Pet/Mount/Etc window and the Macro window.
     -- But, we can't do that until those windows exist.
-    -- They are created by Bliz's built-in addons.
-    -- Inexplicably, Bliz doesn't necessarily load its own addons before it starts calling user addons.
-    -- So, we have to write anti-GOTCHA! code to compensate for yet another example of Bliz's bad decisions.
-    -- Why bad?  Otherwise, we could have simply created the [UFO] buttons in the XML
+    -- And they won't exist until Bliz's built-in addons load.
 
     if addonName == "Blizzard_Collections" then
         Catalog:createToggleButton(CollectionsJournal)
@@ -95,7 +94,7 @@ function EventHandlers:ADDON_LOADED(addonName)
 
     if addonName == "Blizzard_MacroUI" then
         Catalog:createToggleButton(MacroFrame)
-        MacroShitShow:analyzeMacroUpdate()
+        MacroShitShow:init() -- this is worthless at the point in time because Bliz hasn't actually loaded macros yet.  Golfclap.
     end
 
     if addonName == "LargerMacroIconSelection" then
@@ -405,6 +404,7 @@ end
 function initalizeAddonStuff()
     if isUfoInitialized then return end
 
+    MacroShitShow:init()
     GermCommander:delayedAsynchronousConditionalDeleteProxy()
     ThirdPartyAddonSupport:detectSupportedAddons()
     registerSlashCmd()

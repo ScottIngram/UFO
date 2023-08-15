@@ -29,8 +29,33 @@ local zebug = Zebug:new()
 local MacroShitShow = {}
 Ufo.MacroShitShow = MacroShitShow
 
+local WAS_INITIALIZED = true
 local macrosIndex
 local macrosMap
+
+function MacroShitShow:init()
+    if macrosIndex then return WAS_INITIALIZED end
+
+    zebug.info:print("initalizing macro index...")
+
+    macrosIndex = {}
+    macrosMap = {}
+    local didAnything = false
+    forEveryMacro(function(i, name)
+        zebug.trace:print("forEveryMacro...i",i, "name",name)
+        didAnything = true
+        macrosIndex[i] = name
+        macrosMap[name] = i
+    end)
+
+    if not didAnything then
+        zebug.info:print("There are no macros... Yeah, sure.  FU Bliz.")
+        macrosIndex = nil
+        macrosMap = nil
+    end
+
+    return not WAS_INITIALIZED
+end
 
 function MacroShitShow:analyzeMacroUpdate()
     -- The Bliz API helpfully informs me that something, anything, who knows what,
@@ -44,20 +69,13 @@ function MacroShitShow:analyzeMacroUpdate()
         return -- EXIT
     end
 
-    if not macrosIndex then
-        -- initialze and exit
-        zebug.trace:print("initialze and exit")
-        macrosIndex = {}
-        macrosMap = {}
-        forEveryMacro(function(i, name)
-            macrosIndex[i] = name
-            macrosMap[name] = i
-        end)
-        --zebug.trace:dumpy("INIT macrosMap",macrosMap)
-        --zebug.trace:dumpy("INIT macrosIndex",macrosIndex)
-
-        return -- EXIT
+    if self:init() ~= WAS_INITIALIZED then
+        -- was only just now initialzed so abort
+        zebug.info:print("not WAS_INITIALIZED")
+        return
     end
+
+    zebug.trace:print("analyzing...")
 
     -- analyze and act
     local delta = didAnyMacroChange()
