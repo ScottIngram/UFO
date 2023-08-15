@@ -116,7 +116,7 @@ end
 
 function GermCommander:getActionBarBtn(bbInfo)
     local actionBarBtn
-    if ThirdPartyAddonSupport.isActive then
+    if ThirdPartyAddonSupport.isAnyActionBarAddonActive then
         actionBarBtn = ThirdPartyAddonSupport:getParent(bbInfo)
     end
     if not actionBarBtn then

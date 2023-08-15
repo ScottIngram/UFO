@@ -60,7 +60,6 @@ TODO
 -------------------------------------------------------------------------------
 
 local ADDON_NAME, Ufo = ...
-local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
@@ -107,9 +106,8 @@ end
 function EventHandlers:PLAYER_LOGIN()
     zebug.trace:print("Heard event: PLAYER_LOGIN")
     local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
-    local msg = ADDON_NAME .. " v"..version .. " loaded"
-    local colorMsg = GetClassColorObj("ROGUE"):WrapTextInColorCode(msg)
-    print(colorMsg)
+    local msg = L10N.LOADED .. " v"..version
+    msgUser(msg)
 end
 
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
@@ -396,16 +394,8 @@ function registerSlashCmd()
     SlashCmdList["UFO"] = Catalog.open
 end
 
-local isLargerMacroIconSelectionInitialized
-
-function supportLargerMacroIconSelection()
-    if isLargerMacroIconSelectionInitialized then return end
-    local isLoaded = IsAddOnLoaded("LargerMacroIconSelection")
-    zebug.trace:print("isLoaded", isLoaded, "LargerMacroIconSelection",LargerMacroIconSelection)
-    if isLoaded then
-        LargerMacroIconSelection:Initialize(UIUFO_IconPicker)
-        isLargerMacroIconSelectionInitialized = true
-    end
+function msgUser(msg)
+    print(zebug.info:colorize(ADDON_NAME .. ": ") .. msg)
 end
 
 -------------------------------------------------------------------------------
@@ -417,8 +407,6 @@ function initalizeAddonStuff()
 
     GermCommander:delayedAsynchronousConditionalDeleteProxy()
     ThirdPartyAddonSupport:detectSupportedAddons()
-    supportLargerMacroIconSelection()
-
     registerSlashCmd()
     Catalog:definePopupDialogWindow()
     Config:initializeFlyouts()

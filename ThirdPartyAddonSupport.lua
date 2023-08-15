@@ -7,11 +7,11 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 local zebug = Zebug:new()
 
 ---@class ThirdPartyAddonSupport -- IntelliJ-EmmyLua annotation
----@field isActive boolean
+---@field isAnyActionBarAddonActive boolean
 ---@field ufoType string The classname
 local ThirdPartyAddonSupport = {
     ufoType = "ThirdPartyAddonSupport",
-    isActive = false,
+    isAnyActionBarAddonActive = false,
 }
 Ufo.ThirdPartyAddonSupport = ThirdPartyAddonSupport
 
@@ -19,6 +19,8 @@ Ufo.ThirdPartyAddonSupport = ThirdPartyAddonSupport
 -- Data
 -------------------------------------------------------------------------------
 
+---@class SUPPORTED_ADDONS -- IntelliJ-EmmyLua annotation
+---@field activate function
 local SUPPORTED_ADDONS -- to be defined below
 local warned = false
 local _getParent
@@ -29,13 +31,17 @@ local _getParent
 
 function ThirdPartyAddonSupport:detectSupportedAddons()
     for addon, methods in pairs(SUPPORTED_ADDONS) do
+        zebug.info:print("Checking - addon",addon)
         if IsAddOnLoaded(addon) then
-            ThirdPartyAddonSupport.isActive = true
-            _getParent = SUPPORTED_ADDONS[addon].getParent
-            break
+            msgUser(L10N.DETECTED .. " " .. addon)
+            SUPPORTED_ADDONS[addon].activate()
         end
     end
 end
+
+-------------------------------------------------------------------------------
+-- Action Bar Addons
+-------------------------------------------------------------------------------
 
 function ThirdPartyAddonSupport:getParent(bbInfo)
     return _getParent(bbInfo)
@@ -78,6 +84,19 @@ function getParentForElvUI(btnBarInfo)
     return parent
 end
 
+function activateActionBarAddon(parentGetterFunc)
+    ThirdPartyAddonSupport.isAnyActionBarAddonActive = true
+    _getParent = parentGetterFunc
+end
+
+-------------------------------------------------------------------------------
+-- Icons
+-------------------------------------------------------------------------------
+
+function supportLargerMacroIconSelection()
+    LargerMacroIconSelection:Initialize(UIUFO_IconPicker)
+end
+
 -------------------------------------------------------------------------------
 -- Constants
 -- I have to put these after the function declarations due to Lua's one-pass compiler.
@@ -85,10 +104,17 @@ end
 
 SUPPORTED_ADDONS = {
     Bartender4 = {
-        getParent = getParentForBartender4,
+        activate = function()
+            activateActionBarAddon(getParentForBartender4)
+        end,
     },
     ElvUI = {
-        getParent = getParentForElvUI,
+        activate = function()
+            activateActionBarAddon(getParentForElvUI)
+        end,
     },
+    LargerMacroIconSelection = {
+        activate = supportLargerMacroIconSelection,
+    }
 }
 
