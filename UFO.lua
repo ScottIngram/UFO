@@ -5,6 +5,7 @@
 
 TODO
 * BUG: deleting a flyout removes the germ but leaves the placeholder macro
+* FEATURE: add tool to install placeholder macros under each germ
 * FEATURE: use AceConfig-3.0
 * FEATURE: export/import - look at MacroManager for the [link] code.
 * BUG: canUse filter doesn't respect faction restricted pets / mounts
