@@ -4,19 +4,18 @@
 --[[
 
 TODO
-* BUG: macro shitshow nil error on delete
-* BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
-* FEATURE: support various action bar addons
 * FEATURE: export/import - look at MacroManager for the [link] code.
-* FEATURE: replace existing icon picker with something closer to MacroManager / Weak Auras
 * BUG: canUse filter doesn't respect faction restricted pets / mounts
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
 * optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
 * use ACE Lib/DataBroker so Titan Panel and other addons can open the UFO catalog
 * question: can I use GetItemSpell(itemId) to simplify my code ?
 * BUG: edit-mode -> change direction doesn't automatically update existing germs
-* BUG: when germs omit unusable buttons they exclude combat abilities based on not-enough-mana/runicpower/etc
 *
+* DONE: BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
+* DONE: BUG: macro shitshow nil error on delete
+* DONE: FEATURE: replace existing icon picker with something closer to MacroManager / Weak Auras
+* DONE: FEATURE: support various action bar addons
 * DONE: BUG: fix empty (unusable) flyouts showing remnants from previously opened flyout
 * DONE: BUG: if a toon edits a flyout containing buttons they can't use, the buttons go bye-bye.
 * DONE: BUG: fix the funky macro picker blank spaces
@@ -140,8 +139,7 @@ end
 function EventHandlers:CURSOR_CHANGED()
     if not isUfoInitialized then return end
     zebug.trace:line(40,"Heard event: CURSOR_CHANGED")
-    -- this event happens before ACTIONBAR_SLOT_CHANGED which needs the proxy -- TODO: find a workaround
-    --Catalog:clearProxyOnCursosChange()
+    GermCommander:delayedAsynchronousConditionalDeleteProxy()
 end
 
 -------------------------------------------------------------------------------
@@ -417,6 +415,7 @@ end
 function initalizeAddonStuff()
     if isUfoInitialized then return end
 
+    GermCommander:delayedAsynchronousConditionalDeleteProxy()
     ThirdPartyAddonSupport:detectSupportedAddons()
     supportLargerMacroIconSelection()
 

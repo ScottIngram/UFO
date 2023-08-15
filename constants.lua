@@ -23,8 +23,8 @@ CONSUMABLE = "Consumable"
 DEFAULT_ICON = "INV_Misc_QuestionMark"
 DEFAULT_ICON_FULL = "INTERFACE\\ICONS\\INV_Misc_QuestionMark"
 DEFAULT_ICON_FULL_CAPS = "INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK"
-PROXY_MACRO_NAME = "Z-UFO-PROXY"
-KEEPER_MACRO_NAME = "Z-UFO"
+PROXY_MACRO_NAME = "ZUFO-PROXY"
+KEEPER_MACRO_NAME = "ZUFO"
 KEEPER_MACRO_TEXT = [=[Placeholder for a UFO.
 
 Without this macro, you must set "Always Show Buttons" in Edit Mode (or "Button Grid" in Bartender4). Why? A UFO isn't a real button so the UI thinks its action bar slot is empty & will hide it.

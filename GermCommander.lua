@@ -163,23 +163,44 @@ function GermCommander:newGermProxy(flyoutId, icon)
     return self:createProxy(flyoutId, icon)
 end
 
-local retainScrollPosition = true
-
 function GermCommander:deleteProxy()
     Ufo.thatWasMe = true
     DeleteMacro(PROXY_MACRO_NAME)
-    -- workaround Bliz bug
+    -- workaround Bliz bug - make sure the macro frame accurately reflects that the macro has been deleted
     if MacroFrame:IsShown() then
-        MacroFrame:Update(retainScrollPosition)
+        MacroFrame:Update()
     end
 end
 
-local toonSpecific = false
+function doKillProxy()
+    local proxyExists = GetMacroInfo(PROXY_MACRO_NAME)
+    local isDraggingProxy = GermCommander:isDraggingProxy()
+    local doKillProxy = proxyExists and not isDraggingProxy
+    zebug.trace:print("proxyExists",proxyExists, "isDraggingProxy",isDraggingProxy, "doKillProxy", doKillProxy)
+    return doKillProxy
+end
+
+function GermCommander:delayedAsynchronousConditionalDeleteProxy()
+    zebug.trace:print("checking proxy...")
+    if doKillProxy() then
+        zebug.trace:print("deleting proxy in 1 second...")
+        C_Timer.After(1,
+            -- START callback
+            function()
+                zebug.trace:print("double checking proxy...")
+                if doKillProxy() then
+                    zebug.trace:print("DIE PROXY !!!")
+                    self:deleteProxy()
+                end
+            end
+        ) -- END callback
+    end
+end
 
 function GermCommander:createProxy(flyoutId, icon)
     Ufo.thatWasMe = true
     local macroText = flyoutId
-    return CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText, toonSpecific)
+    return CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText)
 end
 
 -- Responds to event: ACTIONBAR_SLOT_CHANGED
