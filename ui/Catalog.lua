@@ -44,7 +44,7 @@ function Catalog:definePopupDialogWindow()
         text = L10N.CONFIRM_DELETE,
         button1 = YES,
         button2 = NO,
-        OnAccept = function (dialog) FlyoutDefsDb:delete(dialog.flyoutId); Catalog:update(); GermCommander:updateAll(); end,
+        OnAccept = function (dialog) IconPicker:Hide(); FlyoutDefsDb:delete(dialog.flyoutId); Catalog:update(); GermCommander:updateAll(); end,
         OnCancel = function (dialog) end,
         hideOnEscape = 1,
         timeout = 0,
