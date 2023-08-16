@@ -1,6 +1,6 @@
 # UFO - Universal FlyOut
 
-A World of Warcraft addon - beta 6 release
+A World of Warcraft addon - beta 7 release
 
 UFO lets you create custom actionbar flyout menus similar to the built-in ones for mage portals, warlock demons, dragonriding abilities, etc.  But with UFO, you can include anything you want:
 
