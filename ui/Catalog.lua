@@ -5,8 +5,8 @@
 -- Module Loading
 -------------------------------------------------------------------------------
 
+---@type Ufo
 local ADDON_NAME, Ufo = ...
-local L10N = Ufo.L10N
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
@@ -408,7 +408,12 @@ end
 
 function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
     zebug.trace:print("addonName",addonName, "whichMouseButton", whichMouseButton, "SpellBookFrame",SpellBookFrame)
-    Catalog:open()
+
+    if whichMouseButton == "LeftButton" then
+        Catalog:open()
+    else
+        Settings.OpenToCategory(Ufo.myTitle)
+    end
 end
 
 function GLOBAL_Any_BtnToToggleCatalog_OnClick(anyBtnToToggleCatalog)

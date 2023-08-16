@@ -62,11 +62,17 @@ TODO
 -- Module Loading
 -------------------------------------------------------------------------------
 
+---@class Ufo -- IntelliJ-EmmyLua annotation
+---@field myTitle string Ufo.toc Title
+---@field thatWasMe boolean flag used to stop event handler responses to UFO actions related to macros
+---@field droppedUfoOntoActionBar boolean flag used to stop event handler responses to UFO actions related to drag and drop
+---@field pickedUpBtn table table of data for a UFO on the mouse cursor
 local ADDON_NAME, Ufo = ...
 
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
 local zebug = Zebug:new()
+
 
 -------------------------------------------------------------------------------
 -- Data
@@ -405,15 +411,18 @@ end
 function initalizeAddonStuff()
     if isUfoInitialized then return end
 
-    Ufo.myName = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Title")
+    Ufo.myTitle = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Title")
+
+    Config:initializeFlyouts()
+    Config:initializePlacements()
+    Config:initializeOptsMemory()
+    Config:initializeOptionsMenu()
 
     MacroShitShow:init()
     GermCommander:delayedAsynchronousConditionalDeleteProxy()
     ThirdPartyAddonSupport:detectSupportedAddons()
     registerSlashCmd()
     Catalog:definePopupDialogWindow()
-    Config:initializeFlyouts()
-    Config:initializePlacements()
     ButtonDef:registerToolTipRecorder()
     Catalog:createToggleButton(SpellBookFrame)
     IconPicker:init()
