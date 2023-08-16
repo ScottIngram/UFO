@@ -27,6 +27,9 @@ Ufo.Config = Config
 
 local opts
 
+---@type GermCommander
+local GermCommander -- initialized below
+
 -------------------------------------------------------------------------------
 -- Flyouts
 -------------------------------------------------------------------------------
@@ -71,7 +74,6 @@ end
 -------------------------------------------------------------------------------
 
 function Config:initializeOptsMemory()
-    print("Config:initializeOptsMemory")
     if not UFO_SV_ACCOUNT.opts then
         UFO_SV_ACCOUNT.opts = Options
     end
@@ -103,7 +105,7 @@ local optionsMenu = {
             type = "toggle",
             set = function(optionsMenu, val)
                 opts.doCloseOnClick = val
-                Ufo.GermCommander:updateAll()
+                GermCommander:updateAll()
             end,
             get = function()
                 return opts.doCloseOnClick
@@ -118,7 +120,7 @@ local optionsMenu = {
             order = 40,
             type = 'description',
             name = [=[
-Each UFO placed onto an action bar has a special macro (named "]=].. Ufo.KEEPER_MACRO_NAME ..[=[") to hold its place as a button and ensure the UI renders it.
+Each UFO placed onto an action bar has a special macro (named "]=].. Ufo.PLACEHOLDER_MACRO_NAME ..[=[") to hold its place as a button and ensure the UI renders it.
 
 You may disable placeholder macros, but, doing so will require extra UI configuration on your part: You must set the "Always Show Buttons" config option for action bars in Bliz UI "Edit Mode" (in Bartender4 the same option is called "Button Grid").
 ]=]
@@ -138,6 +140,11 @@ You may disable placeholder macros, but, doing so will require extra UI configur
             set = function(optionsMenu, val)
                 opts.usePlaceHolders = val
                 zebug.info:name("opt:usePlaceHolders()"):print("new val",val)
+                if val then
+                    GermCommander:ensureAllGermsHavePlaceholders()
+                else
+                    DeleteMacro(Ufo.PLACEHOLDER_MACRO_NAME)
+                end
             end,
             get = function()
                 return opts.usePlaceHolders
@@ -160,6 +167,8 @@ You may disable placeholder macros, but, doing so will require extra UI configur
 }
 
 function Config:initializeOptionsMenu()
+    GermCommander = Ufo.GermCommander
+
     --local db = LibStub("AceDB-3.0"):New(ADDON_NAME, defaults)
     --options.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(db)
     LibStub("AceConfig-3.0"):RegisterOptionsTable(ADDON_NAME, optionsMenu)

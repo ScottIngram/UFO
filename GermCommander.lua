@@ -95,6 +95,11 @@ function GermCommander:updateAll()
                 self:saveGerm(germ)
             end
             germ:update(flyoutId)
+            if Config.opts.usePlaceHolders then
+                if not self:hasPlaceholder(btnSlotIndex) then
+                    self:putPlaceholder(btnSlotIndex)
+                end
+            end
         else
             -- because one toon can delete a flyout while other toons still have it on their bars
             zebug.warn:print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
@@ -146,16 +151,19 @@ function GermCommander:extractBarBtnInfo(btnSlotIndex)
     }
 end
 
-function GermCommander:pickupPlaceHolder()
+function GermCommander:createPlaceholder()
     Ufo.thatWasMe = true
-    local name = KEEPER_MACRO_NAME
-    local exists = GetMacroInfo(name)
+    local exists = GetMacroInfo(PLACEHOLDER_MACRO_NAME)
     if not exists then
         local icon = C_AddOns.GetAddOnMetadata(ADDON_NAME, "IconTexture")
-        zebug.info:print("name",name, "icon",icon, "KEEPER_MACRO_TEXT", KEEPER_MACRO_TEXT)
-        CreateMacro(name, icon, KEEPER_MACRO_TEXT)
+        zebug.info:print("name",PLACEHOLDER_MACRO_NAME, "icon",icon, "PLACEHOLDER_MACRO_TEXT", PLACEHOLDER_MACRO_TEXT)
+        CreateMacro(PLACEHOLDER_MACRO_NAME, icon, PLACEHOLDER_MACRO_TEXT)
     end
-    PickupMacro(name)
+end
+
+function GermCommander:pickupPlaceHolder()
+    self:createPlaceholder()
+    PickupMacro(PLACEHOLDER_MACRO_NAME)
 end
 
 function GermCommander:newGermProxy(flyoutId, icon)
@@ -364,10 +372,15 @@ function GermCommander:dropUfoOntoActionBar(btnSlotIndex, flyoutId)
     self:savePlacement(btnSlotIndex, flyoutId)
     self:deleteProxy()
     if Config.opts.usePlaceHolders then
-        Ufo.droppedUfoOntoActionBar = true
-        self:pickupPlaceHolder()
-        PlaceAction(btnSlotIndex)
+        self:putPlaceholder(btnSlotIndex)
     end
+end
+
+function GermCommander:putPlaceholder(btnSlotIndex)
+    Ufo.droppedUfoOntoActionBar = true
+    self:pickupPlaceHolder()
+    zebug.trace:print("btnSlotIndex",btnSlotIndex)
+    PlaceAction(btnSlotIndex)
 end
 
 function GermCommander:clearUfoPlaceholderFromActionBar(btnSlotIndex)
@@ -375,6 +388,28 @@ function GermCommander:clearUfoPlaceholderFromActionBar(btnSlotIndex)
         -- pickup whatever it is onto the mouse cursor.
         -- assume it's a UFO placeholder.  assume the cursor will be cleared later
         PickupAction(btnSlotIndex)
+    end
+end
+
+function GermCommander:hasPlaceholder(btnSlotIndex)
+    local type, id = GetActionInfo(btnSlotIndex)
+    zebug.trace:print("type",type, "id",id)
+    if type == ButtonType.MACRO then
+        local name = GetMacroInfo(id)
+        zebug.trace:print("name",name)
+        return name == PLACEHOLDER_MACRO_NAME
+    end
+    return false
+end
+
+function GermCommander:ensureAllGermsHavePlaceholders()
+    self:createPlaceholder()
+    self:updateAll()
+end
+
+function GermCommander:nukePlaceholder()
+    while GetMacroInfo(PLACEHOLDER_MACRO_NAME) do
+        DeleteMacro(PLACEHOLDER_MACRO_NAME)
     end
 end
 

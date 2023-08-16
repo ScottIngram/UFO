@@ -5,8 +5,6 @@
 
 TODO
 * BUG: deleting a flyout removes the germ but leaves the placeholder macro
-* FEATURE: add tool to install placeholder macros under each germ
-* FEATURE: use AceConfig-3.0
 * FEATURE: export/import - look at MacroManager for the [link] code.
 * BUG: canUse filter doesn't respect faction restricted pets / mounts
 * make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
@@ -14,6 +12,8 @@ TODO
 * question: can I use GetItemSpell(itemId) to simplify my code ?
 * BUG: edit-mode -> change direction doesn't automatically update existing germs
 *
+* DONE: FEATURE: use AceConfig-3.0
+* DONE: FEATURE: add tool to install placeholder macros under each germ
 * DONE: BUG: yet another macro tracking bug thanks to Blizzard_MacroUI snafu
 * DONE: BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
 * DONE: BUG: macro shitshow nil error on delete
