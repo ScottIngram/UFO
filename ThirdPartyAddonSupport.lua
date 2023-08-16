@@ -60,7 +60,7 @@ function getParentForBartender4(btnBarInfo)
         parent.bar.GetSpellFlyoutDirection = function() return parent.config.flyoutDirection end
     else
         if not warned then
-            print(zebug.error:colorize(L10N.BARTENDER_BAR_DISABLED))
+            msgUser(L10N.BARTENDER_BAR_DISABLED)
             warned = true
         end
     end

@@ -81,10 +81,21 @@ function Catalog:createToggleButton(blizFrame)
     btnFrame:SetFrameStrata(xBtnFrame:GetFrameStrata())
     btnFrame:SetFrameLevel(xBtnFrame:GetFrameLevel()+1 )
     btnFrame.Text:SetText("UFO")
-    btnFrame:SetScript("OnClick", function(zelf) Catalog:toggle(zelf) end)
+    btnFrame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    btnFrame:SetScript("OnClick", Catalog.clickUfoButton)
     btnFrame:Show()
 
     toggleBtns[blizFrame] = btnFrame
+end
+
+function Catalog:clickUfoButton(whichMouseButton, isDown)
+    zebug.info:print("ufoBtn", self:GetName(), "whichMouseButton",whichMouseButton, "isDown",isDown)
+
+    if whichMouseButton == "LeftButton" then
+        Catalog:toggle(self)
+    else
+        Settings.OpenToCategory(Ufo.myTitle)
+    end
 end
 
 function Catalog:toggle(clickedBtn, forceOpen)
@@ -414,10 +425,6 @@ function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
     else
         Settings.OpenToCategory(Ufo.myTitle)
     end
-end
-
-function GLOBAL_Any_BtnToToggleCatalog_OnClick(anyBtnToToggleCatalog)
-    Catalog:toggle(anyBtnToToggleCatalog)
 end
 
 -- throttle OnUpdate because it fires as often as FPS and is very resource intensive

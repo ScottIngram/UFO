@@ -90,80 +90,57 @@ local optionsMenu = {
     type = "group",
     args = {
         helpText = {
-            order = 10,
+            order = 5,
             type = 'description',
-            name = [=[
-UFO lets you create custom actionbar flyout menus similar to the built-in ones for mage portals, warlock demons, dragonriding abilities, etc.  But with UFO, you can include anything you want:
-
-* Spells
-* Items
-* Mounts
-* Pets
-* Macros
-* Trade skill Windows
-
-UFO adds a flyout catalog UI onto the side of various panels (Spellbook, Macros, Collections) to let you create and organize multiple flyouts.  These can be shared between all characters on your account.
-
-From there, you can drag your flyouts onto your action bars.  Each toon keeps their own distinct record of which flyouts are on which bars.  Furthermore, placements are stored per spec and automatically change when you change your spec.
-
-]=]
+            fontSize = "small",
+            name = "(Shortcut: Right-click the [UFO] button to open this config menu.)\n\n",
         },
-        url = {
-            order = 11,
-            name = "Full documentation can be found on Curseforge",
-            type = "input",
-            width = "double",
-            get = function() return "https://curseforge.com/wow/addons/ufo/"  end
+        doCloseOnClick = {
+            order = 10,
+            name = "Auto-Close UFO",
+            desc = "Closes the UFO after clicking any of its buttons",
+            width = "full",
+            type = "toggle",
+            set = function(optionsMenu, val)
+                opts.doCloseOnClick = val
+                Ufo.GermCommander:updateAll()
+            end,
+            get = function()
+                return opts.doCloseOnClick
+            end,
         },
         configHeader = {
             order = 20,
-            name = "Configuration",
+            name = "PlaceHolder Macros VS Edit Mode Config",
             type = 'header',
         },
         helpTextForPlaceHolders = {
             order = 40,
             type = 'description',
             name = [=[
-Because UFOs aren't real buttons, when they are placed on an action bar the UI thinks it's empty and typically leaves it hidden.
+Each UFO placed onto an action bar has a special macro (named "]=].. Ufo.KEEPER_MACRO_NAME ..[=[") to hold its place as a button and ensure the UI renders it.
 
-To solve this, two workarounds exist: Extra UI configuration OR Placeholder macros.
-
-Extra UI configuration: You must set the \"Always Show Buttons\" config option for action bars in Bliz UI \"Edit Mode\" (or \"Button Grid\" in Bartender4).
-
-Placeholder macros: UFO will
-Without this macro, you must set "Always Show Buttons" in Edit Mode (or "Button Grid" in Bartender4). Why? A UFO isn't a real button so the UI thinks its action bar slot is empty & will hide it.
-If you stop using UFO, delete this macro to remove it from your action bars.
-  ]=]
+You may disable placeholder macros, but, doing so will require extra UI configuration on your part: You must set the "Always Show Buttons" config option for action bars in Bliz UI "Edit Mode" (in Bartender4 the same option is called "Button Grid").
+]=]
         },
         usePlaceHolders = {
             order = 41,
             name = "Choose your workaround:",
-            desc = "Because UFOs aren't real buttons, when they are placed on Bliz Action bars, the UI thinks those buttons are empty.  Choose your workaround:",
+            desc = "Because UFOs aren't spells or items, when they are placed into an action bar slot, the UI thinks that slot is empty and doesn't render the slot by default.",
             width = "full",
             type = "select",
             style = "radio",
             values = {
-                [false] = "Extra UI configuration" ,
-                [true]  = "Placeholder macros",
+                [true]  = "Placeholder Macros",
+                [false] = "Extra UI Configuration" ,
             },
+            sorting = {true,false},
             set = function(optionsMenu, val)
                 opts.usePlaceHolders = val
+                zebug.info:name("opt:usePlaceHolders()"):print("new val",val)
             end,
             get = function()
                 return opts.usePlaceHolders
-            end,
-        },
-        doCloseOnClick = {
-            order = 50,
-            name = "Auto-Close Flyout",
-            desc = "Close the flyout after clicking any of its buttons",
-            width = "full",
-            type = "toggle",
-            set = function(optionsMenu, val)
-                opts.doCloseOnClick = val
-            end,
-            get = function()
-                return opts.doCloseOnClick
             end,
         },
         supportCombat = {
