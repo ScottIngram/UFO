@@ -16,6 +16,12 @@ UFO adds a flyout catalog UI onto the side of various panels (Spellbook, Macros,
 
 From there, you can drag your flyouts onto your action bars.  Each toon keeps their own distinct record of which flyouts are on which bars.  Furthermore, placements are stored per spec and automatically change when you change your spec.
 
+![UFO Catalog](../assets/assets/UFO-Catalog-Open.png)
+
+![Flyouts](../assets/assets/Shared-Flyout.png)
+
+![Demo](../assets/assets/ufo-cap-2-med-720-4fps.gif)
+
 ### 3rd-Party Addon Support
 
 There is limited (let's call it beta) support for a few action bar and other addons:
