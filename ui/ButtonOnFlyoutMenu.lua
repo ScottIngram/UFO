@@ -254,7 +254,7 @@ function ButtonOnFlyoutMenu:updateCount()
     if not hasItem then
         local spellId = btnDef and btnDef.spellId
         if exists(spellId) then
-            zebug.trace:out("spellID",self.spellID)
+            zebug.trace:print("spellID",self.spellID)
             -- use Bliz's built-in handler for the stuff it understands, ie, not items
             SpellFlyoutButton_UpdateCount(self)
             return
