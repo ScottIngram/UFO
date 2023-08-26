@@ -9,6 +9,8 @@ V_PATCH = 0
 V_UFO = "alpha"
 VERSION = table.concat({V_MAJOR, V_MINOR, V_PATCH, V_UFO}, ".")
 
+QUOTE = "\""
+EOL = "\n"
 X = nil
 MAX_FLYOUT_SIZE = 30
 NON_SPEC_SLOT = 5

@@ -1,62 +1,6 @@
 -- UFO.lua
 -- addon lifecycle methods, coordination between submodules, etc.
 
---[[
-
-TODO
-* BUG: deleting a flyout removes the germ but leaves the placeholder macro
-* FEATURE: export/import - look at MacroManager for the [link] code.
-* BUG: canUse filter doesn't respect faction restricted pets / mounts
-* make germs glow when you mouseover their flyouts in the catalog (same way spells on the actionbars glow when you point at them in the spellbook)
-* optimize handlers so that everything isn't always updating ALL germs.  Only update the affected ones.
-* question: can I use GetItemSpell(itemId) to simplify my code ?
-* BUG: edit-mode -> change direction doesn't automatically update existing germs
-*
-* DONE: FEATURE: use AceConfig-3.0
-* DONE: FEATURE: add tool to install placeholder macros under each germ
-* DONE: BUG: yet another macro tracking bug thanks to Blizzard_MacroUI snafu
-* DONE: BUG: dropping a flyout from the cursor onto nothing fails to delete its proxy.  FIX: use CURSOR_CHANGED event
-* DONE: BUG: macro shitshow nil error on delete
-* DONE: FEATURE: replace existing icon picker with something closer to MacroManager / Weak Auras
-* DONE: FEATURE: support various action bar addons
-* DONE: BUG: fix empty (unusable) flyouts showing remnants from previously opened flyout
-* DONE: BUG: if a toon edits a flyout containing buttons they can't use, the buttons go bye-bye.
-* DONE: BUG: fix the funky macro picker blank spaces
-* DONE: FEATURE: support ElvUI
-* DONE: FEATURE: support Bartender4
-* DONE: FEATURE: reorder flyouts in the catalog
-* DONE: BUG: when a macro is added or deleted (from the Bliz macro editor) then all of the macro IDs shift by 1 FUBARing the macro IDs in UFO
-* DONE: BUG: the empty btn sparkles on every OnUpdate
-* DONE: BUG: Oops, I clobbered the frames on the germ flyouts
-* DONE: change onupdate to always happen on initial open
-* DONE: optimize xedni - don't throw away the whole thing - for flyoutId = deleted index to howMany { flyout[flyoutId]-- }
-* DONE: BUG: deleting a flyout sometimes loses the guid
-* DONE: bug: if one toon deletes a flyout causing the IDs of the subsequent ones to change by 1, then the other toons' configs are FUBAR
-* DONE: put a ufo -> catalog button on the collections and macro panels too
-* DONE: BUG: OnDragStart needs to accommodate when there is already something on the cursor
-* DONE: - steps to recreate: pick up any spell, release the mouse button over thin air such that the spell stays on the cursor, then hover over a germ, hold down left-mouse, begin dragging
-* DONE: BUG: macros sometimes(?) have the wrong image / tooltip
-* DONE: centralize the numerous "if ButtonType == FOO then BAR" blocks into some common solution
-* DONE: BUG: when germs omit unusable buttons, they still appear and now it and each subsequent btn behaves as though it were the one after
-* DONE: refactor FlyoutMenu:updateFlyoutMenuForGerm and move some logic into a germ:Method(); replace all mentions of UIUFO_FlyoutMenuForGerm with simply self
-* DONE: implement UFO_SV_FLYOUTS as array of self-contained button objects rather than each button spread across multiple parallel arrays
-* DONE: encapsulate as FlyoutConfigData
-* DONE: encapsulate as PlacementConfigData
-* DONE: BUG: germs that extend horizontally (as the ones on the vertical action bars) sometimes have weirdly wide borders
-* DONE: fix C_MountJournal OnPickup global var bug
-* DONE: consolidate all the redundant code, such as the if actionType == "spell" then PickupSpell(spellId) --> function ButtonOnFlyoutMenu:PickMeUp()
-* DONE: BLIZ BUG: fixed flyouts on side bars pointing in the wrong direction because the Bliz API reported the wrong direction
-* DONE: BUG: bliz bug: C_MountJournal index is in flux (e.g. a search filter will change the indices)
-* DONE: BLIZ BUG: picking up a mount by its spell ID results in a cursor whose GetCursorInfo() returns "companion" n "MOUNT" where n is... a meaningless number?
-* DONE: BUG: flyouts don't indicate if an item is usable / not usable
-* DONE: BUG: stacks, charges, etc for things that don't have stacks etc.
-* DONE: BUG: cooldown display only works for spells, not inventory items (hearthstone, trinkets, potions, etc)
-* DONE: NUKE all function paramsNamed(self) and rename them with actual NAMES
-* DONE: identify which Ufo:Foo() methods actually need to be global
-* DONE: eliminate as many Ufo:Foo() -> foo()
-* DONE: eliminate all "legacy data" fixes
-* DONE: eliminate any support for classic
-]]
 
 -------------------------------------------------------------------------------
 -- Module Loading
@@ -172,7 +116,7 @@ end
 function isInCombatLockdown(actionDescription)
     if InCombatLockdown() then
         local msg = actionDescription or "That action"
-        zebug.warn:print(msg .. " is not allowed during combat.")
+        zebug.info:print(msg .. " is not allowed during combat.")
         return true
     else
         return false
@@ -340,9 +284,6 @@ function serialize(val, name, skipnewlines, depth)
 
     return tmp
 end
-
-local QUOTE = "\""
-local EOL = "\n"
 
 -- convert data structures into lines of Lua variable assignments
 -- useful for injecting tables into secure functions because SFs don't allow tables

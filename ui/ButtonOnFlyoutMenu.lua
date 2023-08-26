@@ -117,9 +117,9 @@ function ButtonOnFlyoutMenu:abortIfUnusable(btnDef)
     end
 
     local name = btnDef:getName()
-    local msg = name .. " " .. Ufo.L10N.CAN_NOT_MOVE
+    local msg = QUOTE .. name .. QUOTE .. " " .. L10N.CAN_NOT_MOVE
+    msgUser(msg)
     zebug.warn:alert(msg)
-    zebug.warn:print(msg)
     return true
 end
 
