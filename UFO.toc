@@ -1,7 +1,7 @@
 ## Interface: 100105
 ## Title: UFO - Universal FlyOuts
 ## Author: Scott Ingram
-## Version: 10.1.5c
+## Version: 10.1.5e
 ## AddonCompartmentFunc: GLOBAL_UIUFO_BlizCompartment_OnClick
 ## IconTexture: 369278
 ## SavedVariables: UFO_SV_ACCOUNT
@@ -19,6 +19,7 @@ ThirdPartyAddonSupport.lua
 FlyoutDefsDb.lua
 FlyoutDef.lua
 ButtonDef.lua
+ui\ButtonMixin.lua
 Germ.lua
 GermCommander.lua
 MacroShitShow.lua

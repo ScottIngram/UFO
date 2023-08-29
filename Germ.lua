@@ -146,8 +146,7 @@ function Germ.new(flyoutId, btnSlotIndex, parent)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parent:GetName()
 
     ---@type Germ
-    local protoGerm = CreateFrame("CheckButton", myName, parent, "ActionButtonTemplate, SecureHandlerClickTemplate")
-
+    local protoGerm = CreateFrame("CheckButton", myName, parent, "SmallActionButtonTemplate, SecureHandlerClickTemplate")
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
     ---@type Germ
@@ -200,7 +199,6 @@ end
 function Germ:getDirection()
     -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
     -- ask the bar instance what direction to fly
-    local direction = "UP" -- default
     local parent = self:GetParent()
     return parent.bar:GetSpellFlyoutDirection()
 end
@@ -301,6 +299,8 @@ function Germ:update(flyoutId)
 end
 
 function Germ:handleGermUpdateEvent()
+    self:updateCooldownsAndCountsAndStatesEtc()
+
     -- Update border and determine arrow position
     local arrowDistance;
     local isMouseOverButton = GetMouseFocus() == self;
@@ -364,6 +364,24 @@ function Germ:setToolTip()
 
     GameTooltip:SetText(label)
 end
+
+-- required by ButttonMixin
+function Germ:getDef()
+    -- treat the first button in the flyout as the "definition" for the Germ
+    local flyoutDef = FlyoutDefsDb:get(self.flyoutId)
+    local usableFlyout = flyoutDef:filterOutUnusable()
+    return usableFlyout:getButtonDef(1)
+end
+
+function noop()  end
+
+-- this syntax is clunky but my IDE understands this better than ButttonMixin:inject()
+Germ.updateCooldownsAndCountsAndStatesEtc = ButttonMixin.updateCooldownsAndCountsAndStatesEtc
+Germ.updateUsable   = ButttonMixin.updateUsable
+Germ.updateCooldown = ButttonMixin.updateCooldown
+Germ.updateCount    = ButttonMixin.updateCount
+Germ.getIconFrame   = ButttonMixin.getIconFrame
+Germ.maxVisibleCooldownDuration = 60
 
 -------------------------------------------------------------------------------
 -- Handlers
