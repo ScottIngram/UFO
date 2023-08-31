@@ -35,9 +35,11 @@ local handlers = {}
 
 local GERM_UI_NAME_PREFIX = "UfoGerm"
 local snippet_Germ_Click = [=[
+	local germ = self
+	local whichMouseButton = button
+
 	local DELIMITER = "]=]..DELIMITER..[=["
 	local EMPTY_ELEMENT = "]=]..EMPTY_ELEMENT..[=["
-	local germ = self
 	local flyoutMenu = germ:GetFrameRef("flyoutMenu")
 	local direction = germ:GetAttribute("flyoutDirection")
 	local prevBtn = nil;
@@ -110,6 +112,7 @@ local snippet_Germ_Click = [=[
                 btn:SetAttribute("type", "macro")
                 btn:SetAttribute("macrotext", petMacro)
             else
+                --btn:SetAttribute("downbutton", "MiddleButton")
                 btn:SetAttribute("type", type)
                 btn:SetAttribute(type, nameList[i]) -- huh, I woulda thought spellId or itemId etc
             end
@@ -130,8 +133,25 @@ local snippet_Germ_Click = [=[
         flyoutMenu:SetWidth((prevBtn:GetWidth()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
     end
 
-    flyoutMenu:Show()
-    flyoutMenu:SetAttribute("doCloseFlyout", true)
+    local RMB = "]=].. MOUSE_BUTTON_RIGHT ..[=["
+    if whichMouseButton == RMB then
+    	local btn1 = germ:GetFrameRef("btn1")
+        print("_onclick btn1 =",btn1, "btn1.Click",btn1.Click)
+        if btn1 then
+            print("this is where I would do a Click()")
+            --print("running btn1:Click()")
+            --btn1:Click()
+            --print("did it work ??? !!!")
+        end
+
+        --print("running toy #49703")
+        --UseToy(49703)
+        --C_MountJournal.SummonByID(1591)
+        --print("did it work?")
+    else
+        flyoutMenu:Show()
+        flyoutMenu:SetAttribute("doCloseFlyout", true)
+    end
 
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
     --flyoutMenu:AddToAutoHide(germ)
@@ -141,12 +161,12 @@ local snippet_Germ_Click = [=[
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
-function Germ.new(flyoutId, btnSlotIndex, parent)
+function Germ.new(flyoutId, btnSlotIndex, parentActionBarBtn)
     assertIsFunctionOf(flyoutId,Germ)
-    local myName = GERM_UI_NAME_PREFIX .. "On_" .. parent:GetName()
+    local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
 
-    ---@type Germ
-    local protoGerm = CreateFrame("CheckButton", myName, parent, "SmallActionButtonTemplate, SecureHandlerClickTemplate")
+    local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "SmallActionButtonTemplate, SecureHandlerClickTemplate") -- SecureActionButtonTemplate
+
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
     ---@type Germ
@@ -156,7 +176,7 @@ function Germ.new(flyoutId, btnSlotIndex, parent)
     self.btnSlotIndex = btnSlotIndex
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self.flyoutId     = flyoutId
-    self.visibleIf    = parent.visibleIf -- I set this inside GermCommander:getActionBarBtn()
+    self.visibleIf    = parentActionBarBtn.visibleIf -- I set this inside GermCommander:getActionBarBtn()
 
     -- FlyoutMenu
     self:initFlyoutMenu()
@@ -165,7 +185,21 @@ function Germ.new(flyoutId, btnSlotIndex, parent)
     -- anti-taint / protected environment / secure BS
     self:SetAttribute("flyoutDirection", self:getDirection())
     self:SetFrameRef("flyoutMenu", self.flyoutMenu)
+    local btn1 = self.flyoutMenu:getButtonFrame(1)
+    zebug.error:print("btn1", btn1)
+    self:SetFrameRef("btn1", btn1)
+    self:WrapScript(self, "OnClick", [=[
 
+local btn1 = self
+local whichMouseButton = button
+local btn1b = self:GetFrameRef("btn1")
+print("WrapScript OnClick whichMouseButton",whichMouseButton, "btn1",btn1, "btn1.Click", btn1 and btn1.Click, "btn1b",btn1b, "btn1b.Click",btn1b and btn1b.Click)
+
+if whichMouseButton == "RightButton" then
+    --btn1:Click()
+    print("this is where I would do a Click()")
+end
+]=])
     self:setHandlers()
     self:setVisibility()
 
@@ -499,11 +533,21 @@ local oldGerm
 
 -- this is needed for the edge case of clicking on a different germ while the current one is still open
 -- in which case there is no OnShow event which is where the below usually happens
----@param germ Germ
-function handlers.OnPostClick(germ, whichMouseButton, down)
-    zebug.trace:name("OnPostClick"):print("flyoutId",germ:getFlyoutId())
-    if oldGerm and oldGerm ~= germ then
-        germ:updateAllBtnCooldownsEtc()
+---@param self Germ
+function handlers.OnPostClick(self, whichMouseButton, down)
+    if oldGerm and oldGerm ~= self then
+        self:updateAllBtnCooldownsEtc()
     end
-    oldGerm = germ
+    oldGerm = self
+
+    if whichMouseButton == MOUSE_BUTTON_RIGHT then
+        local btn1 = self.flyoutMenu:getButtonFrame(1)
+        local btn1 = self:getDef()
+        if btn1 then
+            btn1:click(self)
+            --print("suck")
+            --self:Execute("print( \"Fun!\"  )") -- succeeds
+            --germ:Execute("C_MountJournal.SummonByID(1591)") -- fails
+        end
+    end
 end

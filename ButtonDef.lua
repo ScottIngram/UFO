@@ -148,6 +148,7 @@ function ButtonDef:isUsable()
         --zebug.trace:print("IsSpellKnownOrOverridesKnown",IsSpellKnownOrOverridesKnown(id))
         return IsSpellKnownOrOverridesKnown(id)
     elseif t == ButtonType.ITEM then
+        -- isUseable = C_PlayerInfo.CanUseItem(itemID)
         local n = GetItemCount(id)
         return n > 0
     elseif t == ButtonType.MACRO then
@@ -346,4 +347,54 @@ function ButtonDef:pickupToCursor()
     zebug.trace:print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId)
 
     pickup(id)
+end
+
+function ButtonDef:click(germ)
+    zebug.warn:print("type",self.type, "name",self.name)
+    --if isInCombatLockdown("Clicking this") then return end
+
+    local type = self.type
+    local id = self:getIdForBlizApi()
+    if ButtonType.SPELL == type then
+        self:secureClick()
+        --CastSpellByID(self.spellId)
+    elseif ButtonType.MOUNT == type then
+        --zebug.warn:print("C_MountJournal.SummonByID",self.mountId)
+        --zebug.error:print(C_MountJournal.GetMountInfoByID(self.mountId))
+        C_MountJournal.SummonByID(self.mountId)
+    elseif ButtonType.ITEM == type then
+        --self:secureClick()
+        UseItemByName(self.name)
+        --local _, spellID = GetItemSpell(self.itemId)
+        --CastSpellByID(spellID)
+    elseif ButtonType.TOY == type then
+        self:secureClick()
+        --UseToy(self.itemId)
+    elseif ButtonType.MACRO == type then
+        self:secureClick()
+        --RunMacro(self.macroId)
+    elseif ButtonType.PET == type then
+        C_PetJournal.SummonPetByGUID(self.petGuid)
+    else
+        zebug.warn:print("Unknown type:", type)
+    end
+
+    return self.name
+end
+
+local secureButton
+
+function ButtonDef:secureClick(germ)
+    if not secureButton then
+        secureButton = CreateFrame("Button", "UfoSecureBtn", germ, "SecureActionButtonTemplate")
+    end
+    secureButton:SetAttribute("type2", self.type)
+    secureButton:SetAttribute(self.type, self.name)
+    zebug.warn:print("type",self.type, "name",self.name, "CLICK")
+    secureButton:Click(MOUSE_BUTTON_RIGHT)
+    zebug.warn:print("type",self.type, "name",self.name, "CLICKED")
+end
+
+function ButtonDef:secureClick2(germ)
+
 end

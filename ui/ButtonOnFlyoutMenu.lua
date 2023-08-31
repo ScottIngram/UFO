@@ -203,7 +203,8 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(self)
     self:RegisterForDrag("LeftButton")
     _G[self:GetName().."Count"]:SetPoint("BOTTOMRIGHT", 0, 0)
     self.maxDisplayCount = 99
-    self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
+    --self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
+    self:RegisterForClicks("AnyDown", "AnyUp")
 
     -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
     ButtonOnFlyoutMenu:oneOfUs(self)
