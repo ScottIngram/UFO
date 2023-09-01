@@ -147,11 +147,11 @@ function FlyoutMenu:updateForCatalog(flyoutId)
         local btnDef = flyoutDef:getButtonDef(i)
         if btnDef then
             btnFrame:setDef(btnDef)
-            btnFrame:setIconTexture( btnDef:getIcon() )
+            btnFrame:setIcon( btnDef:getIcon() )
         else
             -- the empty slot on the end
             btnFrame:setDef(nil)
-            btnFrame:setIconTexture(nil)
+            btnFrame:setIcon(nil)
         end
 
         btnFrame:setGeometry(dir, prevButton)
@@ -202,10 +202,10 @@ function FlyoutMenu:updateForGerm(germ)
 
         if btnDef then
             zebug.trace:print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
-            btnFrame:setIconTexture( btnDef:getIcon() )
+            btnFrame:setIcon( btnDef:getIcon() )
             btnFrame:setGeometry(self.direction)
         else
-            btnFrame:setIconTexture(DEFAULT_ICON)
+            btnFrame:setIcon(DEFAULT_ICON)
             return
         end
     end)

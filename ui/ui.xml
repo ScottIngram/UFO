@@ -1,6 +1,6 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
 
-<CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate" virtual="TRUE" inherits="SmallActionButtonTemplate, SecureActionButtonTemplate">
+    <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate" virtual="TRUE" inherits="SmallActionButtonTemplate, SecureActionButtonTemplate">
         <Scripts>
             <OnLoad function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad" />
             <OnEnter function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip" />

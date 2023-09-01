@@ -165,7 +165,7 @@ function Germ.new(flyoutId, btnSlotIndex, parentActionBarBtn)
     assertIsFunctionOf(flyoutId,Germ)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
 
-    local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "SmallActionButtonTemplate, SecureHandlerClickTemplate") -- SecureActionButtonTemplate
+    local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "SecureHandlerClickTemplate, SmallActionButtonTemplate, SecureActionButtonTemplate") -- SecureActionButtonTemplate or SecureHandlerClickTemplate
 
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
@@ -277,14 +277,6 @@ function Germ:setHandlers()
     self:SetAttribute("_onclick",   snippet_Germ_Click)
     self:RegisterForClicks("AnyUp")
     self:RegisterForDrag("LeftButton")
-end
-
-function Germ:setIcon(icon)
-    if icon and type(icon) ~= "number" then
-        icon = ("INTERFACE\\ICONS\\".. icon)
-    end
-
-    _G[ self:GetName().."Icon" ]:SetTexture(icon)
 end
 
 function Germ:getBtnSlotIndex()
@@ -415,6 +407,7 @@ Germ.updateUsable   = ButttonMixin.updateUsable
 Germ.updateCooldown = ButttonMixin.updateCooldown
 Germ.updateCount    = ButttonMixin.updateCount
 Germ.getIconFrame   = ButttonMixin.getIconFrame
+Germ.setIcon        = ButttonMixin.setIcon
 Germ.maxVisibleCooldownDuration = 60
 
 -------------------------------------------------------------------------------

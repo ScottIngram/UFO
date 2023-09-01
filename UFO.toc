@@ -23,6 +23,7 @@ ui\ButtonMixin.lua
 Germ.lua
 GermCommander.lua
 MacroShitShow.lua
+Asshole.lua
 UFO.lua
 ui\FlyoutMenu.lua
 ui\ButtonOnFlyoutMenu.lua

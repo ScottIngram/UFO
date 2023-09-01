@@ -40,10 +40,6 @@ function ButtonOnFlyoutMenu:getParent()
     return self:GetParent()
 end
 
-function ButtonOnFlyoutMenu:setIconTexture(texture)
-    self:getIconFrame():SetTexture(texture)
-end
-
 function ButtonOnFlyoutMenu:isEmpty()
     return not self:hasDef()
 end
@@ -190,7 +186,7 @@ ButtonOnFlyoutMenu.updateUsable   = ButttonMixin.updateUsable
 ButtonOnFlyoutMenu.updateCooldown = ButttonMixin.updateCooldown
 ButtonOnFlyoutMenu.updateCount    = ButttonMixin.updateCount
 ButtonOnFlyoutMenu.getIconFrame   = ButttonMixin.getIconFrame
-
+ButtonOnFlyoutMenu.setIcon        = ButttonMixin.setIcon
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutBtn XML Callbacks
 -------------------------------------------------------------------------------

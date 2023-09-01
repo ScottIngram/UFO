@@ -30,6 +30,14 @@ function ButttonMixin:getCooldownFrame()
     return _G[ self:GetName().."Cooldown" ]
 end
 
+function ButttonMixin:setIcon(icon)
+    if icon and type(icon) ~= "number" then
+        icon = ("INTERFACE\\ICONS\\".. icon)
+    end
+
+    self:getIconFrame():SetTexture(icon)
+end
+
 function ButttonMixin:updateCooldownsAndCountsAndStatesEtc()
     local btnDef = self:getDef()
     local spellId = btnDef and btnDef.spellId

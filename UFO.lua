@@ -368,6 +368,8 @@ function initalizeAddonStuff()
     Catalog:createToggleButton(SpellBookFrame)
     IconPicker:init()
 
+    Asshole:new()
+
     isUfoInitialized = true
 end
 
