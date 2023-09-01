@@ -48,11 +48,12 @@ function Asshole:new()
 
     asshole:SetAttribute("type1","customscript");-- Can be anything as long as it isn't one of the predefined actions
     asshole:SetAttribute("_customscript", [[
+local asshole = self
 print("asshole's type1 (left-click) customscript is running...")
-local isChecked = not self:GetAttribute("isChecked");
-local turd_getter = self.GetFrameRef
+local isChecked = not asshole:GetAttribute("isChecked");
+local turd_getter = asshole.GetFrameRef
 local turdRef = getter and getter("turdRef")
-local kids = table.new(self:GetChildren())
+local kids = table.new(asshole:GetChildren())
 
 local turd
 
@@ -65,20 +66,34 @@ local turd
         end
     end
 
+local pp = turd:GetParent()
+local ppp = pp == asshole
+    print( pp, ppp )
 
-    print("turdRef =", turdRef, "turd",turd, self:GetChildren()[1],  table.new(self:GetChildren())[1]);
+    print("turdRef =", turdRef, "turd",turd, asshole:GetChildren()[1],  table.new(asshole:GetChildren())[1]);
     if isChecked then
         print("turd:Show()")
         turd:Show()
     else
         print("turd:Hide()")
         turd:Hide()
+
+        -- move the turd just for fun
+        turd:ClearAllPoints()
+        local whichSpot = turd:GetAttribute("whichSpot")
+        if (whichSpot) then
+            turd:SetPoint("BOTTOMRIGHT", asshole, "BOTTOMLEFT", 0, 0)
+        else
+            turd:SetPoint("TOPLEFT", asshole, "BOTTOMLEFT", 0, 0)
+        end
+        turd:SetAttribute("whichSpot",not whichSpot)
     end
 
-    self:SetAttribute("isChecked",isChecked)
+    asshole:SetAttribute("isChecked",isChecked)
 
 ]]
 );
+
 
     --print(asshole:GetName(), "asshole: type1 -> customscript... turd_getter =", turd_getter, "turd =", turd, "kid_getter =",kid_getter, "kids =",kids, "kidn",kidn, "kid1 =",kid1, "kid1_name",kid1_name);
     -- not
@@ -93,9 +108,13 @@ local turd
     --local turd = CreateFrame("Button", "Turd", asshole, "UIPanelButtonTemplate")
     --turd:RegisterForClicks("AnyDown", "AnyUp")
     --local turd = CreateFrame("Button", "Turd", self, "UIPanelButtonTemplate")
-    turd:SetSize(80 ,22) -- width, height
+    local w,h = asshole:GetSize()
+    turd:SetSize(80,22) -- width, height
+    turd:SetSize(w,h) -- width, height
     turd:SetText("Button!")
     turd:SetPoint("TOPLEFT", asshole, "BOTTOMLEFT", 0, 0)
+    turd:ClearAllPoints()
+    turd:SetPoint("BOTTOMRIGHT", asshole, "BOTTOMLEFT", 0, 0)
     turd:RegisterForClicks("AnyDown", "AnyUp")
 
     --turd:SetScript("OnClick", function() print("turd OnClick") end)
