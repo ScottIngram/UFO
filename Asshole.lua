@@ -17,7 +17,7 @@ Asshole.getIconFrame = ButttonMixin.getIconFrame
 Asshole.setIcon      = ButttonMixin.setIcon
 
 function Asshole:new()
-    local asshole = CreateFrame("CheckButton", "Asshole", UIParent, "SecureHandlerClickTemplate, SmallActionButtonTemplate, SecureActionButtonTemplate") -- SecureHandlerTemplate
+    local asshole = CreateFrame("CheckButton", "Asshole", UIParent, "SmallActionButtonTemplate, SecureActionButtonTemplate") -- SecureHandlerTemplate
     asshole:SmallActionButtonMixin_OnLoad()
     asshole:RegisterForClicks("AnyDown", "AnyUp")
 
@@ -41,38 +41,38 @@ function Asshole:new()
     end)
 ]]--
 
-    asshole:SetAttribute("type2","macro")
-    asshole:SetAttribute("macrotext",  "/s self type2 macro goes Booyah")
+    --asshole:SetAttribute("type2","macro")
+    --asshole:SetAttribute("macrotext",  "/s asshole's type2 (right-click) macro goes Booyah!")
+    asshole:SetAttribute("type2","spell")
+    asshole:SetAttribute("spell",  "Regrowth")
 
     asshole:SetAttribute("type1","customscript");-- Can be anything as long as it isn't one of the predefined actions
     asshole:SetAttribute("_customscript", [[
-print(1)
+print("asshole's type1 (left-click) customscript is running...")
 local isChecked = not self:GetAttribute("isChecked");
 local turd_getter = self.GetFrameRef
-local turd = getter and getter("turd")
+local turdRef = getter and getter("turdRef")
 local kids = table.new(self:GetChildren())
-local kid1 = kids[1]
-local kid1_name = kid1 and kid1:GetName()
 
-local Turd
+local turd
 
     for i, kid in ipairs(kids) do
         local kidName = kid:GetName()
         print(i,kidName)
         if kidName == "Turd" then
-            Turd = kid
+            turd = kid
             break
         end
     end
 
 
-    print("turd =", turd, "kid1 =",kid1, "kid1_name",kid1_name, "Turd",Turd);
+    print("turdRef =", turdRef, "turd",turd, self:GetChildren()[1],  table.new(self:GetChildren())[1]);
     if isChecked then
-        print("Turd:Show()")
-        Turd:Show()
+        print("turd:Show()")
+        turd:Show()
     else
-        print("Turd:Hide()")
-        Turd:Hide()
+        print("turd:Hide()")
+        turd:Hide()
     end
 
     self:SetAttribute("isChecked",isChecked)
@@ -88,28 +88,29 @@ local Turd
 
     -- TURD ---
 
-    --local turd = CreateFrame("CheckButton", "Turd", asshole, "SmallActionButtonTemplate, SecureActionButtonTemplate")
+    local turd = CreateFrame("CheckButton", "Turd", asshole, "SmallActionButtonTemplate, SecureActionButtonTemplate")
     --local self = CreateFrame("CheckButton", "Asshole", UIParent, "SecureHandlerClickTemplate, SmallActionButtonTemplate, SecureActionButtonTemplate") -- SecureHandlerTemplate
-    local turd = CreateFrame("Button", "Turd", asshole, "UIPanelButtonTemplate")
-    turd:RegisterForClicks("AnyDown", "AnyUp")
+    --local turd = CreateFrame("Button", "Turd", asshole, "UIPanelButtonTemplate")
+    --turd:RegisterForClicks("AnyDown", "AnyUp")
     --local turd = CreateFrame("Button", "Turd", self, "UIPanelButtonTemplate")
     turd:SetSize(80 ,22) -- width, height
     turd:SetText("Button!")
-    turd:SetPoint("TOP", asshole, "BOTTOM", 0, 0)
+    turd:SetPoint("TOPLEFT", asshole, "BOTTOMLEFT", 0, 0)
+    turd:RegisterForClicks("AnyDown", "AnyUp")
 
-    turd:SetScript("OnClick", function()
-        print("turd OnClick")
-    end)
+    --turd:SetScript("OnClick", function() print("turd OnClick") end)
+    --turd:SetAttribute("type","macro")
+    --turd:SetAttribute("macrotext",  "/s TURD type = macro")
+    turd:SetAttribute("type","spell")
+    turd:SetAttribute("spell",  "Regrowth")
 
-    turd:SetAttribute("type","macro")
-    turd:SetAttribute("macrotext",  "/s TURD type = macro")
 
     -- Notice that turd has NO RegisterForClicks
 
-    turd:Show()
+    turd:Hide()
 
 
-    asshole:SetFrameRef("turd", turd)
+    --asshole:SetFrameRef("turdRef", turd)
 
     return self
 end
