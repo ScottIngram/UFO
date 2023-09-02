@@ -76,7 +76,6 @@ function getClickerCode()
             end
         end
     end
-    print(flyoutMenu)
 
     local doCloseFlyout = flyoutMenu:GetAttribute("doCloseFlyout")
 	if doCloseFlyout then
@@ -182,19 +181,57 @@ function Germ.new(flyoutId, btnSlotIndex, parentActionBarBtn)
     assertIsFunctionOf(flyoutId,Germ)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
 
-    local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "SecureHandlerClickTemplate, ActionButtonTemplate") -- SecureActionButtonTemplate or SecureHandlerClickTemplate
-    --local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
+    --local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "SecureHandlerClickTemplate, ActionButtonTemplate") -- SecureActionButtonTemplate or SecureHandlerClickTemplate
+    local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "SecureActionButtonTemplate, ActionButtonTemplate") -- SecureHandlerTemplate
+    --protoGerm:SmallActionButtonMixin_OnLoad()
 
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
     ---@type Germ
     local self = deepcopy(Germ, protoGerm)
 
+
+    protoGerm:RegisterForClicks("AnyDown", "AnyUp")
+
+    protoGerm:SetAttribute("type","customscript") -- type1 == left mouse click
+    protoGerm:SetAttribute("_customscript", getClickerCode())
+
+
+--[[
+    protoGerm:SetAttribute("type","macro")
+    protoGerm:SetAttribute("macrotext",  "/s TURD type = macro")
+    protoGerm:SetAttribute("type2","macro")
+    protoGerm:SetAttribute("macrotext",  "/s asshole's type2 (right-click) macro goes Booyah!")
+]]
+
+    protoGerm:ClearAllPoints()
+    protoGerm:SetAllPoints(parentActionBarBtn)
+
+
     -- initialize my fields, handlers, etc.
     self.btnSlotIndex = btnSlotIndex
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self.flyoutId     = flyoutId
     self.visibleIf    = parentActionBarBtn.visibleIf -- I set this inside GermCommander:getActionBarBtn()
+
+    local myName = self:getFlyoutDef().name
+
+    local btn1 = self:getDef()
+    local btn1Name = btn1.name
+    local btn1Type = btn1:getTypeForBlizApi()
+    local btn1Id = btn1:getIdForBlizApi()
+    zebug.error:print("myName",myName, "btn1Name",btn1Name, "btn1Type",btn1Type, "btn1Id",btn1Id)
+
+    if (btn1Type == "battlepet") then
+        -- summon the pet via a macro
+        local petMacro = "/run C_PetJournal.SummonPetByGUID(\"" .. btn1.petGuid .. "\")"
+        self:SetAttribute("type2", "macro")
+        self:SetAttribute("macrotext", petMacro)
+    else
+        self:SetAttribute("type2",btn1Type) -- right mouse click
+        self:SetAttribute(btn1Type, btn1Name)
+    end
+
 
     -- FlyoutMenu
     self:initFlyoutMenu()
@@ -223,7 +260,7 @@ end
 
 ]]
 
-    self:setHandlers()
+    --self:setHandlers()
     self:setVisibility()
 
     return self
@@ -232,6 +269,7 @@ end
 function Germ:initFlyoutMenu()
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu.new(self)
+        self.flyoutMenu:updateForGerm(self)
     else
         self.flyoutMenu = UIUFO_FlyoutMenuForGerm
     end
@@ -266,11 +304,13 @@ function Germ:updateAllBtnCooldownsEtc()
 end
 
 function Germ:setHandlers()
+    --[[
     local actionBarBtn = self:GetParent()
     if actionBarBtn then
         if actionBarBtn:GetSize() and actionBarBtn:IsRectValid() then
             self:SetAllPoints(actionBarBtn)
         else
+            -- delete this. there is no such string
             local spacerName = "UIUfo_ActionBarButtonSpacer"..tostring(actionBarBtn.index)
             local children = { actionBarBtn:GetParent():GetChildren()}
             for _, child in ipairs(children) do
@@ -283,6 +323,7 @@ function Germ:setHandlers()
     else
         zebug.trace:print("How is there no actionBarBtn?", "btnSlotIndex", self.btnSlotIndex)
     end
+    ]]
 
     self:SetFrameStrata(STRATA_DEFAULT)
     self:SetFrameLevel(100)
@@ -412,6 +453,10 @@ function Germ:setToolTip()
     end
 
     GameTooltip:SetText(label)
+end
+
+function Germ:getFlyoutDef()
+    return FlyoutDefsDb:get(self.flyoutId)
 end
 
 -- required by ButttonMixin
