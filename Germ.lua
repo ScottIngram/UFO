@@ -47,7 +47,9 @@ local handlers = {}
 -------------------------------------------------------------------------------
 
 local GERM_UI_NAME_PREFIX = "UfoGerm"
-local snippet_Germ_Click = [=[
+
+function getClickerCode()
+    return [=[
 	local germ = self
 	local whichMouseButton = button
 
@@ -56,6 +58,25 @@ local snippet_Germ_Click = [=[
 	local flyoutMenu = germ:GetFrameRef("flyoutMenu")
 	local direction = germ:GetAttribute("flyoutDirection")
 	local prevBtn = nil;
+
+    -- search the kids for the flyout menu
+    local flyoutMenu
+    local kids = table.new(germ:GetChildren())
+    for i, kid in ipairs(kids) do
+        local kidName = kid:GetName()
+        print(i,kidName)
+        if kidName then
+            local wantedSuffix = "]=].. FlyoutMenu.nameSuffix ..[=["
+            local n = string.len(wantedSuffix)
+            local kidSuffix = string.sub(kidName, 0-n) -- last n letters
+
+            if kidSuffix == wantedSuffix then
+                flyoutMenu = kid
+                break
+            end
+        end
+    end
+    print(flyoutMenu)
 
     local doCloseFlyout = flyoutMenu:GetAttribute("doCloseFlyout")
 	if doCloseFlyout then
@@ -145,33 +166,13 @@ local snippet_Germ_Click = [=[
         flyoutMenu:SetHeight(prevBtn:GetHeight())
         flyoutMenu:SetWidth((prevBtn:GetWidth()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
     end
---[[
-    local RMB = "]=].. MOUSE_BUTTON_RIGHT ..[=["
-    if whichMouseButton == RMB then
-    	local btn1 = germ:GetFrameRef("btn1")
-        print("_onclick btn1 =",btn1, "btn1.Click",btn1.Click)
-        if btn1 then
-            print("this is where I would do a Click()")
-            --print("running btn1:Click()")
-            --btn1:Click()
-            --print("did it work ??? !!!")
-        end
-
-        --print("running toy #49703")
-        --UseToy(49703)
-        --C_MountJournal.SummonByID(1591)
-        --print("did it work?")
-    else
-        flyoutMenu:Show()
-        flyoutMenu:SetAttribute("doCloseFlyout", true)
-    end
-]]
         flyoutMenu:Show()
         flyoutMenu:SetAttribute("doCloseFlyout", true)
 
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
     --flyoutMenu:AddToAutoHide(germ)
 ]=]
+end
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -201,7 +202,7 @@ function Germ.new(flyoutId, btnSlotIndex, parentActionBarBtn)
 
     -- anti-taint / protected environment / secure BS
     self:SetAttribute("flyoutDirection", self:getDirection())
-    self:SetFrameRef("flyoutMenu", self.flyoutMenu)
+    --self:SetFrameRef("flyoutMenu", self.flyoutMenu)
 
 --[[
     local btn1 = self.flyoutMenu:getButtonFrame(1)
@@ -296,7 +297,7 @@ function Germ:setHandlers()
     self:SetScript("OnDragStart",   handlers.OnPickupAndDrag)
     self:SetScript("PreClick",      handlers.OnPreClick)
     self:SetScript("PostClick",     handlers.OnPostClick)
-    self:SetAttribute("_onclick",   snippet_Germ_Click)
+    self:SetAttribute("_onclick",   getClickerCode())
     self:RegisterForClicks("AnyUp")
     self:RegisterForDrag("LeftButton")
 end

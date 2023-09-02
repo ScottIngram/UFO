@@ -15,10 +15,12 @@ local zebug = Zebug:new()
 ---@field id string
 ---@field isForGerm boolean
 ---@field isForCatalog boolean
+---@field nameSuffix string part of its name used to identify it as a flyout frame
 local FlyoutMenu = {
     ufoType = "FlyoutMenu",
     isForGerm = false,
     isForCatalog = false,
+    nameSuffix = "_FlyoutMenu"
 }
 Ufo.FlyoutMenu = FlyoutMenu
 
@@ -35,7 +37,7 @@ function FlyoutMenu:oneOfUs(fomu)
 end
 
 function FlyoutMenu.new(germ)
-    local myName = germ:GetName() .. "_FlyoutMenu"
+    local myName = germ:GetName() .. FlyoutMenu.nameSuffix
     local protoSelf = CreateFrame("Frame", myName, germ, "UIUFO_FlyoutMenuTemplate")
     ---@type FlyoutMenu
     local self = FlyoutMenu:oneOfUs(protoSelf)
