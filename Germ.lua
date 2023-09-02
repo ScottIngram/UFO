@@ -232,6 +232,28 @@ function Germ.new(flyoutId, btnSlotIndex, parentActionBarBtn)
         self:SetAttribute(btn1Type, btn1Name)
     end
 
+    local preScript = [=[
+        local whichMouseButton = button
+        return whichMouseButton, true
+]=]
+
+    -- here I will be able to pick some button other than btn1 via true code and concat its values into the snippet
+    local someOtherBtnValues = "TBD"
+    local postScript = [=[
+        -- only trigger on "mouse up"
+        local isPressed = down
+        if not isPressed then
+            local randomNumber = random(1,99)
+            local myCounter = self:GetAttribute("myCounter") or 1
+            print("fun!!! isPressed =", isPressed, myCounter, randomNumber, "]=] .. someOtherBtnValues .. [=[")
+            self:SetAttribute("type2","macro")
+            self:SetAttribute("macrotext",  "/s changed the click handler during the click handler! myCounter="..myCounter)
+            self:SetAttribute("myCounter", myCounter+1)
+        end
+]=]
+
+    SecureHandlerWrapScript(self, "OnClick", self, preScript, postScript)
+
 
     -- FlyoutMenu
     self:initFlyoutMenu()
