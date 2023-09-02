@@ -17,13 +17,13 @@ Asshole.getIconFrame = ButttonMixin.getIconFrame
 Asshole.setIcon      = ButttonMixin.setIcon
 
 function Asshole:new()
-    local asshole = CreateFrame("CheckButton", "Asshole", UIParent, "SmallActionButtonTemplate, SecureActionButtonTemplate") -- SecureHandlerTemplate
-    asshole:SmallActionButtonMixin_OnLoad()
+    local asshole = CreateFrame("CheckButton", "Asshole", UIParent, "ActionButtonTemplate, SecureActionButtonTemplate") -- SecureHandlerTemplate
+    --asshole:SmallActionButtonMixin_OnLoad()
     asshole:RegisterForClicks("AnyDown", "AnyUp")
 
     deepcopy(Asshole, asshole)
 
-    --self:setIcon(369278)
+    asshole:setIcon(369278)
     asshole:SetFrameStrata(STRATA_DEFAULT)
     asshole:SetFrameLevel(100)
     asshole:SetToplevel(true)
@@ -103,13 +103,13 @@ local ppp = pp == asshole
 
     -- TURD ---
 
-    local turd = CreateFrame("CheckButton", "Turd", asshole, "SmallActionButtonTemplate, SecureActionButtonTemplate")
+    local turd = CreateFrame("CheckButton", "Turd", asshole, "ActionButtonTemplate, SecureActionButtonTemplate")
     --local self = CreateFrame("CheckButton", "Asshole", UIParent, "SecureHandlerClickTemplate, SmallActionButtonTemplate, SecureActionButtonTemplate") -- SecureHandlerTemplate
     --local turd = CreateFrame("Button", "Turd", asshole, "UIPanelButtonTemplate")
     --turd:RegisterForClicks("AnyDown", "AnyUp")
     --local turd = CreateFrame("Button", "Turd", self, "UIPanelButtonTemplate")
     local w,h = asshole:GetSize()
-    turd:SetSize(80,22) -- width, height
+    --turd:SetSize(80,22) -- width, height
     turd:SetSize(w,h) -- width, height
     turd:SetText("Button!")
     turd:SetPoint("TOPLEFT", asshole, "BOTTOMLEFT", 0, 0)
@@ -124,9 +124,12 @@ local ppp = pp == asshole
     turd:SetAttribute("spell",  "Regrowth")
 
 
-    -- Notice that turd has NO RegisterForClicks
 
     turd:Hide()
+
+    deepcopy(Asshole, turd)
+    turd:setIcon(4200123)
+
 
 
     --asshole:SetFrameRef("turdRef", turd)
