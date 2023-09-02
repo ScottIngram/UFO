@@ -48,6 +48,12 @@ local handlers = {}
 
 local GERM_UI_NAME_PREFIX = "UfoGerm"
 
+local PRE_SCRIPT_STANDARD = [=[
+        -- button is which mouse button is clicked
+        -- "true" flag is yes, execute the post script
+        return button, true
+]=]
+
 function getClickerCode()
     return [=[
 	local germ = self
@@ -232,14 +238,108 @@ function Germ.new(flyoutId, btnSlotIndex, parentActionBarBtn)
         self:SetAttribute(btn1Type, btn1Name)
     end
 
+    self:setAltClickHandler(MOUSE_BUTTON_RIGHT)
+
+    -- FlyoutMenu
+    self:initFlyoutMenu()
+    self.flyoutMenu:initializeCloseOnClick()
+
+    -- anti-taint / protected environment / secure BS
+    self:SetAttribute("flyoutDirection", self:getDirection())
+    --self:SetFrameRef("flyoutMenu", self.flyoutMenu)
+
+
+    --self:setHandlers()
+    self:setVisibility()
+
+    return self
+end
+
+local MOUSE_BUTTON_ANY = "any"
+
+local typeForMouseButton = {
+    type1 = MOUSE_BUTTON_LEFT,
+    type2 = MOUSE_BUTTON_RIGHT,
+    type3 = MOUSE_BUTTON_MIDDLE, -- I guess?!  I'm sure there's documentation SOMEwhere, but wtf knows.
+    type4 = "who knows",
+    type5 = "who knows",
+
+    [MOUSE_BUTTON_ANY]    = "type",
+    [MOUSE_BUTTON_LEFT]   = "type1",
+    [MOUSE_BUTTON_RIGHT]  = "type2",
+    [MOUSE_BUTTON_MIDDLE] = "type3", -- I guess?!  I'm sure there's documentation SOMEwhere, but wtf knows.
+}
+
+---@param whichMouseButton string right/left/middle/(etc?)
+function Germ:setAltClickHandler(whichMouseButton)
+    local yetAnotherIdForTheMouseButton = typeForMouseButton[whichMouseButton]
+    zebug.error:print("whichMouseButton",whichMouseButton, "yetAnotherIdForTheMouseButton",yetAnotherIdForTheMouseButton)
+    local postScript = self:makeHandlerForBtn1(yetAnotherIdForTheMouseButton)
+    SecureHandlerWrapScript(self, "OnClick", self, PRE_SCRIPT_STANDARD, postScript)
+end
+
+function Germ:makeHandlerForBtn1(yetAnotherIdForTheMouseButton)
+    local myName = self:getFlyoutDef().name
+    local btn1 = self:getBtnDef(1)
+    local btn1Type = btn1:getTypeForBlizApi()
+    local btn1Name = btn1.name
+    zebug.error:print("myName",myName, "btn1Name",btn1Name, "btn1Type",btn1Type)
+
+    -- this shit ain't convoluted at all. thanks Bliz!
+    local actionType, attributeNameUsedForThisActionToIdentifyTheIdOrName, nameOrId = btn1:asClickHandlerAttributes()
+    zebug.warn:print("yetAnotherIdForTheMouseButton",yetAnotherIdForTheMouseButton, "actionType",actionType, "attr2name",attributeNameUsedForThisActionToIdentifyTheIdOrName, "nameOrId",nameOrId)
+    self:SetAttribute(yetAnotherIdForTheMouseButton, actionType)
+    self:SetAttribute(attributeNameUsedForThisActionToIdentifyTheIdOrName, nameOrId)
+
+    if (btn1Type == ButtonType.PET) then
+        -- summon the pet via a macro
+        local petMacro = "/run C_PetJournal.SummonPetByGUID(\"" .. btn1.petGuid .. "\")"
+        self:SetAttribute(yetAnotherIdForTheMouseButton, "macro")
+        self:SetAttribute("macrotext", petMacro)
+    else
+        self:SetAttribute(yetAnotherIdForTheMouseButton, btn1Type) -- right mouse click
+        self:SetAttribute(btn1Type, btn1Name)
+    end
+
+
+
+    return [=[
+	    local germ = self
+        local whichMouseButton = button
+        local isPressed = down
+
+        -- only trigger on mouse up
+        if isPressed then
+            return
+        end
+
+        local randomNumber = random(1,99)
+        local myCounter = self:GetAttribute("myCounter") or 1
+        print("fun!!! isPressed =", isPressed, myCounter, randomNumber)
+        self:SetAttribute("type2","macro")
+        self:SetAttribute("macrotext",  "/s changed the click handler during the click handler! myCounter="..myCounter)
+        self:SetAttribute("myCounter", myCounter+1)
+    ]=]
+end
+
+function Germ:makeHandlerForCyclingThroughAllBtns()
+
+end
+
+function Germ:makeHandlerForRandomBtn()
+
+end
+
+function Germ:makeHandlerForProofOfConcept()
     local preScript = [=[
         local whichMouseButton = button
-        return whichMouseButton, true
-]=]
+        local yesExecuteThePostScript = true
+        return whichMouseButton, yesExecuteThePostScript
+    ]=]
 
     -- here I will be able to pick some button other than btn1 via true code and concat its values into the snippet
     local someOtherBtnValues = "TBD"
-    local postScript = [=[
+    return [=[
         -- only trigger on "mouse up"
         local isPressed = down
         if not isPressed then
@@ -250,42 +350,7 @@ function Germ.new(flyoutId, btnSlotIndex, parentActionBarBtn)
             self:SetAttribute("macrotext",  "/s changed the click handler during the click handler! myCounter="..myCounter)
             self:SetAttribute("myCounter", myCounter+1)
         end
-]=]
-
-    SecureHandlerWrapScript(self, "OnClick", self, preScript, postScript)
-
-
-    -- FlyoutMenu
-    self:initFlyoutMenu()
-    self.flyoutMenu:initializeCloseOnClick()
-
-    -- anti-taint / protected environment / secure BS
-    self:SetAttribute("flyoutDirection", self:getDirection())
-    --self:SetFrameRef("flyoutMenu", self.flyoutMenu)
-
---[[
-    local btn1 = self.flyoutMenu:getButtonFrame(1)
-    zebug.error:print("btn1", btn1)
-    self:SetFrameRef("btn1", btn1)
-    self:WrapScript(self, "OnClick", [=[
-
-local btn1 = self
-local whichMouseButton = button
-local btn1b = self:GetFrameRef("btn1")
-print("WrapScript OnClick whichMouseButton",whichMouseButton, "btn1",btn1, "btn1.Click", btn1 and btn1.Click, "btn1b",btn1b, "btn1b.Click",btn1b and btn1b.Click)
-
-if whichMouseButton == "RightButton" then
-    --btn1:Click()
-    print("this is where I would do a Click()")
-end
-]=])
-
-]]
-
-    --self:setHandlers()
-    self:setVisibility()
-
-    return self
+    ]=]
 end
 
 function Germ:initFlyoutMenu()
@@ -481,12 +546,19 @@ function Germ:getFlyoutDef()
     return FlyoutDefsDb:get(self.flyoutId)
 end
 
+function Germ:getUsableFlyoutDef()
+    return self:getFlyoutDef():filterOutUnusable()
+end
+
+function Germ:getBtnDef(n)
+    -- treat the first button in the flyout as the "definition" for the Germ
+    return self:getUsableFlyoutDef():getButtonDef(n)
+end
+
 -- required by ButttonMixin
 function Germ:getDef()
     -- treat the first button in the flyout as the "definition" for the Germ
-    local flyoutDef = FlyoutDefsDb:get(self.flyoutId)
-    local usableFlyout = flyoutDef:filterOutUnusable()
-    return usableFlyout:getButtonDef(1)
+    return self:getBtnDef(1)
 end
 
 -------------------------------------------------------------------------------

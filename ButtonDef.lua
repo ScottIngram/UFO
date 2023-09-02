@@ -382,6 +382,20 @@ function ButtonDef:click(germ)
     return self.name
 end
 
+function ButtonDef:asClickHandlerAttributes()
+    if (self.type == ButtonType.PET) then
+        local snippet = "C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
+        --return "customscript", "_customscript", snippet -- this broke the flyout
+
+        -- summon the pet via a macro
+        local petMacro = "/run C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
+        return ButtonType.MACRO, "macrotext", petMacro
+    else
+        local blizType = self:getTypeForBlizApi()
+        return blizType, blizType, self.name
+    end
+end
+
 local secureButton
 
 function ButtonDef:secureClick(germ)
