@@ -18,6 +18,18 @@ local ButtonOnFlyoutMenu = {
 Ufo.ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 
 -------------------------------------------------------------------------------
+-- Mixing the Mixins
+-------------------------------------------------------------------------------
+
+-- this syntax is clunky but my IDE understands this better than ButttonMixin:inject()
+ButtonOnFlyoutMenu.updateCooldownsAndCountsAndStatesEtc = ButttonMixin.updateCooldownsAndCountsAndStatesEtc
+ButtonOnFlyoutMenu.updateUsable   = ButttonMixin.updateUsable
+ButtonOnFlyoutMenu.updateCooldown = ButttonMixin.updateCooldown
+ButtonOnFlyoutMenu.updateCount    = ButttonMixin.updateCount
+ButtonOnFlyoutMenu.getIconFrame   = ButttonMixin.getIconFrame
+ButtonOnFlyoutMenu.setIcon        = ButttonMixin.setIcon
+
+-------------------------------------------------------------------------------
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
@@ -180,13 +192,6 @@ function ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc(self)
     self:updateCooldownsAndCountsAndStatesEtc()
 end
 
--- this syntax is clunky but my IDE understands this better than ButttonMixin:inject()
-ButtonOnFlyoutMenu.updateCooldownsAndCountsAndStatesEtc = ButttonMixin.updateCooldownsAndCountsAndStatesEtc
-ButtonOnFlyoutMenu.updateUsable   = ButttonMixin.updateUsable
-ButtonOnFlyoutMenu.updateCooldown = ButttonMixin.updateCooldown
-ButtonOnFlyoutMenu.updateCount    = ButttonMixin.updateCount
-ButtonOnFlyoutMenu.getIconFrame   = ButttonMixin.getIconFrame
-ButtonOnFlyoutMenu.setIcon        = ButttonMixin.setIcon
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutBtn XML Callbacks
 -------------------------------------------------------------------------------

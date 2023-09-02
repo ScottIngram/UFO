@@ -24,6 +24,19 @@ local Germ = {
 Ufo.Germ = Germ
 
 -------------------------------------------------------------------------------
+-- Mixing the Mixins
+-------------------------------------------------------------------------------
+
+-- this syntax is clunky but my IDE understands this better than ButttonMixin:inject()
+Germ.updateCooldownsAndCountsAndStatesEtc = ButttonMixin.updateCooldownsAndCountsAndStatesEtc
+Germ.updateUsable   = ButttonMixin.updateUsable
+Germ.updateCooldown = ButttonMixin.updateCooldown
+Germ.updateCount    = ButttonMixin.updateCount
+Germ.getIconFrame   = ButttonMixin.getIconFrame
+Germ.setIcon        = ButttonMixin.setIcon
+Germ.maxVisibleCooldownDuration = 60
+
+-------------------------------------------------------------------------------
 -- Data
 -------------------------------------------------------------------------------
 
@@ -132,7 +145,7 @@ local snippet_Germ_Click = [=[
         flyoutMenu:SetHeight(prevBtn:GetHeight())
         flyoutMenu:SetWidth((prevBtn:GetWidth()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
     end
-
+--[[
     local RMB = "]=].. MOUSE_BUTTON_RIGHT ..[=["
     if whichMouseButton == RMB then
     	local btn1 = germ:GetFrameRef("btn1")
@@ -152,6 +165,9 @@ local snippet_Germ_Click = [=[
         flyoutMenu:Show()
         flyoutMenu:SetAttribute("doCloseFlyout", true)
     end
+]]
+        flyoutMenu:Show()
+        flyoutMenu:SetAttribute("doCloseFlyout", true)
 
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
     --flyoutMenu:AddToAutoHide(germ)
@@ -165,7 +181,8 @@ function Germ.new(flyoutId, btnSlotIndex, parentActionBarBtn)
     assertIsFunctionOf(flyoutId,Germ)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
 
-    local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "SecureHandlerClickTemplate, SmallActionButtonTemplate, SecureActionButtonTemplate") -- SecureActionButtonTemplate or SecureHandlerClickTemplate
+    local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "SecureHandlerClickTemplate, ActionButtonTemplate") -- SecureActionButtonTemplate or SecureHandlerClickTemplate
+    --local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "ActionButtonTemplate, SecureHandlerClickTemplate")
 
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
@@ -185,6 +202,8 @@ function Germ.new(flyoutId, btnSlotIndex, parentActionBarBtn)
     -- anti-taint / protected environment / secure BS
     self:SetAttribute("flyoutDirection", self:getDirection())
     self:SetFrameRef("flyoutMenu", self.flyoutMenu)
+
+--[[
     local btn1 = self.flyoutMenu:getButtonFrame(1)
     zebug.error:print("btn1", btn1)
     self:SetFrameRef("btn1", btn1)
@@ -200,6 +219,9 @@ if whichMouseButton == "RightButton" then
     print("this is where I would do a Click()")
 end
 ]=])
+
+]]
+
     self:setHandlers()
     self:setVisibility()
 
@@ -399,17 +421,6 @@ function Germ:getDef()
     return usableFlyout:getButtonDef(1)
 end
 
-function noop()  end
-
--- this syntax is clunky but my IDE understands this better than ButttonMixin:inject()
-Germ.updateCooldownsAndCountsAndStatesEtc = ButttonMixin.updateCooldownsAndCountsAndStatesEtc
-Germ.updateUsable   = ButttonMixin.updateUsable
-Germ.updateCooldown = ButttonMixin.updateCooldown
-Germ.updateCount    = ButttonMixin.updateCount
-Germ.getIconFrame   = ButttonMixin.getIconFrame
-Germ.setIcon        = ButttonMixin.setIcon
-Germ.maxVisibleCooldownDuration = 60
-
 -------------------------------------------------------------------------------
 -- Handlers
 --
@@ -533,7 +544,7 @@ function handlers.OnPostClick(self, whichMouseButton, down)
     end
     oldGerm = self
 
-    if whichMouseButton == MOUSE_BUTTON_RIGHT then
+    if false and whichMouseButton == MOUSE_BUTTON_RIGHT then
         local btn1 = self.flyoutMenu:getButtonFrame(1)
         local btn1 = self:getDef()
         if btn1 then

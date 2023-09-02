@@ -30,9 +30,11 @@ function ButttonMixin:getCooldownFrame()
     return _G[ self:GetName().."Cooldown" ]
 end
 
+local ICON_PREFIX = "INTERFACE\\ICONS\\"
+
 function ButttonMixin:setIcon(icon)
-    if icon and type(icon) ~= "number" then
-        icon = ("INTERFACE\\ICONS\\".. icon)
+    if icon and type(icon) ~= "number" and string.sub(icon,1,string.len(ICON_PREFIX)) ~= ICON_PREFIX then
+        icon = (ICON_PREFIX .. icon)
     end
 
     self:getIconFrame():SetTexture(icon)
