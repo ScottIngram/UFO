@@ -4,11 +4,23 @@
 -- Bliz's SavedVariables don't like my Wormhole magic, so, I've isolated them
 -------------------------------------------------------------------------------
 
+--TODO: move all of the Config into its own file away from the SAVED_VAR stuff
+
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 
----@type Zebuggers
-local zebug = Ufo.Zebug:new()
+-- there is no call to Wormhole()
+-- so we're in the global namespace, NOT in the Ufo !
+
+---@class MouseClickBehavior -- IntelliJ-EmmyLua annotation
+local MouseClickBehavior = {
+    OPEN = "OPEN",
+    FIRST_BTN = "FIRST_BTN",
+    RANDOM_BTN = "RANDOM_BTN",
+    CYCLE_ALL_BTNS = "CYCLE_ALL_BTNS",
+    REVERSE_CYCLE_ALL_BTNS = "REVERSE_CYCLE_ALL_BTNS",
+}
+Ufo.MouseClickBehavior = MouseClickBehavior
 
 ---@class Options -- IntelliJ-EmmyLua annotation
 ---@field supportCombat boolean placate Bliz security rules of "don't SetAnchor() during combat"
@@ -18,11 +30,20 @@ local Options = {
     supportCombat   = true,
     doCloseOnClick  = true,
     usePlaceHolders = true,
+    [Ufo.MOUSE_BUTTON_ANY]    = MouseClickBehavior.OPEN,
+    [Ufo.MOUSE_BUTTON_LEFT]   = MouseClickBehavior.OPEN,
+    [Ufo.MOUSE_BUTTON_RIGHT]  = MouseClickBehavior.FIRST_BTN,
+    [Ufo.MOUSE_BUTTON_MIDDLE] = MouseClickBehavior.RANDOM_BTN,
+    [Ufo.MOUSE_BUTTON_FOUR]   = MouseClickBehavior.CYCLE_ALL_BTNS,
+    [Ufo.MOUSE_BUTTON_FIVE]   = MouseClickBehavior.REVERSE_CYCLE_ALL_BTNS,
 }
 
 ---@class Config -- IntelliJ-EmmyLua annotation
 ---@field opts Options
-local Config = {}
+---@field defaults Options
+local Config = {
+    defaults = Options,
+}
 Ufo.Config = Config
 
 local opts

@@ -48,14 +48,14 @@ function Asshole:new()
 
     asshole:SetAttribute("type1","customscript");-- Can be anything as long as it isn't one of the predefined actions
     asshole:SetAttribute("_customscript", [[
-local asshole = self
-print("asshole's type1 (left-click) customscript is running...")
-local isChecked = not asshole:GetAttribute("isChecked");
-local turd_getter = asshole.GetFrameRef
-local turdRef = getter and getter("turdRef")
-local kids = table.new(asshole:GetChildren())
+    local asshole = self
+    print("asshole's type1 (left-click) customscript is running...")
+    local isChecked = not asshole:GetAttribute("isChecked");
+    local turd_getter = asshole.GetFrameRef
+    local turdRef = getter and getter("turdRef")
+    local kids = table.new(asshole:GetChildren())
 
-local turd
+    local turd
 
     for i, kid in ipairs(kids) do
         local kidName = kid:GetName()
@@ -65,10 +65,6 @@ local turd
             break
         end
     end
-
-local pp = turd:GetParent()
-local ppp = pp == asshole
-    print( pp, ppp )
 
     print("turdRef =", turdRef, "turd",turd, asshole:GetChildren()[1],  table.new(asshole:GetChildren())[1]);
     if isChecked then

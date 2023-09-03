@@ -48,9 +48,26 @@ local handlers = {}
 
 local GERM_UI_NAME_PREFIX = "UfoGerm"
 
+local typeForMouseButton = {
+    type1 = MOUSE_BUTTON_LEFT,
+    type2 = MOUSE_BUTTON_RIGHT,
+    type3 = MOUSE_BUTTON_MIDDLE,
+    type4 = MOUSE_BUTTON_FOUR,
+    type5 = MOUSE_BUTTON_FIVE,
+
+    [MOUSE_BUTTON_ANY]    = "type",
+    [MOUSE_BUTTON_LEFT]   = "type1",
+    [MOUSE_BUTTON_RIGHT]  = "type2",
+    [MOUSE_BUTTON_MIDDLE] = "type3",
+    [MOUSE_BUTTON_FOUR]   = "type4",
+    [MOUSE_BUTTON_FIVE]   = "type5",
+}
+
 local PRE_SCRIPT_STANDARD = [=[
         -- button is which mouse button is clicked
         -- "true" flag is yes, execute the post script
+        --print(button, down)
+        --return "noneya", nil -- this will short-circuit it as long as I'm not setting a "type" handler (vs "type1" and/or "type2")
         return button, true
 ]=]
 
@@ -70,7 +87,7 @@ function getClickerCode()
     local kids = table.new(germ:GetChildren())
     for i, kid in ipairs(kids) do
         local kidName = kid:GetName()
-        print(i,kidName)
+        --print(i,kidName)
         if kidName then
             local wantedSuffix = "]=].. FlyoutMenu.nameSuffix ..[=["
             local n = string.len(wantedSuffix)
@@ -196,138 +213,114 @@ function Germ.new(flyoutId, btnSlotIndex, parentActionBarBtn)
     ---@type Germ
     local self = deepcopy(Germ, protoGerm)
 
-
-    protoGerm:RegisterForClicks("AnyDown", "AnyUp")
-
-    protoGerm:SetAttribute("type","customscript") -- type1 == left mouse click
-    protoGerm:SetAttribute("_customscript", getClickerCode())
-
-
---[[
-    protoGerm:SetAttribute("type","macro")
-    protoGerm:SetAttribute("macrotext",  "/s TURD type = macro")
-    protoGerm:SetAttribute("type2","macro")
-    protoGerm:SetAttribute("macrotext",  "/s asshole's type2 (right-click) macro goes Booyah!")
-]]
-
-    protoGerm:ClearAllPoints()
-    protoGerm:SetAllPoints(parentActionBarBtn)
-
-
-    -- initialize my fields, handlers, etc.
+    -- initialize my fields
     self.btnSlotIndex = btnSlotIndex
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self.flyoutId     = flyoutId
     self.visibleIf    = parentActionBarBtn.visibleIf -- I set this inside GermCommander:getActionBarBtn()
 
-    local myName = self:getFlyoutDef().name
+    -- UI positioning
+    self:ClearAllPoints()
+    self:SetAllPoints(parentActionBarBtn)
+    self:SetFrameStrata(STRATA_DEFAULT)
+    self:SetFrameLevel(100)
+    self:SetToplevel(true)
+    self:setVisibilityDriver()
 
-    local btn1 = self:getDef()
-    local btn1Name = btn1.name
-    local btn1Type = btn1:getTypeForBlizApi()
-    local btn1Id = btn1:getIdForBlizApi()
-    zebug.error:print("myName",myName, "btn1Name",btn1Name, "btn1Type",btn1Type, "btn1Id",btn1Id)
+    -- UI reactions
+    self:SetScript("OnUpdate",      handlers.OnUpdate)
+    self:SetScript("OnEnter",       handlers.OnEnter)
+    self:SetScript("OnLeave",       handlers.OnLeave)
+    self:SetScript("OnReceiveDrag", handlers.OnReceiveDrag)
+    self:SetScript("OnMouseUp",     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
+    self:SetScript("OnDragStart",   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
 
-    if (btn1Type == "battlepet") then
-        -- summon the pet via a macro
-        local petMacro = "/run C_PetJournal.SummonPetByGUID(\"" .. btn1.petGuid .. "\")"
-        self:SetAttribute("type2", "macro")
-        self:SetAttribute("macrotext", petMacro)
-    else
-        self:SetAttribute("type2",btn1Type) -- right mouse click
-        self:SetAttribute(btn1Type, btn1Name)
-    end
+    -- Click behavior
+    --self:RegisterForClicks("AnyDown") -- this works but clobbers OnDragStart
+    self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
+    --self:RegisterForClicks("AnyUp") -- this does nothing
+    self:setMouseClickHandler(MOUSE_BUTTON_LEFT)
+    self:setMouseClickHandler(MOUSE_BUTTON_RIGHT)
+    self:setMouseClickHandler(MOUSE_BUTTON_MIDDLE)
 
-    self:setAltClickHandler(MOUSE_BUTTON_RIGHT)
+    -- Drag and Drop behavior
+    self:RegisterForDrag("LeftButton")
+    SecureHandlerWrapScript(self, "OnDragStart", self, "return "..QUOTE.."message"..QUOTE , "print(123456789)")
 
     -- FlyoutMenu
     self:initFlyoutMenu()
     self.flyoutMenu:initializeCloseOnClick()
-
-    -- anti-taint / protected environment / secure BS
     self:SetAttribute("flyoutDirection", self:getDirection())
-    --self:SetFrameRef("flyoutMenu", self.flyoutMenu)
-
-
-    --self:setHandlers()
-    self:setVisibility()
 
     return self
 end
 
-local MOUSE_BUTTON_ANY = "any"
+local WHICH_HANDLER
 
-local typeForMouseButton = {
-    type1 = MOUSE_BUTTON_LEFT,
-    type2 = MOUSE_BUTTON_RIGHT,
-    type3 = MOUSE_BUTTON_MIDDLE, -- I guess?!  I'm sure there's documentation SOMEwhere, but wtf knows.
-    type4 = "who knows",
-    type5 = "who knows",
+---@param mouseClickBehaviorOpt MouseClickBehavior
+local function getHandler(mouseClickBehaviorOpt)
+    if not WHICH_HANDLER then
+        WHICH_HANDLER = {
+            [MouseClickBehavior.OPEN]           = Germ.makeHandlerToOpenFlyout,
+            [MouseClickBehavior.FIRST_BTN]      = Germ.makeHandlerToActivateBtn1,
+            [MouseClickBehavior.RANDOM_BTN]     = Germ.makeHandlerToActivateRandomBtn,
+            [MouseClickBehavior.CYCLE_ALL_BTNS] = Germ.makeHandlerToCycleThroughAllBtns,
+        }
+    end
 
-    [MOUSE_BUTTON_ANY]    = "type",
-    [MOUSE_BUTTON_LEFT]   = "type1",
-    [MOUSE_BUTTON_RIGHT]  = "type2",
-    [MOUSE_BUTTON_MIDDLE] = "type3", -- I guess?!  I'm sure there's documentation SOMEwhere, but wtf knows.
-}
+    return WHICH_HANDLER[mouseClickBehaviorOpt]
+end
 
 ---@param whichMouseButton string right/left/middle/(etc?)
-function Germ:setAltClickHandler(whichMouseButton)
-    local yetAnotherIdForTheMouseButton = typeForMouseButton[whichMouseButton]
-    zebug.error:print("whichMouseButton",whichMouseButton, "yetAnotherIdForTheMouseButton",yetAnotherIdForTheMouseButton)
-    local postScript = self:makeHandlerForBtn1(yetAnotherIdForTheMouseButton)
+function Germ:setMouseClickHandler(whichMouseButton)
+    local mouseClickBehaviorOpt = Config.opts[whichMouseButton] or Config.defaults[whichMouseButton]
+    local yetAnotherMouseButtonId = typeForMouseButton[whichMouseButton]
+    local whichHandler = getHandler(mouseClickBehaviorOpt)
+
+    zebug.info:print("whichMouseButton",whichMouseButton, "yetAnotherIdForTheMouseButton", yetAnotherMouseButtonId, "mouseClickBehaviorOpt", mouseClickBehaviorOpt, "whichHandler",whichHandler)
+
+    local postScript = whichHandler(self, yetAnotherMouseButtonId)
     SecureHandlerWrapScript(self, "OnClick", self, PRE_SCRIPT_STANDARD, postScript)
 end
 
-function Germ:makeHandlerForBtn1(yetAnotherIdForTheMouseButton)
+function Germ:makeHandlerToOpenFlyout(yetAnotherMouseButtonId)
+    local scriptName = "OPENER_SCRIPT_FOR_" .. yetAnotherMouseButtonId
+    zebug.info:print("yetAnotherMouseButtonId",yetAnotherMouseButtonId, "scriptName",scriptName)
+    self:SetAttribute(yetAnotherMouseButtonId,scriptName)
+    self:SetAttribute("_"..scriptName, getClickerCode())
+end
+
+function Germ:makeHandlerToActivateBtn1(yetAnotherMouseButtonId)
+    zebug.info:print("yetAnotherMouseButtonId",yetAnotherMouseButtonId)
     local myName = self:getFlyoutDef().name
     local btn1 = self:getBtnDef(1)
     local btn1Type = btn1:getTypeForBlizApi()
     local btn1Name = btn1.name
-    zebug.error:print("myName",myName, "btn1Name",btn1Name, "btn1Type",btn1Type)
+    zebug.info:print("myName",myName, "btn1Name",btn1Name, "btn1Type",btn1Type)
 
-    -- this shit ain't convoluted at all. thanks Bliz!
-    local actionType, attributeNameUsedForThisActionToIdentifyTheIdOrName, nameOrId = btn1:asClickHandlerAttributes()
-    zebug.warn:print("yetAnotherIdForTheMouseButton",yetAnotherIdForTheMouseButton, "actionType",actionType, "attr2name",attributeNameUsedForThisActionToIdentifyTheIdOrName, "nameOrId",nameOrId)
-    self:SetAttribute(yetAnotherIdForTheMouseButton, actionType)
-    self:SetAttribute(attributeNameUsedForThisActionToIdentifyTheIdOrName, nameOrId)
+    local actionType, key, id = btn1:asClickHandlerAttributes()
+    zebug.info:print("yetAnotherMouseButtonId", yetAnotherMouseButtonId, "actionType",actionType, "key", key, "id", id)
+    self:SetAttribute(yetAnotherMouseButtonId, actionType)
+    self:SetAttribute(key, id)
+end
 
-    if (btn1Type == ButtonType.PET) then
-        -- summon the pet via a macro
-        local petMacro = "/run C_PetJournal.SummonPetByGUID(\"" .. btn1.petGuid .. "\")"
-        self:SetAttribute(yetAnotherIdForTheMouseButton, "macro")
-        self:SetAttribute("macrotext", petMacro)
-    else
-        self:SetAttribute(yetAnotherIdForTheMouseButton, btn1Type) -- right mouse click
-        self:SetAttribute(btn1Type, btn1Name)
-    end
+---@param btnDef ButtonDef
+function Germ:makeHandlerToActivateArbitraryBtn(btnDef)
+    -- TODO: abstract makeHandlerForBtn1
+end
 
+function Germ:makeHandlerToCycleThroughAllBtns()
 
+end
 
-    return [=[
-	    local germ = self
-        local whichMouseButton = button
-        local isPressed = down
-
-        -- only trigger on mouse up
-        if isPressed then
-            return
-        end
-
+function Germ:makeHandlerToActivateRandomBtn(yetAnotherMouseButtonId)
+    local scriptName = "RANDOMIZER_SCRIPT_FOR_" .. yetAnotherMouseButtonId
+    zebug.info:print("yetAnotherMouseButtonId",yetAnotherMouseButtonId, "scriptName",scriptName)
+    self:SetAttribute(yetAnotherMouseButtonId,scriptName)
+    self:SetAttribute("_"..scriptName, [=[
         local randomNumber = random(1,99)
-        local myCounter = self:GetAttribute("myCounter") or 1
-        print("fun!!! isPressed =", isPressed, myCounter, randomNumber)
-        self:SetAttribute("type2","macro")
-        self:SetAttribute("macrotext",  "/s changed the click handler during the click handler! myCounter="..myCounter)
-        self:SetAttribute("myCounter", myCounter+1)
-    ]=]
-end
-
-function Germ:makeHandlerForCyclingThroughAllBtns()
-
-end
-
-function Germ:makeHandlerForRandomBtn()
-
+        print(randomNumber)
+    ]=])
 end
 
 function Germ:makeHandlerForProofOfConcept()
@@ -363,7 +356,7 @@ function Germ:initFlyoutMenu()
     self.flyoutMenu.isForGerm = true
 end
 
-function Germ:setVisibility()
+function Germ:setVisibilityDriver()
     if self.visibleIf then
         -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
         local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. self.visibleIf
@@ -390,44 +383,21 @@ function Germ:updateAllBtnCooldownsEtc()
     self.flyoutMenu:updateAllBtnCooldownsEtc()
 end
 
-function Germ:setHandlers()
-    --[[
-    local actionBarBtn = self:GetParent()
-    if actionBarBtn then
-        if actionBarBtn:GetSize() and actionBarBtn:IsRectValid() then
-            self:SetAllPoints(actionBarBtn)
-        else
-            -- delete this. there is no such string
-            local spacerName = "UIUfo_ActionBarButtonSpacer"..tostring(actionBarBtn.index)
-            local children = { actionBarBtn:GetParent():GetChildren()}
-            for _, child in ipairs(children) do
-                if child:GetName() == spacerName then
-                    self:SetAllPoints(child)
-                    break;
-                end
-            end
-        end
-    else
-        zebug.trace:print("How is there no actionBarBtn?", "btnSlotIndex", self.btnSlotIndex)
-    end
-    ]]
-
-    self:SetFrameStrata(STRATA_DEFAULT)
-    self:SetFrameLevel(100)
-    self:SetToplevel(true)
-
-    -- handlers
+function Germ:OLD_setEventHandlers()
     self:SetScript("OnUpdate",      handlers.OnUpdate)
     self:SetScript("OnEnter",       handlers.OnEnter)
     self:SetScript("OnLeave",       handlers.OnLeave)
     self:SetScript("OnReceiveDrag", handlers.OnReceiveDrag)
-    self:SetScript("OnMouseUp",     handlers.OnMouseUp)
-    self:SetScript("OnDragStart",   handlers.OnPickupAndDrag)
+    self:SetScript("OnMouseUp",     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
+    self:SetScript("OnDragStart",   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
+
+--[[
     self:SetScript("PreClick",      handlers.OnPreClick)
     self:SetScript("PostClick",     handlers.OnPostClick)
     self:SetAttribute("_onclick",   getClickerCode())
     self:RegisterForClicks("AnyUp")
     self:RegisterForDrag("LeftButton")
+]]
 end
 
 function Germ:getBtnSlotIndex()
@@ -449,7 +419,7 @@ function Germ:update(flyoutId)
     if not flyoutDef then
         -- because one toon can delete a flyout while other toons still have it on their bars
         local msg = "Flyout".. flyoutId .."no longer exists.  Removing it from your action bars."
-        zebug.warn:print(msg)
+        zebug.info:print(msg)
         GermCommander:deletePlacement(btnSlotIndex)
         return
     end
@@ -472,7 +442,7 @@ function Germ:update(flyoutId)
     self:SetAttribute("UFO_PETS",       asStrLists.petGuids)
     self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
 
-    self:setVisibility() -- TODO: remove after we stop sledge hammering all the germs every time
+    self:setVisibilityDriver() -- TODO: remove after we stop sledge hammering all the germs every time
 end
 
 function Germ:handleGermUpdateEvent()
