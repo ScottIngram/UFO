@@ -12,11 +12,7 @@ local zebug = Zebug:new()
 
 ---@class GermCommander -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
-local GermCommander = { }
-Ufo.GermCommander = GermCommander
-
----@type Germ -- IntelliJ-EmmyLua annotation
-local Germ = Ufo.Germ
+GermCommander = { }
 
 -------------------------------------------------------------------------------
 -- Constants
