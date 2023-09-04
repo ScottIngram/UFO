@@ -18,8 +18,10 @@ local zebug = Zebug:new()
 ---@field ufoType string The classname
 ---@field flyoutId number Identifies which flyout is currently copied into this germ
 ---@field flyoutMenu FlyoutMenu The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
+---@field clickScriptUpdaters table secure scriptlettes that must be run during any update()
 Germ = {
     ufoType = "Germ",
+    clickScriptUpdaters = {}
 }
 
 -------------------------------------------------------------------------------
@@ -319,50 +321,25 @@ end
 function Germ:makeHandlerToActivateRandomBtn(yetAnotherMouseButtonId)
     -- Sets two handlers, or rather, the first handler creates the second.
     -- 1) a SecureHandlerWrapScript script that picks a random button and...
-    -- 2) that script creates another handler via SetAttribute(mouseButton -> action) that actually performs the action determined in step #1
+    -- 2) that script creates another handler via SetAttribute(mouseButton -> action) that will actually perform the action determined in step #1
 
+    local myName = self:getFlyoutDef().name
     local mouseBtnNumber = getMouseBtnNumber(yetAnotherMouseButtonId) or ""
     local scriptToSetNextRandomBtn = [=[
         local yetAnotherMouseButtonId = "]=].. yetAnotherMouseButtonId ..[=["
-        local n    = self:GetAttribute("UFO_CLICKER_BTN_COUNT")
+        local n    = self:GetAttribute("UFO_KID_BTN_COUNT")
         local x    = random(1,n)
-        local type = self:GetAttribute("UFO_CLICKER_TYPE_"..x)
-        local key  = self:GetAttribute("UFO_CLICKER_KEY_"..x) .. ]=].. mouseBtnNumber ..[=[
-        local id   = self:GetAttribute("UFO_CLICKER_ID_"..x)
+        local type = self:GetAttribute("UFO_KID_BTN_TYPE_"..x)
+        local key  = self:GetAttribute("UFO_KID_BTN_KEY_"..x) .. ]=].. mouseBtnNumber ..[=[
+        local id   = self:GetAttribute("UFO_KID_BTN_ID_"..x)
         --print(yetAnotherMouseButtonId, "type =", type, "key =", key, "id =",id) -- this shows that it is firing for both mouse UP and DOWN
         self:SetAttribute(yetAnotherMouseButtonId, type)
         self:SetAttribute(key, id)
     ]=]
 
-    zebug.info:print("yetAnotherMouseButtonId",yetAnotherMouseButtonId, "mouseBtnNumber",mouseBtnNumber)
+    zebug.info:print("germ",myName, "yetAnotherMouseButtonId",yetAnotherMouseButtonId, "mouseBtnNumber",mouseBtnNumber)
     SecureHandlerWrapScript(self, "OnClick", self, PRE_SCRIPT_STANDARD, scriptToSetNextRandomBtn)
-
-    -- TODO: is there a bug when more than one mouse button is set to be a randomizer?
-    if self.isRandomizerHandlerInitialized then
-        return
-    end
-
-    -- convert all of the buttons into secure friendly attributes
-    --TODO: move into FlyoutDef and optimize memory usage via cache.  See asLists() -- TODO BETTER: replace existing UFO_NAMES etc
-    --TODO: these values must update whenever the FlyoutDef changes - MOVE into Germ:update()
-    local flyoutDef = self:getFlyoutDef()
-    ---@param buttonDef ButtonDef
-    flyoutDef:forEachBtn(
-    -- START CALLBACK
-            function(buttonDef, buttonDef, i)
-                local type, key, id = buttonDef:asClickHandlerAttributes()
-                self:SetAttribute("UFO_CLICKER_TYPE_"..i, type)
-                self:SetAttribute("UFO_CLICKER_KEY_"..i, key)
-                self:SetAttribute("UFO_CLICKER_ID_"..i, id)
-                self:SetAttribute("UFO_CLICKER_BTN_COUNT", i)
-            end
-    -- END CALLBACK
-    )
-
-    -- trigger the script so it installs the clicker handler
-    SecureHandlerExecute(self, scriptToSetNextRandomBtn)
-
-    self.isRandomizerHandlerInitialized = true
+    self.clickScriptUpdaters[yetAnotherMouseButtonId] = scriptToSetNextRandomBtn
 end
 
 function Germ:makeHandlerForProofOfConcept()
@@ -437,13 +414,14 @@ end
 function Germ:update(flyoutId)
     self.flyoutId = flyoutId
     local btnSlotIndex = self.btnSlotIndex
-    zebug.trace:line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName())
+    local myName = self:getFlyoutDef().name
+    zebug.trace:line(30, "germ",myName, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName())
 
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     if not flyoutDef then
         -- because one toon can delete a flyout while other toons still have it on their bars
         local msg = "Flyout".. flyoutId .."no longer exists.  Removing it from your action bars."
-        zebug.info:print(msg)
+        msgUser(msg)
         GermCommander:deletePlacement(btnSlotIndex)
         return
     end
@@ -457,6 +435,30 @@ function Germ:update(flyoutId)
 
     self.flyoutMenu:updateForGerm(self)
 
+    self:setVisibilityDriver() -- TODO: remove after we stop sledge hammering all the germs every time
+
+    ---------------------
+    -- SECURE TEMPLATE --
+    ---------------------
+
+    flyoutDef:forEachBtn(
+        -- START CALLBACK
+        function(buttonDef, _, i)
+            local type, key, id = buttonDef:asClickHandlerAttributes()
+            self:SetAttribute("UFO_KID_BTN_TYPE_"..i, type)
+            self:SetAttribute("UFO_KID_BTN_KEY_"..i, key)
+            self:SetAttribute("UFO_KID_BTN_ID_"..i, id)
+            self:SetAttribute("UFO_KID_BTN_COUNT", i)
+        end
+        -- END CALLBACK
+    )
+    -- some clickers need to be re-initialized whenever the flyout's buttons change
+    for yetAnotherMouseButtonId, updaterScriptlette in pairs(self.clickScriptUpdaters) do
+        zebug.trace:print("germ",myName, "i",yetAnotherMouseButtonId, "updaterScriptlette",updaterScriptlette)
+        SecureHandlerExecute(self, updaterScriptlette)
+    end
+
+    -- TODO: eradicate these and update getOpenerClickerCode() to use UFO_KID_BTN_* instead
     -- attach string representations of the buttons
     -- because Blizzard "secure" templates don't let us attach the actual array
     local asStrLists = usableFlyout:asStrLists()
@@ -465,8 +467,6 @@ function Germ:update(flyoutId)
     self:SetAttribute("UFO_BLIZ_TYPES", asStrLists.blizTypes)
     self:SetAttribute("UFO_PETS",       asStrLists.petGuids)
     self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
-
-    self:setVisibilityDriver() -- TODO: remove after we stop sledge hammering all the germs every time
 end
 
 function Germ:handleGermUpdateEvent()
