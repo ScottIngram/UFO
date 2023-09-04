@@ -9,15 +9,19 @@ V_PATCH = 0
 V_UFO = "alpha"
 VERSION = table.concat({V_MAJOR, V_MINOR, V_PATCH, V_UFO}, ".")
 
+---@class MouseButton
+MouseButton = {
+    ANY    = "any",
+    LEFT   = "LeftButton",
+    RIGHT  = "RightButton",
+    MIDDLE = "MiddleButton",
+    FOUR   = "Button4",
+    FIVE   = "Button5",
+}
+
 QUOTE = "\""
 EOL = "\n"
 X = nil
-MOUSE_BUTTON_ANY = "any"
-MOUSE_BUTTON_LEFT = "LeftButton"
-MOUSE_BUTTON_RIGHT = "RightButton"
-MOUSE_BUTTON_MIDDLE = "MiddleButton"
-MOUSE_BUTTON_FOUR = "Button4"
-MOUSE_BUTTON_FIVE = "Button5"
 MAX_FLYOUT_SIZE = 30
 NON_SPEC_SLOT = 5
 SPELLFLYOUT_DEFAULT_SPACING = 4

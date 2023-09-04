@@ -72,6 +72,10 @@ function FlyoutDef:setCachedLists(lists)
     self:_setUsableFlyoutDef(nil) -- always clear the filtered copy when the base changes
 end
 
+function FlyoutDef:invalidateCache()
+    self:setCachedLists(nil)
+end
+
 function FlyoutDef:newId()
     return Config:nextN() ..":".. getIdForCurrentToon() ..":".. (time()-1687736964)
 end
@@ -99,7 +103,7 @@ function FlyoutDef:forEachBtn(callback)
         end
     end
     if invalidateCaches then
-        self:setCachedLists(nil)
+        self:invalidateCache()
     end
 end
 
@@ -108,7 +112,7 @@ function FlyoutDef:batchDeleteBtns(killTester)
     local btns = self:getAllButtonDefs()
     local modified = deleteFromArray(btns, killTester)
     if modified then
-        self:setCachedLists(nil)
+        self:invalidateCache()
     end
 end
 
@@ -135,14 +139,14 @@ end
 ---@param buttonDef ButtonDef
 function FlyoutDef:addButton(buttonDef)
     table.insert(self.btns, buttonDef)
-    self:setCachedLists(nil)
+    self:invalidateCache()
 end
 
 ---@param i number
 ---@param buttonDef ButtonDef
 function FlyoutDef:replaceButton(i, buttonDef)
     self.btns[tonumber(i)] = buttonDef
-    self:setCachedLists(nil)
+    self:invalidateCache()
 end
 
 -- removes a button an moves the rest down a notch

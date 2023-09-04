@@ -14,7 +14,7 @@ local zebug = Zebug:new()
 -- For now, this class is tightly coupled with the ButtonDef class -- most methods here require its arg to be a ButtonDef
 -------------------------------------------------------------------------------
 ---@class ButtonType -- IntelliJ-EmmyLua annotation
-local ButtonType = {
+ButtonType = {
     SPELL = "spell",
     MOUNT = "mount",
     ITEM  = "item",
@@ -23,7 +23,6 @@ local ButtonType = {
     MACRO = "macro",
     SNAFU = "companion",
 }
-Ufo.ButtonType = ButtonType
 
 -------------------------------------------------------------------------------
 -- BlizApiFieldDef
@@ -33,7 +32,7 @@ Ufo.ButtonType = ButtonType
 ---@field pickerUpper function the Bliz API that can load the mouse pointer
 ---@field typeForBliz ButtonType
 ---@field key string which field should be used as the ID
-local BlizApiFieldDef = {
+BlizApiFieldDef = {
     [ButtonType.SPELL] = { pickerUpper = PickupSpell, typeForBliz = ButtonType.SPELL, },
     [ButtonType.MOUNT] = { pickerUpper = PickupSpell, typeForBliz = ButtonType.SPELL, },
     [ButtonType.ITEM ] = { pickerUpper = PickupItem,  typeForBliz = ButtonType.ITEM,  },
@@ -42,7 +41,6 @@ local BlizApiFieldDef = {
     [ButtonType.SNAFU] = { pickerUpper = nil,         typeForBliz = ButtonType.SPELL, key = "mountId" },
     [ButtonType.PET  ] = { pickerUpper = C_PetJournal.PickupPet, typeForBliz = ButtonType.PET, key = "petGuid" },
 }
-Ufo.BlizApiFieldDef = BlizApiFieldDef
 
 -------------------------------------------------------------------------------
 -- ButtonDef
@@ -57,10 +55,9 @@ Ufo.BlizApiFieldDef = BlizApiFieldDef
 ---@field petGuid string
 ---@field macroId number
 ---@field macroOwner string
-local ButtonDef = {
+ButtonDef = {
     ufoType = "ButtonDef"
 }
-Ufo.ButtonDef = ButtonDef
 
 -------------------------------------------------------------------------------
 -- Methods
@@ -405,7 +402,7 @@ function ButtonDef:secureClick(germ)
     secureButton:SetAttribute("type2", self.type)
     secureButton:SetAttribute(self.type, self.name)
     zebug.warn:print("type",self.type, "name",self.name, "CLICK")
-    secureButton:Click(MOUSE_BUTTON_RIGHT)
+    secureButton:Click(MouseButton.RIGHT)
     zebug.warn:print("type",self.type, "name",self.name, "CLICKED")
 end
 

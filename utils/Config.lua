@@ -1,3 +1,6 @@
+-- Config
+-- user defined options and saved vars
+
 -------------------------------------------------------------------------------
 -- Module Loading
 --
@@ -22,6 +25,9 @@ local MouseClickBehavior = {
 }
 Ufo.MouseClickBehavior = MouseClickBehavior
 
+---@type MouseButton
+local MouseButton = Ufo.MouseButton
+
 ---@class Options -- IntelliJ-EmmyLua annotation
 ---@field supportCombat boolean placate Bliz security rules of "don't SetAnchor() during combat"
 ---@field doCloseOnClick boolean close the flyout after the user clicks one of its buttons
@@ -30,19 +36,19 @@ local Options = {
     supportCombat   = true,
     doCloseOnClick  = true,
     usePlaceHolders = true,
-    [Ufo.MOUSE_BUTTON_ANY]    = MouseClickBehavior.OPEN,
-    [Ufo.MOUSE_BUTTON_LEFT]   = MouseClickBehavior.OPEN,
-    [Ufo.MOUSE_BUTTON_RIGHT]  = MouseClickBehavior.FIRST_BTN,
-    [Ufo.MOUSE_BUTTON_MIDDLE] = MouseClickBehavior.RANDOM_BTN,
-    [Ufo.MOUSE_BUTTON_FOUR]   = MouseClickBehavior.CYCLE_ALL_BTNS,
-    [Ufo.MOUSE_BUTTON_FIVE]   = MouseClickBehavior.REVERSE_CYCLE_ALL_BTNS,
+    [MouseButton.ANY]    = MouseClickBehavior.OPEN,
+    [MouseButton.LEFT]   = MouseClickBehavior.OPEN,
+    [MouseButton.RIGHT]  = MouseClickBehavior.FIRST_BTN,
+    [MouseButton.MIDDLE] = MouseClickBehavior.RANDOM_BTN,
+    [MouseButton.FOUR]   = MouseClickBehavior.CYCLE_ALL_BTNS,
+    [MouseButton.FIVE]   = MouseClickBehavior.REVERSE_CYCLE_ALL_BTNS,
 }
 
 ---@class Config -- IntelliJ-EmmyLua annotation
 ---@field opts Options
----@field defaults Options
+---@field optDefaults Options
 local Config = {
-    defaults = Options,
+    optDefaults = Options,
 }
 Ufo.Config = Config
 

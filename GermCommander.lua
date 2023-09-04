@@ -87,7 +87,7 @@ function GermCommander:updateAll()
                 -- create a new germ
                 local bbInfo = self:extractBarBtnInfo(btnSlotIndex)
                 local parent = self:getActionBarBtn(bbInfo)
-                germ = Germ.new(flyoutId, btnSlotIndex, parent)
+                germ = Germ:new(flyoutId, btnSlotIndex, parent)
                 self:saveGerm(germ)
             end
             germ:update(flyoutId)
