@@ -84,9 +84,24 @@ function EventHandlers:UPDATE_MACROS()
     MacroShitShow:analyzeMacroUpdate()
 end
 
+function EventHandlers:UNIT_INVENTORY_CHANGED()
+    if not isUfoInitialized then return end
+    zebug.trace:line(40,"Heard event: UNIT_INVENTORY_CHANGED")
+    -- TODO: be a little less NUKEy
+    ---@param flyoutDef FlyoutDef
+    FlyoutDefsDb:forEachFlyoutDef(function(flyoutDef)
+        -- START CALLBACK
+        flyoutDef:invalidateCache()
+        -- END CALLBACK
+    end)
+    GermCommander:updateAll()
+end
+
 function EventHandlers:CURSOR_CHANGED()
     if not isUfoInitialized then return end
-    zebug.trace:line(40,"Heard event: CURSOR_CHANGED")
+    --zebug.trace:line(40,"Heard event: CURSOR_CHANGED",C_TradeSkillUI.GetProfessionForCursorItem())
+    local type, spellId = GetCursorInfo()
+    zebug.trace:print("type",type, "spellId",spellId)
     GermCommander:delayedAsynchronousConditionalDeleteProxy()
 end
 

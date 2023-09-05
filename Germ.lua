@@ -25,6 +25,7 @@ Germ = {
     ufoType = "Germ",
     maxVisibleCooldownDuration = 60, -- for ButtonMixin:updateCooldown()
     clickScriptUpdaters = {},
+    clickers = {},
 }
 ButtonMixin:inject(Germ)
 
@@ -220,6 +221,7 @@ function Germ:setMouseClickHandler(mouseClick)
     local installTheBehavior = getHandlerMaker(behavior)
     zebug.info:print("mouseClick",mouseClick, "opt", behavior, "handler", installTheBehavior)
     installTheBehavior(self, mouseClick)
+    self.clickers[mouseClick] = behavior
 end
 
 function Germ:initFlyoutMenu()
@@ -304,6 +306,16 @@ function Germ:update(flyoutId)
     for secureMouseClickId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
         zebug.trace:print("germ",myName, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
         SecureHandlerExecute(self, updaterScriptlet)
+    end
+
+    -- all FIRST_BTN handlers must be re-initialized after flyoutDef changes
+    ---@param mouseClick MouseClick
+    ---@param behavior MouseClickBehavior
+    for mouseClick, behavior in pairs(self.clickers) do
+        if behavior == MouseClickBehavior.FIRST_BTN then
+            local installTheBehavior = getHandlerMaker(behavior)
+            installTheBehavior(self, mouseClick)
+        end
     end
 
     -- TODO: eradicate UFO_BLIZ_TYPES and refactor getOpenerClickerCode()
