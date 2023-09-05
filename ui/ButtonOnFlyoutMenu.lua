@@ -12,22 +12,12 @@ local zebug = Zebug:new()
 
 ---@class ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
-local ButtonOnFlyoutMenu = {
+
+---@type ButtonOnFlyoutMenu|ButtonMixin
+ButtonOnFlyoutMenu = {
     ufoType = "ButtonOnFlyoutMenu",
 }
-Ufo.ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
-
--------------------------------------------------------------------------------
--- Mixing the Mixins
--------------------------------------------------------------------------------
-
--- this syntax is clunky but my IDE understands this better than ButttonMixin:inject()
-ButtonOnFlyoutMenu.updateCooldownsAndCountsAndStatesEtc = ButttonMixin.updateCooldownsAndCountsAndStatesEtc
-ButtonOnFlyoutMenu.updateUsable   = ButttonMixin.updateUsable
-ButtonOnFlyoutMenu.updateCooldown = ButttonMixin.updateCooldown
-ButtonOnFlyoutMenu.updateCount    = ButttonMixin.updateCount
-ButtonOnFlyoutMenu.getIconFrame   = ButttonMixin.getIconFrame
-ButtonOnFlyoutMenu.setIcon        = ButttonMixin.setIcon
+ButtonMixin:inject(ButtonOnFlyoutMenu)
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -69,6 +59,7 @@ end
 function ButtonOnFlyoutMenu:setDef(btnDef)
     self.btnDef = btnDef
     self:copyDefToBlizFields()
+    self:updateSecureClicker(MouseButton.ANY)
 end
 
 function ButtonOnFlyoutMenu:copyDefToBlizFields()

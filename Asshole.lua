@@ -13,8 +13,8 @@ Asshole = {
     ufoType = "Asshole",
 }
 
-Asshole.getIconFrame = ButttonMixin.getIconFrame
-Asshole.setIcon      = ButttonMixin.setIcon
+Asshole.getIconFrame = ButtonMixin.getIconFrame
+Asshole.setIcon      = ButtonMixin.setIcon
 
 function Asshole:new()
     local asshole = CreateFrame("CheckButton", "Asshole", UIParent, "ActionButtonTemplate, SecureActionButtonTemplate") -- SecureHandlerTemplate

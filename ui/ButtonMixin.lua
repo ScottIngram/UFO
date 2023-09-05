@@ -1,4 +1,4 @@
--- ButttonMixin
+-- ButtonMixin
 
 -------------------------------------------------------------------------------
 -- Module Loading
@@ -8,31 +8,54 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 local zebug = Zebug:new()
 
----@class ButttonMixin -- IntelliJ-EmmyLua annotation
-local ButttonMixin = { }
-Ufo.ButttonMixin = ButttonMixin
+---@class ButtonMixin -- IntelliJ-EmmyLua annotation
+ButtonMixin = { }
+
+-------------------------------------------------------------------------------
+--  Constants
+-------------------------------------------------------------------------------
+
+---@class YetAnotherMouseButtonId
+YetAnotherMouseButtonId = {
+    type = "type", -- all buttons
+    type1 = "type1",
+    type2 = "type2",
+    type3 = "type3",
+    type4 = "type4",
+    type5 = "type5",
+}
+
+---@type { [MouseButton]: YetAnotherMouseButtonId }
+MouseButtonRemapToYetAnotherMouseButtonId = {
+    [MouseButton.ANY]    = "type",
+    [MouseButton.LEFT]   = "type1",
+    [MouseButton.RIGHT]  = "type2",
+    [MouseButton.MIDDLE] = "type3",
+    [MouseButton.FOUR]   = "type4",
+    [MouseButton.FIVE]   = "type5",
+}
 
 -------------------------------------------------------------------------------
 --  Methods
 -------------------------------------------------------------------------------
 
-function ButttonMixin:inject(other)
-    for name, func in pairs(ButttonMixin) do
+function ButtonMixin:inject(other)
+    for name, func in pairs(ButtonMixin) do
         other[name] = func
     end
 end
 
-function ButttonMixin:getIconFrame()
+function ButtonMixin:getIconFrame()
     return _G[ self:GetName().."Icon" ]
 end
 
-function ButttonMixin:getCooldownFrame()
+function ButtonMixin:getCooldownFrame()
     return _G[ self:GetName().."Cooldown" ]
 end
 
 local ICON_PREFIX = "INTERFACE\\ICONS\\"
 
-function ButttonMixin:setIcon(icon)
+function ButtonMixin:setIcon(icon)
     if icon and type(icon) ~= "number" and string.sub(icon,1,string.len(ICON_PREFIX)) ~= ICON_PREFIX then
         icon = (ICON_PREFIX .. icon)
     end
@@ -40,7 +63,7 @@ function ButttonMixin:setIcon(icon)
     self:getIconFrame():SetTexture(icon)
 end
 
-function ButttonMixin:updateCooldownsAndCountsAndStatesEtc()
+function ButtonMixin:updateCooldownsAndCountsAndStatesEtc()
     local btnDef = self:getDef()
     local spellId = btnDef and btnDef.spellId
     if (spellId) then
@@ -52,7 +75,7 @@ function ButttonMixin:updateCooldownsAndCountsAndStatesEtc()
     self:updateCount()
 end
 
-function ButttonMixin:updateUsable()
+function ButtonMixin:updateUsable()
     local isUsable = true
     local notEnoughMana = false
     local btnDef = self:getDef()
@@ -82,7 +105,7 @@ function ButttonMixin:updateUsable()
     end
 end
 
-function ButttonMixin:updateCooldown()
+function ButtonMixin:updateCooldown()
     local btnDef = self:getDef()
     local type = btnDef and btnDef.type
     local itemId = btnDef and btnDef.itemId
@@ -127,7 +150,7 @@ function ButttonMixin:updateCooldown()
 
 end
 
-function ButttonMixin:updateCount()
+function ButtonMixin:updateCount()
     local btnDef = self:getDef()
     local itemId = btnDef and btnDef.itemId
     local hasItem = exists(itemId)
@@ -163,4 +186,40 @@ function ButttonMixin:updateCount()
 
     local textFrame = _G[self:GetName().."Count"];
     textFrame:SetText(display);
+end
+
+-------------------------------------------------------------------------------
+--  SECURE TEMPLATE / RESTRICTED ENVIRONMENT
+-------------------------------------------------------------------------------
+
+---@param yetAnotherMouseButtonId YetAnotherMouseButtonId
+function ButtonMixin:getMouseBtnNumber(yetAnotherMouseButtonId)
+    local mouseBtnNumber = string.sub(yetAnotherMouseButtonId, -1) -- last digit of "type1" or "type3" etc
+    return tonumber(mouseBtnNumber) and mouseBtnNumber or nil
+end
+
+---@param yetAnotherMouseButtonId YetAnotherMouseButtonId
+function ButtonMixin:adjustSecureKeyToMatchTheMouseButton(yetAnotherMouseButtonId, key)
+    local mouseBtnNumber = self:getMouseBtnNumber(yetAnotherMouseButtonId)
+    if mouseBtnNumber then
+        return key .. mouseBtnNumber
+    else
+        return key
+    end
+end
+
+---@param whichMouseButton MouseButton
+function ButtonMixin:updateSecureClicker(whichMouseButton)
+    local btnDef = self:getDef()
+    if btnDef then
+        local yetAnotherMouseButtonId = MouseButtonRemapToYetAnotherMouseButtonId[whichMouseButton]
+        local type, key, id = btnDef:asClickHandlerAttributes()
+        local keyAdjustedToMatchMouseButton = self:adjustSecureKeyToMatchTheMouseButton(yetAnotherMouseButtonId, key)
+        zebug.trace:print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseButton, "id",id)
+        self:SetAttribute(yetAnotherMouseButtonId, type)
+        self:SetAttribute(keyAdjustedToMatchMouseButton, id)
+    else
+        self:SetAttribute("type", nil)
+    end
+
 end

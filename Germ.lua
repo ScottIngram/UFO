@@ -19,50 +19,27 @@ local zebug = Zebug:new()
 ---@field flyoutId number Identifies which flyout is currently copied into this germ
 ---@field flyoutMenu FlyoutMenu The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
 ---@field clickScriptUpdaters table secure scriptlettes that must be run during any update()
+
+---@type Germ|ButtonMixin
 Germ = {
     ufoType = "Germ",
-    clickScriptUpdaters = {}
+    maxVisibleCooldownDuration = 60, -- for ButtonMixin:updateCooldown()
+    clickScriptUpdaters = {},
 }
-
--------------------------------------------------------------------------------
--- Mixing the Mixins
--------------------------------------------------------------------------------
-
--- this syntax is clunky but my IDE understands this better than ButttonMixin:inject()
-Germ.updateCooldownsAndCountsAndStatesEtc = ButttonMixin.updateCooldownsAndCountsAndStatesEtc
-Germ.updateUsable   = ButttonMixin.updateUsable
-Germ.updateCooldown = ButttonMixin.updateCooldown
-Germ.updateCount    = ButttonMixin.updateCount
-Germ.getIconFrame   = ButttonMixin.getIconFrame
-Germ.setIcon        = ButttonMixin.setIcon
-Germ.maxVisibleCooldownDuration = 60
+ButtonMixin:inject(Germ)
 
 -------------------------------------------------------------------------------
 -- Data
 -------------------------------------------------------------------------------
 
 local handlers = {}
+local HANDLER_MAKERS_MAP
 
 -------------------------------------------------------------------------------
 -- Constants
 -------------------------------------------------------------------------------
 
 local GERM_UI_NAME_PREFIX = "UfoGerm"
-
-local typeForMouseButton = {
-    type1 = MouseButton.LEFT,
-    type2 = MouseButton.RIGHT,
-    type3 = MouseButton.MIDDLE,
-    type4 = MouseButton.FOUR,
-    type5 = MouseButton.FIVE,
-
-    [MouseButton.ANY]    = "type",
-    [MouseButton.LEFT]   = "type1",
-    [MouseButton.RIGHT]  = "type2",
-    [MouseButton.MIDDLE] = "type3",
-    [MouseButton.FOUR]   = "type4",
-    [MouseButton.FIVE]   = "type5",
-}
 
 local PRE_SCRIPT_STANDARD = [=[
         -- button is which mouse button is clicked
@@ -253,116 +230,12 @@ function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
     return self
 end
 
-local HANDLER_MAKERS
-
----@param mouseClickBehaviorOpt MouseClickBehavior
-local function getHandlerMaker(mouseClickBehaviorOpt)
-    if not HANDLER_MAKERS then
-        HANDLER_MAKERS = {
-            [MouseClickBehavior.OPEN]           = Germ.makeHandlerToOpenFlyout,
-            [MouseClickBehavior.FIRST_BTN]      = Germ.makeHandlerToActivateBtn1,
-            [MouseClickBehavior.RANDOM_BTN]     = Germ.makeHandlerToActivateRandomBtn,
-            [MouseClickBehavior.CYCLE_ALL_BTNS] = Germ.makeHandlerToCycleThroughAllBtns,
-        }
-    end
-
-    return HANDLER_MAKERS[mouseClickBehaviorOpt]
-end
-
-local function getMouseBtnNumber(yetAnotherMouseButtonId)
-    local mouseBtnNumber = string.sub(yetAnotherMouseButtonId, -1) -- last digit of "type1" or "type3" etc
-    return tonumber(mouseBtnNumber) and mouseBtnNumber or nil
-end
-
-local function adjustKeyToMatchTheMouseButton(yetAnotherMouseButtonId, key)
-    local mouseBtnNumber = getMouseBtnNumber(yetAnotherMouseButtonId)
-    if mouseBtnNumber then
-        return key .. mouseBtnNumber
-    else
-        return key
-    end
-end
-
 ---@param whichMouseButton MouseButton
 function Germ:setMouseClickHandler(whichMouseButton)
-    local yetAnotherMouseButtonId = typeForMouseButton[whichMouseButton]
-    local mouseClickBehaviorOpt = Config.opts[whichMouseButton] or Config.optDefaults[whichMouseButton]
-    local aHandlerMaker = getHandlerMaker(mouseClickBehaviorOpt)
-
-    zebug.info:print("whichMouseButton",whichMouseButton, "yetAnotherIdForTheMouseButton", yetAnotherMouseButtonId, "mouseClickBehaviorOpt", mouseClickBehaviorOpt, "whichHandler", aHandlerMaker)
-
-    aHandlerMaker(self, yetAnotherMouseButtonId)
-end
-
-function Germ:makeHandlerToOpenFlyout(yetAnotherMouseButtonId)
-    local scriptName = "OPENER_SCRIPT_FOR_" .. yetAnotherMouseButtonId
-    zebug.info:print("yetAnotherMouseButtonId",yetAnotherMouseButtonId, "scriptName",scriptName)
-    self:SetAttribute(yetAnotherMouseButtonId,scriptName)
-    self:SetAttribute("_"..scriptName, getOpenerClickerCode())
-end
-
-function Germ:makeHandlerToActivateBtn1(yetAnotherMouseButtonId)
-    zebug.info:print("yetAnotherMouseButtonId",yetAnotherMouseButtonId)
-    local myName = self:getFlyoutDef().name
-    local btn1 = self:getBtnDef(1)
-    local btn1Type = btn1:getTypeForBlizApi()
-    local btn1Name = btn1.name
-    local type, key, id = btn1:asClickHandlerAttributes()
-    local keyAdjustedToMatchMouseButton = adjustKeyToMatchTheMouseButton(yetAnotherMouseButtonId, type, key)
-    zebug.info:print("myName",myName, "btn1Name",btn1Name, "btn1Type",btn1Type, "yetAnotherMouseButtonId", yetAnotherMouseButtonId, "type", type, "key", key, "keyAdjustedToMatchMouseButton",keyAdjustedToMatchMouseButton,  "id", id)
-    self:SetAttribute(yetAnotherMouseButtonId, key)
-    self:SetAttribute(keyAdjustedToMatchMouseButton, id)
-end
-
-function Germ:makeHandlerToCycleThroughAllBtns()
-
-end
-
-function Germ:makeHandlerToActivateRandomBtn(yetAnotherMouseButtonId)
-    -- Sets two handlers, or rather, the first handler creates the second.
-    -- 1) a SecureHandlerWrapScript script that picks a random button and...
-    -- 2) that script creates another handler via SetAttribute(mouseButton -> action) that will actually perform the action determined in step #1
-
-    local myName = self:getFlyoutDef().name
-    local mouseBtnNumber = getMouseBtnNumber(yetAnotherMouseButtonId) or ""
-    local scriptToSetNextRandomBtn = [=[
-        local yetAnotherMouseButtonId = "]=].. yetAnotherMouseButtonId ..[=["
-        local n    = self:GetAttribute("UFO_KID_BTN_COUNT")
-        local x    = random(1,n)
-        local type = self:GetAttribute("UFO_KID_BTN_TYPE_"..x)
-        local key  = self:GetAttribute("UFO_KID_BTN_KEY_"..x) .. ]=].. mouseBtnNumber ..[=[
-        local id   = self:GetAttribute("UFO_KID_BTN_ID_"..x)
-        --print(yetAnotherMouseButtonId, "type =", type, "key =", key, "id =",id) -- this shows that it is firing for both mouse UP and DOWN
-        self:SetAttribute(yetAnotherMouseButtonId, type)
-        self:SetAttribute(key, id)
-    ]=]
-
-    zebug.info:print("germ",myName, "yetAnotherMouseButtonId",yetAnotherMouseButtonId, "mouseBtnNumber",mouseBtnNumber)
-    SecureHandlerWrapScript(self, "OnClick", self, PRE_SCRIPT_STANDARD, scriptToSetNextRandomBtn)
-    self.clickScriptUpdaters[yetAnotherMouseButtonId] = scriptToSetNextRandomBtn
-end
-
-function Germ:makeHandlerForProofOfConcept()
-    local preScript = [=[
-        local whichMouseButton = button
-        local yesExecuteThePostScript = true
-        return whichMouseButton, yesExecuteThePostScript
-    ]=]
-
-    -- here I will be able to pick some button other than btn1 via true code and concat its values into the snippet
-    local someOtherBtnValues = "TBD"
-    return [=[
-        -- only trigger on "mouse up"
-        local isPressed = down
-        if not isPressed then
-            local randomNumber = random(1,99)
-            local myCounter = self:GetAttribute("myCounter") or 1
-            print("fun!!! isPressed =", isPressed, myCounter, randomNumber, "]=] .. someOtherBtnValues .. [=[")
-            self:SetAttribute("type2","macro")
-            self:SetAttribute("macrotext",  "/s changed the click handler during the click handler! myCounter="..myCounter)
-            self:SetAttribute("myCounter", myCounter+1)
-        end
-    ]=]
+    local behavior = Config.opts[whichMouseButton] or Config.optDefaults[whichMouseButton]
+    local installTheBehavior = getHandlerMaker(behavior)
+    zebug.info:print("whichMouseButton",whichMouseButton, "opt", behavior, "handler", installTheBehavior)
+    installTheBehavior(self, whichMouseButton)
 end
 
 function Germ:initFlyoutMenu()
@@ -549,7 +422,7 @@ function Germ:getBtnDef(n)
     return self:getUsableFlyoutDef():getButtonDef(n)
 end
 
--- required by ButttonMixin
+-- required by ButtonMixin
 function Germ:getDef()
     -- treat the first button in the flyout as the "definition" for the Germ
     return self:getBtnDef(1)
@@ -689,3 +562,85 @@ function handlers.OnPostClick(self, whichMouseButton, down)
         end
     end
 end
+
+-------------------------------------------------------------------------------
+-- Handler Makers
+--
+-- SECURE HANDLER / RESTRICTED ENVIRONMENT
+--
+-- a bunch of code to make calls to SetAttribute("type",action) etc
+-- to enable the Germ's button to do things in response to mouse clicks
+-------------------------------------------------------------------------------
+
+---@type Germ|ButtonMixin
+local HandlerMaker = { }
+
+---@param mouseClickBehaviorOpt MouseClickBehavior
+---@return fun(zelf: Germ, whichMouseButton: MouseButton): nil
+function getHandlerMaker(mouseClickBehaviorOpt)
+    return HANDLER_MAKERS_MAP[mouseClickBehaviorOpt]
+end
+
+---@param whichMouseButton MouseButton
+function HandlerMaker:OpenFlyout(whichMouseButton)
+    local yetAnotherMouseButtonId = MouseButtonRemapToYetAnotherMouseButtonId[whichMouseButton]
+    zebug.info:name("HandlerMakers:OpenFlyout"):print("self",self, "whichMouseButton",whichMouseButton, "yetAnotherMouseButtonId", yetAnotherMouseButtonId)
+    local scriptName = "OPENER_SCRIPT_FOR_" .. yetAnotherMouseButtonId
+    zebug.info:print("yetAnotherMouseButtonId",yetAnotherMouseButtonId, "scriptName",scriptName)
+    self:SetAttribute(yetAnotherMouseButtonId,scriptName)
+    self:SetAttribute("_"..scriptName, getOpenerClickerCode())
+end
+
+---@param whichMouseButton MouseButton
+function HandlerMaker:ActivateBtn1(whichMouseButton)
+    local yetAnotherMouseButtonId = MouseButtonRemapToYetAnotherMouseButtonId[whichMouseButton]
+    zebug.info:print("yetAnotherMouseButtonId",yetAnotherMouseButtonId)
+    self:updateSecureClicker(whichMouseButton)
+    local myName = self:getFlyoutDef().name
+    local btn1 = self:getBtnDef(1)
+    local btn1Type = btn1:getTypeForBlizApi()
+    local btn1Name = btn1.name
+    local type, key, id = btn1:asClickHandlerAttributes()
+    local keyAdjustedToMatchMouseButton = self:adjustSecureKeyToMatchTheMouseButton(yetAnotherMouseButtonId, key)
+    zebug.info:name("HandlerMakers:ActivateBtn1"):print("myName",myName, "btn1Name",btn1Name, "btn1Type",btn1Type, "yetAnotherMouseButtonId", yetAnotherMouseButtonId, "type", type, "key", key, "keyAdjustedToMatchMouseButton",keyAdjustedToMatchMouseButton,  "id", id)
+    self:SetAttribute(yetAnotherMouseButtonId, key)
+    self:SetAttribute(keyAdjustedToMatchMouseButton, id)
+end
+
+---@param whichMouseButton MouseButton
+function HandlerMaker:ActivateRandomBtn(whichMouseButton)
+    -- Sets two handlers, or rather, the first handler creates the second.
+    -- 1) a SecureHandlerWrapScript script that picks a random button and...
+    -- 2) that script creates another handler via SetAttribute(mouseButton -> action) that will actually perform the action determined in step #1
+
+    local myName = self:getFlyoutDef().name
+    local yetAnotherMouseButtonId = MouseButtonRemapToYetAnotherMouseButtonId[whichMouseButton]
+    local mouseBtnNumber = self:getMouseBtnNumber(yetAnotherMouseButtonId) or ""
+    local scriptToSetNextRandomBtn = [=[
+        local yetAnotherMouseButtonId = "]=].. yetAnotherMouseButtonId ..[=["
+        local n    = self:GetAttribute("UFO_KID_BTN_COUNT")
+        local x    = random(1,n)
+        local type = self:GetAttribute("UFO_KID_BTN_TYPE_"..x)
+        local key  = self:GetAttribute("UFO_KID_BTN_KEY_"..x) .. ]=].. mouseBtnNumber ..[=[
+        local id   = self:GetAttribute("UFO_KID_BTN_ID_"..x)
+        --print(yetAnotherMouseButtonId, "type =", type, "key =", key, "id =",id) -- this shows that it is firing for both mouse UP and DOWN
+        self:SetAttribute(yetAnotherMouseButtonId, type)
+        self:SetAttribute(key, id)
+    ]=]
+
+    zebug.info:print("germ",myName, "yetAnotherMouseButtonId",yetAnotherMouseButtonId, "mouseBtnNumber",mouseBtnNumber)
+    SecureHandlerWrapScript(self, "OnClick", self, PRE_SCRIPT_STANDARD, scriptToSetNextRandomBtn)
+    self.clickScriptUpdaters[yetAnotherMouseButtonId] = scriptToSetNextRandomBtn
+end
+
+function HandlerMaker:CycleThroughAllBtns()
+
+end
+
+HANDLER_MAKERS_MAP = {
+    [MouseClickBehavior.OPEN]           = HandlerMaker.OpenFlyout,
+    [MouseClickBehavior.FIRST_BTN]      = HandlerMaker.ActivateBtn1,
+    [MouseClickBehavior.RANDOM_BTN]     = HandlerMaker.ActivateRandomBtn,
+    [MouseClickBehavior.CYCLE_ALL_BTNS] = HandlerMaker.CycleThroughAllBtns,
+}
+
