@@ -379,10 +379,13 @@ function ButtonDef:click(germ)
     return self.name
 end
 
+---@return ButtonType buttonType what kind of action is performed by the btn
+---@return string key for the SecureActionButtonTemplate:SetAttribute(key, val)
+---@return string val for the SecureActionButtonTemplate:SetAttribute(key, val)
 function ButtonDef:asClickHandlerAttributes()
     if (self.type == ButtonType.PET) then
-        local snippet = "C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
-        --return "customscript", "_customscript", snippet -- this broke the flyout
+        --local snippet = "C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
+        --return "UFO_customscript", "_UFO_customscript", snippet -- this broke the flyout... probably will work now that I'm adjusting by mouseBtn
 
         -- summon the pet via a macro
         local petMacro = "/run C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"

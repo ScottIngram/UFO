@@ -206,8 +206,10 @@ function FlyoutMenu:updateForGerm(germ)
             zebug.trace:print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
             btnFrame:setIcon( btnDef:getIcon() )
             btnFrame:setGeometry(self.direction)
+            btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SECURE TEMPLATE
         else
             btnFrame:setIcon(DEFAULT_ICON)
+            btnFrame:SetAttribute("UFO_NAME",nil) -- SECURE TEMPLATE
             return
         end
     end)

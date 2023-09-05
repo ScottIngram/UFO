@@ -9,6 +9,7 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 local zebug = Zebug:new()
 
 ---@class ButtonMixin -- IntelliJ-EmmyLua annotation
+---@field ufoType string The classname... set by "child" "classes"
 ButtonMixin = { }
 
 -------------------------------------------------------------------------------
@@ -198,6 +199,9 @@ function ButtonMixin:getMouseBtnNumber(yetAnotherMouseButtonId)
     return tonumber(mouseBtnNumber) and mouseBtnNumber or nil
 end
 
+-- because in the world of Bliz SECURE
+-- if your type = "type3"
+-- then your key must be key.."3"
 ---@param yetAnotherMouseButtonId YetAnotherMouseButtonId
 function ButtonMixin:adjustSecureKeyToMatchTheMouseButton(yetAnotherMouseButtonId, key)
     local mouseBtnNumber = self:getMouseBtnNumber(yetAnotherMouseButtonId)
@@ -213,11 +217,18 @@ function ButtonMixin:updateSecureClicker(whichMouseButton)
     local btnDef = self:getDef()
     if btnDef then
         local yetAnotherMouseButtonId = MouseButtonRemapToYetAnotherMouseButtonId[whichMouseButton]
-        local type, key, id = btnDef:asClickHandlerAttributes()
+        local type, key, val = btnDef:asClickHandlerAttributes()
         local keyAdjustedToMatchMouseButton = self:adjustSecureKeyToMatchTheMouseButton(yetAnotherMouseButtonId, key)
-        zebug.trace:print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseButton, "id",id)
+        zebug.trace:print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseButton, "val", val)
         self:SetAttribute(yetAnotherMouseButtonId, type)
-        self:SetAttribute(keyAdjustedToMatchMouseButton, id)
+        self:SetAttribute(keyAdjustedToMatchMouseButton, val)
+
+        -- for use by Germ
+        if self.ufoType == ButtonOnFlyoutMenu.ufoType then
+            self:SetAttribute("UFO_KEY", key)
+            self:SetAttribute("UFO_VAL", val)
+        end
+
     else
         self:SetAttribute("type", nil)
     end

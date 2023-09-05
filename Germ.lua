@@ -18,7 +18,7 @@ local zebug = Zebug:new()
 ---@field ufoType string The classname
 ---@field flyoutId number Identifies which flyout is currently copied into this germ
 ---@field flyoutMenu FlyoutMenu The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
----@field clickScriptUpdaters table secure scriptlettes that must be run during any update()
+---@field clickScriptUpdaters table secure scriptlets that must be run during any update()
 
 ---@type Germ|ButtonMixin
 Germ = {
@@ -85,7 +85,9 @@ function getOpenerClickerCode()
 		return
     end
 
-    flyoutMenu:SetParent(germ)
+-- TODO: move this into FlyoutMenu:updateForGerm()
+
+    flyoutMenu:SetParent(germ)  -- holdover from single FM
     flyoutMenu:ClearAllPoints()
     if direction == "UP" then
         flyoutMenu:SetPoint("BOTTOM", germ, "TOP", 0, 0)
@@ -97,9 +99,7 @@ function getOpenerClickerCode()
         flyoutMenu:SetPoint("LEFT", germ, "RIGHT", 0, 0)
     end
 
-    local nameList  = table.new(strsplit(DELIMITER, germ:GetAttribute("UFO_NAMES") or ""))
     local typeList  = table.new(strsplit(DELIMITER, germ:GetAttribute("UFO_BLIZ_TYPES") or ""))
-    local pets      = table.new(strsplit(DELIMITER, germ:GetAttribute("UFO_PETS")  or ""))
 
     local uiButtons = table.new(flyoutMenu:GetChildren())
     if uiButtons[1]:GetObjectType() ~= "CheckButton" then
@@ -134,23 +134,6 @@ function getOpenerClickerCode()
                 end
             end
 
-            local type = typeList[i]
-
-            -- It appears that SecureActionButtonTemplate
-            -- provides no support for summoning battlepets
-            -- because summoning a battlepet is not a protected action.
-            -- So, fake it with an adhoc macro!
-            if (type == "battlepet") then
-                -- summon the pet via a macro
-                local petMacro = "/run C_PetJournal.SummonPetByGUID(\"" .. pets[i] .. "\")"
-                btn:SetAttribute("type", "macro")
-                btn:SetAttribute("macrotext", petMacro)
-            else
-                --btn:SetAttribute("downbutton", "MiddleButton")
-                btn:SetAttribute("type", type)
-                btn:SetAttribute(type, nameList[i]) -- huh, I woulda thought spellId or itemId etc
-            end
-
             prevBtn = btn
             btn:Show()
         else
@@ -166,8 +149,9 @@ function getOpenerClickerCode()
         flyoutMenu:SetHeight(prevBtn:GetHeight())
         flyoutMenu:SetWidth((prevBtn:GetWidth()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
     end
-        flyoutMenu:Show()
-        flyoutMenu:SetAttribute("doCloseFlyout", true)
+
+    flyoutMenu:Show()
+    flyoutMenu:SetAttribute("doCloseFlyout", true)
 
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
     --flyoutMenu:AddToAutoHide(germ)
@@ -314,31 +298,19 @@ function Germ:update(flyoutId)
     -- SECURE TEMPLATE --
     ---------------------
 
-    flyoutDef:forEachBtn(
-        -- START CALLBACK
-        function(buttonDef, _, i)
-            local type, key, id = buttonDef:asClickHandlerAttributes()
-            self:SetAttribute("UFO_KID_BTN_TYPE_"..i, type)
-            self:SetAttribute("UFO_KID_BTN_KEY_"..i, key)
-            self:SetAttribute("UFO_KID_BTN_ID_"..i, id)
-            self:SetAttribute("UFO_KID_BTN_COUNT", i)
-        end
-        -- END CALLBACK
-    )
+    self:SetAttribute("UFO_NAME",  myName)
+
     -- some clickers need to be re-initialized whenever the flyout's buttons change
-    for yetAnotherMouseButtonId, updaterScriptlette in pairs(self.clickScriptUpdaters) do
-        zebug.trace:print("germ",myName, "i",yetAnotherMouseButtonId, "updaterScriptlette",updaterScriptlette)
-        SecureHandlerExecute(self, updaterScriptlette)
+    for yetAnotherMouseButtonId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
+        zebug.trace:print("germ",myName, "i",yetAnotherMouseButtonId, "updaterScriptlet",updaterScriptlet)
+        SecureHandlerExecute(self, updaterScriptlet)
     end
 
-    -- TODO: eradicate these and update getOpenerClickerCode() to use UFO_KID_BTN_* instead
+    -- TODO: eradicate UFO_BLIZ_TYPES and refactor getOpenerClickerCode()
     -- attach string representations of the buttons
     -- because Blizzard "secure" templates don't let us attach the actual array
     local asStrLists = usableFlyout:asStrLists()
-    self:SetAttribute("UFO_SPELL_IDS",  asStrLists.spellIds)
-    self:SetAttribute("UFO_NAMES",      asStrLists.names)
     self:SetAttribute("UFO_BLIZ_TYPES", asStrLists.blizTypes)
-    self:SetAttribute("UFO_PETS",       asStrLists.petGuids)
     self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
 end
 
@@ -566,7 +538,7 @@ end
 -------------------------------------------------------------------------------
 -- Handler Makers
 --
--- SECURE HANDLER / RESTRICTED ENVIRONMENT
+-- SECURE TEMPLATE / RESTRICTED ENVIRONMENT
 --
 -- a bunch of code to make calls to SetAttribute("type",action) etc
 -- to enable the Germ's button to do things in response to mouse clicks
@@ -600,11 +572,11 @@ function HandlerMaker:ActivateBtn1(whichMouseButton)
     local btn1 = self:getBtnDef(1)
     local btn1Type = btn1:getTypeForBlizApi()
     local btn1Name = btn1.name
-    local type, key, id = btn1:asClickHandlerAttributes()
+    local type, key, val = btn1:asClickHandlerAttributes()
     local keyAdjustedToMatchMouseButton = self:adjustSecureKeyToMatchTheMouseButton(yetAnotherMouseButtonId, key)
-    zebug.info:name("HandlerMakers:ActivateBtn1"):print("myName",myName, "btn1Name",btn1Name, "btn1Type",btn1Type, "yetAnotherMouseButtonId", yetAnotherMouseButtonId, "type", type, "key", key, "keyAdjustedToMatchMouseButton",keyAdjustedToMatchMouseButton,  "id", id)
-    self:SetAttribute(yetAnotherMouseButtonId, key)
-    self:SetAttribute(keyAdjustedToMatchMouseButton, id)
+    zebug.info:name("HandlerMakers:ActivateBtn1"):print("myName",myName, "btn1Name",btn1Name, "btn1Type",btn1Type, "yetAnotherMouseButtonId", yetAnotherMouseButtonId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseButton, "val", val)
+    self:SetAttribute(yetAnotherMouseButtonId, type)
+    self:SetAttribute(keyAdjustedToMatchMouseButton, val)
 end
 
 ---@param whichMouseButton MouseButton
@@ -617,16 +589,29 @@ function HandlerMaker:ActivateRandomBtn(whichMouseButton)
     local yetAnotherMouseButtonId = MouseButtonRemapToYetAnotherMouseButtonId[whichMouseButton]
     local mouseBtnNumber = self:getMouseBtnNumber(yetAnotherMouseButtonId) or ""
     local scriptToSetNextRandomBtn = [=[
-        local yetAnotherMouseButtonId = "]=].. yetAnotherMouseButtonId ..[=["
-        local n    = self:GetAttribute("UFO_KID_BTN_COUNT")
-        local x    = random(1,n)
-        local type = self:GetAttribute("UFO_KID_BTN_TYPE_"..x)
-        local key  = self:GetAttribute("UFO_KID_BTN_KEY_"..x) .. ]=].. mouseBtnNumber ..[=[
-        local id   = self:GetAttribute("UFO_KID_BTN_ID_"..x)
-        --print(yetAnotherMouseButtonId, "type =", type, "key =", key, "id =",id) -- this shows that it is firing for both mouse UP and DOWN
+    	local germ = self
+    	local whichMouseButton = button
+    	local myName = self:GetAttribute("UFO_NAME")
+        local yetAnotherMouseButtonId = "]=].. yetAnotherMouseButtonId .. [=["
+
+    	-- will be populated by the scriptlet
+    	-- local buttonsOnFlyoutMenu
+    	-- local n
+    	]=] .. getFlyoutMenuButtonsGetterScriptlet() .. [=[
+
+        local x      = random(1,n)
+        local btn    = buttonsOnFlyoutMenu[x]
+        local type   = btn:GetAttribute("type")
+        local adjKey = btn:GetAttribute("UFO_KEY") .. ]=] .. mouseBtnNumber .. [=[
+        local val    = btn:GetAttribute("UFO_VAL")
+
+        --print("1)", myName, "btn#",x, yetAnotherMouseButtonId, "-->", type, "... adjKey =", adjKey, "-->",val) -- this shows that it is firing for both mouse UP and DOWN
         self:SetAttribute(yetAnotherMouseButtonId, type)
-        self:SetAttribute(key, id)
+        self:SetAttribute(adjKey, val)
     ]=]
+    --local btn1Type = self:GetAttribute("type2")
+    --local btn1val = self:GetAttribute("macrotext2")
+    --print("2)", myName, "btn# 1 type2 -->", btn1Type, "... adjKey: macrotext2 -->", btn1val)
 
     zebug.info:print("germ",myName, "yetAnotherMouseButtonId",yetAnotherMouseButtonId, "mouseBtnNumber",mouseBtnNumber)
     SecureHandlerWrapScript(self, "OnClick", self, PRE_SCRIPT_STANDARD, scriptToSetNextRandomBtn)
@@ -634,6 +619,43 @@ function HandlerMaker:ActivateRandomBtn(whichMouseButton)
 end
 
 function HandlerMaker:CycleThroughAllBtns()
+
+end
+
+-- TODO: refactor getOpenerClickerCode() to use this or eliminate its need to use this
+function getFlyoutMenuButtonsGetterScriptlet()
+    -- will store its result in buttonsOnFlyoutMenu and n
+    return [=[
+    -- search the kids for the flyout menu
+    local flyoutMenu
+    local germKids = table.new(germ:GetChildren())
+    for i, kid in ipairs(germKids) do
+        local kidName = kid:GetName()
+        --print("germKids:", i,kidName)
+        if kidName then
+            local wantedSuffix = "]=].. FlyoutMenu.nameSuffix ..[=["
+            local n = string.len(wantedSuffix)
+            local kidSuffix = string.sub(kidName, 0-n) -- last n letters
+
+            if kidSuffix == wantedSuffix then
+                flyoutMenu = kid
+                break
+            end
+        end
+    end
+
+    local flyoutMenuKids = table.new(flyoutMenu:GetChildren())
+    local buttonsOnFlyoutMenu = table.new()
+    local n = 0
+    for i, btn in ipairs(flyoutMenuKids) do
+        local btnName = btn:GetAttribute("UFO_NAME")
+        if btnName then
+            n = n + 1
+            buttonsOnFlyoutMenu[n] = btn
+            --print("flyoutMenuKids:", n, btnName, buttonsOnFlyoutMenu[n])
+        end
+    end
+]=]
 
 end
 

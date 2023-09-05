@@ -214,6 +214,8 @@ function FlyoutDef:asLists()
     zebug.trace:print("cache",cache, "isSame",isSame, "self:howManyButtons()",self:howManyButtons())
     zebug.trace:dumpy("cache",cache)
     if cache then return cache end
+
+    -- TODO: can I nuke this?
     local lists = {
         blizTypes = {},
         types = {},
@@ -236,6 +238,7 @@ function FlyoutDef:asLists()
     return lists
 end
 
+-- TODO: can I nuke this?
 function FlyoutDef:asStrLists()
     local cache = self.cachedStrLists
     if cache then return cache end
@@ -248,10 +251,6 @@ function FlyoutDef:asStrLists()
         blizTypes = fknJoin(asLists.blizTypes),
         petGuids  = fknJoin(asLists.petGuids),
     }
-
-    zebug.trace:print("UFO_NAMES",      asStrLists.names)
-    zebug.trace:print("UFO_BLIZ_TYPES", asStrLists.blizTypes)
-    zebug.trace:print("UFO_PETS",       asStrLists.petGuids)
 
     self.cachedStrLists = asStrLists
     return asStrLists
