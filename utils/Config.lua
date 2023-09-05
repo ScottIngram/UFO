@@ -25,8 +25,8 @@ local MouseClickBehavior = {
 }
 Ufo.MouseClickBehavior = MouseClickBehavior
 
----@type MouseButton
-local MouseButton = Ufo.MouseButton
+---@type MouseClick
+local MouseClick = Ufo.MouseClick
 
 ---@class Options -- IntelliJ-EmmyLua annotation
 ---@field supportCombat boolean placate Bliz security rules of "don't SetAnchor() during combat"
@@ -36,12 +36,12 @@ local Options = {
     supportCombat   = true,
     doCloseOnClick  = true,
     usePlaceHolders = true,
-    [MouseButton.ANY]    = MouseClickBehavior.OPEN,
-    [MouseButton.LEFT]   = MouseClickBehavior.OPEN,
-    [MouseButton.RIGHT]  = MouseClickBehavior.FIRST_BTN,
-    [MouseButton.MIDDLE] = MouseClickBehavior.RANDOM_BTN,
-    [MouseButton.FOUR]   = MouseClickBehavior.CYCLE_ALL_BTNS,
-    [MouseButton.FIVE]   = MouseClickBehavior.REVERSE_CYCLE_ALL_BTNS,
+    [MouseClick.ANY]    = MouseClickBehavior.OPEN,
+    [MouseClick.LEFT]   = MouseClickBehavior.OPEN,
+    [MouseClick.RIGHT]  = MouseClickBehavior.FIRST_BTN,
+    [MouseClick.MIDDLE] = MouseClickBehavior.RANDOM_BTN,
+    [MouseClick.FOUR]   = MouseClickBehavior.CYCLE_ALL_BTNS,
+    [MouseClick.FIVE]   = MouseClickBehavior.REVERSE_CYCLE_ALL_BTNS,
 }
 
 ---@class Config -- IntelliJ-EmmyLua annotation

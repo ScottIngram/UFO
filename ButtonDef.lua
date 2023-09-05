@@ -405,7 +405,7 @@ function ButtonDef:secureClick(germ)
     secureButton:SetAttribute("type2", self.type)
     secureButton:SetAttribute(self.type, self.name)
     zebug.warn:print("type",self.type, "name",self.name, "CLICK")
-    secureButton:Click(MouseButton.RIGHT)
+    secureButton:Click(MouseClick.RIGHT)
     zebug.warn:print("type",self.type, "name",self.name, "CLICKED")
 end
 

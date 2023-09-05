@@ -9,8 +9,8 @@ V_PATCH = 0
 V_UFO = "alpha"
 VERSION = table.concat({V_MAJOR, V_MINOR, V_PATCH, V_UFO}, ".")
 
----@class MouseButton
-MouseButton = {
+---@class MouseClick
+MouseClick = {
     ANY    = "any",
     LEFT   = "LeftButton",
     RIGHT  = "RightButton",

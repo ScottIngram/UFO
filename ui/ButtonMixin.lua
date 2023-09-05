@@ -16,8 +16,8 @@ ButtonMixin = { }
 --  Constants
 -------------------------------------------------------------------------------
 
----@class YetAnotherMouseButtonId
-YetAnotherMouseButtonId = {
+---@class SecureMouseClickId
+SecureMouseClickId = {
     type = "type", -- all buttons
     type1 = "type1",
     type2 = "type2",
@@ -26,14 +26,14 @@ YetAnotherMouseButtonId = {
     type5 = "type5",
 }
 
----@type { [MouseButton]: YetAnotherMouseButtonId }
-MouseButtonRemapToYetAnotherMouseButtonId = {
-    [MouseButton.ANY]    = "type",
-    [MouseButton.LEFT]   = "type1",
-    [MouseButton.RIGHT]  = "type2",
-    [MouseButton.MIDDLE] = "type3",
-    [MouseButton.FOUR]   = "type4",
-    [MouseButton.FIVE]   = "type5",
+---@type { [MouseClick]: SecureMouseClickId }
+MouseClickRemapToSecureMouseClickId = {
+    [MouseClick.ANY]    = "type",
+    [MouseClick.LEFT]   = "type1",
+    [MouseClick.RIGHT]  = "type2",
+    [MouseClick.MIDDLE] = "type3",
+    [MouseClick.FOUR]   = "type4",
+    [MouseClick.FIVE]   = "type5",
 }
 
 -------------------------------------------------------------------------------
@@ -193,18 +193,18 @@ end
 --  SECURE TEMPLATE / RESTRICTED ENVIRONMENT
 -------------------------------------------------------------------------------
 
----@param yetAnotherMouseButtonId YetAnotherMouseButtonId
-function ButtonMixin:getMouseBtnNumber(yetAnotherMouseButtonId)
-    local mouseBtnNumber = string.sub(yetAnotherMouseButtonId, -1) -- last digit of "type1" or "type3" etc
+---@param secureMouseClickId SecureMouseClickId
+function ButtonMixin:getMouseBtnNumber(secureMouseClickId)
+    local mouseBtnNumber = string.sub(secureMouseClickId, -1) -- last digit of "type1" or "type3" etc
     return tonumber(mouseBtnNumber) and mouseBtnNumber or nil
 end
 
 -- because in the world of Bliz SECURE
 -- if your type = "type3"
 -- then your key must be key.."3"
----@param yetAnotherMouseButtonId YetAnotherMouseButtonId
-function ButtonMixin:adjustSecureKeyToMatchTheMouseButton(yetAnotherMouseButtonId, key)
-    local mouseBtnNumber = self:getMouseBtnNumber(yetAnotherMouseButtonId)
+---@param secureMouseClickId SecureMouseClickId
+function ButtonMixin:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
+    local mouseBtnNumber = self:getMouseBtnNumber(secureMouseClickId)
     if mouseBtnNumber then
         return key .. mouseBtnNumber
     else
@@ -212,16 +212,16 @@ function ButtonMixin:adjustSecureKeyToMatchTheMouseButton(yetAnotherMouseButtonI
     end
 end
 
----@param whichMouseButton MouseButton
-function ButtonMixin:updateSecureClicker(whichMouseButton)
+---@param mouseClick MouseClick
+function ButtonMixin:updateSecureClicker(mouseClick)
     local btnDef = self:getDef()
     if btnDef then
-        local yetAnotherMouseButtonId = MouseButtonRemapToYetAnotherMouseButtonId[whichMouseButton]
+        local secureMouseClickId = MouseClickRemapToSecureMouseClickId[mouseClick]
         local type, key, val = btnDef:asClickHandlerAttributes()
-        local keyAdjustedToMatchMouseButton = self:adjustSecureKeyToMatchTheMouseButton(yetAnotherMouseButtonId, key)
-        zebug.trace:print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseButton, "val", val)
-        self:SetAttribute(yetAnotherMouseButtonId, type)
-        self:SetAttribute(keyAdjustedToMatchMouseButton, val)
+        local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
+        zebug.trace:print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseClick, "val", val)
+        self:SetAttribute(secureMouseClickId, type)
+        self:SetAttribute(keyAdjustedToMatchMouseClick, val)
 
         -- for use by Germ
         if self.ufoType == ButtonOnFlyoutMenu.ufoType then

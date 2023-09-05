@@ -59,7 +59,7 @@ end
 function ButtonOnFlyoutMenu:setDef(btnDef)
     self.btnDef = btnDef
     self:copyDefToBlizFields()
-    self:updateSecureClicker(MouseButton.ANY) -- TODO: will probably need to call this anytime the underlying btnDef changes... which may already be happening because updateForGerm() calls this and is called by Germ:update()
+    self:updateSecureClicker(MouseClick.ANY) -- TODO: will probably need to call this anytime the underlying btnDef changes... which may already be happening because updateForGerm() calls this and is called by Germ:update()
 end
 
 function ButtonOnFlyoutMenu:copyDefToBlizFields()
