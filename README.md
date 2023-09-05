@@ -10,7 +10,6 @@ UFO lets you create custom actionbar flyout menus similar to the built-in ones f
 - Pets
 - Macros
 - Trade skill Windows
-- More? Let me know!
 
 UFO adds a flyout catalog UI onto the side of various panels (Spellbook, Macros, Collections) to let you create and organize multiple flyouts.  These can be shared between all characters on your account.
 
