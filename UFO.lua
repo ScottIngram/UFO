@@ -17,6 +17,8 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 local zebug = Zebug:new()
 
+-- Purely to satisfy my IDE
+DB = Ufo.DB
 
 -------------------------------------------------------------------------------
 -- Data
@@ -369,9 +371,9 @@ function initalizeAddonStuff()
 
     Ufo.myTitle = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Title")
 
-    Config:initializeFlyouts()
-    Config:initializePlacements()
-    Config:initializeOptsMemory()
+    DB:initializeFlyouts()
+    DB:initializePlacements()
+    DB:initializeOptsMemory()
     Config:initializeOptionsMenu()
 
     MacroShitShow:init()

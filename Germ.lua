@@ -29,6 +29,15 @@ Germ = {
 }
 ButtonMixin:inject(Germ)
 
+---@class GermClickBehavior
+GermClickBehavior = {
+    OPEN = "OPEN",
+    FIRST_BTN = "FIRST_BTN",
+    RANDOM_BTN = "RANDOM_BTN",
+    CYCLE_ALL_BTNS = "CYCLE_ALL_BTNS",
+    REVERSE_CYCLE_ALL_BTNS = "REVERSE_CYCLE_ALL_BTNS",
+}
+
 -------------------------------------------------------------------------------
 -- Data
 -------------------------------------------------------------------------------
@@ -310,9 +319,9 @@ function Germ:update(flyoutId)
 
     -- all FIRST_BTN handlers must be re-initialized after flyoutDef changes
     ---@param mouseClick MouseClick
-    ---@param behavior MouseClickBehavior
+    ---@param behavior GermClickBehavior
     for mouseClick, behavior in pairs(self.clickers) do
-        if behavior == MouseClickBehavior.FIRST_BTN then
+        if behavior == GermClickBehavior.FIRST_BTN then
             local installTheBehavior = getHandlerMaker(behavior)
             installTheBehavior(self, mouseClick)
         end
@@ -561,10 +570,20 @@ end
 ---@type Germ|ButtonMixin
 local HandlerMaker = { }
 
----@param mouseClickBehaviorOpt MouseClickBehavior
+---@param behavior GermClickBehavior
 ---@return fun(zelf: Germ, mouseClick: MouseClick): nil
-function getHandlerMaker(mouseClickBehaviorOpt)
-    return HANDLER_MAKERS_MAP[mouseClickBehaviorOpt]
+function getHandlerMaker(behavior)
+    if not HANDLER_MAKERS_MAP then
+        HANDLER_MAKERS_MAP = {
+            [GermClickBehavior.OPEN]           = HandlerMaker.OpenFlyout,
+            [GermClickBehavior.FIRST_BTN]      = HandlerMaker.ActivateBtn1,
+            [GermClickBehavior.RANDOM_BTN]     = HandlerMaker.ActivateRandomBtn,
+            [GermClickBehavior.CYCLE_ALL_BTNS] = HandlerMaker.CycleThroughAllBtns,
+        }
+    end
+    local result = HANDLER_MAKERS_MAP[behavior]
+    assert(result, "Unknown GermClickBehavior: ".. behavior)
+    return result
 end
 
 ---@param mouseClick MouseClick
@@ -672,11 +691,3 @@ function getFlyoutMenuButtonsGetterScriptlet()
 ]=]
 
 end
-
-HANDLER_MAKERS_MAP = {
-    [MouseClickBehavior.OPEN]           = HandlerMaker.OpenFlyout,
-    [MouseClickBehavior.FIRST_BTN]      = HandlerMaker.ActivateBtn1,
-    [MouseClickBehavior.RANDOM_BTN]     = HandlerMaker.ActivateRandomBtn,
-    [MouseClickBehavior.CYCLE_ALL_BTNS] = HandlerMaker.CycleThroughAllBtns,
-}
-

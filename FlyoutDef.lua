@@ -77,7 +77,7 @@ function FlyoutDef:invalidateCache()
 end
 
 function FlyoutDef:newId()
-    return Config:nextN() ..":".. getIdForCurrentToon() ..":".. (time()-1687736964)
+    return DB:nextN() ..":".. getIdForCurrentToon() ..":".. (time()-1687736964)
 end
 
 function FlyoutDef:howManyButtons()

@@ -360,7 +360,7 @@ end
 
 -- the placement of flyouts on the action bars is stored separately for each toon
 function GermCommander:getAllSpecsPlacementsConfig()
-    local foo = Config:getAllSpecsPlacementsConfig()
+    local foo = DB:getAllSpecsPlacementsConfig()
     return foo
 end
 
