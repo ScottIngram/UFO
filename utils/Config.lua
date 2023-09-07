@@ -235,7 +235,7 @@ function includeMouseButtonOpts(mouseClick)
         set = function(zelf, behavior)
             Config:setClickBehavior(nil, mouseClick, behavior)
             zebug.info:name("opt:MouseButtonOpts()"):print("mouseClick",mouseClick, "new val", behavior)
-            GermCommander:updateAllClickHandlers()
+            GermCommander:updateClickHandlerForAllGerms(mouseClick)
         end,
         ---@return GermClickBehavior
         get = function()

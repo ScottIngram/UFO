@@ -50,6 +50,8 @@ local HANDLER_MAKERS_MAP
 -------------------------------------------------------------------------------
 
 local GERM_UI_NAME_PREFIX = "UfoGerm"
+local CLICK_ID_MARKER = "-- CLICK_ID_MARKER:"
+local LEN_CLICK_ID_MARKER = string.len(CLICK_ID_MARKER)
 
 local PRE_SCRIPT_STANDARD = [=[
         -- button is which mouse button is clicked
@@ -173,9 +175,9 @@ end
 -------------------------------------------------------------------------------
 
 function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
-    local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
+    self.myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
 
-    local protoGerm = CreateFrame("CheckButton", myName, parentActionBarBtn, "SecureActionButtonTemplate, ActionButtonTemplate")
+    local protoGerm = CreateFrame("CheckButton", self.myName, parentActionBarBtn, "SecureActionButtonTemplate, ActionButtonTemplate")
 
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
@@ -280,9 +282,10 @@ end
 
 function Germ:update(flyoutId)
     self.flyoutId = flyoutId
+    self.myLabel = self:getFlyoutDef().name
+
     local btnSlotIndex = self.btnSlotIndex
-    local myName = self:getFlyoutDef().name
-    zebug.trace:line(30, "germ",myName, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName())
+    zebug.trace:line(30, "germ",self.myLabel, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName())
 
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     if not flyoutDef then
@@ -308,7 +311,7 @@ function Germ:update(flyoutId)
     -- SECURE TEMPLATE --
     ---------------------
 
-    self:SetAttribute("UFO_NAME",  myName)
+    self:SetAttribute("UFO_NAME",  self.myLabel)
 
     -- some clickers need to be re-initialized whenever the flyout's buttons change
     self:reInitializeMySecureClickers()
@@ -333,7 +336,7 @@ end
 
 function Germ:reInitializeMySecureClickers()
     for secureMouseClickId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
-        zebug.trace:print("germ",myName, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
+        zebug.trace:print("germ",self.myLabel, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
         SecureHandlerExecute(self, updaterScriptlet)
     end
 end
@@ -582,16 +585,56 @@ function Germ:setMouseClickHandler(mouseClick, behavior)
     self.clickers[mouseClick] = behavior
 end
 
+-- Fuck you yet again, Bliz, for providing a way to only remove some unknown, generally arbitrary handler but not a specific handler.
+-- So now, I cry, and loop through ALL of the SecureHandlerUnwrapScript(self, "OnClick") until I find the one,
+-- then restore the others that were needlessly stripped while groping the Frame in a blind, hamfisted search.
+
 function Germ:removeOldHandler(mouseClick)
     local old = self.clickers[mouseClick]
     zebug.trace:print("old",old)
     if not old then return end
 
-    -- TODO fix the bug of unwrapping the wrong script when more than one exists.
-    if old == GermClickBehavior.RANDOM_BTN then -- will probably need to include CYCLE_*
+    local needsRemoval = (old == (GermClickBehavior.RANDOM_BTN) or (old == GermClickBehavior.CYCLE_ALL_BTNS))
+    if not needsRemoval then return end
+
+    local i = 0
+    local lostBoys = {}
+    local rescue = function(header, preBody, postBody, scriptsClick)
+        -- Oopsy daisy!  Blizzy Wizzy tricked me into removing the wrong one!  Remember it so we can put it back.
+        i = i + 1
+        lostBoys[i] = { header, preBody, postBody, scriptsClick }
+    end
+
+    local header = self
+    local isForThisClick = false
+    while header and not isForThisClick do -- assume we will only ever install ONE handler per mouse button
         local header, preBody, postBody = SecureHandlerUnwrapScript(self, "OnClick")
-        zebug.info:print("REMOVED",postBody)
-        assert(header == self, "Oops, you just clobbered some other addon's handler")
+        if not header then
+            break
+        end
+
+        if header ~= self then
+            rescue(header, preBody, postBody, "unknown")
+            break
+        end
+
+        -- pull the ID marker out of the script body and see if it's the one we're supposed to remove
+        local start = LEN_CLICK_ID_MARKER +1
+        local stop  = LEN_CLICK_ID_MARKER + string.len(mouseClick)
+        local scriptsClick = string.sub(postBody, start, stop)
+        isForThisClick = (scriptsClick == mouseClick)
+        zebug.info:print("germ", self.myLabel, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
+        if not isForThisClick then
+            rescue( header, preBody, postBody, scriptsClick )
+        end
+    end
+
+    -- try to put that shit back
+    for i, params in ipairs(lostBoys) do
+        local success = pcall(function ()
+            SecureHandlerWrapScript(params[1], "OnClick", params[1], params[2], params[3])
+        end )
+        zebug.info:print("germ", self.myLabel, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
     end
 end
 
@@ -628,13 +671,12 @@ function HandlerMaker:ActivateBtn1(mouseClick)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
     zebug.info:print("secureMouseClickId",secureMouseClickId)
     self:updateSecureClicker(mouseClick)
-    local myName = self:getFlyoutDef().name
     local btn1 = self:getBtnDef(1)
     local btn1Type = btn1:getTypeForBlizApi()
     local btn1Name = btn1.name
     local type, key, val = btn1:asClickHandlerAttributes()
     local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
-    zebug.info:name("HandlerMakers:ActivateBtn1"):print("myName",myName, "btn1Name",btn1Name, "btn1Type",btn1Type, "secureMouseClickId", secureMouseClickId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseClick, "val", val)
+    zebug.info:name("HandlerMakers:ActivateBtn1"):print("germ",self.myLabel, "btn1Name",btn1Name, "btn1Type",btn1Type, "secureMouseClickId", secureMouseClickId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseClick, "val", val)
     self:SetAttribute(secureMouseClickId, type)
     self:SetAttribute(keyAdjustedToMatchMouseClick, val)
 end
@@ -668,12 +710,10 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
     -- 1) a SecureHandlerWrapScript script that picks a [random|sequential] button and...
     -- 2) that script creates another handler via SetAttribute(mouseButton -> action) that will actually perform the action determined in step #1
 
-    local myName = self:getFlyoutDef().name
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
     local mouseBtnNumber = self:getMouseBtnNumber(secureMouseClickId) or ""
-    local scriptToSetNextRandomBtn = "--"..mouseClick .. -- include this as a marker so we can identify this script later
+    local scriptToSetNextRandomBtn = CLICK_ID_MARKER .. mouseClick .. ";\n" ..
     [=[
-
     	local germ = self
     	local mouseClick = button
     	local isClicked = down
@@ -711,7 +751,7 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
         self:SetAttribute(adjKey, val)
     ]=]
 
-    zebug.info:print("germ",myName, "secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
+    zebug.info:print("germ",self.myLabel, "secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
     SecureHandlerWrapScript(self, "OnClick", self, PRE_SCRIPT_STANDARD, scriptToSetNextRandomBtn)
     self.clickScriptUpdaters[secureMouseClickId] = scriptToSetNextRandomBtn
 end

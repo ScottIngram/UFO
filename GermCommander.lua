@@ -104,11 +104,20 @@ function GermCommander:updateAll()
     end
 end
 
-function GermCommander:updateAllClickHandlers()
+function GermCommander:updateAllGermsAllClickHandlers()
     ---@param germ Germ
     for btnSlotIndex, germ in pairs(germs) do
         zebug.info:print("btnSlotIndex",btnSlotIndex, "germ", germ:getFlyoutDef().name)
         germ:setAllClickHandlers()
+    end
+end
+
+---@param mouseClick MouseClick
+function GermCommander:updateClickHandlerForAllGerms(mouseClick)
+    ---@param germ Germ
+    for btnSlotIndex, germ in pairs(germs) do
+        zebug.info:print("btnSlotIndex",btnSlotIndex, "germ", germ:getFlyoutDef().name)
+        germ:setMouseClickHandler(mouseClick, Config:getClickBehavior(self.flyoutId, mouseClick))
     end
 end
 
@@ -415,10 +424,6 @@ function GermCommander:nukePlaceholder()
     while GetMacroInfo(PLACEHOLDER_MACRO_NAME) do
         DeleteMacro(PLACEHOLDER_MACRO_NAME)
     end
-end
-
-function GermCommander:handleEventChangedOptions()
-    self:updateAllClickHandlers()
 end
 
 function GermCommander:handleEventChangedInventory()
