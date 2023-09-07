@@ -205,12 +205,10 @@ function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
     self:SetScript("OnDragStart",   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
 
     -- Click behavior
+    --self:RegisterForClicks("AnyUp") -- this does nothing
     --self:RegisterForClicks("AnyDown") -- this works but clobbers OnDragStart
     self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
-    --self:RegisterForClicks("AnyUp") -- this does nothing
-    self:setMouseClickHandler(MouseClick.LEFT) -- TODO: make the behavior obvious HERE
-    self:setMouseClickHandler(MouseClick.MIDDLE)
-    self:setMouseClickHandler(MouseClick.RIGHT)
+    self:setAllClickHandlers()
 
     -- Drag and Drop behavior
     self:RegisterForDrag("LeftButton")
@@ -224,13 +222,13 @@ function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
     return self
 end
 
----@param mouseClick MouseClick
-function Germ:setMouseClickHandler(mouseClick)
-    local behavior = Config.opts[mouseClick] or Config.optDefaults[mouseClick]
-    local installTheBehavior = getHandlerMaker(behavior)
-    zebug.info:print("mouseClick",mouseClick, "opt", behavior, "handler", installTheBehavior)
-    installTheBehavior(self, mouseClick)
-    self.clickers[mouseClick] = behavior
+function Germ:setAllClickHandlers()
+    local flyoutId = self.flyoutId
+    self:setMouseClickHandler(MouseClick.LEFT,   Config:getClickBehavior(flyoutId, MouseClick.LEFT))
+    self:setMouseClickHandler(MouseClick.MIDDLE, Config:getClickBehavior(flyoutId, MouseClick.MIDDLE))
+    self:setMouseClickHandler(MouseClick.RIGHT,  Config:getClickBehavior(flyoutId, MouseClick.RIGHT))
+    self:setMouseClickHandler(MouseClick.FOUR,   Config:getClickBehavior(flyoutId, MouseClick.FOUR))
+    self:setMouseClickHandler(MouseClick.FIVE,   Config:getClickBehavior(flyoutId, MouseClick.FIVE))
 end
 
 function Germ:initFlyoutMenu()
@@ -559,7 +557,7 @@ function handlers.OnPostClick(self, mouseClick, down)
 end
 
 -------------------------------------------------------------------------------
--- Handler Makers
+-- Mouse Click Handling
 --
 -- SECURE TEMPLATE / RESTRICTED ENVIRONMENT
 --
@@ -570,15 +568,39 @@ end
 ---@type Germ|ButtonMixin
 local HandlerMaker = { }
 
+---@param mouseClick MouseClick
+function Germ:setMouseClickHandler(mouseClick, behavior)
+    self:removeOldHandler(mouseClick)
+    local installTheBehavior = getHandlerMaker(behavior)
+    zebug.info:print("mouseClick",mouseClick, "opt", behavior, "handler", installTheBehavior)
+    installTheBehavior(self, mouseClick)
+    self.clickers[mouseClick] = behavior
+end
+
+function Germ:removeOldHandler(mouseClick)
+    local old = self.clickers[mouseClick]
+    zebug.trace:print("old",old)
+    if not old then return end
+
+    -- TODO fix the bug of unwrapping the wrong script when more than one exists.
+    if old == GermClickBehavior.RANDOM_BTN then -- will probably need to include CYCLE_*
+        local header, preBody, postBody = SecureHandlerUnwrapScript(self, "OnClick")
+        zebug.info:print("REMOVED",postBody)
+        assert(header == self, "Oops, you just clobbered some other addon's handler")
+    end
+end
+
 ---@param behavior GermClickBehavior
 ---@return fun(zelf: Germ, mouseClick: MouseClick): nil
 function getHandlerMaker(behavior)
+    assert(behavior, "usage: getHandlerMaker(behavior)")
     if not HANDLER_MAKERS_MAP then
         HANDLER_MAKERS_MAP = {
             [GermClickBehavior.OPEN]           = HandlerMaker.OpenFlyout,
             [GermClickBehavior.FIRST_BTN]      = HandlerMaker.ActivateBtn1,
             [GermClickBehavior.RANDOM_BTN]     = HandlerMaker.ActivateRandomBtn,
             [GermClickBehavior.CYCLE_ALL_BTNS] = HandlerMaker.CycleThroughAllBtns,
+            [GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = HandlerMaker.ReverseCycleThroughAllBtns,
         }
     end
     local result = HANDLER_MAKERS_MAP[behavior]
@@ -652,6 +674,10 @@ function HandlerMaker:ActivateRandomBtn(mouseClick)
 end
 
 function HandlerMaker:CycleThroughAllBtns()
+
+end
+
+function HandlerMaker:ReverseCycleThroughAllBtns()
 
 end
 

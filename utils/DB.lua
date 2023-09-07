@@ -67,4 +67,9 @@ function DB:initializeOptsMemory()
     local Config = Ufo.Config
     Config.opts = UFO_SV_ACCOUNT.opts
     Config.optDefaults = Config:getOptionDefaults()
+
+    -- new opt introduced by UFO v10.1.7.a
+    if not Config.opts.clickers then
+        Config.opts.clickers = Config.optDefaults.clickers
+    end
 end

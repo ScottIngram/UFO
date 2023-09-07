@@ -25,6 +25,7 @@ DB = Ufo.DB
 -------------------------------------------------------------------------------
 
 local isUfoInitialized = false
+local hasShitCalmedTheFuckDown = false
 
 -------------------------------------------------------------------------------
 -- Event Handlers
@@ -69,38 +70,32 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
-    if not isUfoInitialized then return end
+    if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
     GermCommander:handleActionBarSlotChanged(actionBarSlotId)
 end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
-    if not isUfoInitialized then return end
+    if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: PLAYER_SPECIALIZATION_CHANGED")
     GermCommander:updateAll()
 end
 
 function EventHandlers:UPDATE_MACROS()
-    if not isUfoInitialized then return end
+    if not hasShitCalmedTheFuckDown then return end
     zebug.trace:line(40,"Heard event: UPDATE_MACROS")
     MacroShitShow:analyzeMacroUpdate()
 end
 
 function EventHandlers:UNIT_INVENTORY_CHANGED()
-    if not isUfoInitialized then return end
-    zebug.trace:line(40,"Heard event: UNIT_INVENTORY_CHANGED")
-    -- TODO: be a little less NUKEy
-    ---@param flyoutDef FlyoutDef
-    FlyoutDefsDb:forEachFlyoutDef(function(flyoutDef)
-        -- START CALLBACK
-        flyoutDef:invalidateCache()
-        -- END CALLBACK
-    end)
-    GermCommander:updateAll()
+    if not hasShitCalmedTheFuckDown then return end
+    zebug.warn:line(40,"Heard event: UNIT_INVENTORY_CHANGED")
+
+    GermCommander:handleEventChangedInventory()
 end
 
 function EventHandlers:CURSOR_CHANGED()
-    if not isUfoInitialized then return end
+    if not hasShitCalmedTheFuckDown then return end
     --zebug.trace:line(40,"Heard event: CURSOR_CHANGED",C_TradeSkillUI.GetProfessionForCursorItem())
     local type, spellId = GetCursorInfo()
     zebug.trace:print("type",type, "spellId",spellId)
@@ -385,9 +380,9 @@ function initalizeAddonStuff()
     Catalog:createToggleButton(SpellBookFrame)
     IconPicker:init()
 
-    --Asshole:new()
-
+    -- flags to wait out the chaos happening when the UI first loads / reloads.
     isUfoInitialized = true
+    C_Timer.After(1, function() hasShitCalmedTheFuckDown = true end)
 end
 
 -------------------------------------------------------------------------------

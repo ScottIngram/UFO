@@ -104,6 +104,14 @@ function GermCommander:updateAll()
     end
 end
 
+function GermCommander:updateAllClickHandlers()
+    ---@param germ Germ
+    for btnSlotIndex, germ in pairs(germs) do
+        zebug.info:print("btnSlotIndex",btnSlotIndex, "germ", germ:getFlyoutDef().name)
+        germ:setAllClickHandlers()
+    end
+end
+
 ---@return Germ
 function GermCommander:recallGerm(btnSlotIndex)
     return germs[btnSlotIndex]
@@ -407,5 +415,15 @@ function GermCommander:nukePlaceholder()
     while GetMacroInfo(PLACEHOLDER_MACRO_NAME) do
         DeleteMacro(PLACEHOLDER_MACRO_NAME)
     end
+end
+
+function GermCommander:handleEventChangedOptions()
+    self:updateAllClickHandlers()
+end
+
+function GermCommander:handleEventChangedInventory()
+    -- TODO: be a little less NUKEy... create an index of which flyouts contain inventory items
+    FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.invalidateCache)
+    self:updateAll()
 end
 
