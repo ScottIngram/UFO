@@ -111,38 +111,41 @@ function getOpenerClickerCode()
         flyoutMenu:SetPoint("LEFT", germ, "RIGHT", 0, 0)
     end
 
-    local typeList  = table.new(strsplit(DELIMITER, germ:GetAttribute("UFO_BLIZ_TYPES") or ""))
-
     local uiButtons = table.new(flyoutMenu:GetChildren())
     if uiButtons[1]:GetObjectType() ~= "CheckButton" then
         table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
     end
 
+    local numButtons = 0
     for i, btn in ipairs(uiButtons) do
-        if typeList[i] then
+        local isInUse = btn:GetAttribute("UFO_NAME")
+        --print(i, numButtons, isInUse)
+        if isInUse then
+            numButtons = numButtons + 1
+
             --print("SNIPPET... i:",i, "btn:",btn:GetName())
             btn:ClearAllPoints()
 
             local parent = prevBtn or "$parent"
             if prevBtn then
                 if direction == "UP" then
-                    btn:SetPoint("BOTTOM", parent, "TOP", 0, ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[)
+                    btn:SetPoint("BOTTOM", parent, "TOP", 0, ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[)
                 elseif direction == "DOWN" then
-                    btn:SetPoint("TOP", parent, "BOTTOM", 0, -]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[)
+                    btn:SetPoint("TOP", parent, "BOTTOM", 0, -]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[)
                 elseif direction == "LEFT" then
-                    btn:SetPoint("RIGHT", parent, "LEFT", -]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[, 0)
+                    btn:SetPoint("RIGHT", parent, "LEFT", -]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[, 0)
                 elseif direction == "RIGHT" then
-                    btn:SetPoint("LEFT", parent, "RIGHT", ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[, 0)
+                    btn:SetPoint("LEFT", parent, "RIGHT", ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[, 0)
                 end
             else
                 if direction == "UP" then
-                    btn:SetPoint("BOTTOM", parent, 0, ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[)
+                    btn:SetPoint("BOTTOM", parent, 0, ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[)
                 elseif direction == "DOWN" then
-                    btn:SetPoint("TOP", parent, 0, -]=]..SPELLFLYOUT_INITIAL_SPACING..[=[)
+                    btn:SetPoint("TOP", parent, 0, -]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[)
                 elseif direction == "LEFT" then
-                    btn:SetPoint("RIGHT", parent, -]=]..SPELLFLYOUT_INITIAL_SPACING..[=[, 0)
+                    btn:SetPoint("RIGHT", parent, -]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[, 0)
                 elseif direction == "RIGHT" then
-                    btn:SetPoint("LEFT", parent, ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[, 0)
+                    btn:SetPoint("LEFT", parent, ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[, 0)
                 end
             end
 
@@ -153,13 +156,12 @@ function getOpenerClickerCode()
         end
     end
 
-    local numButtons = table.maxn(typeList)
     if direction == "UP" or direction == "DOWN" then
         flyoutMenu:SetWidth(prevBtn:GetWidth())
-        flyoutMenu:SetHeight((prevBtn:GetHeight()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
+        flyoutMenu:SetHeight((prevBtn:GetHeight()+]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * numButtons - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
     else
         flyoutMenu:SetHeight(prevBtn:GetHeight())
-        flyoutMenu:SetWidth((prevBtn:GetWidth()+]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[) * numButtons - ]=]..SPELLFLYOUT_DEFAULT_SPACING..[=[ + ]=]..SPELLFLYOUT_INITIAL_SPACING..[=[ + ]=]..SPELLFLYOUT_FINAL_SPACING..[=[)
+        flyoutMenu:SetWidth((prevBtn:GetWidth()+]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * numButtons - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
     end
 
     flyoutMenu:Show()
@@ -326,11 +328,6 @@ function Germ:update(flyoutId)
         end
     end
 
-    -- TODO: eradicate UFO_BLIZ_TYPES and refactor getOpenerClickerCode()
-    -- attach string representations of the buttons
-    -- because Blizzard "secure" templates don't let us attach the actual array
-    local asStrLists = usableFlyout:asStrLists()
-    self:SetAttribute("UFO_BLIZ_TYPES", asStrLists.blizTypes)
     self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
 end
 

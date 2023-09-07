@@ -95,7 +95,7 @@ function IconPicker:OkayButton_OnClick()
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
         flyoutDef.name = name
         flyoutDef.icon = icon
-        flyoutDef:setCachedLists(nil)
+        flyoutDef:invalidateCache()
         GermCommander:updateAll()
     else
         Catalog:addNewFlyout(name, icon)
