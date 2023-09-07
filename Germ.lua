@@ -66,18 +66,22 @@ function getOpenerClickerCode()
 	local germ = self
 	local mouseClick = button
 
+    print("OpenerClickerCode(): A")
+
 	local DELIMITER = "]=]..DELIMITER..[=["
 	local EMPTY_ELEMENT = "]=]..EMPTY_ELEMENT..[=["
-	local flyoutMenu = germ:GetFrameRef("flyoutMenu")
 	local direction = germ:GetAttribute("flyoutDirection")
 	local prevBtn = nil;
+
+    print("OpenerClickerCode(): B")
 
     -- search the kids for the flyout menu
     local flyoutMenu
     local kids = table.new(germ:GetChildren())
+    print("OpenerClickerCode(): C... kids",kids, kids[1])
     for i, kid in ipairs(kids) do
         local kidName = kid:GetName()
-        --print(i,kidName)
+        print("OpenerClickerCode(): D", i,kidName)
         if kidName then
             local wantedSuffix = "]=].. FlyoutMenu.nameSuffix ..[=["
             local n = string.len(wantedSuffix)
@@ -89,6 +93,8 @@ function getOpenerClickerCode()
             end
         end
     end
+
+    print("OpenerClickerCode(): E")
 
     local doCloseFlyout = flyoutMenu:GetAttribute("doCloseFlyout")
 	if doCloseFlyout then
