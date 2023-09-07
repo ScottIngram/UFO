@@ -43,7 +43,7 @@ function Config:getOptionDefaults()
                     [MouseClick.RIGHT]  = GermClickBehavior.FIRST_BTN,
                     [MouseClick.MIDDLE] = GermClickBehavior.RANDOM_BTN,
                     [MouseClick.FOUR]   = GermClickBehavior.CYCLE_ALL_BTNS,
-                    [MouseClick.FIVE]   = GermClickBehavior.REVERSE_CYCLE_ALL_BTNS,
+                    [MouseClick.FIVE]   = GermClickBehavior.OPEN, -- REVERSE_CYCLE_ALL_BTNS,
                 }
             }
         },
@@ -221,15 +221,15 @@ function includeMouseButtonOpts(mouseClick)
             [GermClickBehavior.FIRST_BTN]      = "Trigger the ".. zebug.info:colorize("first") .." button of the flyout",
             [GermClickBehavior.RANDOM_BTN]     = "Trigger a ".. zebug.info:colorize("random") .." button of the flyout",
             [GermClickBehavior.CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle") .." through each button of the flyout",
-            [GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle backwards") .." through each button of the flyout",
+            --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle backwards") .." through each button of the flyout",
         },
         sorting = {
-            "default",
+            --"default", -- will be useful if I implement each FlyoutId having its own config
             GermClickBehavior.OPEN,
             GermClickBehavior.FIRST_BTN,
             GermClickBehavior.RANDOM_BTN,
             GermClickBehavior.CYCLE_ALL_BTNS,
-            GermClickBehavior.REVERSE_CYCLE_ALL_BTNS,
+            --GermClickBehavior.REVERSE_CYCLE_ALL_BTNS,
         },
         ---@param behavior GermClickBehavior
         set = function(zelf, behavior)

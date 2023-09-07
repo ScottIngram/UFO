@@ -35,7 +35,7 @@ GermClickBehavior = {
     FIRST_BTN = "FIRST_BTN",
     RANDOM_BTN = "RANDOM_BTN",
     CYCLE_ALL_BTNS = "CYCLE_ALL_BTNS",
-    REVERSE_CYCLE_ALL_BTNS = "REVERSE_CYCLE_ALL_BTNS",
+    --REVERSE_CYCLE_ALL_BTNS = "REVERSE_CYCLE_ALL_BTNS",
 }
 
 -------------------------------------------------------------------------------
@@ -223,6 +223,7 @@ function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
 end
 
 function Germ:setAllClickHandlers()
+    -- I could have done this in a loop, but, this is FAR clearer and easier to understand
     local flyoutId = self.flyoutId
     self:setMouseClickHandler(MouseClick.LEFT,   Config:getClickBehavior(flyoutId, MouseClick.LEFT))
     self:setMouseClickHandler(MouseClick.MIDDLE, Config:getClickBehavior(flyoutId, MouseClick.MIDDLE))
@@ -600,7 +601,7 @@ function getHandlerMaker(behavior)
             [GermClickBehavior.FIRST_BTN]      = HandlerMaker.ActivateBtn1,
             [GermClickBehavior.RANDOM_BTN]     = HandlerMaker.ActivateRandomBtn,
             [GermClickBehavior.CYCLE_ALL_BTNS] = HandlerMaker.CycleThroughAllBtns,
-            [GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = HandlerMaker.ReverseCycleThroughAllBtns,
+            --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = HandlerMaker.ReverseCycleThroughAllBtns,
         }
     end
     local result = HANDLER_MAKERS_MAP[behavior]
@@ -636,16 +637,56 @@ end
 
 ---@param mouseClick MouseClick
 function HandlerMaker:ActivateRandomBtn(mouseClick)
-    -- Sets two handlers, or rather, the first handler creates the second.
-    -- 1) a SecureHandlerWrapScript script that picks a random button and...
+    self:installHandlerForDynamicBehavior(mouseClick, "local x = random(1,n)")
+end
+
+---@param mouseClick MouseClick
+function HandlerMaker:CycleThroughAllBtns(mouseClick)
+    local xGetterScriptlet = [=[
+        local x = self:GetAttribute("CYCLE_POSITION") or 0
+        x = x + 1
+        if x > n then x = 1 end
+        self:SetAttribute("CYCLE_POSITION", x)
+        --print("CycleThroughAllBtns", self:GetName(), isClicked, n, x)
+]=]
+    -- "self" is actually a Germ and not HandlerMaker
+    self:installHandlerForDynamicBehavior(mouseClick, xGetterScriptlet)
+end
+
+---@param mouseClick MouseClick
+function HandlerMaker:ReverseCycleThroughAllBtns(mouseClick)
+    -- not supported at the moment
+end
+
+---@param mouseClick MouseClick
+function Germ:installHandlerForDynamicBehavior(mouseClick, xGetterScriptlet)
+    -- Sets two handlers (or rather, the first handler creates the second.)
+    -- 1) a SecureHandlerWrapScript script that picks a [random|sequential] button and...
     -- 2) that script creates another handler via SetAttribute(mouseButton -> action) that will actually perform the action determined in step #1
 
     local myName = self:getFlyoutDef().name
     local secureMouseClickId = MouseClickRemapToSecureMouseClickId[mouseClick]
     local mouseBtnNumber = self:getMouseBtnNumber(secureMouseClickId) or ""
-    local scriptToSetNextRandomBtn = [=[
+    local scriptToSetNextRandomBtn = "--"..mouseClick .. -- include this as a marker so we can identify this script later
+    [=[
+
     	local germ = self
     	local mouseClick = button
+    	local isClicked = down
+    	local onlyInitialize = mouseClick == nil
+
+        local iAmFor = "]=].. mouseClick ..[=["
+
+    	if onlyInitialize then
+    	    -- good to go... this is being called by Germ:update() in order to initialize the click SetAttribute()s
+        elseif not isClicked then
+            -- abort... only execute once per mouseclick, not on both UP and DOWN
+            return
+        elseif iAmFor ~= mouseClick then
+            -- abort... only execute if the clicked mouse button matches the one this script was specifically created
+            return
+    	end
+
     	local myName = self:GetAttribute("UFO_NAME")
         local secureMouseClickId = "]=].. secureMouseClickId .. [=["
 
@@ -654,31 +695,21 @@ function HandlerMaker:ActivateRandomBtn(mouseClick)
     	-- local n
     	]=] .. getFlyoutMenuButtonsGetterScriptlet() .. [=[
 
-        local x      = random(1,n)
-        local btn    = buttonsOnFlyoutMenu[x]
+    	]=] .. xGetterScriptlet .. [=[
+
+        local btn    = buttonsOnFlyoutMenu[x] -- x is computed by xGetterScriptlet
         local type   = btn:GetAttribute("type")
         local adjKey = btn:GetAttribute("UFO_KEY") .. ]=] .. mouseBtnNumber .. [=[
         local val    = btn:GetAttribute("UFO_VAL")
 
-        --print("1)", myName, "btn#",x, secureMouseClickId, "-->", type, "... adjKey =", adjKey, "-->",val) -- this shows that it is firing for both mouse UP and DOWN
+        --print(myName, "btn#",x, secureMouseClickId, "-->", type, "... adjKey =", adjKey, "-->",val) -- this shows that it is firing for both mouse UP and DOWN
         self:SetAttribute(secureMouseClickId, type)
         self:SetAttribute(adjKey, val)
     ]=]
-    --local btn1Type = self:GetAttribute("type2")
-    --local btn1val = self:GetAttribute("macrotext2")
-    --print("2)", myName, "btn# 1 type2 -->", btn1Type, "... adjKey: macrotext2 -->", btn1val)
 
     zebug.info:print("germ",myName, "secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
     SecureHandlerWrapScript(self, "OnClick", self, PRE_SCRIPT_STANDARD, scriptToSetNextRandomBtn)
     self.clickScriptUpdaters[secureMouseClickId] = scriptToSetNextRandomBtn
-end
-
-function HandlerMaker:CycleThroughAllBtns()
-
-end
-
-function HandlerMaker:ReverseCycleThroughAllBtns()
-
 end
 
 -- TODO: refactor getOpenerClickerCode() to use this or eliminate its need to use this
