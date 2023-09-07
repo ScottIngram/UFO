@@ -59,12 +59,17 @@ end
 function ButtonOnFlyoutMenu:setDef(btnDef)
     self.btnDef = btnDef
     self:copyDefToBlizFields()
-    self:updateSecureClicker(MouseClick.ANY) -- TODO: will probably need to call this anytime the underlying btnDef changes... which may already be happening because updateForGerm() calls this and is called by Germ:update()
+
+    -- install click behavior but only if it's on a Germ (i.e. not in the Catalog)
+    local flyoutMenu = self:GetParent()
+    if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
+        self:updateSecureClicker(MouseClick.ANY)
+    end
 end
 
 function ButtonOnFlyoutMenu:copyDefToBlizFields()
     local d = self.btnDef or {}
-    -- the names on the left are used deep inside Bliz code
+    -- the names on the left are used deep inside Bliz code by the likes of SpellFlyoutButton_UpdateCooldown() etc
     self.actionType = d.type
     self.actionID   = d.spellId or d.itemId or d.toyId or d.mountId -- or d.petGuid
     self.spellID    = d.spellId
@@ -189,17 +194,27 @@ end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(self)
+    -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
+    ButtonOnFlyoutMenu:oneOfUs(self)
+
+    -- initialize my fields
+    self.maxDisplayCount = 99 -- limits how big of a number to show on stacks
+
     -- initialize the Bliz ActionButton
     self:SmallActionButtonMixin_OnLoad()
     self.PushedTexture:SetSize(31.6, 30.9)
+    self:getCountFrame():SetPoint("BOTTOMRIGHT", 0, 0)
+
+    -- Drag Handler
     self:RegisterForDrag("LeftButton")
-    _G[self:GetName().."Count"]:SetPoint("BOTTOMRIGHT", 0, 0)
-    self.maxDisplayCount = 99
+    local pickupAction = [[print("WEEE"); return "action", self:GetAttribute("action")]]
+    --self:SetAttribute("_ondragstart", pickupAction)
+    --self:SetAttribute("_onreceivedrag", pickupAction)
+
+    -- Click handler
     --self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
     self:RegisterForClicks("AnyDown", "AnyUp")
-
-    -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
-    ButtonOnFlyoutMenu:oneOfUs(self)
+    -- see also ButtonMixin:updateSecureClicker
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation

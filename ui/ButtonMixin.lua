@@ -27,7 +27,7 @@ SecureMouseClickId = {
 }
 
 ---@type { [MouseClick]: SecureMouseClickId }
-MouseClickRemapToSecureMouseClickId = {
+REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID = {
     [MouseClick.ANY]    = "type",
     [MouseClick.LEFT]   = "type1",
     [MouseClick.RIGHT]  = "type2",
@@ -52,6 +52,10 @@ end
 
 function ButtonMixin:getCooldownFrame()
     return _G[ self:GetName().."Cooldown" ]
+end
+
+function ButtonMixin:getCountFrame()
+    return _G[ self:GetName().."Count" ]
 end
 
 local ICON_PREFIX = "INTERFACE\\ICONS\\"
@@ -216,7 +220,7 @@ end
 function ButtonMixin:updateSecureClicker(mouseClick)
     local btnDef = self:getDef()
     if btnDef then
-        local secureMouseClickId = MouseClickRemapToSecureMouseClickId[mouseClick]
+        local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
         local type, key, val = btnDef:asClickHandlerAttributes()
         local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
         zebug.trace:print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseClick, "val", val)

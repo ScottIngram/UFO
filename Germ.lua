@@ -311,10 +311,7 @@ function Germ:update(flyoutId)
     self:SetAttribute("UFO_NAME",  myName)
 
     -- some clickers need to be re-initialized whenever the flyout's buttons change
-    for secureMouseClickId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
-        zebug.trace:print("germ",myName, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
-        SecureHandlerExecute(self, updaterScriptlet)
-    end
+    self:reInitializeMySecureClickers()
 
     -- all FIRST_BTN handlers must be re-initialized after flyoutDef changes
     ---@param mouseClick MouseClick
@@ -332,6 +329,13 @@ function Germ:update(flyoutId)
     local asStrLists = usableFlyout:asStrLists()
     self:SetAttribute("UFO_BLIZ_TYPES", asStrLists.blizTypes)
     self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
+end
+
+function Germ:reInitializeMySecureClickers()
+    for secureMouseClickId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
+        zebug.trace:print("germ",myName, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
+        SecureHandlerExecute(self, updaterScriptlet)
+    end
 end
 
 function Germ:handleGermUpdateEvent()
@@ -611,7 +615,7 @@ end
 
 ---@param mouseClick MouseClick
 function HandlerMaker:OpenFlyout(mouseClick)
-    local secureMouseClickId = MouseClickRemapToSecureMouseClickId[mouseClick]
+    local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
     zebug.info:name("HandlerMakers:OpenFlyout"):print("self",self, "mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
     local scriptName = "OPENER_SCRIPT_FOR_" .. secureMouseClickId
     zebug.info:print("secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
@@ -621,7 +625,7 @@ end
 
 ---@param mouseClick MouseClick
 function HandlerMaker:ActivateBtn1(mouseClick)
-    local secureMouseClickId = MouseClickRemapToSecureMouseClickId[mouseClick]
+    local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
     zebug.info:print("secureMouseClickId",secureMouseClickId)
     self:updateSecureClicker(mouseClick)
     local myName = self:getFlyoutDef().name
@@ -637,7 +641,7 @@ end
 
 ---@param mouseClick MouseClick
 function HandlerMaker:ActivateRandomBtn(mouseClick)
-    self:installHandlerForDynamicBehavior(mouseClick, "local x = random(1,n)")
+    self:installHandlerForDynamicButtonPickerClicker(mouseClick, "local x = random(1,n)")
 end
 
 ---@param mouseClick MouseClick
@@ -650,7 +654,7 @@ function HandlerMaker:CycleThroughAllBtns(mouseClick)
         --print("CycleThroughAllBtns", self:GetName(), isClicked, n, x)
 ]=]
     -- "self" is actually a Germ and not HandlerMaker
-    self:installHandlerForDynamicBehavior(mouseClick, xGetterScriptlet)
+    self:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScriptlet)
 end
 
 ---@param mouseClick MouseClick
@@ -659,13 +663,13 @@ function HandlerMaker:ReverseCycleThroughAllBtns(mouseClick)
 end
 
 ---@param mouseClick MouseClick
-function Germ:installHandlerForDynamicBehavior(mouseClick, xGetterScriptlet)
+function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScriptlet)
     -- Sets two handlers (or rather, the first handler creates the second.)
     -- 1) a SecureHandlerWrapScript script that picks a [random|sequential] button and...
     -- 2) that script creates another handler via SetAttribute(mouseButton -> action) that will actually perform the action determined in step #1
 
     local myName = self:getFlyoutDef().name
-    local secureMouseClickId = MouseClickRemapToSecureMouseClickId[mouseClick]
+    local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
     local mouseBtnNumber = self:getMouseBtnNumber(secureMouseClickId) or ""
     local scriptToSetNextRandomBtn = "--"..mouseClick .. -- include this as a marker so we can identify this script later
     [=[
