@@ -72,20 +72,30 @@ function FlyoutMenu:forEachButton(handler)
     end
 end
 
-function FlyoutMenu:initializeCloseOnClick()
+-- use non-local "global" variables to save values between executions
+-- because GetParent() returns nil during combat lockdown
+local CLOSE_ON_CLICK_SCRIPTLET = [=[
+    if not flyoutMenu then
+        flyoutMenu = self:GetParent()
+    end
+
+    if not germ then
+        germ = flyoutMenu:GetParent()
+    end
+
+    local doClose = germ:GetAttribute("doCloseOnClick")
+    if doClose then
+        flyoutMenu:Hide()
+        flyoutMenu:SetAttribute("doCloseFlyout", false)
+    end
+]=]
+
+function FlyoutMenu:installHandlerForCloseOnClick()
     if self.isCloserInitialized or not self.isForGerm then return end
 
     self:forEachButton(function(button)
-        SecureHandlerWrapScript(button, "OnClick", button, [=[
-        local flyoutMenu = self:GetParent()
-        local germ = flyoutMenu:GetParent()
-        local doClose = germ:GetAttribute("doCloseOnClick")
-        if doClose then
-            flyoutMenu:Hide()
-            flyoutMenu:SetAttribute("doCloseFlyout", false)
-        end
-]=]
-        )
+        SecureHandlerWrapScript(button, "OnClick", button, CLOSE_ON_CLICK_SCRIPTLET)
+        SecureHandlerExecute(button, CLOSE_ON_CLICK_SCRIPTLET) -- initialize the scriptlet's "global" vars
     end)
 
     self.isCloserInitialized = true

@@ -384,10 +384,12 @@ end
 ---@return string val for the SecureActionButtonTemplate:SetAttribute(key, val)
 function ButtonDef:asClickHandlerAttributes()
     if (self.type == ButtonType.PET) then
+        -- this fails with "invalid attribute name"
         --local snippet = "C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
-        --return "UFO_customscript", "_UFO_customscript", snippet -- this broke the flyout... probably will work now that I'm adjusting by mouseBtn
+        --return "UFO_customscript", "_UFO_customscript", snippet
 
         -- summon the pet via a macro
+        -- TODO: fix bug where this fails in combat - perhaps control:CallMethod(keyName, ...) ?
         local petMacro = "/run C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
         return ButtonType.MACRO, "macrotext", petMacro
     else

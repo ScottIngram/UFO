@@ -53,50 +53,39 @@ local GERM_UI_NAME_PREFIX = "UfoGerm"
 local CLICK_ID_MARKER = "-- CLICK_ID_MARKER:"
 local LEN_CLICK_ID_MARKER = string.len(CLICK_ID_MARKER)
 
-local PRE_SCRIPT_STANDARD = [=[
-        -- button is which mouse button is clicked
-        -- "true" flag is yes, execute the post script
-        --print(button, down)
-        --return "noneya", nil -- this will short-circuit it as long as I'm not setting a "type" handler (vs "type1" and/or "type2")
-        return button, true
-]=]
-
-function getOpenerClickerCode()
+function searchForFlyoutMenuScriptlet()
     return [=[
-	local germ = self
-	local mouseClick = button
+	germ = self
 
-    print("OpenerClickerCode(): A")
+    -- use a global var to cache the flyout menu
+    if not flyoutMenu then
+        -- search the kids for the flyout menu
+        local kids = table.new(germ:GetChildren())
+        for i, kid in ipairs(kids) do
+            local kidName = kid:GetName()
+            if kidName then
+                local wantedSuffix = "]=].. FlyoutMenu.nameSuffix ..[=["
+                local n = string.len(wantedSuffix)
+                local kidSuffix = string.sub(kidName, 0-n) -- last n letters
 
-	local DELIMITER = "]=]..DELIMITER..[=["
-	local EMPTY_ELEMENT = "]=]..EMPTY_ELEMENT..[=["
-	local direction = germ:GetAttribute("flyoutDirection")
-	local prevBtn = nil;
-
-    print("OpenerClickerCode(): B")
-
-    -- search the kids for the flyout menu
-    local flyoutMenu
-    local kids = table.new(germ:GetChildren())
-    print("OpenerClickerCode(): C... kids",kids, kids[1])
-    for i, kid in ipairs(kids) do
-        local kidName = kid:GetName()
-        print("OpenerClickerCode(): D", i,kidName)
-        if kidName then
-            local wantedSuffix = "]=].. FlyoutMenu.nameSuffix ..[=["
-            local n = string.len(wantedSuffix)
-            local kidSuffix = string.sub(kidName, 0-n) -- last n letters
-
-            if kidSuffix == wantedSuffix then
-                flyoutMenu = kid
-                break
+                if kidSuffix == wantedSuffix then
+                    flyoutMenu = kid
+                    break
+                end
             end
         end
     end
+    ]=]
+end
 
-    print("OpenerClickerCode(): E")
-
+function getOpenerClickerScriptlet()
+    return [=[
+	local germ = self
+	local mouseClick = button
+	local isClicked = down
+	local direction = germ:GetAttribute("flyoutDirection")
     local doCloseFlyout = flyoutMenu:GetAttribute("doCloseFlyout")
+
 	if doCloseFlyout then
 		flyoutMenu:Hide()
 		flyoutMenu:SetAttribute("doCloseFlyout", false)
@@ -122,6 +111,7 @@ function getOpenerClickerCode()
         table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
     end
 
+	local prevBtn = nil;
     local numButtons = 0
     for i, btn in ipairs(uiButtons) do
         local isInUse = btn:GetAttribute("UFO_NAME")
@@ -197,6 +187,7 @@ function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self.flyoutId     = flyoutId
     self.visibleIf    = parentActionBarBtn.visibleIf -- I set this inside GermCommander:getActionBarBtn()
+    self.myLabel      = self:getFlyoutDef().name
 
     -- UI positioning
     self:ClearAllPoints()
@@ -214,6 +205,11 @@ function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
     self:SetScript("OnMouseUp",     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
     self:SetScript("OnDragStart",   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
 
+    -- FlyoutMenu
+    self:initFlyoutMenu()
+    self.flyoutMenu:installHandlerForCloseOnClick()
+    self:SetAttribute("flyoutDirection", self:getDirection())
+
     -- Click behavior
     --self:RegisterForClicks("AnyUp") -- this does nothing
     --self:RegisterForClicks("AnyDown") -- this works but clobbers OnDragStart
@@ -223,11 +219,6 @@ function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
     -- Drag and Drop behavior
     self:RegisterForDrag("LeftButton")
     --SecureHandlerWrapScript(self, "OnDragStart", self, "return "..QUOTE.."message"..QUOTE , "print(123456789)") -- this does nothing.  TODO: understand why
-
-    -- FlyoutMenu
-    self:initFlyoutMenu()
-    self.flyoutMenu:initializeCloseOnClick()
-    self:SetAttribute("flyoutDirection", self:getDirection())
 
     return self
 end
@@ -340,7 +331,7 @@ end
 function Germ:reInitializeMySecureClickers()
     for secureMouseClickId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
         zebug.trace:print("germ",self.myLabel, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
-        SecureHandlerExecute(self, updaterScriptlet)
+            SecureHandlerExecute(self, updaterScriptlet)
     end
 end
 
@@ -586,59 +577,7 @@ function Germ:setMouseClickHandler(mouseClick, behavior)
     zebug.info:print("mouseClick",mouseClick, "opt", behavior, "handler", installTheBehavior)
     installTheBehavior(self, mouseClick)
     self.clickers[mouseClick] = behavior
-end
-
--- Fuck you yet again, Bliz, for providing a way to only remove some unknown, generally arbitrary handler but not a specific handler.
--- So now, I cry, and loop through ALL of the SecureHandlerUnwrapScript(self, "OnClick") until I find the one,
--- then restore the others that were needlessly stripped while groping the Frame in a blind, hamfisted search.
-
-function Germ:removeOldHandler(mouseClick)
-    local old = self.clickers[mouseClick]
-    zebug.trace:print("old",old)
-    if not old then return end
-
-    local needsRemoval = (old == (GermClickBehavior.RANDOM_BTN) or (old == GermClickBehavior.CYCLE_ALL_BTNS))
-    if not needsRemoval then return end
-
-    local i = 0
-    local lostBoys = {}
-    local rescue = function(header, preBody, postBody, scriptsClick)
-        -- Oopsy daisy!  Blizzy Wizzy tricked me into removing the wrong one!  Remember it so we can put it back.
-        i = i + 1
-        lostBoys[i] = { header, preBody, postBody, scriptsClick }
-    end
-
-    local header = self
-    local isForThisClick = false
-    while header and not isForThisClick do -- assume we will only ever install ONE handler per mouse button
-        local header, preBody, postBody = SecureHandlerUnwrapScript(self, "OnClick")
-        if not header then
-            break
-        end
-
-        if header ~= self then
-            rescue(header, preBody, postBody, "unknown")
-            break
-        end
-
-        -- pull the ID marker out of the script body and see if it's the one we're supposed to remove
-        local start = LEN_CLICK_ID_MARKER +1
-        local stop  = LEN_CLICK_ID_MARKER + string.len(mouseClick)
-        local scriptsClick = string.sub(postBody, start, stop)
-        isForThisClick = (scriptsClick == mouseClick)
-        zebug.info:print("germ", self.myLabel, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
-        if not isForThisClick then
-            rescue( header, preBody, postBody, scriptsClick )
-        end
-    end
-
-    -- try to put that shit back
-    for i, params in ipairs(lostBoys) do
-        local success = pcall(function ()
-            SecureHandlerWrapScript(params[1], "OnClick", params[1], params[2], params[3])
-        end )
-        zebug.info:print("germ", self.myLabel, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
-    end
+    SecureHandlerExecute(self, searchForFlyoutMenuScriptlet()) -- initialize the scriptlet's "global" vars
 end
 
 ---@param behavior GermClickBehavior
@@ -664,9 +603,9 @@ function HandlerMaker:OpenFlyout(mouseClick)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
     zebug.info:name("HandlerMakers:OpenFlyout"):print("self",self, "mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
     local scriptName = "OPENER_SCRIPT_FOR_" .. secureMouseClickId
-    zebug.info:print("secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
+    zebug.info:name("HandlerMakers:OpenFlyout"):print("germ",self.myLabel, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
     self:SetAttribute(secureMouseClickId,scriptName)
-    self:SetAttribute("_"..scriptName, getOpenerClickerCode())
+    self:SetAttribute("_"..scriptName, getOpenerClickerScriptlet())
 end
 
 ---@param mouseClick MouseClick
@@ -688,6 +627,9 @@ end
 function HandlerMaker:ActivateRandomBtn(mouseClick)
     self:installHandlerForDynamicButtonPickerClicker(mouseClick, "local x = random(1,n)")
 end
+
+-- TODO: can I make CYCLE_POSITION a global var instead of a SetAttribute() ?
+-- yes, but, it still won't be shared between mouse buttons
 
 ---@param mouseClick MouseClick
 function HandlerMaker:CycleThroughAllBtns(mouseClick)
@@ -737,61 +679,98 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
     	local myName = self:GetAttribute("UFO_NAME")
         local secureMouseClickId = "]=].. secureMouseClickId .. [=["
 
-    	-- will be populated by the scriptlet
-    	-- local buttonsOnFlyoutMenu
-    	-- local n
-    	]=] .. getFlyoutMenuButtonsGetterScriptlet() .. [=[
+        --print("PickerClicker(): germ =",myName, "(1) flyoutMenuKids =", flyoutMenuKids)
+
+        if not flyoutMenuKids then
+            flyoutMenuKids = table.new(flyoutMenu:GetChildren())
+            buttonsOnFlyoutMenu = table.new()
+            n = 0
+            for i, btn in ipairs(flyoutMenuKids) do
+                local btnName = btn:GetAttribute("UFO_NAME")
+                if btnName then
+                    n = n + 1
+                    buttonsOnFlyoutMenu[n] = btn
+                    --print("flyoutMenuKids:", n, btnName, buttonsOnFlyoutMenu[n])
+                end
+            end
+        end
+
+        --print("PickerClicker(): germ =",myName, "(2) flyoutMenuKids =", flyoutMenuKids)
 
     	]=] .. xGetterScriptlet .. [=[
 
-        local btn    = buttonsOnFlyoutMenu[x] -- x is computed by xGetterScriptlet
+        local btn    = buttonsOnFlyoutMenu[x] -- computed by xGetterScriptlet
         local type   = btn:GetAttribute("type")
         local adjKey = btn:GetAttribute("UFO_KEY") .. ]=] .. mouseBtnNumber .. [=[
         local val    = btn:GetAttribute("UFO_VAL")
 
-        --print(myName, "btn#",x, secureMouseClickId, "-->", type, "... adjKey =", adjKey, "-->",val) -- this shows that it is firing for both mouse UP and DOWN
+        --print("PickerClicker(): germ =", myName, "(3) copy btn to clicker... btn#",x, secureMouseClickId, "-->", type, "... adjKey =", adjKey, "-->",val) -- this shows that it is firing for both mouse UP and DOWN
+
+        -- copy the btn's behavior onto myself
         self:SetAttribute(secureMouseClickId, type)
         self:SetAttribute(adjKey, val)
     ]=]
 
     zebug.info:print("germ",self.myLabel, "secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
-    SecureHandlerWrapScript(self, "OnClick", self, PRE_SCRIPT_STANDARD, scriptToSetNextRandomBtn)
     self.clickScriptUpdaters[secureMouseClickId] = scriptToSetNextRandomBtn
+
+    -- install the script which will install the buttons which will perform the action
+    SecureHandlerWrapScript(self, "OnClick", self, scriptToSetNextRandomBtn)
+
+    -- initialize the scriptlet's "global" vars
+    SecureHandlerExecute(self, searchForFlyoutMenuScriptlet())
 end
 
--- TODO: refactor getOpenerClickerCode() to use this or eliminate its need to use this
-function getFlyoutMenuButtonsGetterScriptlet()
-    -- will store its result in buttonsOnFlyoutMenu and n
-    return [=[
-    -- search the kids for the flyout menu
-    local flyoutMenu
-    local germKids = table.new(germ:GetChildren())
-    for i, kid in ipairs(germKids) do
-        local kidName = kid:GetName()
-        --print("germKids:", i,kidName)
-        if kidName then
-            local wantedSuffix = "]=].. FlyoutMenu.nameSuffix ..[=["
-            local n = string.len(wantedSuffix)
-            local kidSuffix = string.sub(kidName, 0-n) -- last n letters
+-- Fuck you yet again, Bliz, for only providing a way to remove some unknown, generally arbitrary handler but not a specific handler.
+-- So now, I cry, and loop through ALL of the SecureHandlerUnwrapScript(self, "OnClick") until I find the one,
+-- then restore the others that were needlessly stripped while groping the Frame in a blind, hamfisted search.
 
-            if kidSuffix == wantedSuffix then
-                flyoutMenu = kid
-                break
-            end
+function Germ:removeOldHandler(mouseClick)
+    local old = self.clickers[mouseClick]
+    zebug.trace:print("old",old)
+    if not old then return end
+
+    local needsRemoval = (old == (GermClickBehavior.RANDOM_BTN) or (old == GermClickBehavior.CYCLE_ALL_BTNS))
+    if not needsRemoval then return end
+
+    local i = 0
+    local lostBoys = {}
+    local rescue = function(header, preBody, postBody, scriptsClick)
+        -- Oopsy daisy!  Blizzy Wizzy tricked me into removing the wrong one!  Remember it so we can put it back.
+        i = i + 1
+        lostBoys[i] = { header, preBody, postBody, scriptsClick }
+    end
+
+    local header = self
+    local isForThisClick = false
+    while header and not isForThisClick do -- assume we will only ever install ONE handler per mouse button
+        local header, preBody, postBody = SecureHandlerUnwrapScript(self, "OnClick")
+        if not header then
+            break
+        end
+
+        if header ~= self then
+            rescue(header, preBody, postBody, "unknown")
+            break
+        end
+
+        -- pull the ID marker out of the script body and see if it's the one we're supposed to remove
+        local start = LEN_CLICK_ID_MARKER +1
+        local stop  = LEN_CLICK_ID_MARKER + string.len(mouseClick)
+        local scriptsClick = string.sub(postBody, start, stop)
+        isForThisClick = (scriptsClick == mouseClick)
+        zebug.info:print("germ", self.myLabel, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
+        if not isForThisClick then
+            rescue( header, preBody, postBody, scriptsClick )
         end
     end
 
-    local flyoutMenuKids = table.new(flyoutMenu:GetChildren())
-    local buttonsOnFlyoutMenu = table.new()
-    local n = 0
-    for i, btn in ipairs(flyoutMenuKids) do
-        local btnName = btn:GetAttribute("UFO_NAME")
-        if btnName then
-            n = n + 1
-            buttonsOnFlyoutMenu[n] = btn
-            --print("flyoutMenuKids:", n, btnName, buttonsOnFlyoutMenu[n])
-        end
+    -- try to put that shit back
+    for i, params in ipairs(lostBoys) do
+        local success = pcall(function()
+            SecureHandlerWrapScript(params[1], "OnClick", params[1], params[2], params[3])
+        end )
+        zebug.info:print("germ", self.myLabel, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
     end
-]=]
-
 end
+
