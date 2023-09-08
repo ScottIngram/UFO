@@ -89,7 +89,7 @@ end
 
 function EventHandlers:UNIT_INVENTORY_CHANGED()
     if not hasShitCalmedTheFuckDown then return end
-    zebug.warn:line(40,"Heard event: UNIT_INVENTORY_CHANGED")
+    zebug.trace:print("Heard event: UNIT_INVENTORY_CHANGED")
 
     GermCommander:handleEventChangedInventory()
 end
