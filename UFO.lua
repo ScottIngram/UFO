@@ -350,7 +350,38 @@ end
 
 function registerSlashCmd()
     _G.SLASH_UFO1 = "/ufo"
-    SlashCmdList["UFO"] = Catalog.open
+
+    local slashFunc
+    local slashHelp = function()
+        --msgUser("commands...")
+        for name, cmd in pairs(slashFunc) do
+            local wee = cmd.desc and print("/ufo ".. name.. " - " .. cmd.desc)
+        end
+    end
+
+    slashFunc = {
+        help   = { fnc = slashHelp,},
+        [L10N.SLASH_CMD_CONFIG] = { fnc = openConfig,   desc = L10N.SLASH_DESC_CONFIG },
+        [L10N.SLASH_CMD_OPEN]   = { fnc = Catalog.open, desc = L10N.SLASH_DESC_OPEN },
+    }
+
+    SlashCmdList["UFO"] = function(arg)
+        if isEmpty(arg) then
+            arg = "help"
+        end
+        local cmd = slashFunc[arg]
+        if not cmd then
+            msgUser(L10N.SLASH_UNKNOWN_COMMAND .. ": \"".. arg .."\"")
+        else
+            msgUser(arg .."...")
+            local func =cmd.fnc
+            func()
+        end
+    end
+end
+
+function openConfig()
+    Settings.OpenToCategory(Ufo.myTitle)
 end
 
 function msgUser(msg)
