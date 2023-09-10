@@ -8,7 +8,7 @@
 ## SavedVariablesPerCharacter: UFO_SV_TOON
 ## Notes: custom actionbar flyout menus
 
-libs\ace3-ffs.xml
+libs\libs.xml
 utils\Wormhole.lua
 constants.lua
 utils\Zebug.lua
