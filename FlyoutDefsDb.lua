@@ -33,13 +33,13 @@ Ufo.Xedni = Xedni
 -------------------------------------------------------------------------------
 
 function FlyoutDefsDb:howMany()
-    local list = Config:getOrderedFlyoutIds()
+    local list = DB:getOrderedFlyoutIds()
     return list and #list or 0
 end
 
 function FlyoutDefsDb:forEachFlyoutDef(callback)
     zebug.trace:out(25,"~")
-    for i, flyoutId in ipairs(Config:getOrderedFlyoutIds()) do
+    for i, flyoutId in ipairs(DB:getOrderedFlyoutIds()) do
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
         zebug.trace:out(20,"~", "flyoutId",flyoutId, "--> flyoutDef", flyoutDef)
         callback(flyoutDef, flyoutDef) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
@@ -48,7 +48,7 @@ end
 
 function FlyoutDefsDb:getAll()
     zebug.trace:out(30,"=")
-    local allFlyouts = Config:getFlyoutDefs()
+    local allFlyouts = DB:getFlyoutDefs()
     zebug.trace:out(10,"=", "allFlyouts", allFlyouts, "self.isInitialized", self.isInitialized, "self.infiniteLoopStopper",self.infiniteLoopStopper)
     if not self.isInitialized and not self.infiniteLoopStopper then
         self.infiniteLoopStopper = true
@@ -121,7 +121,7 @@ function FlyoutDefsDb:getByIndex(flyoutIndex)
         end
     end
 
-    local flyoutId = Config:getOrderedFlyoutIds()[flyoutIndex]
+    local flyoutId = DB:getOrderedFlyoutIds()[flyoutIndex]
     zebug.trace:print("flyoutIndex",flyoutIndex, "--> flyoutId",flyoutId)
     return self:get(flyoutId)
 end
@@ -140,7 +140,7 @@ function FlyoutDefsDb:add(flyoutDef)
     self:getAll()[flyoutId] = flyoutDef
 
     -- keep the index and the reverse index in sync
-    local list = Config:getOrderedFlyoutIds()
+    local list = DB:getOrderedFlyoutIds()
     local i = #list + 1
     list[i] = flyoutId
     Xedni:get()[flyoutDef.id] = i
@@ -164,7 +164,7 @@ function FlyoutDefsDb:delete(flyoutId)
     -- remove it from some arbitrary point in the orderedFlyoutIds "array"
     -- luckily, we have a reverse index array (Xedni) to find its index :-)
     zebug.info:print("flyoutId",flyoutId, "removing at flyoutIndex", flyoutIndex)
-    local flyoutList = Config:getOrderedFlyoutIds()
+    local flyoutList = DB:getOrderedFlyoutIds()
     zebug.info:dumpy("list B4 delete", flyoutList)
     local mort = table.remove(flyoutList, flyoutIndex)
     zebug.info:dumpy("list AFTER delete", flyoutList)
@@ -188,7 +188,7 @@ end
 function FlyoutDefsDb:move(flyoutId, destinationIndex)
     local xedni = Xedni:get()
     local flyoutIndex = xedni[flyoutId]
-    local flyoutList = Config:getOrderedFlyoutIds()
+    local flyoutList = DB:getOrderedFlyoutIds()
     local moved = moveElementInArray(flyoutList, flyoutIndex, destinationIndex)
     if moved then
         Xedni:nuke() -- TODO: do something more elegant than erasing the old one
@@ -231,7 +231,7 @@ function Xedni:moveOrRemove(instigatingFlyoutId)
 
     -- If a flyout is added/deleted from anywhere but the end,
     -- then some/all of the reverse index is now off by 1.
-    local orderedIds = Config:getOrderedFlyoutIds()
+    local orderedIds = DB:getOrderedFlyoutIds()
     local size = #orderedIds
 
     -- go through the remaining entries and lookup their new index

@@ -81,17 +81,18 @@ function Catalog:createToggleButton(blizFrame)
     btnFrame:SetFrameStrata(xBtnFrame:GetFrameStrata())
     btnFrame:SetFrameLevel(xBtnFrame:GetFrameLevel()+1 )
     btnFrame.Text:SetText("UFO")
-    btnFrame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    btnFrame:RegisterForClicks("AnyUp")
     btnFrame:SetScript("OnClick", Catalog.clickUfoButton)
     btnFrame:Show()
 
     toggleBtns[blizFrame] = btnFrame
 end
 
-function Catalog:clickUfoButton(whichMouseButton, isDown)
-    zebug.info:print("ufoBtn", self:GetName(), "whichMouseButton",whichMouseButton, "isDown",isDown)
+---@param mouseClick MouseClick
+function Catalog:clickUfoButton(mouseClick, isDown)
+    zebug.info:print("ufoBtn", self:GetName(), "mouseClick",mouseClick, "isDown",isDown)
 
-    if whichMouseButton == "LeftButton" then
+    if mouseClick == MouseClick.LEFT then
         Catalog:toggle(self)
     else
         Settings.OpenToCategory(Ufo.myTitle)
@@ -417,10 +418,11 @@ function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
     UIUFO_FlyoutMenuForCatalog:Hide()
 end
 
-function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, whichMouseButton)
-    zebug.trace:print("addonName",addonName, "whichMouseButton", whichMouseButton, "SpellBookFrame",SpellBookFrame)
+---@param mouseClick MouseClick
+function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, mouseClick)
+    zebug.trace:print("addonName",addonName, "mouseClick", mouseClick, "SpellBookFrame",SpellBookFrame)
 
-    if whichMouseButton == "LeftButton" then
+    if mouseClick == MouseClick.LEFT then
         Catalog:open()
     else
         Settings.OpenToCategory(Ufo.myTitle)
@@ -441,7 +443,7 @@ function GLOBAL_UIUFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
     UFO_CatalogScrollPane_DoUpdate(scrollPane)
 end
 
-function GLOBAL_UIUFO_CatalogEntryButton_OnClick(btnInCatalog, whichMouseButton, down)
+function GLOBAL_UIUFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
     zebug.info:name("GLOBAL_UIUFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
     local scrollPane = UIUFO_CatalogScrollPane
 

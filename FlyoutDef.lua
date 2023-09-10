@@ -38,18 +38,16 @@ function FlyoutDef:oneOfUs(self)
 
     -- create a table to store stuff that we do NOT want persisted out to SAVED_VARIABLES
     -- and attach methods to get and put that data
-    local privateData = {
+    local privateCache = {
         alreadyCoercedMyButtons = false,
     }
-    function privateData:_setUsableFlyoutDef(usableFlyoutDef) privateData.usableFlyoutDef = usableFlyoutDef end
-    function privateData:_setCachedStrLists(strLists) privateData.cachedStrLists = strLists end
-    function privateData:_setCachedLists(lists) privateData.cachedLists = lists end
-    function privateData:setAlreadyCoercedMyButtons() privateData.alreadyCoercedMyButtons = true end
+    function privateCache:_cacheUsableFlyoutDef(usableFlyoutDef) privateCache.cachedUsableFlyoutDef = usableFlyoutDef end
+    function privateCache:setAlreadyCoercedMyButtons() privateCache.alreadyCoercedMyButtons = true end
 
     -- tie the privateData table to the FlyoutDef class definition
-    setmetatable(privateData, { __index = FlyoutDef })
+    setmetatable(privateCache, { __index = FlyoutDef })
     -- tie the "self" instance to the privateData table (which in turn is tied to  the class)
-    setmetatable(self, { __index = privateData })
+    setmetatable(self, { __index = privateCache })
     return self
 end
 
@@ -63,17 +61,12 @@ function FlyoutDef:new()
     return FlyoutDef:oneOfUs(self)
 end
 
--- because privateData:_setCachedLists() is not visible to my IDE's autocomplete
--- defining this redundant declaration here
-function FlyoutDef:setCachedLists(lists)
-    zebug.trace:print("self.name",self.name, "lists",lists)
-    self:_setCachedLists(lists)
-    self:_setCachedStrLists(nil) -- always clear the stringy copy when the base changes
-    self:_setUsableFlyoutDef(nil) -- always clear the filtered copy when the base changes
+function FlyoutDef:invalidateCache()
+    self:_cacheUsableFlyoutDef(nil) -- always clear the filtered copy when the base changes
 end
 
 function FlyoutDef:newId()
-    return Config:nextN() ..":".. getIdForCurrentToon() ..":".. (time()-1687736964)
+    return DB:nextN() ..":".. getIdForCurrentToon() ..":".. (time()-1687736964)
 end
 
 function FlyoutDef:howManyButtons()
@@ -99,7 +92,7 @@ function FlyoutDef:forEachBtn(callback)
         end
     end
     if invalidateCaches then
-        self:setCachedLists(nil)
+        self:invalidateCache()
     end
 end
 
@@ -108,7 +101,7 @@ function FlyoutDef:batchDeleteBtns(killTester)
     local btns = self:getAllButtonDefs()
     local modified = deleteFromArray(btns, killTester)
     if modified then
-        self:setCachedLists(nil)
+        self:invalidateCache()
     end
 end
 
@@ -135,14 +128,14 @@ end
 ---@param buttonDef ButtonDef
 function FlyoutDef:addButton(buttonDef)
     table.insert(self.btns, buttonDef)
-    self:setCachedLists(nil)
+    self:invalidateCache()
 end
 
 ---@param i number
 ---@param buttonDef ButtonDef
 function FlyoutDef:replaceButton(i, buttonDef)
     self.btns[tonumber(i)] = buttonDef
-    self:setCachedLists(nil)
+    self:invalidateCache()
 end
 
 -- removes a button an moves the rest down a notch
@@ -176,9 +169,9 @@ end
 function FlyoutDef:filterOutUnusable()
     zebug:print("self.name", self.name)
 
-    if self.usableFlyoutDef then
-        zebug.trace:print("returning chached usableFlyoutDef")
-        return self.usableFlyoutDef
+    if self.cachedUsableFlyoutDef then
+        zebug.trace:print("returning cached usableFlyoutDef")
+        return self.cachedUsableFlyoutDef
     end
 
     local usableFlyoutDef = FlyoutDef:new()
@@ -195,60 +188,10 @@ function FlyoutDef:filterOutUnusable()
     usableFlyoutDef.icon = self.icon
     usableFlyoutDef.fallbackIcon = self.fallbackIcon
     usableFlyoutDef.setAlreadyCoercedMyButtons() -- because the source btns have already been coerced
-    self:_setUsableFlyoutDef(usableFlyoutDef)
+    self:_cacheUsableFlyoutDef(usableFlyoutDef)
     return usableFlyoutDef
 end
 
 function table.inserty(t, val)
     table.insert(t, val or EMPTY_ELEMENT)
-end
-
----@return table
-function FlyoutDef:asLists()
-    local cache = self.cachedLists
-    local isSame = cache == self
-    zebug.trace:print("cache",cache, "isSame",isSame, "self:howManyButtons()",self:howManyButtons())
-    zebug.trace:dumpy("cache",cache)
-    if cache then return cache end
-    local lists = {
-        blizTypes = {},
-        types = {},
-        names = {},
-        spellIds = {},
-        petGuids = {},
-        macroIds = {},
-    }
-    ---@param btn ButtonDef
-    for i, btn in ipairs(self:getAllButtonDefs()) do
-        lists.blizTypes[i] = btn:getTypeForBlizApi()
-        lists.types    [i] = btn.type
-        lists.names    [i] = btn.name
-        lists.spellIds [i] = btn.spellId
-        lists.petGuids [i] = btn.petGuid
-        lists.macroIds [i] = btn.macroId
-    end
-    zebug.trace:dumpy("lists",lists)
-    self:setCachedLists(lists)
-    return lists
-end
-
-function FlyoutDef:asStrLists()
-    local cache = self.cachedStrLists
-    if cache then return cache end
-
-    local asLists = self:asLists()
-
-    local asStrLists = {
-        spellIds  = fknJoin(asLists.spellIds),
-        names     = fknJoin(asLists.names),
-        blizTypes = fknJoin(asLists.blizTypes),
-        petGuids  = fknJoin(asLists.petGuids),
-    }
-
-    zebug.trace:print("UFO_NAMES",      asStrLists.names)
-    zebug.trace:print("UFO_BLIZ_TYPES", asStrLists.blizTypes)
-    zebug.trace:print("UFO_PETS",       asStrLists.petGuids)
-
-    self.cachedStrLists = asStrLists
-    return asStrLists
 end

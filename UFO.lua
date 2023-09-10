@@ -17,12 +17,15 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 local zebug = Zebug:new()
 
+-- Purely to satisfy my IDE
+DB = Ufo.DB
 
 -------------------------------------------------------------------------------
 -- Data
 -------------------------------------------------------------------------------
 
 local isUfoInitialized = false
+local hasShitCalmedTheFuckDown = false
 
 -------------------------------------------------------------------------------
 -- Event Handlers
@@ -67,26 +70,35 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
-    if not isUfoInitialized then return end
+    if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
     GermCommander:handleActionBarSlotChanged(actionBarSlotId)
 end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
-    if not isUfoInitialized then return end
+    if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: PLAYER_SPECIALIZATION_CHANGED")
     GermCommander:updateAll()
 end
 
 function EventHandlers:UPDATE_MACROS()
-    if not isUfoInitialized then return end
+    if not hasShitCalmedTheFuckDown then return end
     zebug.trace:line(40,"Heard event: UPDATE_MACROS")
     MacroShitShow:analyzeMacroUpdate()
 end
 
+function EventHandlers:UNIT_INVENTORY_CHANGED()
+    if not hasShitCalmedTheFuckDown then return end
+    zebug.trace:print("Heard event: UNIT_INVENTORY_CHANGED")
+
+    GermCommander:handleEventChangedInventory()
+end
+
 function EventHandlers:CURSOR_CHANGED()
-    if not isUfoInitialized then return end
-    zebug.trace:line(40,"Heard event: CURSOR_CHANGED")
+    if not hasShitCalmedTheFuckDown then return end
+    --zebug.trace:line(40,"Heard event: CURSOR_CHANGED",C_TradeSkillUI.GetProfessionForCursorItem())
+    local type, spellId = GetCursorInfo()
+    zebug.trace:print("type",type, "spellId",spellId)
     GermCommander:delayedAsynchronousConditionalDeleteProxy()
 end
 
@@ -354,9 +366,9 @@ function initalizeAddonStuff()
 
     Ufo.myTitle = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Title")
 
-    Config:initializeFlyouts()
-    Config:initializePlacements()
-    Config:initializeOptsMemory()
+    DB:initializeFlyouts()
+    DB:initializePlacements()
+    DB:initializeOptsMemory()
     Config:initializeOptionsMenu()
 
     MacroShitShow:init()
@@ -368,7 +380,9 @@ function initalizeAddonStuff()
     Catalog:createToggleButton(SpellBookFrame)
     IconPicker:init()
 
+    -- flags to wait out the chaos happening when the UI first loads / reloads.
     isUfoInitialized = true
+    C_Timer.After(1, function() hasShitCalmedTheFuckDown = true end)
 end
 
 -------------------------------------------------------------------------------

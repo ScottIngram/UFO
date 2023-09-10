@@ -12,10 +12,12 @@ local zebug = Zebug:new()
 
 ---@class ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
-local ButtonOnFlyoutMenu = {
+
+---@type ButtonOnFlyoutMenu|ButtonMixin
+ButtonOnFlyoutMenu = {
     ufoType = "ButtonOnFlyoutMenu",
 }
-Ufo.ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
+ButtonMixin:inject(ButtonOnFlyoutMenu)
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -40,10 +42,6 @@ function ButtonOnFlyoutMenu:getParent()
     return self:GetParent()
 end
 
-function ButtonOnFlyoutMenu:setIconTexture(texture)
-    self:getIconFrame():SetTexture(texture)
-end
-
 function ButtonOnFlyoutMenu:isEmpty()
     return not self:hasDef()
 end
@@ -61,11 +59,17 @@ end
 function ButtonOnFlyoutMenu:setDef(btnDef)
     self.btnDef = btnDef
     self:copyDefToBlizFields()
+
+    -- install click behavior but only if it's on a Germ (i.e. not in the Catalog)
+    local flyoutMenu = self:GetParent()
+    if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
+        self:updateSecureClicker(MouseClick.ANY)
+    end
 end
 
 function ButtonOnFlyoutMenu:copyDefToBlizFields()
     local d = self.btnDef or {}
-    -- the names on the left are used deep inside Bliz code
+    -- the names on the left are used deep inside Bliz code by the likes of SpellFlyoutButton_UpdateCooldown() etc
     self.actionType = d.type
     self.actionID   = d.spellId or d.itemId or d.toyId or d.mountId -- or d.petGuid
     self.spellID    = d.spellId
@@ -184,29 +188,33 @@ function ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc(self)
     self:updateCooldownsAndCountsAndStatesEtc()
 end
 
--- this syntax is clunky but my IDE understands this better than ButttonMixin:inject()
-ButtonOnFlyoutMenu.updateCooldownsAndCountsAndStatesEtc = ButttonMixin.updateCooldownsAndCountsAndStatesEtc
-ButtonOnFlyoutMenu.updateUsable   = ButttonMixin.updateUsable
-ButtonOnFlyoutMenu.updateCooldown = ButttonMixin.updateCooldown
-ButtonOnFlyoutMenu.updateCount    = ButttonMixin.updateCount
-ButtonOnFlyoutMenu.getIconFrame   = ButttonMixin.getIconFrame
-
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutBtn XML Callbacks
 -------------------------------------------------------------------------------
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(self)
+    -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
+    ButtonOnFlyoutMenu:oneOfUs(self)
+
+    -- initialize my fields
+    self.maxDisplayCount = 99 -- limits how big of a number to show on stacks
+
     -- initialize the Bliz ActionButton
     self:SmallActionButtonMixin_OnLoad()
     self.PushedTexture:SetSize(31.6, 30.9)
-    self:RegisterForDrag("LeftButton")
-    _G[self:GetName().."Count"]:SetPoint("BOTTOMRIGHT", 0, 0)
-    self.maxDisplayCount = 99
-    self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
+    self:getCountFrame():SetPoint("BOTTOMRIGHT", 0, 0)
 
-    -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
-    ButtonOnFlyoutMenu:oneOfUs(self)
+    -- Drag Handler
+    self:RegisterForDrag("LeftButton")
+    local pickupAction = [[print("WEEE"); return "action", self:GetAttribute("action")]]
+    --self:SetAttribute("_ondragstart", pickupAction)
+    --self:SetAttribute("_onreceivedrag", pickupAction)
+
+    -- Click handler
+    --self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
+    self:RegisterForClicks("AnyDown", "AnyUp")
+    -- see also ButtonMixin:updateSecureClicker
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation

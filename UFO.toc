@@ -8,11 +8,12 @@
 ## SavedVariablesPerCharacter: UFO_SV_TOON
 ## Notes: custom actionbar flyout menus
 
-libs\ace3-ffs.xml
+libs\libs.xml
 utils\Wormhole.lua
 constants.lua
 utils\Zebug.lua
 utils\Debug.lua
+utils\DB.lua
 utils\Config.lua
 locales\index.xml
 ThirdPartyAddonSupport.lua
@@ -23,6 +24,7 @@ ui\ButtonMixin.lua
 Germ.lua
 GermCommander.lua
 MacroShitShow.lua
+Asshole.lua
 UFO.lua
 ui\FlyoutMenu.lua
 ui\ButtonOnFlyoutMenu.lua

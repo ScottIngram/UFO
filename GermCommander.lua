@@ -12,11 +12,7 @@ local zebug = Zebug:new()
 
 ---@class GermCommander -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
-local GermCommander = { }
-Ufo.GermCommander = GermCommander
-
----@type Germ -- IntelliJ-EmmyLua annotation
-local Germ = Ufo.Germ
+GermCommander = { }
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -91,7 +87,7 @@ function GermCommander:updateAll()
                 -- create a new germ
                 local bbInfo = self:extractBarBtnInfo(btnSlotIndex)
                 local parent = self:getActionBarBtn(bbInfo)
-                germ = Germ.new(flyoutId, btnSlotIndex, parent)
+                germ = Germ:new(flyoutId, btnSlotIndex, parent)
                 self:saveGerm(germ)
             end
             germ:update(flyoutId)
@@ -105,6 +101,23 @@ function GermCommander:updateAll()
             zebug.warn:print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
             GermCommander:deletePlacement(btnSlotIndex)
         end
+    end
+end
+
+function GermCommander:updateAllGermsAllClickHandlers()
+    ---@param germ Germ
+    for btnSlotIndex, germ in pairs(germs) do
+        zebug.info:print("btnSlotIndex",btnSlotIndex, "germ", germ:getFlyoutDef().name)
+        germ:setAllClickHandlers()
+    end
+end
+
+---@param mouseClick MouseClick
+function GermCommander:updateClickHandlerForAllGerms(mouseClick)
+    ---@param germ Germ
+    for btnSlotIndex, germ in pairs(germs) do
+        zebug.info:print("btnSlotIndex",btnSlotIndex, "germ", germ:getFlyoutDef().name)
+        germ:setMouseClickHandler(mouseClick, Config:getClickBehavior(self.flyoutId, mouseClick))
     end
 end
 
@@ -364,7 +377,7 @@ end
 
 -- the placement of flyouts on the action bars is stored separately for each toon
 function GermCommander:getAllSpecsPlacementsConfig()
-    local foo = Config:getAllSpecsPlacementsConfig()
+    local foo = DB:getAllSpecsPlacementsConfig()
     return foo
 end
 
@@ -411,5 +424,11 @@ function GermCommander:nukePlaceholder()
     while GetMacroInfo(PLACEHOLDER_MACRO_NAME) do
         DeleteMacro(PLACEHOLDER_MACRO_NAME)
     end
+end
+
+function GermCommander:handleEventChangedInventory()
+    -- TODO: be a little less NUKEy... create an index of which flyouts contain inventory items
+    FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.invalidateCache)
+    self:updateAll()
 end
 

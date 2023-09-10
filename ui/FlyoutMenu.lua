@@ -15,10 +15,12 @@ local zebug = Zebug:new()
 ---@field id string
 ---@field isForGerm boolean
 ---@field isForCatalog boolean
+---@field nameSuffix string part of its name used to identify it as a flyout frame
 local FlyoutMenu = {
     ufoType = "FlyoutMenu",
     isForGerm = false,
     isForCatalog = false,
+    nameSuffix = "_FlyoutMenu"
 }
 Ufo.FlyoutMenu = FlyoutMenu
 
@@ -35,7 +37,7 @@ function FlyoutMenu:oneOfUs(fomu)
 end
 
 function FlyoutMenu.new(germ)
-    local myName = germ:GetName() .. "_FlyoutMenu"
+    local myName = germ:GetName() .. FlyoutMenu.nameSuffix
     local protoSelf = CreateFrame("Frame", myName, germ, "UIUFO_FlyoutMenuTemplate")
     ---@type FlyoutMenu
     local self = FlyoutMenu:oneOfUs(protoSelf)
@@ -70,20 +72,30 @@ function FlyoutMenu:forEachButton(handler)
     end
 end
 
-function FlyoutMenu:initializeCloseOnClick()
+-- use non-local "global" variables to save values between executions
+-- because GetParent() returns nil during combat lockdown
+local CLOSE_ON_CLICK_SCRIPTLET = [=[
+    if not flyoutMenu then
+        flyoutMenu = self:GetParent()
+    end
+
+    if not germ then
+        germ = flyoutMenu:GetParent()
+    end
+
+    local doClose = germ:GetAttribute("doCloseOnClick")
+    if doClose then
+        flyoutMenu:Hide()
+        flyoutMenu:SetAttribute("doCloseFlyout", false)
+    end
+]=]
+
+function FlyoutMenu:installHandlerForCloseOnClick()
     if self.isCloserInitialized or not self.isForGerm then return end
 
     self:forEachButton(function(button)
-        SecureHandlerWrapScript(button, "OnClick", button, [=[
-        local flyoutMenu = self:GetParent()
-        local germ = flyoutMenu:GetParent()
-        local doClose = germ:GetAttribute("doCloseOnClick")
-        if doClose then
-            flyoutMenu:Hide()
-            flyoutMenu:SetAttribute("doCloseFlyout", false)
-        end
-]=]
-        )
+        SecureHandlerWrapScript(button, "OnClick", button, CLOSE_ON_CLICK_SCRIPTLET)
+        SecureHandlerExecute(button, CLOSE_ON_CLICK_SCRIPTLET) -- initialize the scriptlet's "global" vars
     end)
 
     self.isCloserInitialized = true
@@ -147,11 +159,11 @@ function FlyoutMenu:updateForCatalog(flyoutId)
         local btnDef = flyoutDef:getButtonDef(i)
         if btnDef then
             btnFrame:setDef(btnDef)
-            btnFrame:setIconTexture( btnDef:getIcon() )
+            btnFrame:setIcon( btnDef:getIcon() )
         else
             -- the empty slot on the end
             btnFrame:setDef(nil)
-            btnFrame:setIconTexture(nil)
+            btnFrame:setIcon(nil)
         end
 
         btnFrame:setGeometry(dir, prevButton)
@@ -202,10 +214,12 @@ function FlyoutMenu:updateForGerm(germ)
 
         if btnDef then
             zebug.trace:print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
-            btnFrame:setIconTexture( btnDef:getIcon() )
+            btnFrame:setIcon( btnDef:getIcon() )
             btnFrame:setGeometry(self.direction)
+            btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SECURE TEMPLATE
         else
-            btnFrame:setIconTexture(DEFAULT_ICON)
+            btnFrame:setIcon(DEFAULT_ICON)
+            btnFrame:SetAttribute("UFO_NAME",nil) -- SECURE TEMPLATE
             return
         end
     end)
