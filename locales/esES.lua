@@ -13,4 +13,10 @@ if "esES" == GetLocale() then
     BARTENDER_BAR_DISABLED = "Un UFO está en una barra Bartender4 deshabilitada. Vuelva a habilitar la barra y vuelva a cargar la interfaz de usuario para activar el UFO."
     DETECTED = "detectado"
     LOADED = "cargado"
+
+    -- Professions / Trade Skills
+    -- These MUST match what Bliz uses in its UI
+    JEWELCRAFTING = "Joyería"
+    BLACKSMITHING = "Herrería"
+    LEATHERWORKING = "Peletería"
 end

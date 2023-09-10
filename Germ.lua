@@ -616,7 +616,7 @@ function HandlerMaker:ActivateBtn1(mouseClick)
     local btn1 = self:getBtnDef(1)
     local btn1Type = btn1:getTypeForBlizApi()
     local btn1Name = btn1.name
-    local type, key, val = btn1:asClickHandlerAttributes()
+    local type, key, val = btn1:asSecureClickHandlerAttributes()
     local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
     zebug.info:name("HandlerMakers:ActivateBtn1"):print("germ",self.myLabel, "btn1Name",btn1Name, "btn1Type",btn1Type, "secureMouseClickId", secureMouseClickId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseClick, "val", val)
     self:SetAttribute(secureMouseClickId, type)

@@ -13,4 +13,10 @@ if "deDE" == GetLocale() then
     BARTENDER_BAR_DISABLED = "Ein UFO ist in eine Deaktiviert Bartender4-Leiste.  Re-aktivieren die Leiste und nachladen UI um zu das UFO aktivieren."
     DETECTED = "Erkannt"
     LOADED = "Voll"
+
+    -- Professions / Trade Skills
+    -- These MUST match what Bliz uses in its UI
+    JEWELCRAFTING = "Juwelierskunst"
+    BLACKSMITHING = "Schmiedekunst"
+    LEATHERWORKING = "Lederverarbeitung"
 end

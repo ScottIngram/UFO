@@ -43,6 +43,23 @@ BlizApiFieldDef = {
 }
 
 -------------------------------------------------------------------------------
+-- Broken Professions
+-- In a shocking turn of events, Bliz broke something!  IKR?!
+-- In the professions tab of the spell book, there are buttons to open its trade skill panel / cookbook.
+-- The Bliz API GetCursorInfo() provides a spell ID when you drag those buttons. Sometimes this spell ID is bullshit.
+-- Here is a map of IDs suitable for C_TradeSkillUI.OpenTradeSkill()
+-- The keys are localized strings, so, this will only work for supported languages.
+-------------------------------------------------------------------------------
+
+BrokenProfessions = {
+    [INSCRIPTION] = 773, -- Bliz provides this localized "Inscription"
+    [L10N.JEWELCRAFTING] = 755, -- but not these!  Blizzard is consistent only in their inconsistency!  Blizconsistency!!!
+    [L10N.BLACKSMITHING] = 164,
+    [L10N.LEATHERWORKING] = 165,
+}
+
+
+-------------------------------------------------------------------------------
 -- ButtonDef
 -- data for a single button, its spell/pet/macro/item/etc.  and methods for manipulating that data
 -------------------------------------------------------------------------------
@@ -382,7 +399,9 @@ end
 ---@return ButtonType buttonType what kind of action is performed by the btn
 ---@return string key for the SecureActionButtonTemplate:SetAttribute(key, val)
 ---@return string val for the SecureActionButtonTemplate:SetAttribute(key, val)
-function ButtonDef:asClickHandlerAttributes()
+function ButtonDef:asSecureClickHandlerAttributes()
+    local altId = BrokenProfessions[self.name]
+
     if (self.type == ButtonType.PET) then
         -- this fails with "invalid attribute name"
         --local snippet = "C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
@@ -392,6 +411,13 @@ function ButtonDef:asClickHandlerAttributes()
         -- TODO: fix bug where this fails in combat - perhaps control:CallMethod(keyName, ...) ?
         local petMacro = "/run C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
         return ButtonType.MACRO, "macrotext", petMacro
+    elseif altId and (self.type == ButtonType.SPELL) then
+        --local snippet = "C_TradeSkillUI.OpenTradeSkill(" .. altId .. ")" -- fails with:  attempt to index global 'C_TradeSkillUI' (a nil value)
+        --return "UFO_PROF_FIXER", "_UFO_PROF_FIXER", snippet
+
+        local profMacro = sprintf("/run C_TradeSkillUI.OpenTradeSkill(%d)", altId)
+        --zebug.error:print("name",self.name, "altId",altId, "profMacro",profMacro)
+        return ButtonType.MACRO, "macrotext", profMacro
     else
         local blizType = self:getTypeForBlizApi()
         return blizType, blizType, self.name

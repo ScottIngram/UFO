@@ -27,3 +27,9 @@ SLASH_DESC_CONFIG = "open the options configuration panel."
 SLASH_CMD_OPEN = "open"
 SLASH_DESC_OPEN = "open the catalog of flyout menus."
 SLASH_UNKNOWN_COMMAND = "unknown command"
+
+-- Professions / Trade Skills
+-- These MUST match what Bliz uses in its UI
+JEWELCRAFTING = "Jewelcrafting"
+BLACKSMITHING = "Blacksmithing"
+LEATHERWORKING = "Leatherworking"

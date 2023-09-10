@@ -125,6 +125,8 @@ end
 -- Utility Functions
 -------------------------------------------------------------------------------
 
+sprintf = string.format
+
 function isInCombatLockdown(actionDescription)
     if InCombatLockdown() then
         local msg = actionDescription or "That action"
@@ -385,7 +387,11 @@ function openConfig()
 end
 
 function msgUser(msg)
-    print(zebug.info:colorize(ADDON_NAME .. ": ") .. msg)
+    if not Ufo.inColor then
+        Ufo.inColor = zebug.info:colorize(ADDON_NAME)
+    end
+
+    print(Ufo.inColor .. ": " .. msg)
 end
 
 -------------------------------------------------------------------------------

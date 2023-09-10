@@ -221,7 +221,7 @@ function ButtonMixin:updateSecureClicker(mouseClick)
     local btnDef = self:getDef()
     if btnDef then
         local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
-        local type, key, val = btnDef:asClickHandlerAttributes()
+        local type, key, val = btnDef:asSecureClickHandlerAttributes()
         local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
         zebug.trace:print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseClick, "val", val)
         self:SetAttribute(secureMouseClickId, type)
