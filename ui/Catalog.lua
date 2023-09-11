@@ -429,6 +429,27 @@ function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, mouseClick)
     end
 end
 
+local muhToolTip
+function GLOBAL_UIUFO_BlizCompartment_OnEnter(addonName, menuButtonFrame)
+    zebug.trace:print("addonName",addonName, "menuButtonFrame", menuButtonFrame:GetName())
+    GameTooltip:SetOwner(menuButtonFrame, "ANCHOR_LEFT");
+    if not muhToolTip then
+        muhToolTip = sprintf(
+                "%s \r\r %s - %s \r %s - %s",
+                ADDON_NAME,
+                zebug.trace:colorize(L10N.LEFT_CLICK), zebug.info:colorize(L10N.OPEN_CATALOG),
+                zebug.trace:colorize(L10N.RIGHT_CLICK), zebug.info:colorize(L10N.OPEN_CONFIG)
+        )
+    end
+    GameTooltip:SetText(muhToolTip);
+end
+
+function GLOBAL_UIUFO_BlizCompartment_OnLeave(addonName, menuButtonFrame)
+    zebug.trace:print("addonName",addonName, "menuButtonFrame", menuButtonFrame:GetName())
+    GameTooltip_Hide();
+end
+
+
 -- throttle OnUpdate because it fires as often as FPS and is very resource intensive
 local C_UI_ON_UPDATE_TIMER_FREQUENCY = 0.25
 local onUpdateTimerForConfigUi = 0
