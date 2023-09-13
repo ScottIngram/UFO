@@ -2,11 +2,9 @@
 
     <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate" virtual="TRUE" inherits="SmallActionButtonTemplate, SecureActionButtonTemplate">
         <Scripts>
-            <OnLoad function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad" />
-            <OnEnter function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip" />
-            <OnLeave>
-                GameTooltip:Hide()
-            </OnLeave>
+            <OnLoad  function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad" />
+            <OnEnter function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnEnter" />
+            <OnLeave function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLeave" />
             <OnDragStart function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart" />
             <OnReceiveDrag function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag" />
             <OnMouseUp function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp" />
@@ -67,8 +65,9 @@
         </Frames>
         <Scripts>
             <OnUpdate function="GLOBAL_UIUFO_FlyoutMenu_OnUpdate"/>
-            <OnShow function="GLOBAL_UIUFO_FlyoutMenu_OnShow"/>
-            <OnHide function="GLOBAL_UIUFO_FlyoutMenu_OnHide"/>
+            <OnShow  function="GLOBAL_UIUFO_FlyoutMenu_OnShow"/>
+            <OnHide  function="GLOBAL_UIUFO_FlyoutMenu_OnHide"/>
+            <OnLeave function="GLOBAL_UIUFO_FlyoutMenu_OnLeave" />
         </Scripts>
     </Frame>
 

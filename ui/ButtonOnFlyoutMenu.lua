@@ -12,6 +12,7 @@ local zebug = Zebug:new()
 
 ---@class ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
+---@field id number unique identifier
 
 ---@type ButtonOnFlyoutMenu|ButtonMixin
 ButtonOnFlyoutMenu = {
@@ -98,6 +99,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
 
     local btnDef = self:getDef()
     if self:abortIfUnusable(btnDef) then
+        -- TODO - work some sort of proxy magic to let a toon drag around a spell they don't know
         return
     end
 
@@ -142,18 +144,14 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     local flyoutId = flyoutMenu:getId()
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     local btnIndex = self:getId()
-    local oldBtnDef = flyoutDef:getButtonDef(btnIndex)
-    flyoutDef:replaceButton(btnIndex, crsDef)
+
+    flyoutDef:insertButton(btnIndex, crsDef)
 
     ClearCursor()
     GermCommander:updateAll() -- TODO: only update germs for flyoutId
+    flyoutMenu.displaceBtnsHere = nil
     flyoutMenu:updateForCatalog(flyoutId)
     Ufo.pickedUpBtn = nil
-
-    zebug.trace:print("oldBtnDef",oldBtnDef)
-    if oldBtnDef then
-        oldBtnDef:pickupToCursor()
-    end
 end
 
 function ButtonOnFlyoutMenu:setGeometry(direction, prevBtn)
@@ -230,9 +228,28 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(self)
     self:onReceiveDragAddIt()
 end
 
+---@param self ButtonOnFlyoutMenu
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnEnter(self)
+    self:setTooltip()
+
+    -- push catalog buttons out of the way for easier btn relocation
+    ---@type FlyoutMenu
+    local flyoutMenu = self:GetParent()
+    flyoutMenu:setMouseOverKid(self)
+    flyoutMenu:displaceButtonsOnHover(self:getId())
+end
+
+function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLeave(self)
+    GameTooltip:Hide()
+    ---@type FlyoutMenu
+    local flyoutMenu = self:GetParent()
+    flyoutMenu:clearMouseOverKid(self)
+    flyoutMenu:restoreButtonsAfterHover()
+end
+
 -- taken from SpellFlyoutButton_SetTooltip in bliz API SpellFlyout.lua
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip(self)
+function ButtonOnFlyoutMenu:setTooltip()
     if self:isEmpty() then
         -- this is the empty btn in the catalog... or is it?
         if not self:getParent().isForCatalog then

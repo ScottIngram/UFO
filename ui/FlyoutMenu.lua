@@ -16,6 +16,7 @@ local zebug = Zebug:new()
 ---@field isForGerm boolean
 ---@field isForCatalog boolean
 ---@field nameSuffix string part of its name used to identify it as a flyout frame
+---@field displaceBtnsHere number used to push buttons out of the way during "OnHover"
 local FlyoutMenu = {
     ufoType = "FlyoutMenu",
     isForGerm = false,
@@ -157,6 +158,17 @@ function FlyoutMenu:updateForCatalog(flyoutId)
     for i=1, math.min(rows, MAX_FLYOUT_SIZE) do
         local btnFrame = self:getButtonFrame(i)
         local btnDef = flyoutDef:getButtonDef(i)
+
+        if self.displaceBtnsHere then
+            if i == self.displaceBtnsHere then
+                btnDef = nil -- force it to be the empty slot
+            elseif i > self.displaceBtnsHere then
+                btnDef = flyoutDef:getButtonDef(i - 1)
+            end
+        else
+             btnDef = flyoutDef:getButtonDef(i)
+        end
+
         if btnDef then
             btnFrame:setDef(btnDef)
             btnFrame:setIcon( btnDef:getIcon() )
@@ -290,10 +302,64 @@ function doBlizOnLoad(flyoutMenu)
     SpellFlyout_OnLoad(flyoutMenu)
 end
 
+---@param btn ButtonOnFlyoutMenu
+function FlyoutMenu:displaceButtonsOnHover(index)
+    if not self.isForCatalog then
+        return
+    end
+
+    if GetCursorInfo() then
+        self.displaceBtnsHere = index
+        self:updateForCatalog(self.flyoutId)
+    end
+end
+
+function FlyoutMenu:restoreButtonsAfterHover()
+    ---@type FlyoutMenu
+    if not self.displaceBtnsHere then
+        return
+    end
+
+    if self:isMouseOverMeOrKids() then
+        return
+    end
+
+    self.displaceBtnsHere = nil
+    self:updateForCatalog( self.flyoutId )
+end
+
+-- currently unused -- TODO use it
+---@param btnDef ButtonDef
+---@param btnIndex number
+function FlyoutMenu:addBtnAt(btnDef, btnIndex)
+    local flyoutDef = self:getDef()
+    flyoutDef:replaceButton(btnIndex, btnDef) -- TODO - repects displace
+    self:updateForCatalog(self.flyoutId)
+    GermCommander:updateAll() -- TODO: only update germs for flyoutId
+end
+
+function FlyoutMenu:isMouseOverMeOrKids()
+    return self:IsMouseOver() or self.mouseOverKid
+end
+
+function FlyoutMenu:setMouseOverKid(kid)
+    self.mouseOverKid = kid:GetName()
+end
+
+function FlyoutMenu:clearMouseOverKid(kid)
+    if self.mouseOverKid == kid:GetName() then
+        self.mouseOverKid = nil
+    end
+end
 
 -------------------------------------------------------------------------------
 -- GLOBAL Functions Supporting FlyoutMenu XML Callbacks
 -------------------------------------------------------------------------------
+
+---@param flyoutMenu FlyoutMenu
+function GLOBAL_UIUFO_FlyoutMenu_OnLeave(flyoutMenu)
+    flyoutMenu:restoreButtonsAfterHover()
+end
 
 ---@param flyoutMenu FlyoutMenu
 function GLOBAL_UIUFO_FlyoutMenuForGerm_OnLoad(flyoutMenu)

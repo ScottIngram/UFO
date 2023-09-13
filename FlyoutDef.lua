@@ -138,6 +138,26 @@ function FlyoutDef:replaceButton(i, buttonDef)
     self:invalidateCache()
 end
 
+---@param i number
+---@param buttonDef ButtonDef
+function FlyoutDef:insertButton(index, buttonDef)
+    index = tonumber(index)
+    local n = index
+    local existingBtnDef = buttonDef
+    for i = index, #self.btns do
+        existingBtnDef = self.btns[i]
+        self.btns[i] = buttonDef
+        buttonDef = existingBtnDef
+        n = i+1
+    end
+
+    if n <= MAX_FLYOUT_SIZE then
+        self.btns[n] = existingBtnDef
+    end
+
+    self:invalidateCache()
+end
+
 -- removes a button an moves the rest down a notch
 function FlyoutDef:removeButton(removeAtIndex)
     local howManyButtons = self:howManyButtons()
