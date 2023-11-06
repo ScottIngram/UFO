@@ -4,6 +4,7 @@
 -- Module Loading
 -------------------------------------------------------------------------------
 
+---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 local zebug = Zebug:new()

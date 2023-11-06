@@ -20,14 +20,14 @@ Thanks to this, the following 300+ lines of code exist to overcome the needless 
 -- Module Loading
 -------------------------------------------------------------------------------
 
+---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
 local zebug = Zebug:new()
 
 ---@class MacroShitShow
-local MacroShitShow = {}
-Ufo.MacroShitShow = MacroShitShow
+MacroShitShow = {}
 
 local WAS_INITIALIZED = true
 local macrosIndex

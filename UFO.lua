@@ -11,14 +11,15 @@
 ---@field thatWasMe boolean flag used to stop event handler responses to UFO actions related to macros
 ---@field droppedUfoOntoActionBar boolean flag used to stop event handler responses to UFO actions related to drag and drop
 ---@field pickedUpBtn table table of data for a UFO on the mouse cursor
+
+---@type Ufo
 local ADDON_NAME, Ufo = ...
-
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-
-local zebug = Zebug:new()
+zebug = Zebug:new()
 
 -- Purely to satisfy my IDE
 DB = Ufo.DB
+L10N = Ufo.L10N
 
 -------------------------------------------------------------------------------
 -- Data

@@ -5,18 +5,16 @@
 -- Module Loading
 -------------------------------------------------------------------------------
 
+---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new()
-
 ---@class IconPicker -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
-local IconPicker = {
+IconPicker = {
     ufoType = "IconPicker",
     macroMax = 999,
 }
-Ufo.IconPicker = IconPicker
 
 -- export to the global namespace (via ExportToGlobal) so it's available to ui.xml
 GLOBAL_IconPickerMixin = IconPicker

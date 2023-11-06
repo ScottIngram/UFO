@@ -2,18 +2,17 @@
 -- 3rd-Party Addon Support
 -------------------------------------------------------------------------------
 
+---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-local zebug = Zebug:new()
 
 ---@class ThirdPartyAddonSupport -- IntelliJ-EmmyLua annotation
 ---@field isAnyActionBarAddonActive boolean
 ---@field ufoType string The classname
-local ThirdPartyAddonSupport = {
+ThirdPartyAddonSupport = {
     ufoType = "ThirdPartyAddonSupport",
     isAnyActionBarAddonActive = false,
 }
-Ufo.ThirdPartyAddonSupport = ThirdPartyAddonSupport
 
 -------------------------------------------------------------------------------
 -- Data
