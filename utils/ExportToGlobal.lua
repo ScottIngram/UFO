@@ -4,7 +4,7 @@
 -- I decided to use a prefix "GLOBAL_Foo" approach instead of a table "GLOBAL.Foo" approach
 -- because it's easier for my code editor to find the declarations and usages
 
-local ADDON_NAME, Ufo = ...
+local ADDON_NAME, ADDON_SYMBOL_TABLE = ...
 
 local function exportGlobalSymbols(table)
     for k,v in pairs(table) do
@@ -14,4 +14,4 @@ local function exportGlobalSymbols(table)
     end
 end
 
-exportGlobalSymbols(Ufo)
+exportGlobalSymbols(ADDON_SYMBOL_TABLE)

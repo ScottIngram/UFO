@@ -78,6 +78,20 @@ ButtonDef = {
 }
 
 -------------------------------------------------------------------------------
+-- Utility Functions
+-------------------------------------------------------------------------------
+
+function getPetNameAndIcon(petGuid)
+    --local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, tradable, unique, obtainable = C_PetJournal.GetPetInfoByPetID(petGuid)
+    local _, _, _, _, _, _, _, name, icon = C_PetJournal.GetPetInfoByPetID(petGuid)
+    return name, icon
+end
+
+function isMacroGlobal(macroId)
+    return macroId <= MAX_GLOBAL_MACRO_ID
+end
+
+-------------------------------------------------------------------------------
 -- Methods
 -------------------------------------------------------------------------------
 

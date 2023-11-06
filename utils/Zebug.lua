@@ -16,7 +16,7 @@
 -- During development, you may want to silence some levels that are not currently of interest, so change the arg to WARN or ERROR
 -- When you release your addon and want to silence even more levels, use NONE
 
-local ADDON_NAME, ADDON_VARS = ...
+local ADDON_NAME, ADDON_SYMBOL_TABLE = ...
 
 -------------------------------------------------------------------------------
 -- Module Loading / Exporting
@@ -45,7 +45,7 @@ local Zebug = {
     OUTPUT = OUTPUT
 }
 
-ADDON_VARS.Zebug = Zebug
+ADDON_SYMBOL_TABLE.Zebug = Zebug
 
 -------------------------------------------------------------------------------
 -- Constants
