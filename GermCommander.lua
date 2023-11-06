@@ -72,6 +72,20 @@ end
 -- Methods
 -------------------------------------------------------------------------------
 
+local isAlreadyUpdatingAll
+local throttleSecs = 2
+
+function GermCommander:throttledUpdateAll()
+    if isAlreadyUpdatingAll then return end
+    isAlreadyUpdatingAll = true
+    C_Timer.After(throttleSecs, function()
+        -- START FUNC
+        isAlreadyUpdatingAll = nil
+        self:updateAll()
+        -- END FUNC
+    end)
+end
+
 function GermCommander:updateAll()
     zebug.trace:line(40)
     if isInCombatLockdown("Reconfiguring") then return end

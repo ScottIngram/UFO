@@ -24,7 +24,6 @@ local zebug = Zebug:new()
 ---@type Germ|ButtonMixin
 Germ = {
     ufoType = "Germ",
-    maxVisibleCooldownDuration = 60, -- for ButtonMixin:updateCooldown()
     clickScriptUpdaters = {},
     clickers = {},
 }
@@ -194,7 +193,7 @@ function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
     self:ClearAllPoints()
     self:SetAllPoints(parentActionBarBtn)
     self:SetFrameStrata(STRATA_DEFAULT)
-    self:SetFrameLevel(100)
+    self:SetFrameLevel(STRATA_LEVEL_DEFAULT)
     self:SetToplevel(true)
     self:setVisibilityDriver()
 

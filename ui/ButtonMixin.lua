@@ -140,7 +140,7 @@ function ButtonMixin:updateCooldown()
     local id = btnDef and btnDef:getIdForBlizApi()
     if id then
         start, duration, enable = GetItemCooldown(id);
-        if duration > (self.maxVisibleCooldownDuration or 9999) then return end
+        if duration > (Config.opts.hideCooldownsWhen or 99999) then return end
         CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
     else
         -- without an id, this must be the empty placeholder slot.  Make it sparkle.  Once.

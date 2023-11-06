@@ -35,6 +35,7 @@ function Config:getOptionDefaults()
         supportCombat   = true,
         doCloseOnClick  = true,
         usePlaceHolders = true,
+        hideCooldownsWhen = 99999,
         clickers = {
             flyouts = {
                 default = {
@@ -92,6 +93,24 @@ local function initializeOptionsMenu()
                 end,
                 get = function()
                     return opts.doCloseOnClick
+                end,
+            },
+            hideCooldownsWhen = {
+                order = 20,
+                name = "Hide Cooldowns Over X seconds",
+                desc = "The UFO on the action bar displays the cooldown of its first button.  This option will hide it if it's longer than X seconds.",
+                width = "double",
+                type = "range",
+                min = 1,
+                max = 99999,
+                softMax = 9999,
+                step = 1,
+                set = function(optionsMenu, val)
+                    opts.hideCooldownsWhen = val
+                    GermCommander:throttledUpdateAll()
+                end,
+                get = function()
+                    return opts.hideCooldownsWhen or 1
                 end,
             },
 
