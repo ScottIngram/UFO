@@ -152,9 +152,10 @@ function FlyoutDef:insertButton(index, buttonDef)
         n = i+1
     end
 
-    if n <= MAX_FLYOUT_SIZE then
+    --if n <= MAX_FLYOUT_SIZE then
+    -- eh, let the btns's exist virtually even if there aren't enough UI btns to display them all
         self.btns[n] = existingBtnDef
-    end
+    --end
 
     self:invalidateCache()
 end

@@ -61,6 +61,7 @@
             <CheckButton name="$parent_Button26" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="26" />
             <CheckButton name="$parent_Button27" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="27" />
             <CheckButton name="$parent_Button28" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="28" />
+            <CheckButton name="$parent_Button29" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="29" />
             <CheckButton name="$parent_Button30" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="30" />
         </Frames>
         <Scripts>
