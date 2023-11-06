@@ -28,7 +28,6 @@ ui\ButtonMixin.lua
 Germ.lua
 GermCommander.lua
 MacroShitShow.lua
-Asshole.lua
 ui\FlyoutMenu.lua
 ui\ButtonOnFlyoutMenu.lua
 ui\Catalog.lua
