@@ -3,16 +3,6 @@
 A World of Warcraft addon
 
 ---
-#### September 12, 2023 - New Feature:  RANDOMIZE !
-
-In the options screen, you can now individually configure the left / middle / right / etc mouse buttons to:
-- Trigger a **Random** button
-- Trigger the **First** button
-- Open the flyout (the standard behavior)
-
-This opens to door to random favorite mounts or pets or hearthstones :-)
-
----
 
 UFO lets you create custom actionbar flyout menus similar to the built-in ones for mage portals, warlock demons, dragonriding abilities, etc.  But with UFO, you can include anything you want:
 
@@ -23,7 +13,12 @@ UFO lets you create custom actionbar flyout menus similar to the built-in ones f
 - Macros
 - Trade skill Windows
 
-**New:** And *randomly* trigger them with a click!
+In the options screen, you can individually configure the left / middle / right / etc mouse buttons to:
+- Open the flyout (the standard behavior)
+- Trigger a **Random** button
+- Trigger the **First** button
+
+Random favorite mounts, pets, or hearthstones, anyone?
 
 UFO adds a flyout catalog UI onto the side of various panels (Spellbook, Macros, Collections) to let you create and organize multiple flyouts.  These can be shared between all characters on your account.
 
