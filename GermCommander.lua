@@ -406,9 +406,20 @@ end
 
 function GermCommander:putPlaceholder(btnSlotIndex)
     Ufo.droppedUfoOntoActionBar = true
+
+    -- preserve the current contents of the cursor
+    local crsDef = ButtonDef:getFromCursor()
+
+    -- clobber anything on the cursor and replace it with the placeholder
     self:pickupPlaceHolder()
     zebug.trace:print("btnSlotIndex",btnSlotIndex)
     PlaceAction(btnSlotIndex)
+
+    -- restore anything that had originally been on the cursor
+    if crsDef then
+        crsDef:pickupToCursor()
+        GermCommander:updateAll() -- draw the dropped UFO -- TODO: update ONLY the one specific germ
+    end
 end
 
 function GermCommander:clearUfoPlaceholderFromActionBar(btnSlotIndex)
