@@ -445,6 +445,7 @@ function handlers.OnReceiveDrag(germ)
     local cursor = GetCursorInfo()
     if cursor then
         PlaceAction(germ:getBtnSlotIndex())
+        GermCommander:updateAll() -- draw the dropped UFO -- TODO: update ONLY the one specific germ
     end
 end
 
