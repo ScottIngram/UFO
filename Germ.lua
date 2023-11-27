@@ -85,8 +85,9 @@ function getOpenerClickerScriptlet()
 	local isClicked = down
 	local direction = germ:GetAttribute("flyoutDirection")
     local doCloseFlyout = flyoutMenu:GetAttribute("doCloseFlyout")
+    local isOpen = flyoutMenu:IsShown()
 
-	if doCloseFlyout then
+	if doCloseFlyout and isOpen then
 		flyoutMenu:Hide()
 		flyoutMenu:SetAttribute("doCloseFlyout", false)
 		return
@@ -615,6 +616,7 @@ function HandlerMaker:ActivateBtn1(mouseClick)
     zebug.info:print("secureMouseClickId",secureMouseClickId)
     self:updateSecureClicker(mouseClick)
     local btn1 = self:getBtnDef(1)
+    if not btn1 then return end
     local btn1Type = btn1:getTypeForBlizApi()
     local btn1Name = btn1.name
     local type, key, val = btn1:asSecureClickHandlerAttributes()
