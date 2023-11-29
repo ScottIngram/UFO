@@ -59,6 +59,19 @@ function ButtonMixin:getCountFrame()
     return _G[ self:GetName().."Count" ]
 end
 
+function ButtonMixin:getHotKeyFrame()
+    return self.HotKey
+end
+
+function ButtonMixin:setHotKetOverlay(keybindText)
+    local overlay = self.HotKey
+    if overlay then
+        local text = GetBindingText(keybindText, 1) or keybindText
+        overlay:SetText(text)
+    end
+
+end
+
 local ICON_PREFIX = "INTERFACE\\ICONS\\"
 
 function ButtonMixin:setIcon(icon)

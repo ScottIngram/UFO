@@ -25,6 +25,7 @@ FlyoutDefsDb.lua
 FlyoutDef.lua
 ButtonDef.lua
 ui\ButtonMixin.lua
+ui\ActionBarButtonMixin.lua
 Germ.lua
 GermCommander.lua
 MacroShitShow.lua

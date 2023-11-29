@@ -20,6 +20,7 @@ local zebug = Zebug:new()
 ---@field flyoutId number Identifies which flyout is currently copied into this germ
 ---@field flyoutMenu FlyoutMenu The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
 ---@field clickScriptUpdaters table secure scriptlets that must be run during any update()
+---@field bbInfo table definition of the actionbar/button where the Germ lives
 
 ---@type Germ|ButtonMixin
 Germ = {
@@ -28,6 +29,7 @@ Germ = {
     clickers = {},
 }
 ButtonMixin:inject(Germ)
+ActionBarButtonMixin:inject(Germ)
 
 ---@class GermClickBehavior
 GermClickBehavior = {
@@ -173,8 +175,12 @@ end
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
-function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
-    self.myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
+function Germ:new(flyoutId, btnSlotIndex)
+    local bbInfo = self:extractBarBtnInfo(btnSlotIndex)
+    local parentActionBarBtn = self:getActionBarBtn(bbInfo)
+
+    local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
+    self.myName = myName -- TODO: figure out why leaving this line out breaks self:GetName() in FlyoutMenu.new even though self == Germ
 
     local protoGerm = CreateFrame("CheckButton", self.myName, parentActionBarBtn, "SecureActionButtonTemplate, ActionButtonTemplate")
 
@@ -183,12 +189,16 @@ function Germ:new(flyoutId, btnSlotIndex, parentActionBarBtn)
     ---@type Germ
     local self = deepcopy(Germ, protoGerm)
 
+    self.myName = myName
+    _G[myName] = self -- so that keybindings can reference it
+
     -- initialize my fields
     self.btnSlotIndex = btnSlotIndex
     self.action       = btnSlotIndex -- used deep inside the Bliz APIs
     self.flyoutId     = flyoutId
-    self.visibleIf    = parentActionBarBtn.visibleIf -- I set this inside GermCommander:getActionBarBtn()
+    self.visibleIf    = parentActionBarBtn.visibleIf
     self.myLabel      = self:getFlyoutDef().name
+    self.bbInfo       = bbInfo
 
     -- UI positioning
     self:ClearAllPoints()
@@ -420,6 +430,58 @@ end
 function Germ:getDef()
     -- treat the first button in the flyout as the "definition" for the Germ
     return self:getBtnDef(1)
+end
+
+function Germ:doKeybinding()
+    if isInCombatLockdown("Keybind") then return end
+
+    local bb = self.bbInfo
+    local btnName = bb.btnYafName or bb.btnName
+    local ucBtnName = string.upper(btnName)
+    local germName = self:GetName()
+    local keybinds
+    if GetBindingKey(ucBtnName) then
+        keybinds = { GetBindingKey(ucBtnName) }
+    end
+
+    -- add new keybinds
+    if keybinds then
+        for i, keyName in ipairs(keybinds) do
+            if not tableContainsVal(self.keybinds, keyName) then
+                zebug.trace:print("germ",germName, "binding keyName",keyName)
+                SetOverrideBindingClick(self, true, keyName, germName, MouseClick.LEFT)
+            else
+                zebug.trace:print("germ",germName, "NOT binding keyName",keyName, "because it's already bound.")
+            end
+        end
+
+        self:setHotKetOverlay(keybinds[1])
+    else
+        self:setHotKetOverlay(nil)
+    end
+
+    -- remove deleted keybinds
+    if (self.keybinds) then
+        for i, keyName in ipairs(self.keybinds) do
+            if not tableContainsVal(keybinds, keyName) then
+                zebug.trace:print("germ",germName, "UN-binding keyName",keyName)
+                SetOverrideBinding(self, true, keyName, nil)
+            else
+                zebug.trace:print("germ",germName, "NOT UN-binding keyName",keyName, "because it's still bound.")
+            end
+        end
+    end
+
+    self.keybinds = keybinds
+end
+
+function Germ:clearKeybinding()
+    if isInCombatLockdown("Keybind removal") then return end
+    if not (self.keybinds) then return end
+
+    ClearOverrideBindings(self)
+    self:setHotKetOverlay(nil)
+    self.keybinds = nil
 end
 
 -------------------------------------------------------------------------------

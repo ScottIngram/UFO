@@ -64,6 +64,12 @@ function EventHandlers:UNIT_INVENTORY_CHANGED()
     GermCommander:handleEventChangedInventory()
 end
 
+function EventHandlers:UPDATE_BINDINGS()
+    if not hasShitCalmedTheFuckDown then return end
+    zebug.trace:print("Heard event: UPDATE_BINDINGS")
+    GermCommander:updateAll()
+end
+
 function EventHandlers:CURSOR_CHANGED()
     if not hasShitCalmedTheFuckDown then return end
     --zebug.trace:line(40,"Heard event: CURSOR_CHANGED",C_TradeSkillUI.GetProfessionForCursorItem())

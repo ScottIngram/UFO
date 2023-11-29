@@ -140,6 +140,19 @@ function exists(s)
     return not isEmpty(s)
 end
 
+function tableContainsVal(table, val)
+    if not table then return false end
+    assert(val ~= nil, "Can't check for nil as an array element")
+
+    for i, v in ipairs(table) do
+        if v == val then
+            return true
+        end
+    end
+
+    return false
+end
+
 function deleteFromArray(array, killTester)
     local j = 1
     local modified = false
