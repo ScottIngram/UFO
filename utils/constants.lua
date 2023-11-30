@@ -10,6 +10,7 @@ MouseClick = {
     MIDDLE = "MiddleButton",
     FOUR   = "Button4",
     FIVE   = "Button5",
+    SIX    = "Button6", -- there is no "Button6" in the API docs, so,  I've reserved this for use by my keybind code
 }
 
 QUOTE = "\""

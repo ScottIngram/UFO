@@ -18,7 +18,7 @@ MouseClick = Ufo.MouseClick
 ---@field doCloseOnClick boolean close the flyout after the user clicks one of its buttons
 ---@field usePlaceHolders boolean eliminate the need for "Always Show Buttons" in Bliz UI "Edit Mode" config option for action bars
 ---@field clickers table germ behavior for various mouse clicks
----@field keybindClick MouseClick when a keybind is activated, it will simulate this mouseclick
+---@field keybindBehavior GermClickBehavior when a keybind is activated, it will perform this action
 Options = { }
 
 ---@class Config -- IntelliJ-EmmyLua annotation
@@ -38,7 +38,7 @@ function Config:getOptionDefaults()
         doCloseOnClick  = true,
         usePlaceHolders = true,
         hideCooldownsWhen = 99999,
-        keybindClick = MouseClick.LEFT,
+        keybindBehavior = GermClickBehavior.OPEN,
         clickers = {
             flyouts = {
                 default = {
@@ -116,6 +116,31 @@ local function initializeOptionsMenu()
                 end,
                 get = function()
                     return opts.hideCooldownsWhen or 1
+                end,
+            },
+
+            -------------------------------------------------------------------------------
+            -- Keybinds
+            -------------------------------------------------------------------------------
+
+            keybindBehavior = {
+                order = 25,
+                name = "Keybind's Action",
+                desc = "A UFO on an actionbar button will respond to any keybinding you've given that button.  Choose what the keybind does:",
+                --width = "double",
+                type = "select",
+                style = "dropdown",
+                values = includeGermClickBehaviors(),
+                sorting = includeGermClickBehaviorSorting(),
+                set = function(_, behavior)
+                    local isDiff = opts.keybindBehavior ~= behavior
+                    opts.keybindBehavior = behavior
+                    if isDiff then
+                        GermCommander:updateAllKeybindBehavior()
+                    end
+                end,
+                get = function()
+                    return opts.keybindBehavior or Config.optDefaults.keybindBehavior
                 end,
             },
 
@@ -208,45 +233,6 @@ You can choose a different action for each mouse button when it clicks on a UFO.
                     fiveBtn   = includeMouseButtonOpts(MouseClick.FIVE),
                 },
             },
-
-
-            -------------------------------------------------------------------------------
-            -- Keybinds
-            -------------------------------------------------------------------------------
-
-            keybindClick = {
-                order = 200,
-                name = "Keybind's Click",
-                desc = "A UFO on an actionbar button will respond to any keybinding you've given that button.  The keybind will simulate the mouse button set here and thus trigger the behavior assigned to it above.",
-                --width = "double",
-                type = "select",
-                style = "dropdown",
-                values = {
-                    [MouseClick.LEFT]   = "Left Mouse Button",
-                    [MouseClick.MIDDLE] = "Middle Mouse Button",
-                    [MouseClick.RIGHT]  = "Right Mouse Button",
-                    [MouseClick.FOUR]   = "Fourth Mouse Button",
-                    [MouseClick.FIVE]   = "Fifth Mouse Button",
-                },
-                sorting = {
-                    MouseClick.LEFT,
-                    MouseClick.MIDDLE,
-                    MouseClick.RIGHT,
-                    MouseClick.FOUR,
-                    MouseClick.FIVE,
-                },
-                set = function(_, click)
-                    local isDiff = opts.keybindClick ~= click
-                    opts.keybindClick = click
-                    if isDiff then
-                        GermCommander:updateAllKeybinds()
-                    end
-                end,
-                get = function()
-                    return opts.keybindClick or Config.optDefaults.keybindClick
-                end,
-            },
-
         },
     }
 
@@ -265,6 +251,7 @@ local mouseButtonName = {
     [MouseClick.MIDDLE] = "Middle",
     [MouseClick.FOUR]   = "Fourth",
     [MouseClick.FIVE]   = "Fifth",
+    [MouseClick.SIX]    = "Keybind",
 }
 
 ---@param click MouseClick
@@ -278,21 +265,8 @@ function includeMouseButtonOpts(mouseClick)
         width = "double",
         type = "select",
         style = "dropdown",
-        values = {
-            [GermClickBehavior.OPEN]           = zebug.info:colorize("Open") .." the flyout",
-            [GermClickBehavior.FIRST_BTN]      = "Trigger the ".. zebug.info:colorize("first") .." button of the flyout",
-            [GermClickBehavior.RANDOM_BTN]     = "Trigger a ".. zebug.info:colorize("random") .." button of the flyout",
-            [GermClickBehavior.CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle") .." through each button of the flyout",
-            --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle backwards") .." through each button of the flyout",
-        },
-        sorting = {
-            --"default", -- will be useful if I implement each FlyoutId having its own config
-            GermClickBehavior.OPEN,
-            GermClickBehavior.FIRST_BTN,
-            GermClickBehavior.RANDOM_BTN,
-            GermClickBehavior.CYCLE_ALL_BTNS,
-            --GermClickBehavior.REVERSE_CYCLE_ALL_BTNS,
-        },
+        values = includeGermClickBehaviors(),
+        sorting = includeGermClickBehaviorSorting(),
         ---@param behavior GermClickBehavior
         set = function(zelf, behavior)
             Config:setClickBehavior(nil, mouseClick, behavior)
@@ -306,6 +280,29 @@ function includeMouseButtonOpts(mouseClick)
             return val
         end,
     }
+end
+
+function includeGermClickBehaviors()
+    local values = {
+        [GermClickBehavior.OPEN]           = zebug.info:colorize("Open") .." the flyout",
+        [GermClickBehavior.FIRST_BTN]      = "Trigger the ".. zebug.info:colorize("first") .." button of the flyout",
+        [GermClickBehavior.RANDOM_BTN]     = "Trigger a ".. zebug.info:colorize("random") .." button of the flyout",
+        [GermClickBehavior.CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle") .." through each button of the flyout",
+        --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle backwards") .." through each button of the flyout",
+    }
+    return values
+end
+
+function includeGermClickBehaviorSorting()
+    local sorting = {
+        --"default", -- will be useful if I implement each FlyoutId having its own config
+        GermClickBehavior.OPEN,
+        GermClickBehavior.FIRST_BTN,
+        GermClickBehavior.RANDOM_BTN,
+        GermClickBehavior.CYCLE_ALL_BTNS,
+        --GermClickBehavior.REVERSE_CYCLE_ALL_BTNS,
+    }
+    return sorting
 end
 
 ---@param flyoutId string

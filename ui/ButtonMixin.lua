@@ -25,6 +25,7 @@ SecureMouseClickId = {
     type3 = "type3",
     type4 = "type4",
     type5 = "type5",
+    type6 = "type6", -- this isn't mentioned in the documentation
 }
 
 ---@type { [MouseClick]: SecureMouseClickId }
@@ -35,6 +36,7 @@ REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID = {
     [MouseClick.MIDDLE] = "type3",
     [MouseClick.FOUR]   = "type4",
     [MouseClick.FIVE]   = "type5",
+    [MouseClick.SIX]    = "type6",
 }
 
 -------------------------------------------------------------------------------

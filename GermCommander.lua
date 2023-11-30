@@ -105,6 +105,14 @@ function GermCommander:updateAllKeybinds()
     end
 end
 
+function GermCommander:updateAllKeybindBehavior()
+    if isInCombatLockdown("Keybind") then return end
+    ---@param germ Germ
+    for btnSlotIndex, germ in pairs(germs) do
+        germ:setMouseClickHandler(MouseClick.SIX, Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior)
+    end
+end
+
 function GermCommander:updateAllGermsAllClickHandlers()
     ---@param germ Germ
     for btnSlotIndex, germ in pairs(germs) do

@@ -242,6 +242,7 @@ function Germ:setAllClickHandlers()
     self:setMouseClickHandler(MouseClick.RIGHT,  Config:getClickBehavior(flyoutId, MouseClick.RIGHT))
     self:setMouseClickHandler(MouseClick.FOUR,   Config:getClickBehavior(flyoutId, MouseClick.FOUR))
     self:setMouseClickHandler(MouseClick.FIVE,   Config:getClickBehavior(flyoutId, MouseClick.FIVE))
+    self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior)
 end
 
 function Germ:initFlyoutMenu()
@@ -449,8 +450,7 @@ function Germ:doKeybinding()
         for i, keyName in ipairs(keybinds) do
             if not tableContainsVal(self.keybinds, keyName) then
                 zebug.trace:print("germ",germName, "binding keyName",keyName)
-                local configMouseClick = Config.opts.keybindClick or Config.optDefaults.keybindClick
-                SetOverrideBindingClick(self, true, keyName, germName, configMouseClick)
+                SetOverrideBindingClick(self, true, keyName, germName, MouseClick.SIX)
             else
                 zebug.trace:print("germ",germName, "NOT binding keyName",keyName, "because it's already bound.")
             end
