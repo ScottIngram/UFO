@@ -18,6 +18,7 @@ MouseClick = Ufo.MouseClick
 ---@field doCloseOnClick boolean close the flyout after the user clicks one of its buttons
 ---@field usePlaceHolders boolean eliminate the need for "Always Show Buttons" in Bliz UI "Edit Mode" config option for action bars
 ---@field clickers table germ behavior for various mouse clicks
+---@field keybindClick MouseClick when a keybind is activated, it will simulate this mouseclick
 Options = { }
 
 ---@class Config -- IntelliJ-EmmyLua annotation
@@ -31,11 +32,13 @@ Config = { }
 
 ---@return Options
 function Config:getOptionDefaults()
-    return {
+    ---@type Options
+    local defaults = {
         supportCombat   = true,
         doCloseOnClick  = true,
         usePlaceHolders = true,
         hideCooldownsWhen = 99999,
+        keybindClick = MouseClick.LEFT,
         clickers = {
             flyouts = {
                 default = {
@@ -49,6 +52,7 @@ function Config:getOptionDefaults()
             }
         },
     }
+    return defaults
 end
 
 -------------------------------------------------------------------------------
@@ -96,9 +100,10 @@ local function initializeOptionsMenu()
                 end,
             },
             hideCooldownsWhen = {
+                hidden = true, -- this is too nitty gritty
                 order = 20,
-                name = "Hide Cooldowns Over X seconds",
-                desc = "The UFO on the action bar displays the cooldown of its first button.  This option will hide it if it's longer than X seconds.",
+                name = "Hide Long Cooldowns",
+                desc = "When configured with a '?' icon, a UFO on the action bar displays its first button including its cooldown.  This option will hide the cooldown if it's longer than X seconds.",
                 width = "double",
                 type = "range",
                 min = 1,
@@ -114,13 +119,12 @@ local function initializeOptionsMenu()
                 end,
             },
 
-
             -------------------------------------------------------------------------------
             -- Place Holder options
             -------------------------------------------------------------------------------
 
             placeHoldersHeader = {
-                order = 20,
+                order = 30,
                 name = "PlaceHolder Macros VS Edit Mode Config",
                 type = 'header',
             },
@@ -204,6 +208,45 @@ You can choose a different action for each mouse button when it clicks on a UFO.
                     fiveBtn   = includeMouseButtonOpts(MouseClick.FIVE),
                 },
             },
+
+
+            -------------------------------------------------------------------------------
+            -- Keybinds
+            -------------------------------------------------------------------------------
+
+            keybindClick = {
+                order = 200,
+                name = "Keybind's Click",
+                desc = "A UFO on an actionbar button will respond to any keybinding you've given that button.  The keybind will simulate the mouse button set here and thus trigger the behavior assigned to it above.",
+                --width = "double",
+                type = "select",
+                style = "dropdown",
+                values = {
+                    [MouseClick.LEFT]   = "Left Mouse Button",
+                    [MouseClick.MIDDLE] = "Middle Mouse Button",
+                    [MouseClick.RIGHT]  = "Right Mouse Button",
+                    [MouseClick.FOUR]   = "Fourth Mouse Button",
+                    [MouseClick.FIVE]   = "Fifth Mouse Button",
+                },
+                sorting = {
+                    MouseClick.LEFT,
+                    MouseClick.MIDDLE,
+                    MouseClick.RIGHT,
+                    MouseClick.FOUR,
+                    MouseClick.FIVE,
+                },
+                set = function(_, click)
+                    local isDiff = opts.keybindClick ~= click
+                    opts.keybindClick = click
+                    if isDiff then
+                        GermCommander:updateAllKeybinds()
+                    end
+                end,
+                get = function()
+                    return opts.keybindClick or Config.optDefaults.keybindClick
+                end,
+            },
+
         },
     }
 

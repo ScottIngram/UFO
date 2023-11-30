@@ -342,7 +342,7 @@ end
 function Germ:reInitializeMySecureClickers()
     for secureMouseClickId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
         zebug.trace:print("germ",self.myLabel, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
-            SecureHandlerExecute(self, updaterScriptlet)
+        SecureHandlerExecute(self, updaterScriptlet)
     end
 end
 
@@ -449,7 +449,8 @@ function Germ:doKeybinding()
         for i, keyName in ipairs(keybinds) do
             if not tableContainsVal(self.keybinds, keyName) then
                 zebug.trace:print("germ",germName, "binding keyName",keyName)
-                SetOverrideBindingClick(self, true, keyName, germName, MouseClick.LEFT)
+                local configMouseClick = Config.opts.keybindClick or Config.optDefaults.keybindClick
+                SetOverrideBindingClick(self, true, keyName, germName, configMouseClick)
             else
                 zebug.trace:print("germ",germName, "NOT binding keyName",keyName, "because it's already bound.")
             end

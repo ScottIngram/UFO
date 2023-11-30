@@ -96,6 +96,15 @@ function GermCommander:updateAll()
     end
 end
 
+function GermCommander:updateAllKeybinds()
+    if isInCombatLockdown("Keybind") then return end
+    ---@param germ Germ
+    for btnSlotIndex, germ in pairs(germs) do
+        germ:clearKeybinding()
+        germ:doKeybinding()
+    end
+end
+
 function GermCommander:updateAllGermsAllClickHandlers()
     ---@param germ Germ
     for btnSlotIndex, germ in pairs(germs) do
