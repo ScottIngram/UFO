@@ -89,6 +89,7 @@ local CLOSE_ON_CLICK_SCRIPTLET = [=[
     if doClose then
         flyoutMenu:Hide()
         flyoutMenu:SetAttribute("doCloseFlyout", false)
+        germ:ClearBinding("Escape")
     end
 ]=]
 

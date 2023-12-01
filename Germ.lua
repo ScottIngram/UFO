@@ -92,8 +92,11 @@ function getOpenerClickerScriptlet()
 	if doCloseFlyout and isOpen then
 		flyoutMenu:Hide()
 		flyoutMenu:SetAttribute("doCloseFlyout", false)
+		self:ClearBinding("Escape")
 		return
     end
+
+    self:SetBindingClick(true, "Escape", self, mouseClick)
 
 -- TODO: move this into FlyoutMenu:updateForGerm()
 
