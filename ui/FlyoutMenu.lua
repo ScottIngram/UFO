@@ -89,7 +89,7 @@ local CLOSE_ON_CLICK_SCRIPTLET = [=[
     if doClose then
         flyoutMenu:Hide()
         flyoutMenu:SetAttribute("doCloseFlyout", false)
-        germ:ClearBinding("Escape")
+		flyoutMenu:ClearBindings()
     end
 ]=]
 
@@ -219,6 +219,7 @@ function FlyoutMenu:updateForGerm(germ)
     local flyoutDef = self:getDef(flyoutId)
     zebug.trace:dumpy("flyoutDef",flyoutDef)
     local usableFlyout = flyoutDef:filterOutUnusable()
+    local btnNumber = 0
 
     ---@param btnFrame ButtonOnFlyoutMenu
     self:forEachButton(function(btnFrame, i)
@@ -231,6 +232,10 @@ function FlyoutMenu:updateForGerm(germ)
             btnFrame:setIcon( btnDef:getIcon() )
             btnFrame:setGeometry(self.direction)
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SECURE TEMPLATE
+
+            -- label the keybinds
+            btnNumber = btnNumber + 1
+            updateHotKeyLabel(btnFrame, btnNumber)
         else
             btnFrame:setIcon(DEFAULT_ICON)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SECURE TEMPLATE
@@ -239,6 +244,16 @@ function FlyoutMenu:updateForGerm(germ)
     end)
 
     self:setBorderGeometry()
+end
+
+function updateHotKeyLabel(btnFrame, btnNumber)
+    local hotKeyLabel
+    if Config:get("flyoutButtonsWillBind") then
+        if btnNumber < 11 then
+            hotKeyLabel = (btnNumber == 10) and "0" or tostring(btnNumber)
+        end
+    end
+    btnFrame.HotKey:SetText(hotKeyLabel)
 end
 
 function FlyoutMenu:setBorderGeometry()

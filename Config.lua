@@ -19,6 +19,7 @@ MouseClick = Ufo.MouseClick
 ---@field usePlaceHolders boolean eliminate the need for "Always Show Buttons" in Bliz UI "Edit Mode" config option for action bars
 ---@field clickers table germ behavior for various mouse clicks
 ---@field keybindBehavior GermClickBehavior when a keybind is activated, it will perform this action
+---@field flyoutButtonsWillBind boolean when a UFO is open, are its buttons bound to number keys?
 Options = { }
 
 ---@class Config -- IntelliJ-EmmyLua annotation
@@ -39,6 +40,7 @@ function Config:getOptionDefaults()
         usePlaceHolders = true,
         hideCooldownsWhen = 99999,
         keybindBehavior = GermClickBehavior.OPEN,
+        flyoutButtonsWillBind = true,
         clickers = {
             flyouts = {
                 default = {
@@ -127,7 +129,7 @@ local function initializeOptionsMenu()
                 order = 25,
                 name = "Keybind's Action",
                 desc = "A UFO on an actionbar button will respond to any keybinding you've given that button.  Choose what the keybind does:",
-                --width = "double",
+                width = "double",
                 type = "select",
                 style = "dropdown",
                 values = includeGermClickBehaviors(),
@@ -141,6 +143,25 @@ local function initializeOptionsMenu()
                 end,
                 get = function()
                     return opts.keybindBehavior or Config.optDefaults.keybindBehavior
+                end,
+            },
+            hotkeyWhenOpen = {
+                order = 26,
+                name = "Hot Key the Buttons",
+                desc = "While open, assign keys 1 through 9 and 0 to the first 10 buttons on the UFO.",
+                width = "double",
+                type = "select",
+                style = "dropdown",
+                values = {
+                    [true] = "Bind each button to a number (Escape to close).",
+                    [false] = "An open UFO won't intercept key presses.",
+                },
+                set = function(_, flyoutButtonsWillBind)
+                    opts.flyoutButtonsWillBind = flyoutButtonsWillBind
+                    GermCommander:updateAllGermsWithButtonsWillBind()
+                end,
+                get = function()
+                    return Config:get("flyoutButtonsWillBind")
                 end,
             },
 
@@ -337,4 +358,13 @@ function Config:initializeOptionsMenu()
     --options.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(db)
     LibStub("AceConfig-3.0"):RegisterOptionsTable(ADDON_NAME, optionsMenu)
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions(ADDON_NAME, Ufo.myTitle)
+end
+
+function Config:get(key)
+    if Config.opts[key] == nil then
+        return Config.optDefaults[key]
+    else
+        return Config.opts[key]
+    end
+
 end

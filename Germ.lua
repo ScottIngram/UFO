@@ -92,11 +92,11 @@ function getOpenerClickerScriptlet()
 	if doCloseFlyout and isOpen then
 		flyoutMenu:Hide()
 		flyoutMenu:SetAttribute("doCloseFlyout", false)
-		self:ClearBinding("Escape")
+		flyoutMenu:ClearBindings()
 		return
     end
 
-    self:SetBindingClick(true, "Escape", self, mouseClick)
+    flyoutMenu:SetBindingClick(true, "Escape", germ, mouseClick)
 
 -- TODO: move this into FlyoutMenu:updateForGerm()
 
@@ -148,6 +148,15 @@ function getOpenerClickerScriptlet()
                     btn:SetPoint("RIGHT", parent, -]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[, 0)
                 elseif direction == "RIGHT" then
                     btn:SetPoint("LEFT", parent, ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[, 0)
+                end
+            end
+
+            -- keybind each button to 1-9 and 0
+            local flyoutButtonsWillBind = germ:GetAttribute("flyoutButtonsWillBind")
+            if flyoutButtonsWillBind then
+                if numButtons < 11 then
+                    local numberKey = (numButtons == 10) and "0" or tostring(numButtons)
+                    flyoutMenu:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
                 end
             end
 
@@ -229,6 +238,7 @@ function Germ:new(flyoutId, btnSlotIndex)
     --self:RegisterForClicks("AnyDown") -- this works but clobbers OnDragStart
     self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
     self:setAllClickHandlers()
+    self:SetAttribute("flyoutButtonsWillBind", Config:get("flyoutButtonsWillBind"))
 
     -- Drag and Drop behavior
     self:RegisterForDrag("LeftButton")
@@ -283,6 +293,10 @@ end
 function Germ:updateAllBtnCooldownsEtc()
     --zebug.trace:print(self:getFlyoutId())
     self.flyoutMenu:updateAllBtnCooldownsEtc()
+end
+
+function Germ:updateAllBtnHotKeyLabels()
+    self.flyoutMenu:updateForGerm(self)
 end
 
 function Germ:getBtnSlotIndex()

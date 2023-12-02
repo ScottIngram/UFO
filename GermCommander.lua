@@ -113,6 +113,16 @@ function GermCommander:updateAllKeybindBehavior()
     end
 end
 
+function GermCommander:updateAllGermsWithButtonsWillBind()
+    local flyoutButtonsWillBind = Config:get("flyoutButtonsWillBind")
+
+    ---@param germ Germ
+    for btnSlotIndex, germ in pairs(germs) do
+        germ:SetAttribute("flyoutButtonsWillBind", flyoutButtonsWillBind)
+        germ:updateAllBtnHotKeyLabels()
+    end
+end
+
 function GermCommander:updateAllGermsAllClickHandlers()
     ---@param germ Germ
     for btnSlotIndex, germ in pairs(germs) do
