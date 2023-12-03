@@ -22,6 +22,7 @@ ButtonType = {
     TOY   = "toy",
     PET   = "battlepet",
     MACRO = "macro",
+    PSPELL = "petaction",
     SNAFU = "companion",
 }
 
@@ -41,6 +42,7 @@ BlizApiFieldDef = {
     [ButtonType.MACRO] = { pickerUpper = PickupMacro, typeForBliz = ButtonType.MACRO --[[, key = "name"]] },
     [ButtonType.SNAFU] = { pickerUpper = nil,         typeForBliz = ButtonType.SPELL, key = "mountId" },
     [ButtonType.PET  ] = { pickerUpper = C_PetJournal.PickupPet, typeForBliz = ButtonType.PET, key = "petGuid" },
+    [ButtonType.PSPELL]= { pickerUpper = PickupPetSpell, typeForBliz = ButtonType.SPELL, key="petSpellId" },
 }
 
 -------------------------------------------------------------------------------
@@ -71,6 +73,7 @@ BrokenProfessions = {
 ---@field itemId number
 ---@field mountId number
 ---@field petGuid string
+---@field petSpellId number
 ---@field macroId number
 ---@field macroOwner string
 ButtonDef = {
@@ -176,6 +179,9 @@ function ButtonDef:isUsable()
     elseif t == ButtonType.SPELL then
         --zebug.trace:print("IsSpellKnownOrOverridesKnown",IsSpellKnownOrOverridesKnown(id))
         return IsSpellKnownOrOverridesKnown(id)
+    elseif t == ButtonType.PSPELL then
+        --zebug.warn:print("IsSpellKnownOrOverridesKnown PET",IsSpellKnownOrOverridesKnown(id, true))
+        return IsSpellKnownOrOverridesKnown(id, true)
     elseif t == ButtonType.ITEM then
         -- isUseable = C_PlayerInfo.CanUseItem(itemID)
         local n = GetItemCount(id)
@@ -189,7 +195,7 @@ end
 function ButtonDef:getIcon()
     local t = self.type
     local id = self:getIdForBlizApi()
-    if t == ButtonType.SPELL or t == ButtonType.MOUNT then
+    if t == ButtonType.SPELL or t == ButtonType.MOUNT or t == ButtonType.PSPELL then
         return GetSpellTexture(id)
     elseif t == ButtonType.ITEM or t == ButtonType.TOY then
         return GetItemIcon(id)
@@ -213,7 +219,7 @@ function ButtonDef:getName()
 
     local t = self.type
     local id = self:getIdForBlizApi()
-    if t == ButtonType.SPELL or t == ButtonType.MOUNT then
+    if t == ButtonType.SPELL or t == ButtonType.MOUNT or t == ButtonType.PSPELL then
         self.name =  GetSpellInfo(id)
     elseif t == ButtonType.ITEM or t == ButtonType.TOY then
         self.name =  GetItemInfo(id)
@@ -241,7 +247,7 @@ function ButtonDef:getToolTipSetter()
     zebug.info:line(20, "type",type, "id",id)
 
     local tooltipSetter
-    if type == ButtonType.SPELL or type == ButtonType.MOUNT then
+    if type == ButtonType.SPELL or type == ButtonType.MOUNT or type == ButtonType.PSPELL then
         tooltipSetter = GameTooltip.SetSpellByID
     elseif type == ButtonType.ITEM then
         tooltipSetter = GameTooltip.SetItemByID
@@ -351,6 +357,8 @@ function ButtonDef:getFromCursor()
         end
     elseif type == ButtonType.PET then
         btnDef.petGuid = c1
+    elseif type == ButtonType.PSPELL then
+        btnDef.petSpellId = c1
     else
         Ufo.unknownType = type or "UnKnOwN"
         type = nil
@@ -376,39 +384,6 @@ function ButtonDef:pickupToCursor()
     zebug.trace:print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId)
 
     pickup(id)
-end
-
-function ButtonDef:click(germ)
-    zebug.warn:print("type",self.type, "name",self.name)
-    --if isInCombatLockdown("Clicking this") then return end
-
-    local type = self.type
-    local id = self:getIdForBlizApi()
-    if ButtonType.SPELL == type then
-        self:secureClick()
-        --CastSpellByID(self.spellId)
-    elseif ButtonType.MOUNT == type then
-        --zebug.warn:print("C_MountJournal.SummonByID",self.mountId)
-        --zebug.error:print(C_MountJournal.GetMountInfoByID(self.mountId))
-        C_MountJournal.SummonByID(self.mountId)
-    elseif ButtonType.ITEM == type then
-        --self:secureClick()
-        UseItemByName(self.name)
-        --local _, spellID = GetItemSpell(self.itemId)
-        --CastSpellByID(spellID)
-    elseif ButtonType.TOY == type then
-        self:secureClick()
-        --UseToy(self.itemId)
-    elseif ButtonType.MACRO == type then
-        self:secureClick()
-        --RunMacro(self.macroId)
-    elseif ButtonType.PET == type then
-        C_PetJournal.SummonPetByGUID(self.petGuid)
-    else
-        zebug.warn:print("Unknown type:", type)
-    end
-
-    return self.name
 end
 
 ---@return ButtonType buttonType what kind of action is performed by the btn
@@ -440,18 +415,3 @@ function ButtonDef:asSecureClickHandlerAttributes()
 end
 
 local secureButton
-
-function ButtonDef:secureClick(germ)
-    if not secureButton then
-        secureButton = CreateFrame("Button", "UfoSecureBtn", germ, "SecureActionButtonTemplate")
-    end
-    secureButton:SetAttribute("type2", self.type)
-    secureButton:SetAttribute(self.type, self.name)
-    zebug.warn:print("type",self.type, "name",self.name, "CLICK")
-    secureButton:Click(MouseClick.RIGHT)
-    zebug.warn:print("type",self.type, "name",self.name, "CLICKED")
-end
-
-function ButtonDef:secureClick2(germ)
-
-end

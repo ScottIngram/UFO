@@ -626,18 +626,6 @@ function handlers.OnPostClick(self, mouseClick, down)
         self:updateAllBtnCooldownsEtc()
     end
     oldGerm = self
-
-    --TODO: delete this
-    if false and mouseClick == MouseClick.RIGHT then
-        local btn1 = self.flyoutMenu:getButtonFrame(1)
-        local btn1 = self:getDef()
-        if btn1 then
-            btn1:click(self)
-            --print("suck")
-            --self:Execute("print( \"Fun!\"  )") -- succeeds
-            --germ:Execute("C_MountJournal.SummonByID(1591)") -- fails
-        end
-    end
 end
 
 -------------------------------------------------------------------------------
