@@ -435,3 +435,9 @@ function GermCommander:handleEventChangedInventory()
     self:updateAll()
 end
 
+function GermCommander:handleEventPetChanged()
+    -- TODO: be a little less NUKEy... create an index of which flyouts contain inventory items
+    FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.invalidateCache)
+    self:updateAll()
+end
+

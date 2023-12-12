@@ -220,13 +220,21 @@ end
 function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp(self)
     local isDragging = GetCursorInfo()
     if isDragging then
-        self:onReceiveDragAddIt()
+        fuckYouHardBlizzard(self)
     end
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(self)
-    self:onReceiveDragAddIt()
+    fuckYouHardBlizzard(self)
+end
+
+function fuckYouHardBlizzard(self)
+    -- YAY!  Bliz's code is eating exceptions now so I've got to catch and report them my damn self!
+    local isOk, err = pcall( function()  self:onReceiveDragAddIt() end  )
+    if not isOk then
+        zebug.error:print("Drag and drop failed! ERROR",err)
+    end
 end
 
 ---@param self ButtonOnFlyoutMenu

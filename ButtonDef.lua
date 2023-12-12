@@ -10,7 +10,7 @@ local zebug = Zebug:new()
 
 -------------------------------------------------------------------------------
 -- ButtonType
--- identifies a button as a Spell, Item, Pet, etc.
+-- identifies a button as a Spell, Item, Pet, etc. as used by most(some?) APIs including GetCursorInfo.
 -- and provides methods for unified, consistent behavior in the face of Bliz's inconsistent API
 -- For now, this class is tightly coupled with the ButtonDef class -- most methods here require its arg to be a ButtonDef
 -------------------------------------------------------------------------------
@@ -23,6 +23,7 @@ ButtonType = {
     PET   = "battlepet",
     MACRO = "macro",
     PSPELL = "petaction",
+    BROKENP = "brokenPetCommand",
     SNAFU = "companion",
 }
 
@@ -32,8 +33,9 @@ ButtonType = {
 -------------------------------------------------------------------------------
 ---@class BlizApiFieldDef -- IntelliJ-EmmyLua annotation
 ---@field pickerUpper function the Bliz API that can load the mouse pointer
----@field typeForBliz ButtonType
+---@field typeForBliz ButtonType the corresponding SecureActionButtonTemplate keyname
 ---@field key string which field should be used as the ID
+-- the key is a ButtonType as returned by GetCursorInfo while the user is dragging it around on the mouse.
 BlizApiFieldDef = {
     [ButtonType.SPELL] = { pickerUpper = PickupSpell, typeForBliz = ButtonType.SPELL, },
     [ButtonType.MOUNT] = { pickerUpper = PickupSpell, typeForBliz = ButtonType.SPELL, },
@@ -43,6 +45,7 @@ BlizApiFieldDef = {
     [ButtonType.SNAFU] = { pickerUpper = nil,         typeForBliz = ButtonType.SPELL, key = "mountId" },
     [ButtonType.PET  ] = { pickerUpper = C_PetJournal.PickupPet, typeForBliz = ButtonType.PET, key = "petGuid" },
     [ButtonType.PSPELL]= { pickerUpper = PickupPetSpell, typeForBliz = ButtonType.SPELL, key="petSpellId" },
+    [ButtonType.BROKENP]= { pickerUpper = function(id) print("pickerupper not defined for pet action", id)  end, typeForBliz=ButtonType.MACRO, key="name" }, -- for attack, assist, stopattack, etc.
 }
 
 -------------------------------------------------------------------------------
@@ -61,7 +64,6 @@ BrokenProfessions = {
     [L10N.LEATHERWORKING] = 165,
 }
 
-
 -------------------------------------------------------------------------------
 -- ButtonDef
 -- data for a single button, its spell/pet/macro/item/etc.  and methods for manipulating that data
@@ -74,6 +76,7 @@ BrokenProfessions = {
 ---@field mountId number
 ---@field petGuid string
 ---@field petSpellId number
+---@field brokenPetCommandId number custom field to solve Blizzard's broken API
 ---@field macroId number
 ---@field macroOwner string
 ButtonDef = {
@@ -189,6 +192,8 @@ function ButtonDef:isUsable()
     elseif t == ButtonType.MACRO then
         zebug.info:print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
         return isMacroGlobal(self.macroId) or getIdForCurrentToon() == self.macroOwner
+    elseif t == ButtonType.BROKENP then
+        return HasPetSpells()
     end
 end
 
@@ -209,6 +214,8 @@ function ButtonDef:getIcon()
     elseif t == ButtonType.PET then
         local _, icon = getPetNameAndIcon(id)
         return icon
+    elseif t == ButtonType.BROKENP then
+        return BrokenPetCommand[self.brokenPetCommandId].icon
     end
 end
 
@@ -229,6 +236,9 @@ function ButtonDef:getName()
         self.name =  GetMacroInfo(self.macroId)
     elseif t == ButtonType.PET then
         self.name =  getPetNameAndIcon(id)
+    elseif t == ButtonType.BROKENP then
+        --zebug.warn:dumpy("btndef",self)
+        self.name = BrokenPetCommand[self.brokenPetCommandId].name
     else
         zebug.warn:print("Unknown type:",t)
     end
@@ -272,6 +282,12 @@ function ButtonDef:getToolTipSetter()
                 text = "Toon Macro for " .. self.macroOwner
             end
             return zelf:SetText(text)
+        end
+        -- END FUNC
+    elseif type == ButtonType.BROKENP then
+        -- START FUNC
+        tooltipSetter = function(zelf, _)
+            return zelf:SetText(self.name)
         end
         -- END FUNC
     end
@@ -358,7 +374,16 @@ function ButtonDef:getFromCursor()
     elseif type == ButtonType.PET then
         btnDef.petGuid = c1
     elseif type == ButtonType.PSPELL then
-        btnDef.petSpellId = c1
+        if c1 < 10 then
+            --zebug.error:print("BROKENP !!! ",GetCursorInfo() )
+            btnDef.type = ButtonType.BROKENP
+            local brokenPetCommandId, alsoCommand = PetShitShow:get(c1)
+            btnDef.brokenPetCommandId = brokenPetCommandId
+            btnDef.brokenPetCommandId2 = alsoCommand
+            --zebug.error:dumpy("BROKENP btnDef",btnDef)
+        else
+            btnDef.petSpellId = c1
+        end
     else
         Ufo.unknownType = type or "UnKnOwN"
         type = nil
@@ -408,6 +433,20 @@ function ButtonDef:asSecureClickHandlerAttributes()
         local profMacro = sprintf("/run C_TradeSkillUI.OpenTradeSkill(%d)", altId)
         --zebug.error:print("name",self.name, "altId",altId, "profMacro",profMacro)
         return ButtonType.MACRO, "macrotext", profMacro
+    elseif self.type == ButtonType.BROKENP then
+        local brokenPetCommand = BrokenPetCommand[self.brokenPetCommandId]
+        if brokenPetCommand.macro then
+            local bpc = BrokenPetCommand[self.brokenPetCommandId]
+            --zebug.warn:print("self.brokenPetCommandId",self.brokenPetCommandId, "bpc.macro",bpc.macro)
+            --zebug.warn:dumpy("BrokenPetCommand bpc",bpc)
+            return ButtonType.MACRO, "macrotext", bpc.macro
+        elseif brokenPetCommand.scripty then
+            local scripty = BrokenPetCommand[self.brokenPetCommandId].scripty
+            local type = "SCRIPT_FOR_" .. self.brokenPetCommandId
+            return type, "_"..type, scripty
+        end
+        local macroText = BrokenPetCommand[self.brokenPetCommandId]
+        return ButtonType.MACRO, "macrotext", macroText
     else
         local blizType = self:getTypeForBlizApi()
         return blizType, blizType, self.name

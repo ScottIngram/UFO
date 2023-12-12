@@ -64,6 +64,12 @@ function EventHandlers:UNIT_INVENTORY_CHANGED()
     GermCommander:handleEventChangedInventory()
 end
 
+function EventHandlers:UPDATE_VEHICLE_ACTIONBAR()
+    if not hasShitCalmedTheFuckDown then return end
+    zebug.trace:print("Heard event: UPDATE_VEHICLE_ACTIONBAR")
+    GermCommander:handleEventPetChanged()
+end
+
 function EventHandlers:UPDATE_BINDINGS()
     if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: UPDATE_BINDINGS")
