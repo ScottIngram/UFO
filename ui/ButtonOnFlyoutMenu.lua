@@ -147,6 +147,13 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     local btnIndex = self:getId()
 
     flyoutDef:insertButton(btnIndex, crsDef)
+    if crsDef.brokenPetCommandId2 then
+        local twin = ButtonDef:getFromCursor()
+        twin.brokenPetCommandId = twin.brokenPetCommandId2
+        twin.brokenPetCommandId2 = nil
+        twin.name = nil
+        flyoutDef:insertButton(btnIndex+1, twin)
+    end
 
     ClearCursor()
     GermCommander:updateAll() -- TODO: only update germs for flyoutId
