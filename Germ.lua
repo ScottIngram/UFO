@@ -155,6 +155,7 @@ function getOpenerClickerScriptlet()
             local flyoutButtonsWillBind = germ:GetAttribute("flyoutButtonsWillBind")
             if flyoutButtonsWillBind then
                 if numButtons < 11 then
+                    -- TODO: make first keybind same as the UFO's
                     local numberKey = (numButtons == 10) and "0" or tostring(numButtons)
                     flyoutMenu:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
                 end
@@ -459,6 +460,7 @@ function Germ:doKeybinding()
     local germName = self:GetName()
     local keybinds
     if GetBindingKey(ucBtnName) then
+        -- TODO: make first keybind same as the UFO's
         keybinds = { GetBindingKey(ucBtnName) }
     end
 
@@ -472,10 +474,10 @@ function Germ:doKeybinding()
                 zebug.trace:print("germ",germName, "NOT binding keyName",keyName, "because it's already bound.")
             end
         end
-
-        self:setHotKetOverlay(keybinds[1])
+        -- TODO: make first keybind same as the UFO's
+        self:setHotKeyOverlay(keybinds[1])
     else
-        self:setHotKetOverlay(nil)
+        self:setHotKeyOverlay(nil)
     end
 
     -- remove deleted keybinds
@@ -498,7 +500,7 @@ function Germ:clearKeybinding()
     if not (self.keybinds) then return end
 
     ClearOverrideBindings(self)
-    self:setHotKetOverlay(nil)
+    self:setHotKeyOverlay(nil)
     self.keybinds = nil
 end
 

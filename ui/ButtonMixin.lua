@@ -65,7 +65,7 @@ function ButtonMixin:getHotKeyFrame()
     return self.HotKey
 end
 
-function ButtonMixin:setHotKetOverlay(keybindText)
+function ButtonMixin:setHotKeyOverlay(keybindText)
     local overlay = self.HotKey
     if overlay then
         local text = GetBindingText(keybindText, 1) or keybindText

@@ -234,7 +234,7 @@ function FlyoutMenu:updateForGerm(germ)
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SECURE TEMPLATE
 
             -- label the keybinds
-            btnNumber = btnNumber + 1
+            btnNumber = btnNumber + 1 -- TODO: make first keybind same as the UFO's
             updateHotKeyLabel(btnFrame, btnNumber)
         else
             btnFrame:setIcon(DEFAULT_ICON)
