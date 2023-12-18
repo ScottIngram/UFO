@@ -66,11 +66,11 @@ local frameStackSkip = 2 -- despite the implications of a numeric value, Lua doe
 ---@param flyoutId string
 ---@return string
 function FlyoutDefsDb:validateFlyoutId(flyoutId)
+    if isEmpty(flyoutId) then
+        error("The flyoutId arg is empty / nil.", frameStackSkip)
+    end
     if type(flyoutId) ~= "string" then
         error(msgBeString .. (flyoutId or "nil"), frameStackSkip)
-    end
-    if isEmpty(flyoutId) then
-        error("The flyoutId arg is empty." .. (flyoutId or "nil"), frameStackSkip)
     end
     return flyoutId
 end

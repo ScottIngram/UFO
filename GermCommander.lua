@@ -72,27 +72,39 @@ function GermCommander:updateAll()
 
     local placements = self:getPlacementConfigForCurrentSpec()
     for btnSlotIndex, flyoutId in pairs(placements) do
-        local isThere = doesFlyoutExist(flyoutId)
-        zebug.trace:line(5, "btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId, "isThere", isThere)
-        if isThere then
-            local germ = self:recallGerm(btnSlotIndex)
-            if not germ then
-                -- create a new germ
-                germ = Germ:new(flyoutId, btnSlotIndex)
-                self:saveGerm(germ)
-            end
-            germ:update(flyoutId)
-            germ:doKeybinding()
-            if Config.opts.usePlaceHolders then
-                if not self:hasPlaceholder(btnSlotIndex) then
-                    self:putPlaceholder(btnSlotIndex)
-                end
-            end
-        else
-            -- because one toon can delete a flyout while other toons still have it on their bars
-            zebug.warn:print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
-            self:deletePlacement(btnSlotIndex)
+        self:update(btnSlotIndex, flyoutId)
+    end
+end
+
+---@param btnSlotIndex number
+function GermCommander:update(btnSlotIndex, flyoutId)
+    if isInCombatLockdown("Reconfiguring") then return end
+
+    if not flyoutId then
+        local placements = self:getPlacementConfigForCurrentSpec()
+        flyoutId = placements[btnSlotIndex]
+    end
+
+    local isThere = doesFlyoutExist(flyoutId)
+    zebug.trace:line(5, "btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId, "isThere", isThere)
+    if isThere then
+        local germ = self:recallGerm(btnSlotIndex)
+        if not germ then
+            -- create a new germ
+            germ = Germ:new(flyoutId, btnSlotIndex)
+            self:saveGerm(germ)
         end
+        germ:update(flyoutId)
+        germ:doKeybinding()
+        if Config.opts.usePlaceHolders then
+            if not self:hasPlaceholder(btnSlotIndex) then
+                self:putPlaceholder(btnSlotIndex)
+            end
+        end
+    else
+        -- because one toon can delete a flyout while other toons still have it on their bars
+        zebug.warn:print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
+        self:deletePlacement(btnSlotIndex)
     end
 end
 
@@ -250,7 +262,7 @@ function GermCommander:handleActionBarSlotChanged(btnSlotIndex)
     end
 
     if configChanged then
-        self:updateAll()
+        self:update(btnSlotIndex)
     end
 end
 
