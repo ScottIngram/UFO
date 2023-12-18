@@ -193,7 +193,7 @@ function ButtonDef:isUsable()
         zebug.info:print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
         return isMacroGlobal(self.macroId) or getIdForCurrentToon() == self.macroOwner
     elseif t == ButtonType.BROKENP then
-        return HasPetSpells()
+        return PetShitShow:canHazPet()
     end
 end
 

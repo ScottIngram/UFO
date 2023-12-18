@@ -72,3 +72,10 @@ function PetShitShow:get(fubarId)
     assert(commands, "Unknown fubarId " .. (fubarId or "NIL") )
     return unpack(commands)
 end
+
+function PetShitShow:canHazPet()
+    if DB:canHazPet() then
+        return true
+    end
+    return DB:canHazPet(HasPetSpells())
+end

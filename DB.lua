@@ -54,6 +54,19 @@ function DB:getAllSpecsPlacementsConfig()
     return UFO_SV_TOON.placementsForAllSpecs
 end
 
+function DB:canHazPet(arg)
+    local specId = GetSpecialization()
+    if UFO_SV_TOON.canHazPet == nil then
+        UFO_SV_TOON.canHazPet = {}
+    end
+
+    if arg ~= nil then
+        UFO_SV_TOON.canHazPet[specId] = arg and true or false
+    end
+    return UFO_SV_TOON.canHazPet[specId] or false
+end
+
+
 -------------------------------------------------------------------------------
 -- Config Opts
 -------------------------------------------------------------------------------
