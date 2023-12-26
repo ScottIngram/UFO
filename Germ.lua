@@ -698,7 +698,7 @@ end
 
 ---@param mouseClick MouseClick
 function HandlerMaker:ActivateRandomBtn(mouseClick)
-    self:installHandlerForDynamicButtonPickerClicker(mouseClick, "local x = random(1,n)")
+    self:installHandlerForDynamicButtonPickerClicker(mouseClick, "local x = n>0 and random(1,n) or 1")
 end
 
 -- TODO: can I make CYCLE_POSITION a global var instead of a SetAttribute() ?
@@ -773,6 +773,8 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
     	]=] .. xGetterScriptlet .. [=[
 
         local btn    = buttonsOnFlyoutMenu[x] -- computed by xGetterScriptlet
+        if not btn then return end
+
         local type   = btn:GetAttribute("type")
         local adjKey = btn:GetAttribute("UFO_KEY") .. ]=] .. mouseBtnNumber .. [=[
         local val    = btn:GetAttribute("UFO_VAL")
