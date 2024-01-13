@@ -158,6 +158,13 @@ function getOpenerClickerScriptlet()
                     -- TODO: make first keybind same as the UFO's
                     local numberKey = (numButtons == 10) and "0" or tostring(numButtons)
                     flyoutMenu:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
+                    if numberKey == "1" then
+                        -- make the UFO's first button's keybind be the same as the UFO itself
+                        local germKey = self:GetAttribute("UFO_KEYBIND_1")
+                        if germKey then
+                            flyoutMenu:SetBindingClick(true, germKey, btn, "]=].. MouseClick.LEFT ..[=[")
+                        end
+                    end
                 end
             end
 
@@ -460,7 +467,6 @@ function Germ:doKeybinding()
     local germName = self:GetName()
     local keybinds
     if GetBindingKey(ucBtnName) then
-        -- TODO: make first keybind same as the UFO's
         keybinds = { GetBindingKey(ucBtnName) }
     end
 
@@ -474,8 +480,13 @@ function Germ:doKeybinding()
                 zebug.trace:print("germ",germName, "NOT binding keyName",keyName, "because it's already bound.")
             end
         end
-        -- TODO: make first keybind same as the UFO's
-        self:setHotKeyOverlay(keybinds[1])
+        local keybind1 = keybinds[1]
+        self:setHotKeyOverlay(keybind1)
+        if not isNumber(keybind1) then
+            -- store it for use inside the secure code
+            -- so we can make the first button's keybind be the same as the UFO's
+            self:SetAttribute("UFO_KEYBIND_1", keybind1)
+        end
     else
         self:setHotKeyOverlay(nil)
     end

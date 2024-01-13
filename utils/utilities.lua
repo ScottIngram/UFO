@@ -122,6 +122,12 @@ function deepcopy(src, target)
     return copy
 end
 
+function isNumber(n)
+    local isNumber
+    local ok = pcall(function() isNumber = tonumber(n) end)
+    return isNumber and true or false
+end
+
 local next = next
 
 function isTableNotEmpty(table)
