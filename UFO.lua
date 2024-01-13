@@ -36,30 +36,36 @@ local EventHandlers = { }
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
     zebug.trace:print("Heard event: PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
     initalizeAddonStuff() -- moved this here from PLAYER_LOGIN() because the Bliz API was just generally shitting the bed
+    if isInCombatLockdown("Ignoring event PLAYER_ENTERING_WORLD because it") then return end
     GermCommander:updateAll() -- moved this here from PLAYER_LOGIN() because the Bliz API was misrepresenting the bar directions >:(
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
     if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
+    if isInCombatLockdownQuiet("Ignoring event ACTIONBAR_SLOT_CHANGED because it") then return end
+
     GermCommander:handleActionBarSlotChanged(actionBarSlotId)
 end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
     if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: PLAYER_SPECIALIZATION_CHANGED")
+    if isInCombatLockdownQuiet("Ignoring event PLAYER_SPECIALIZATION_CHANGED because it") then return end
     GermCommander:updateAll()
 end
 
 function EventHandlers:UPDATE_MACROS()
     if not hasShitCalmedTheFuckDown then return end
     zebug.trace:line(40,"Heard event: UPDATE_MACROS")
+    if isInCombatLockdownQuiet("Ignoring event UPDATE_MACROS because it") then return end
     MacroShitShow:analyzeMacroUpdate()
 end
 
 function EventHandlers:UNIT_INVENTORY_CHANGED()
     if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: UNIT_INVENTORY_CHANGED")
+    if isInCombatLockdownQuiet("Ignoring event UNIT_INVENTORY_CHANGED because it") then return end
 
     GermCommander:handleEventChangedInventory()
 end
@@ -67,12 +73,14 @@ end
 function EventHandlers:UPDATE_VEHICLE_ACTIONBAR()
     if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: UPDATE_VEHICLE_ACTIONBAR")
+    if isInCombatLockdownQuiet("Ignoring event UPDATE_VEHICLE_ACTIONBAR because it") then return end
     GermCommander:handleEventPetChanged()
 end
 
 function EventHandlers:UPDATE_BINDINGS()
     if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: UPDATE_BINDINGS")
+    if isInCombatLockdownQuiet("Ignoring event UPDATE_BINDINGS because it") then return end
     GermCommander:updateAll()
 end
 

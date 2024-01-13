@@ -54,12 +54,23 @@ end
 function isInCombatLockdown(actionDescription)
     if InCombatLockdown() then
         local msg = actionDescription or "That action"
-        zebug.info:print(msg .. " is not allowed during combat.")
+        zebug.warn:print(msg .. " is not allowed by Blizzard during combat.")
         return true
     else
         return false
     end
 end
+
+function isInCombatLockdownQuiet()
+    if InCombatLockdown() then
+        local msg = actionDescription or "That action"
+        zebug.info:print(msg .. " is not allowed by Blizzard during combat.")
+        return true
+    else
+        return false
+    end
+end
+
 
 function getIdForCurrentToon()
     local name, realm = UnitFullName("player") -- FU Bliz, realm is arbitrarily nil sometimes but not always
