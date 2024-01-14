@@ -56,7 +56,7 @@ function getParentForBartender4(btnBarInfo)
         parent.GetName = function() return name end
         parent.btnSlotIndex = btnSlotIndex
         parent.bar = {}
-        parent.bar.GetSpellFlyoutDirection = function() return parent.config.flyoutDirection end
+        parent.bar.GetSpellFlyoutDirection = function() return parent.config.flyoutDirection or "LEFT" end
     else
         if not warned then
             msgUser(L10N.BARTENDER_BAR_DISABLED)
@@ -78,7 +78,35 @@ function getParentForElvUI(btnBarInfo)
         --parent.GetName = function() return barName end
         --parent.btnSlotIndex = btnSlotIndex
         parent.bar = {}
-        parent.bar.GetSpellFlyoutDirection = function() return parent.db.flyoutDirection end
+        parent.bar.GetSpellFlyoutDirection = function() return parent.db.flyoutDirection or "LEFT" end
+    end
+    return parent
+end
+
+function getParentForDominos(btnBarInfo)
+    local btnSlotIndex = btnBarInfo.btnSlotIndex
+
+    -- for some reason that I can't figure out,
+    -- action buttons 13 through 25 won't show UFOs.
+    -- so for the moment, I'm just not supporting UFOs in those.
+    -- Also, some (but not all) empty button slots will throw this error when you point at them:
+    -- Interface/FrameXML/SecureTemplates.lua:120: Wrong object type for function
+    if btnSlotIndex >= 13 and btnSlotIndex <=25 then return end
+
+    local name = "DominosActionButton" .. btnSlotIndex
+    local parent = _G[name]
+    zebug.error:name("DOMINOS:getParent"):print("btnSlotIndex",btnSlotIndex, "name",name, "parent",parent)
+    if parent then
+        -- poor-man's polymorphism
+        parent.GetName = function() return name end
+        parent.btnSlotIndex = btnSlotIndex
+        if not parent.bar then parent.bar = {} end
+        parent.bar.GetSpellFlyoutDirection = function() return parent:GetAttribute("flyoutDirection") or "LEFT" end
+    else
+        if not warned then
+            msgUser(L10N.DOMINOS_BAR_DISABLED)
+            warned = true
+        end
     end
     return parent
 end
@@ -110,6 +138,11 @@ SUPPORTED_ADDONS = {
     ElvUI = {
         activate = function()
             activateActionBarAddon(getParentForElvUI)
+        end,
+    },
+    Dominos = {
+        activate = function()
+            activateActionBarAddon(getParentForDominos)
         end,
     },
     LargerMacroIconSelection = {
