@@ -1,7 +1,7 @@
-## Interface: 100205
 ## Title: UFO - Universal FlyOuts
 ## Author: Scott Ingram
 ## Version: 10.2.5
+## Interface: 100205
 ## AddonCompartmentFunc: GLOBAL_UIUFO_BlizCompartment_OnClick
 ## AddonCompartmentFuncOnEnter: GLOBAL_UIUFO_BlizCompartment_OnEnter
 ## AddonCompartmentFuncOnLeave: GLOBAL_UIUFO_BlizCompartment_OnLeave
@@ -9,6 +9,9 @@
 ## SavedVariables: UFO_SV_ACCOUNT
 ## SavedVariablesPerCharacter: UFO_SV_TOON
 ## Notes: custom actionbar flyout menus
+## X-Category: Action Bars
+## X-License: Mozilla Public License Version 2.0
+## X-Curse-Project-ID: 904467
 
 libs\libs.xml
 utils\Wormhole.lua

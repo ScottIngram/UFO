@@ -12,13 +12,14 @@ UFO lets you create custom actionbar flyout menus similar to the built-in ones f
 - Pets
 - Macros
 - Trade skill Windows
+- Combat pet actions and spells
 
 In the options screen, you can individually configure the left / middle / right / etc mouse buttons to:
 - Open the flyout (the standard behavior)
 - Trigger a **Random** button
 - Trigger the **First** button
 
-Random favorite mounts, pets, or hearthstones, anyone?
+Random favorite mounts, pets, or hearthstones, anyone?  Put mage portals in the order YOU prefer or leave out any you never use.
 
 UFO adds a flyout catalog UI onto the side of various panels (Spellbook, Macros, Collections) to let you create and organize multiple flyouts.  These can be shared between all characters on your account.
 
@@ -32,9 +33,10 @@ From there, you can drag your flyouts onto your action bars.  Each toon keeps th
 
 ### 3rd-Party Addon Support
 
-There is limited (let's call it beta) support for a few action bar and other addons:
+I'm working on supporting a few action bar and other addons:
 - [Bartender4](https://www.curseforge.com/wow/addons/bartender4)
 - [ElvUI](https://tukui.org/elvui)
+- [Dominos](https://www.curseforge.com/wow/addons/dominos)
 - [LargerMacroIconSelection](https://www.curseforge.com/wow/addons/larger-macro-icon-selection) adds a search bar to the icon picker
 - Want more? [[Make a request]](https://github.com/ScottIngram/Ufo/issues/new?labels=3rd+party+addon)
 
@@ -61,7 +63,7 @@ There is limited (let's call it beta) support for a few action bar and other add
 
 ### Tips & Tricks:
 
-- **Ranom Mounts, Pets, or Hearthstones** - Load up a UFO with nothing but your favorite mounts and use the random-click feature.  Ditto for pets and hearthstones,
+- **Random Mounts, Pets, or Hearthstones** - Load up a UFO with nothing but your favorite mounts and use the random-click feature.  Ditto for pets and hearthstones,
 - **Icon of First Button** - If you choose the "?" icon while defining your flyout, UFO will show the icon of the first button in the flyout.
 - **Reuse UFOs Between Toons** - because UFO will hide buttons that a toon can't use, feel free to load up one flyout with every profession and profession related abilities or items (finesse flasks, campfire, fishing bobbers, Tuskarr harpoon, etc).
 - **One-Button Make & Consume** - For mages (or similarly, warlocks) make a flyout with a consumable mana bun as the first button and the Create Mana Bun spell as the second.  On login, the bun won't exist and the UFO will instead show Create Mana Bun.  Using the Right-Click feature, clicking on the UFO will *create* the bun and immediately update itself so that clicking will *eat* it.  For warlocks, the same approach works for health stones.  In fact, you can reuse the same flyout with both create bun and create healthstone for all toons and only the usable spell will be visible.
