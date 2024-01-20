@@ -97,7 +97,7 @@ function FlyoutMenu:installHandlerForCloseOnClick()
     if self.isCloserInitialized or not self.isForGerm then return end
 
     self:forEachButton(function(button)
-        SecureHandlerWrapScript(button, "OnClick", button, CLOSE_ON_CLICK_SCRIPTLET)
+        SecureHandlerWrapScript(button, "PostClick", button, CLOSE_ON_CLICK_SCRIPTLET)
         SecureHandlerExecute(button, CLOSE_ON_CLICK_SCRIPTLET) -- initialize the scriptlet's "global" vars
     end)
 
