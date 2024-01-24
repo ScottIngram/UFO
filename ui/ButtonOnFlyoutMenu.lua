@@ -280,23 +280,16 @@ function ButtonOnFlyoutMenu:setTooltip()
 
     if GetCVar("UberTooltips") == "1" then
         GameTooltip_SetDefaultAnchor(GameTooltip, self)
-
-        local tooltipSetter = btnDef:getToolTipSetter()
-
-        if tooltipSetter and tooltipSetter() then
-            self.UpdateTooltip = GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip
-        else
-            self.UpdateTooltip = nil
-        end
     else
-        local parent = self:GetParent():GetParent():GetParent():GetParent()
-        if parent == MultiBarBottomRight or parent == MultiBarRight or parent == MultiBarLeft then
-            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        else
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        end
-        GameTooltip:SetText(btnDef.getName(), HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
-        self.UpdateTooltip = nil
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+    end
+
+    local tooltipSetter = btnDef:getToolTipSetter()
+
+    if tooltipSetter then
+        tooltipSetter()
+    else
+        GameTooltip:SetText(btnDef:getName(), HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
     end
 end
 
