@@ -765,19 +765,32 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
 
         --print("PickerClicker(): germ =",myName, "(1) flyoutMenuKids =", flyoutMenuKids)
 
+        -- keep a cache of work done to reduce workload
+        -- but invalidate this cache when the user changes the flyout def
+        local kidsCachedWhen     = germ:GetAttribute("UFO_KIDS_CACHED_WHEN")
+        local flyoutLastModified = self:GetAttribute("UFO_FLYOUT_MOD_TIME")
+        if (not kidsCachedWhen) or (kidsCachedWhen < flyoutLastModified) then
+            flyoutMenuKids = nil
+            --print("clearing kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified)
+        end
+
         if not flyoutMenuKids then
             flyoutMenuKids = table.new(flyoutMenu:GetChildren())
             buttonsOnFlyoutMenu = table.new()
             n = 0
             for i, btn in ipairs(flyoutMenuKids) do
+                local noRnd = btn:GetAttribute("UFO_NO_RND")
                 local btnName = btn:GetAttribute("UFO_NAME")
-                if btnName then
+                --print ("RANDOMIZER: i",i, "name",btnName, "noRnd",noRnd)
+                if btnName and not noRnd then
                     n = n + 1
                     buttonsOnFlyoutMenu[n] = btn
                     --print("flyoutMenuKids:", n, btnName, buttonsOnFlyoutMenu[n])
                 end
             end
         end
+
+        germ:SetAttribute("UFO_KIDS_CACHED_WHEN", flyoutLastModified) -- Bliz doesn't provide time inside secure protected BS
 
         --print("PickerClicker(): germ =",myName, "(2) flyoutMenuKids =", flyoutMenuKids)
 
@@ -843,7 +856,7 @@ function Germ:removeOldHandler(mouseClick)
         -- pull the ID marker out of the script body and see if it's the one we're supposed to remove
         local start = LEN_CLICK_ID_MARKER +1
         local stop  = LEN_CLICK_ID_MARKER + string.len(mouseClick)
-        local scriptsClick = string.sub(postBody, start, stop)
+        local scriptsClick = string.sub(postBody or "", start, stop)
         isForThisClick = (scriptsClick == mouseClick)
         zebug.info:print("germ", self.myLabel, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
         if not isForThisClick then

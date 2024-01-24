@@ -178,6 +178,7 @@ function FlyoutMenu:updateForCatalog(flyoutId)
             -- the empty slot on the end
             btnFrame:setDef(nil)
             btnFrame:setIcon(nil)
+            btnFrame:setExcluderVisibility(nil)
         end
 
         btnFrame:setGeometry(dir, prevButton)
@@ -243,6 +244,7 @@ function FlyoutMenu:updateForGerm(germ)
         end
     end)
 
+    germ:SetAttribute("UFO_FLYOUT_MOD_TIME", flyoutDef:getModStamp())
     self:setBorderGeometry()
 end
 
@@ -393,10 +395,12 @@ end
 function GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad(flyoutMenu)
     doBlizOnLoad(flyoutMenu)
     zebug.info:name("ForCatalog_OnLoad"):print("flyoutMenu",flyoutMenu:GetName())
+
     -- initialize fields
-    FlyoutMenu:oneOfUs(flyoutMenu)
-    Catalog.flyoutMenu = flyoutMenu
-    flyoutMenu.isForCatalog = true
+    local self = FlyoutMenu:oneOfUs(flyoutMenu)
+    Catalog.flyoutMenu = self
+    self.isForCatalog = true
+    self:forEachButton(ButtonOnFlyoutMenu.installExcluder)
 end
 
 -- throttle OnUpdate because it can fire as often as FPS and is very resource intensive
