@@ -20,6 +20,7 @@ local zebug = Zebug:new()
 ---@field icon string user chosen icon
 ---@field fallbackIcon string in absence of the icon field, this is used when the Bliz UI fails to load all the necessary icons on login (usually pets and toys)
 ---@field btns table
+---@field lastMod number timestamp of the last significant modification
 local FlyoutDef = {
     ufoType = "FlyoutDef",
 }
@@ -49,6 +50,9 @@ function FlyoutDef:oneOfUs(self)
     setmetatable(privateCache, { __index = FlyoutDef })
     -- tie the "self" instance to the privateData table (which in turn is tied to  the class)
     setmetatable(self, { __index = privateCache })
+
+    self:setModStamp()
+
     return self
 end
 
@@ -62,7 +66,16 @@ function FlyoutDef:new()
     return FlyoutDef:oneOfUs(self)
 end
 
+function FlyoutDef:setModStamp()
+    self.lastMod = time()
+end
+
+function FlyoutDef:getModStamp()
+    return self.lastMod
+end
+
 function FlyoutDef:invalidateCache()
+    self:setModStamp()
     self:_cacheUsableFlyoutDef(nil) -- always clear the filtered copy when the base changes
 end
 
