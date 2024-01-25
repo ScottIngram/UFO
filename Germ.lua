@@ -80,8 +80,14 @@ function searchForFlyoutMenuScriptlet()
     ]=]
 end
 
+local OPENER_CLICKER_SCRIPTLET
+
 function getOpenerClickerScriptlet()
-    return [=[
+    if OPENER_CLICKER_SCRIPTLET then
+        return OPENER_CLICKER_SCRIPTLET
+    end
+
+    OPENER_CLICKER_SCRIPTLET = [=[
 	local germ = self
 	local mouseClick = button
 	local isClicked = down
@@ -175,12 +181,16 @@ function getOpenerClickerScriptlet()
         end
     end
 
+    local w = prevBtn and prevBtn:GetWidth() or 10
+    local h = prevBtn and prevBtn:GetHeight() or 10
+    local minN = (numButtons == 0) and 1 or numButtons
+
     if direction == "UP" or direction == "DOWN" then
-        flyoutMenu:SetWidth(prevBtn:GetWidth())
-        flyoutMenu:SetHeight((prevBtn:GetHeight()+]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * numButtons - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
+        flyoutMenu:SetWidth(w)
+        flyoutMenu:SetHeight((h + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
     else
-        flyoutMenu:SetHeight(prevBtn:GetHeight())
-        flyoutMenu:SetWidth((prevBtn:GetWidth()+]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * numButtons - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
+        flyoutMenu:SetHeight(h)
+        flyoutMenu:SetWidth((w + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
     end
 
     flyoutMenu:Show()
@@ -189,6 +199,8 @@ function getOpenerClickerScriptlet()
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
     --flyoutMenu:AddToAutoHide(germ)
 ]=]
+
+    return OPENER_CLICKER_SCRIPTLET
 end
 
 -------------------------------------------------------------------------------
