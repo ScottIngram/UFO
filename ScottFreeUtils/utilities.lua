@@ -71,7 +71,6 @@ function isInCombatLockdownQuiet()
     end
 end
 
-
 function getIdForCurrentToon()
     local name, realm = UnitFullName("player") -- FU Bliz, realm is arbitrarily nil sometimes but not always
     realm = GetRealmName()
