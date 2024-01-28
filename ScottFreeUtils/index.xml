@@ -1,0 +1,13 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd"
+>
+    <Script file="Wormhole.lua"/>
+    <Script file="Zebug.lua"/>
+    <Script file="BlizApiEnums.lua"/>
+    <Script file="BlizGlobalEventsListener.lua"/>
+    <Script file="constants.lua"/>
+    <Script file="utilities.lua"/>
+
+    <!-- ExportToGlobal.lua must be included last in your TOC after your code is all brought in -->
+</Ui>

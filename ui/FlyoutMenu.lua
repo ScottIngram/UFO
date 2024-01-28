@@ -40,7 +40,7 @@ end
 
 function FlyoutMenu.new(germ)
     local myName = germ:GetName() .. FlyoutMenu.nameSuffix
-    local protoSelf = CreateFrame("Frame", myName, germ, "UIUFO_FlyoutMenuTemplate")
+    local protoSelf = CreateFrame(FrameType.FRAME, myName, germ, "UIUFO_FlyoutMenuTemplate")
     ---@type FlyoutMenu
     local self = FlyoutMenu:oneOfUs(protoSelf)
     doBlizOnLoad(self)
@@ -204,7 +204,7 @@ function FlyoutMenu:updateForCatalog(flyoutId)
     self:ClearAllPoints()
 
     -- assuming dir == RIGHT
-    self:SetPoint("LEFT", self.parent, "RIGHT");
+    self:SetPoint(Anchor.LEFT, self.parent, Anchor.RIGHT);
     self:SetHeight(prevButton:GetHeight())
     self:SetWidth((prevButton:GetWidth()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
 
@@ -268,49 +268,49 @@ function FlyoutMenu:setBorderGeometry()
     self.Background.HorizontalMiddle:ClearAllPoints()
 
     if (dir == "UP") then
-        self.Background.End:SetPoint("TOP", 0, SPELLFLYOUT_INITIAL_SPACING);
+        self.Background.End:SetPoint(Anchor.TOP, 0, SPELLFLYOUT_INITIAL_SPACING);
         SetClampedTextureRotation(self.Background.End, 0);
         SetClampedTextureRotation(self.Background.VerticalMiddle, 0);
-        self.Background.Start:SetPoint("TOP", self.Background.VerticalMiddle, "BOTTOM");
+        self.Background.Start:SetPoint(Anchor.TOP, self.Background.VerticalMiddle, Anchor.BOTTOM);
         SetClampedTextureRotation(self.Background.Start, 0);
         self.Background.HorizontalMiddle:Hide();
         self.Background.VerticalMiddle:Show();
         --self.Background.VerticalMiddle:ClearAllPoints();
-        self.Background.VerticalMiddle:SetPoint("TOP", self.Background.End, "BOTTOM");
-        self.Background.VerticalMiddle:SetPoint("BOTTOM", 0, distance);
+        self.Background.VerticalMiddle:SetPoint(Anchor.TOP, self.Background.End, Anchor.BOTTOM);
+        self.Background.VerticalMiddle:SetPoint(Anchor.BOTTOM, 0, distance);
     elseif (dir == "DOWN") then
-        self.Background.End:SetPoint("BOTTOM", 0, -SPELLFLYOUT_INITIAL_SPACING);
+        self.Background.End:SetPoint(Anchor.BOTTOM, 0, -SPELLFLYOUT_INITIAL_SPACING);
         SetClampedTextureRotation(self.Background.End, 180);
         SetClampedTextureRotation(self.Background.VerticalMiddle, 180);
-        self.Background.Start:SetPoint("BOTTOM", self.Background.VerticalMiddle, "TOP");
+        self.Background.Start:SetPoint(Anchor.BOTTOM, self.Background.VerticalMiddle, Anchor.TOP);
         SetClampedTextureRotation(self.Background.Start, 180);
         self.Background.HorizontalMiddle:Hide();
         self.Background.VerticalMiddle:Show();
         --self.Background.VerticalMiddle:ClearAllPoints();
-        self.Background.VerticalMiddle:SetPoint("BOTTOM", self.Background.End, "TOP");
-        self.Background.VerticalMiddle:SetPoint("TOP", 0, -distance);
+        self.Background.VerticalMiddle:SetPoint(Anchor.BOTTOM, self.Background.End, Anchor.TOP);
+        self.Background.VerticalMiddle:SetPoint(Anchor.TOP, 0, -distance);
     elseif (dir == "LEFT") then
-        self.Background.End:SetPoint("LEFT", -SPELLFLYOUT_INITIAL_SPACING, 0);
+        self.Background.End:SetPoint(Anchor.LEFT, -SPELLFLYOUT_INITIAL_SPACING, 0);
         SetClampedTextureRotation(self.Background.End, 270);
         SetClampedTextureRotation(self.Background.HorizontalMiddle, 180);
-        self.Background.Start:SetPoint("LEFT", self.Background.HorizontalMiddle, "RIGHT");
+        self.Background.Start:SetPoint(Anchor.LEFT, self.Background.HorizontalMiddle, Anchor.RIGHT);
         SetClampedTextureRotation(self.Background.Start, 270);
         self.Background.VerticalMiddle:Hide();
         self.Background.HorizontalMiddle:Show();
         --self.Background.HorizontalMiddle:ClearAllPoints();
-        self.Background.HorizontalMiddle:SetPoint("LEFT", self.Background.End, "RIGHT");
-        self.Background.HorizontalMiddle:SetPoint("RIGHT", -distance, 0);
+        self.Background.HorizontalMiddle:SetPoint(Anchor.LEFT, self.Background.End, Anchor.RIGHT);
+        self.Background.HorizontalMiddle:SetPoint(Anchor.RIGHT, -distance, 0);
     elseif (dir == "RIGHT") then
-        self.Background.End:SetPoint("RIGHT", SPELLFLYOUT_INITIAL_SPACING, 0);
+        self.Background.End:SetPoint(Anchor.RIGHT, SPELLFLYOUT_INITIAL_SPACING, 0);
         SetClampedTextureRotation(self.Background.End, 90);
         SetClampedTextureRotation(self.Background.HorizontalMiddle, 0);
-        self.Background.Start:SetPoint("RIGHT", self.Background.HorizontalMiddle, "LEFT");
+        self.Background.Start:SetPoint(Anchor.RIGHT, self.Background.HorizontalMiddle, Anchor.LEFT);
         SetClampedTextureRotation(self.Background.Start, 90);
         self.Background.VerticalMiddle:Hide();
         self.Background.HorizontalMiddle:Show();
         --self.Background.HorizontalMiddle:ClearAllPoints();
-        self.Background.HorizontalMiddle:SetPoint("RIGHT", self.Background.End, "LEFT");
-        self.Background.HorizontalMiddle:SetPoint("LEFT", distance, 0);
+        self.Background.HorizontalMiddle:SetPoint(Anchor.RIGHT, self.Background.End, Anchor.LEFT);
+        self.Background.HorizontalMiddle:SetPoint(Anchor.LEFT, distance, 0);
     end
     self:SetBorderColor(0.7, 0.7, 0.7);
     self:SetBorderSize(47);

@@ -13,12 +13,13 @@
 ## X-License: Mozilla Public License Version 2.0
 ## X-Curse-Project-ID: 904467
 
+# external 3rd-party libs
 libs\libs.xml
-ScottFreeUtils\Wormhole.lua
-ScottFreeUtils\Zebug.lua
-ScottFreeUtils\BlizGlobalEventsListener.lua
-ScottFreeUtils\utilities.lua
-ScottFreeUtils\constants.lua
+
+# libs common to my various projects
+ScottFreeUtils\index.xml
+
+# UFO specific code
 constantsUfo.lua
 locales\index.xml
 DB.lua

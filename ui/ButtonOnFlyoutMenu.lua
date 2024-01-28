@@ -202,23 +202,23 @@ function ButtonOnFlyoutMenu:setGeometry(direction, prevBtn)
     self:ClearAllPoints()
     if prevBtn then
         if direction == "UP" then
-            self:SetPoint("BOTTOM", prevBtn, "TOP", 0, SPELLFLYOUT_DEFAULT_SPACING)
+            self:SetPoint(Anchor.BOTTOM, prevBtn, Anchor.TOP, 0, SPELLFLYOUT_DEFAULT_SPACING)
         elseif direction == "DOWN" then
-            self:SetPoint("TOP", prevBtn, "BOTTOM", 0, -SPELLFLYOUT_DEFAULT_SPACING)
+            self:SetPoint(Anchor.TOP, prevBtn, Anchor.BOTTOM, 0, -SPELLFLYOUT_DEFAULT_SPACING)
         elseif direction == "LEFT" then
-            self:SetPoint("RIGHT", prevBtn, "LEFT", -SPELLFLYOUT_DEFAULT_SPACING, 0)
+            self:SetPoint(Anchor.RIGHT, prevBtn, Anchor.LEFT, -SPELLFLYOUT_DEFAULT_SPACING, 0)
         elseif direction == "RIGHT" then
-            self:SetPoint("LEFT", prevBtn, "RIGHT", SPELLFLYOUT_DEFAULT_SPACING, 0)
+            self:SetPoint(Anchor.LEFT, prevBtn, Anchor.RIGHT, SPELLFLYOUT_DEFAULT_SPACING, 0)
         end
     else
         if direction == "UP" then
-            self:SetPoint("BOTTOM", 0, SPELLFLYOUT_INITIAL_SPACING)
+            self:SetPoint(Anchor.BOTTOM, 0, SPELLFLYOUT_INITIAL_SPACING)
         elseif direction == "DOWN" then
-            self:SetPoint("TOP", 0, -SPELLFLYOUT_INITIAL_SPACING)
+            self:SetPoint(Anchor.TOP, 0, -SPELLFLYOUT_INITIAL_SPACING)
         elseif direction == "LEFT" then
-            self:SetPoint("RIGHT", -SPELLFLYOUT_INITIAL_SPACING, 0)
+            self:SetPoint(Anchor.RIGHT, -SPELLFLYOUT_INITIAL_SPACING, 0)
         elseif direction == "RIGHT" then
-            self:SetPoint("LEFT", SPELLFLYOUT_INITIAL_SPACING, 0)
+            self:SetPoint(Anchor.LEFT, SPELLFLYOUT_INITIAL_SPACING, 0)
         end
     end
 
@@ -236,7 +236,7 @@ function ButtonOnFlyoutMenu:installExcluder(i)
     nopeIcon:SetAlpha(0.75)
 
     self.nopeIcon = nopeIcon
-    self:SetScript("OnClick", self.handleExcluderClick)
+    self:SetScript(Script.ON_CLICK, self.handleExcluderClick)
 end
 
 ---@param self ButtonOnFlyoutMenu
@@ -331,7 +331,7 @@ function ButtonOnFlyoutMenu:setTooltip()
     if GetCVar("UberTooltips") == "1" then
         GameTooltip_SetDefaultAnchor(GameTooltip, self)
     else
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:SetOwner(self, TooltipAnchor.LEFT)
     end
 
     local tooltipSetter = btnDef:getToolTipSetter()

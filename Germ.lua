@@ -214,7 +214,7 @@ function Germ:new(flyoutId, btnSlotIndex)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
     self.myName = myName -- TODO: figure out why leaving this line out breaks self:GetName() in FlyoutMenu.new even though self == Germ
 
-    local protoGerm = CreateFrame("CheckButton", self.myName, parentActionBarBtn, "SecureActionButtonTemplate, ActionButtonTemplate")
+    local protoGerm = CreateFrame(FrameType.CHECK_BUTTON, self.myName, parentActionBarBtn, "SecureActionButtonTemplate, ActionButtonTemplate")
 
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
@@ -241,12 +241,12 @@ function Germ:new(flyoutId, btnSlotIndex)
     self:setVisibilityDriver()
 
     -- UI reactions
-    self:SetScript("OnUpdate",      handlers.OnUpdate)
-    self:SetScript("OnEnter",       handlers.OnEnter)
-    self:SetScript("OnLeave",       handlers.OnLeave)
-    self:SetScript("OnReceiveDrag", handlers.OnReceiveDrag)
-    self:SetScript("OnMouseUp",     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
-    self:SetScript("OnDragStart",   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
+    self:SetScript(Script.ON_UPDATE,       handlers.OnUpdate)
+    self:SetScript(Script.ON_ENTER,        handlers.OnEnter)
+    self:SetScript(Script.ON_LEAVE,        handlers.OnLeave)
+    self:SetScript(Script.ON_RECEIVE_DRAG, handlers.OnReceiveDrag)
+    self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
+    self:SetScript(Script.ON_DRAG_START,   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
 
     -- FlyoutMenu
     self:initFlyoutMenu()
@@ -424,16 +424,16 @@ function Germ:handleGermUpdateEvent()
 
     local direction = self:GetAttribute("flyoutDirection");
     if (direction == "LEFT") then
-        flyoutArrowTexture:SetPoint("LEFT", self, "LEFT", -arrowDistance, 0);
+        flyoutArrowTexture:SetPoint(Anchor.LEFT, self, Anchor.LEFT, -arrowDistance, 0);
         SetClampedTextureRotation(flyoutArrowTexture, 270);
     elseif (direction == "RIGHT") then
-        flyoutArrowTexture:SetPoint("RIGHT", self, "RIGHT", arrowDistance, 0);
+        flyoutArrowTexture:SetPoint(Anchor.RIGHT, self, Anchor.RIGHT, arrowDistance, 0);
         SetClampedTextureRotation(flyoutArrowTexture, 90);
     elseif (direction == "DOWN") then
-        flyoutArrowTexture:SetPoint("BOTTOM", self, "BOTTOM", 0, -arrowDistance);
+        flyoutArrowTexture:SetPoint(Anchor.BOTTOM, self, Anchor.BOTTOM, 0, -arrowDistance);
         SetClampedTextureRotation(flyoutArrowTexture, 180);
     else
-        flyoutArrowTexture:SetPoint("TOP", self, "TOP", 0, arrowDistance);
+        flyoutArrowTexture:SetPoint(Anchor.TOP, self, Anchor.TOP, 0, arrowDistance);
         SetClampedTextureRotation(flyoutArrowTexture, 0);
     end
 end
@@ -445,7 +445,7 @@ function Germ:setToolTip()
     if GetCVar("UberTooltips") == "1" then
         GameTooltip_SetDefaultAnchor(GameTooltip, self)
     else
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:SetOwner(self, TooltipAnchor.LEFT)
     end
 
     GameTooltip:SetText(label)
