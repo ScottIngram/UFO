@@ -330,7 +330,7 @@ function Zebug:makeDummyStubForCallback(obj, eventName, msg)
     assert(isZebuggerObj(self), ERR_MSG)
     self:print("makeDummyStubForCallback for " .. eventName)
     obj:RegisterEvent(eventName);
-    obj:SetScript("OnEvent", self:messengerForEvent(eventName,msg))
+    obj:SetScript(Script.ON_EVENT, self:messengerForEvent(eventName,msg))
 
 end
 

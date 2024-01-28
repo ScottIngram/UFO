@@ -25,8 +25,8 @@ function BlizGlobalEventsListener:register(zelf, eventHandlers, addonLoadedHandl
         eventHandlers[eventName](zelf, ...)
     end
 
-    local eventListenerFrame = CreateFrame("Frame", ADDON_NAME.."BlizGlobalEventsListener")
-    eventListenerFrame:SetScript("OnEvent", dispatcher)
+    local eventListenerFrame = CreateFrame(FrameType.FRAME, ADDON_NAME.."BlizGlobalEventsListener")
+    eventListenerFrame:SetScript(Script.ON_EVENT, dispatcher)
 
     -- handle GENERIC events
 
