@@ -87,6 +87,7 @@ local CLOSE_ON_CLICK_SCRIPTLET = [=[
 
     local doClose = germ:GetAttribute("doCloseOnClick")
     if doClose then
+        print("CLOSING: ", germ:GetName() )
         flyoutMenu:Hide()
         flyoutMenu:SetAttribute("doCloseFlyout", false)
 		flyoutMenu:ClearBindings()
@@ -393,6 +394,7 @@ end
 function GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad(flyoutMenu)
     doBlizOnLoad(flyoutMenu)
     zebug.info:name("ForCatalog_OnLoad"):print("flyoutMenu",flyoutMenu:GetName())
+
     -- initialize fields
     FlyoutMenu:oneOfUs(flyoutMenu)
     Catalog.flyoutMenu = flyoutMenu
