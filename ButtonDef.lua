@@ -422,7 +422,7 @@ end
 function ButtonDef:asSecureClickHandlerAttributes()
     local altId = BrokenProfessions[self.name]
 
-    if true then
+    if false then
         return ButtonType.MACRO, "macrotext", sprintf([=[/run print("CLICKED: %s -> %s")]=], self.type, self:getName())
     end
 

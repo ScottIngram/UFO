@@ -77,6 +77,9 @@ end
 -- use non-local "global" variables to save values between executions
 -- because GetParent() returns nil during combat lockdown
 local CLOSE_ON_CLICK_SCRIPTLET = [=[
+    -- only trigger on mouse UP.  the down variable is passed in by the Bliz API
+    if down then return end
+
     if not flyoutMenu then
         flyoutMenu = self:GetParent()
     end
@@ -99,6 +102,9 @@ function FlyoutMenu:installHandlerForCloseOnClick()
 
     self:forEachButton(function(button)
         SecureHandlerWrapScript(button, "PostClick", button, CLOSE_ON_CLICK_SCRIPTLET)
+        SecureHandlerWrapScript(button, "OnClick", button, "if down then print('* mouse button is DOWN.') end")
+        SecureHandlerWrapScript(button, "OnClick", button, "if not down then print('* mouse button is UP.') end")
+
         SecureHandlerExecute(button, CLOSE_ON_CLICK_SCRIPTLET) -- initialize the scriptlet's "global" vars
     end)
 
