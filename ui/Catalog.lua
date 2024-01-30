@@ -71,14 +71,14 @@ function Catalog:createToggleButton(blizFrame)
     local xBtnFrame = _G[xBtnName]
     zebug.trace:print("parentName", blizFrameName, "xBtnName", xBtnName, "btnName",btnName)
 
-    btnFrame = CreateFrame("Button", btnName, blizFrame, "UIPanelButtonTemplate")
+    btnFrame = CreateFrame(FrameType.BUTTON, btnName, blizFrame, "UIPanelButtonTemplate")
     btnFrame:SetSize(80,22)
-    btnFrame:SetPoint("RIGHT", xBtnName, "LEFT", 2, 1)
+    btnFrame:SetPoint(Anchor.RIGHT, xBtnName, Anchor.LEFT, 2, 1)
     btnFrame:SetFrameStrata(xBtnFrame:GetFrameStrata())
     btnFrame:SetFrameLevel(xBtnFrame:GetFrameLevel()+1 )
     btnFrame.Text:SetText("UFO")
     btnFrame:RegisterForClicks("AnyUp")
-    btnFrame:SetScript("OnClick", Catalog.clickUfoButton)
+    btnFrame:SetScript(Script.ON_CLICK, Catalog.clickUfoButton)
     btnFrame:Show()
 
     toggleBtns[blizFrame] = btnFrame
@@ -130,8 +130,8 @@ function Catalog:toggle(clickedBtn, forceOpen)
         SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth() +150)
         catalogFrame:SetParent(blizFrame)
         catalogFrame:ClearAllPoints() -- required to avoid error: Action[SetPoint] failed because[SetPoint would result in anchor family connection]
-        catalogFrame:SetPoint("TOPLEFT", blizFrame, "TOPRIGHT", xOffSet, -15)
-        catalogFrame:SetPoint("BOTTOMLEFT", blizFrame, "BOTTOMRIGHT", xOffSet, -5)
+        catalogFrame:SetPoint(Anchor.TOPLEFT, blizFrame, Anchor.TOPRIGHT, xOffSet, -15)
+        catalogFrame:SetPoint(Anchor.BOTTOMLEFT, blizFrame, Anchor.BOTTOMRIGHT, xOffSet, -5)
     end
 
     if not willCloseCatalog then
@@ -186,7 +186,7 @@ function Catalog:update()
                 btnFrame.text:SetTextColor(GREEN.r, GREEN.g, GREEN.b)
                 btnFrame.icon:SetTexture("Interface\\PaperDollInfoFrame\\Character-Plus")
                 btnFrame.icon:SetSize(30, 30)
-                btnFrame.icon:SetPoint("LEFT", 7, 0)
+                btnFrame.icon:SetPoint(Anchor.LEFT, 7, 0)
                 btnFrame.SelectedBar:Hide()
                 btnFrame.Arrow:Hide()
             elseif row == hoverIndex then
@@ -199,7 +199,7 @@ function Catalog:update()
                 btnFrame.text:SetTextColor(BLUE.r, BLUE.g, BLUE.b)
                 btnFrame.icon:SetTexture("Interface\\Buttons\\ButtonHilight-SquareQuickslot")
                 btnFrame.icon:SetSize(36, 36)
-                btnFrame.icon:SetPoint("LEFT", 4, 0)
+                btnFrame.icon:SetPoint(Anchor.LEFT, 4, 0)
                 btnFrame.SelectedBar:Hide()
                 btnFrame.Arrow:Hide()
             else
@@ -258,23 +258,23 @@ function Catalog:update()
                 end
 
                 btnFrame.icon:SetSize(36, 36)
-                btnFrame.icon:SetPoint("LEFT", 4, 0)
+                btnFrame.icon:SetPoint(Anchor.LEFT, 4, 0)
             end
 
             if (row) == 1 then
                 btnFrame.BgTop:Show()
-                btnFrame.BgMiddle:SetPoint("TOP", btnFrame.BgTop, "BOTTOM")
+                btnFrame.BgMiddle:SetPoint(Anchor.TOP, btnFrame.BgTop, Anchor.BOTTOM)
             else
                 btnFrame.BgTop:Hide()
-                btnFrame.BgMiddle:SetPoint("TOP")
+                btnFrame.BgMiddle:SetPoint(Anchor.TOP)
             end
 
             if (row) == theAddButton then
                 btnFrame.BgBottom:Show()
-                btnFrame.BgMiddle:SetPoint("BOTTOM", btnFrame.BgBottom, "TOP")
+                btnFrame.BgMiddle:SetPoint(Anchor.BOTTOM, btnFrame.BgBottom, Anchor.TOP)
             else
                 btnFrame.BgBottom:Hide()
-                btnFrame.BgMiddle:SetPoint("BOTTOM")
+                btnFrame.BgMiddle:SetPoint(Anchor.BOTTOM)
             end
 
             if (row)%2 == 0 then
@@ -341,7 +341,7 @@ function Catalog:setToolTip(btnInCatalog)
     if GetCVar("UberTooltips") == "1" then
         GameTooltip_SetDefaultAnchor(GameTooltip, btnInCatalog)
     else
-        GameTooltip:SetOwner(btnInCatalog, "ANCHOR_LEFT")
+        GameTooltip:SetOwner(btnInCatalog, TooltipAnchor.LEFT)
     end
 
     GameTooltip:SetText(label)
@@ -428,7 +428,7 @@ end
 local muhToolTip
 function GLOBAL_UIUFO_BlizCompartment_OnEnter(addonName, menuButtonFrame)
     zebug.trace:print("addonName",addonName, "menuButtonFrame", menuButtonFrame:GetName())
-    GameTooltip:SetOwner(menuButtonFrame, "ANCHOR_LEFT");
+    GameTooltip:SetOwner(menuButtonFrame, TooltipAnchor.LEFT);
     if not muhToolTip then
         muhToolTip = sprintf(
                 "%s \r\r %s - %s \r %s - %s",

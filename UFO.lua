@@ -169,4 +169,4 @@ end
 -- OK, Go for it!
 -------------------------------------------------------------------------------
 
-EventListener:register(Ufo, EventHandlers, HandlersForOtherAddons)
+BlizGlobalEventsListener:register(Ufo, EventHandlers, HandlersForOtherAddons)

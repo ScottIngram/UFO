@@ -13,13 +13,14 @@
 ## X-License: Mozilla Public License Version 2.0
 ## X-Curse-Project-ID: 904467
 
+# external 3rd-party libs
 libs\libs.xml
-utils\Wormhole.lua
-utils\Zebug.lua
-utils\utilities.lua
-utils\constants.lua
-utils\constantsUfo.lua
-utils\EventListener.lua
+
+# libs common to my various projects
+ScottFreeUtils\index.xml
+
+# UFO specific code
+constantsUfo.lua
 locales\index.xml
 DB.lua
 Config.lua
@@ -40,7 +41,7 @@ ui\IconPicker.lua
 UFO.lua
 
 # export Ufo functions defined by the above into the Global _G namespace so they are visible for XML callbacks
-utils\ExportToGlobal.lua
+ScottFreeUtils\ExportToGlobal.lua
 
 # must come after GlobalExport
 ui\ui.xml

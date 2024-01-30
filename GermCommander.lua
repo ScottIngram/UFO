@@ -64,6 +64,19 @@ function GermCommander:throttledUpdateAll()
     end)
 end
 
+---@param flyoutId number
+function GermCommander:updateGermsFor(flyoutId)
+    if isInCombatLockdown("Reconfiguring") then return end
+
+    local placements = self:getPlacementConfigForCurrentSpec()
+    for btnSlotIndex, flyoutIdFoo in pairs(placements) do
+        if flyoutIdFoo == flyoutId then
+            zebug.info:print("fixing flyout",flyoutId, "in btnSlotIndex", btnSlotIndex)
+            self:update(btnSlotIndex, flyoutId)
+        end
+    end
+end
+
 function GermCommander:updateAll()
     zebug.trace:line(40)
     if isInCombatLockdown("Reconfiguring") then return end

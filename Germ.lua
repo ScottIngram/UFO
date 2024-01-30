@@ -80,8 +80,14 @@ function searchForFlyoutMenuScriptlet()
     ]=]
 end
 
+local OPENER_CLICKER_SCRIPTLET
+
 function getOpenerClickerScriptlet()
-    return [=[
+    if OPENER_CLICKER_SCRIPTLET then
+        return OPENER_CLICKER_SCRIPTLET
+    end
+
+    OPENER_CLICKER_SCRIPTLET = [=[
 	local germ = self
 	local mouseClick = button
 	local isClicked = down
@@ -175,12 +181,16 @@ function getOpenerClickerScriptlet()
         end
     end
 
+    local w = prevBtn and prevBtn:GetWidth() or 10
+    local h = prevBtn and prevBtn:GetHeight() or 10
+    local minN = (numButtons == 0) and 1 or numButtons
+
     if direction == "UP" or direction == "DOWN" then
-        flyoutMenu:SetWidth(prevBtn:GetWidth())
-        flyoutMenu:SetHeight((prevBtn:GetHeight()+]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * numButtons - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
+        flyoutMenu:SetWidth(w)
+        flyoutMenu:SetHeight((h + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
     else
-        flyoutMenu:SetHeight(prevBtn:GetHeight())
-        flyoutMenu:SetWidth((prevBtn:GetWidth()+]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * numButtons - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
+        flyoutMenu:SetHeight(h)
+        flyoutMenu:SetWidth((w + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
     end
 
     flyoutMenu:Show()
@@ -189,6 +199,8 @@ function getOpenerClickerScriptlet()
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
     --flyoutMenu:AddToAutoHide(germ)
 ]=]
+
+    return OPENER_CLICKER_SCRIPTLET
 end
 
 -------------------------------------------------------------------------------
@@ -202,7 +214,7 @@ function Germ:new(flyoutId, btnSlotIndex)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
     self.myName = myName -- TODO: figure out why leaving this line out breaks self:GetName() in FlyoutMenu.new even though self == Germ
 
-    local protoGerm = CreateFrame("CheckButton", self.myName, parentActionBarBtn, "SecureActionButtonTemplate, ActionButtonTemplate")
+    local protoGerm = CreateFrame(FrameType.CHECK_BUTTON, self.myName, parentActionBarBtn, "SecureActionButtonTemplate, ActionButtonTemplate")
 
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
@@ -229,12 +241,12 @@ function Germ:new(flyoutId, btnSlotIndex)
     self:setVisibilityDriver()
 
     -- UI reactions
-    self:SetScript("OnUpdate",      handlers.OnUpdate)
-    self:SetScript("OnEnter",       handlers.OnEnter)
-    self:SetScript("OnLeave",       handlers.OnLeave)
-    self:SetScript("OnReceiveDrag", handlers.OnReceiveDrag)
-    self:SetScript("OnMouseUp",     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
-    self:SetScript("OnDragStart",   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
+    self:SetScript(Script.ON_UPDATE,       handlers.OnUpdate)
+    self:SetScript(Script.ON_ENTER,        handlers.OnEnter)
+    self:SetScript(Script.ON_LEAVE,        handlers.OnLeave)
+    self:SetScript(Script.ON_RECEIVE_DRAG, handlers.OnReceiveDrag)
+    self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
+    self:SetScript(Script.ON_DRAG_START,   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
 
     -- FlyoutMenu
     self:initFlyoutMenu()
@@ -412,16 +424,16 @@ function Germ:handleGermUpdateEvent()
 
     local direction = self:GetAttribute("flyoutDirection");
     if (direction == "LEFT") then
-        flyoutArrowTexture:SetPoint("LEFT", self, "LEFT", -arrowDistance, 0);
+        flyoutArrowTexture:SetPoint(Anchor.LEFT, self, Anchor.LEFT, -arrowDistance, 0);
         SetClampedTextureRotation(flyoutArrowTexture, 270);
     elseif (direction == "RIGHT") then
-        flyoutArrowTexture:SetPoint("RIGHT", self, "RIGHT", arrowDistance, 0);
+        flyoutArrowTexture:SetPoint(Anchor.RIGHT, self, Anchor.RIGHT, arrowDistance, 0);
         SetClampedTextureRotation(flyoutArrowTexture, 90);
     elseif (direction == "DOWN") then
-        flyoutArrowTexture:SetPoint("BOTTOM", self, "BOTTOM", 0, -arrowDistance);
+        flyoutArrowTexture:SetPoint(Anchor.BOTTOM, self, Anchor.BOTTOM, 0, -arrowDistance);
         SetClampedTextureRotation(flyoutArrowTexture, 180);
     else
-        flyoutArrowTexture:SetPoint("TOP", self, "TOP", 0, arrowDistance);
+        flyoutArrowTexture:SetPoint(Anchor.TOP, self, Anchor.TOP, 0, arrowDistance);
         SetClampedTextureRotation(flyoutArrowTexture, 0);
     end
 end
@@ -433,7 +445,7 @@ function Germ:setToolTip()
     if GetCVar("UberTooltips") == "1" then
         GameTooltip_SetDefaultAnchor(GameTooltip, self)
     else
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:SetOwner(self, TooltipAnchor.LEFT)
     end
 
     GameTooltip:SetText(label)
@@ -765,19 +777,32 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
 
         --print("PickerClicker(): germ =",myName, "(1) flyoutMenuKids =", flyoutMenuKids)
 
+        -- keep a cache of work done to reduce workload
+        -- but invalidate this cache when the user changes the flyout def
+        local kidsCachedWhen     = germ:GetAttribute("UFO_KIDS_CACHED_WHEN")
+        local flyoutLastModified = self:GetAttribute("UFO_FLYOUT_MOD_TIME")
+        if (not kidsCachedWhen) or (kidsCachedWhen < flyoutLastModified) then
+            flyoutMenuKids = nil
+            --print("clearing kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified)
+        end
+
         if not flyoutMenuKids then
             flyoutMenuKids = table.new(flyoutMenu:GetChildren())
             buttonsOnFlyoutMenu = table.new()
             n = 0
             for i, btn in ipairs(flyoutMenuKids) do
+                local noRnd = btn:GetAttribute("UFO_NO_RND")
                 local btnName = btn:GetAttribute("UFO_NAME")
-                if btnName then
+                --print ("RANDOMIZER: i",i, "name",btnName, "noRnd",noRnd)
+                if btnName and not noRnd then
                     n = n + 1
                     buttonsOnFlyoutMenu[n] = btn
                     --print("flyoutMenuKids:", n, btnName, buttonsOnFlyoutMenu[n])
                 end
             end
         end
+
+        germ:SetAttribute("UFO_KIDS_CACHED_WHEN", flyoutLastModified) -- Bliz doesn't provide time inside secure protected BS
 
         --print("PickerClicker(): germ =",myName, "(2) flyoutMenuKids =", flyoutMenuKids)
 
@@ -843,7 +868,7 @@ function Germ:removeOldHandler(mouseClick)
         -- pull the ID marker out of the script body and see if it's the one we're supposed to remove
         local start = LEN_CLICK_ID_MARKER +1
         local stop  = LEN_CLICK_ID_MARKER + string.len(mouseClick)
-        local scriptsClick = string.sub(postBody, start, stop)
+        local scriptsClick = string.sub(postBody or "", start, stop)
         isForThisClick = (scriptsClick == mouseClick)
         zebug.info:print("germ", self.myLabel, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
         if not isForThisClick then

@@ -395,6 +395,11 @@ function ButtonDef:getFromCursor()
         btnDef:getName()
     end
 
+    if Ufo.pickedUpBtn then
+        -- TODO: should this be done as part of receiveDrop instead?
+        btnDef.noRnd = Ufo.pickedUpBtn.noRnd
+    end
+
     Ufo.pickedUpBtn = nil
 
     return btnDef

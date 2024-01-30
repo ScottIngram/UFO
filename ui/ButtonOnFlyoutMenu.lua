@@ -14,6 +14,7 @@ local zebug = Zebug:new()
 ---@class ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
 ---@field id number unique identifier
+---@field nopeIcon Frame w/ a little X indicator
 
 ---@type ButtonOnFlyoutMenu|ButtonMixin
 ButtonOnFlyoutMenu = {
@@ -66,6 +67,9 @@ function ButtonOnFlyoutMenu:setDef(btnDef)
     local flyoutMenu = self:GetParent()
     if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
         self:updateSecureClicker(MouseClick.ANY)
+        self:SetAttribute("UFO_NO_RND", btnDef and btnDef.noRnd or nil) -- SECURE TEMPLATE
+    else
+        self:setExcluderVisibility()
     end
 end
 
@@ -78,6 +82,38 @@ function ButtonOnFlyoutMenu:copyDefToBlizFields()
     self.itemID     = d.itemId
     self.mountID    = d.mountId
     self.battlepet  = d.petGuid
+end
+
+---@param isDown MouseClick
+function ButtonOnFlyoutMenu:handleExcluderClick(mouseClick, isDown)
+    local btnDef = self:getDef()
+    if not btnDef then return end
+
+    if mouseClick == MouseClick.RIGHT and isDown then
+        zebug.info:print("name",btnDef.name, "changing exclude from",btnDef.noRnd, "to", not btnDef.exclude)
+        --zebug.error:dumpKeys(self)
+        btnDef.noRnd = not btnDef.noRnd
+        self:setExcluderVisibility()
+
+        local flyoutDef = self:getParent():getDef()
+        flyoutDef:setModStamp()
+        GermCommander:updateGermsFor(flyoutDef.id)
+    end
+end
+
+function ButtonOnFlyoutMenu:setExcluderVisibility()
+    if not self.nopeIcon then return end
+
+    local btnDef = self:getDef()
+    local noRnd = btnDef and btnDef.noRnd or nil
+
+    self:SetAttribute("UFO_NO_RND", noRnd) -- SECURE TEMPLATE
+
+    if noRnd then
+        self.nopeIcon:Show()
+    else
+        self.nopeIcon:Hide()
+    end
 end
 
 -- pickup an existing button from an existing flyout
@@ -166,27 +202,41 @@ function ButtonOnFlyoutMenu:setGeometry(direction, prevBtn)
     self:ClearAllPoints()
     if prevBtn then
         if direction == "UP" then
-            self:SetPoint("BOTTOM", prevBtn, "TOP", 0, SPELLFLYOUT_DEFAULT_SPACING)
+            self:SetPoint(Anchor.BOTTOM, prevBtn, Anchor.TOP, 0, SPELLFLYOUT_DEFAULT_SPACING)
         elseif direction == "DOWN" then
-            self:SetPoint("TOP", prevBtn, "BOTTOM", 0, -SPELLFLYOUT_DEFAULT_SPACING)
+            self:SetPoint(Anchor.TOP, prevBtn, Anchor.BOTTOM, 0, -SPELLFLYOUT_DEFAULT_SPACING)
         elseif direction == "LEFT" then
-            self:SetPoint("RIGHT", prevBtn, "LEFT", -SPELLFLYOUT_DEFAULT_SPACING, 0)
+            self:SetPoint(Anchor.RIGHT, prevBtn, Anchor.LEFT, -SPELLFLYOUT_DEFAULT_SPACING, 0)
         elseif direction == "RIGHT" then
-            self:SetPoint("LEFT", prevBtn, "RIGHT", SPELLFLYOUT_DEFAULT_SPACING, 0)
+            self:SetPoint(Anchor.LEFT, prevBtn, Anchor.RIGHT, SPELLFLYOUT_DEFAULT_SPACING, 0)
         end
     else
         if direction == "UP" then
-            self:SetPoint("BOTTOM", 0, SPELLFLYOUT_INITIAL_SPACING)
+            self:SetPoint(Anchor.BOTTOM, 0, SPELLFLYOUT_INITIAL_SPACING)
         elseif direction == "DOWN" then
-            self:SetPoint("TOP", 0, -SPELLFLYOUT_INITIAL_SPACING)
+            self:SetPoint(Anchor.TOP, 0, -SPELLFLYOUT_INITIAL_SPACING)
         elseif direction == "LEFT" then
-            self:SetPoint("RIGHT", -SPELLFLYOUT_INITIAL_SPACING, 0)
+            self:SetPoint(Anchor.RIGHT, -SPELLFLYOUT_INITIAL_SPACING, 0)
         elseif direction == "RIGHT" then
-            self:SetPoint("LEFT", SPELLFLYOUT_INITIAL_SPACING, 0)
+            self:SetPoint(Anchor.LEFT, SPELLFLYOUT_INITIAL_SPACING, 0)
         end
     end
 
     self:Show()
+end
+
+function ButtonOnFlyoutMenu:installExcluder(i)
+    zebug.info:print("self",self,"i",i)
+
+    local nopeIcon = self:CreateTexture("nope") -- name , layer , inherits , subLayer
+    nopeIcon:SetPoint("TOPLEFT",-3,3)
+    nopeIcon:SetTexture(3281887) -- 3281887, atlas: "common-search-clearbutton"
+    nopeIcon:SetAtlas("common-search-clearbutton") -- 3281887, atlas: "common-search-clearbutton"
+    nopeIcon:SetSize(10,10)
+    nopeIcon:SetAlpha(0.75)
+
+    self.nopeIcon = nopeIcon
+    self:SetScript(Script.ON_CLICK, self.handleExcluderClick)
 end
 
 ---@param self ButtonOnFlyoutMenu
@@ -280,23 +330,16 @@ function ButtonOnFlyoutMenu:setTooltip()
 
     if GetCVar("UberTooltips") == "1" then
         GameTooltip_SetDefaultAnchor(GameTooltip, self)
-
-        local tooltipSetter = btnDef:getToolTipSetter()
-
-        if tooltipSetter and tooltipSetter() then
-            self.UpdateTooltip = GLOBAL_UIUFO_ButtonOnFlyoutMenu_SetTooltip
-        else
-            self.UpdateTooltip = nil
-        end
     else
-        local parent = self:GetParent():GetParent():GetParent():GetParent()
-        if parent == MultiBarBottomRight or parent == MultiBarRight or parent == MultiBarLeft then
-            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        else
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        end
-        GameTooltip:SetText(btnDef.getName(), HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
-        self.UpdateTooltip = nil
+        GameTooltip:SetOwner(self, TooltipAnchor.LEFT)
+    end
+
+    local tooltipSetter = btnDef:getToolTipSetter()
+
+    if tooltipSetter then
+        tooltipSetter()
+    else
+        GameTooltip:SetText(btnDef:getName(), HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
     end
 end
 
