@@ -28,16 +28,8 @@ function BlizGlobalEventsListener:register(zelf, eventHandlers, addonLoadedHandl
     local eventListenerFrame = CreateFrame(FrameType.FRAME, ADDON_NAME.."BlizGlobalEventsListener")
     eventListenerFrame:SetScript(Script.ON_EVENT, dispatcher)
 
-    -- handle GENERIC events
-
-    for eventName, _ in pairs(eventHandlers) do
-        zebug.trace:print("registering ",eventName)
-        eventListenerFrame:RegisterEvent(eventName)
-    end
-
     -- handle the ADDON_LOADED event for specific addons
 
-    if isEmptyTable(addonLoadedHandlers) then return end
     local oldHandler = eventHandlers.ADDON_LOADED
     local newHandler = function(zelf, loadedAddonName)
         --[START CALLBACK]--
@@ -50,7 +42,7 @@ function BlizGlobalEventsListener:register(zelf, eventHandlers, addonLoadedHandl
         for addonName, handler in pairs(addonLoadedHandlers) do
             zebug.trace:name("dispatcher"):print("loaded",loadedAddonName, "comparing to",addonName, "handler",handler)
             if addonName == loadedAddonName then
-                zebug.trace:print("invoking", addonName)
+                zebug.info:print("invoking", addonName)
                 handler(zelf, addonName)
             end
         end
@@ -58,4 +50,12 @@ function BlizGlobalEventsListener:register(zelf, eventHandlers, addonLoadedHandl
     end
 
     eventHandlers.ADDON_LOADED = newHandler
+
+    -- handle GENERIC events
+
+    for eventName, _ in pairs(eventHandlers) do
+        zebug.info:print("registering ",eventName)
+        eventListenerFrame:RegisterEvent(eventName)
+    end
+
 end
