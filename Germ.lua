@@ -247,6 +247,7 @@ function Germ:new(flyoutId, btnSlotIndex)
     self:SetScript(Script.ON_RECEIVE_DRAG, handlers.OnReceiveDrag)
     self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
     self:SetScript(Script.ON_DRAG_START,   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
+    --self:SetScript(Script.ON_HIDE, function(self) print('***GERM*** Script.ON_HIDE for',self:GetName()); end) -- This is NEVER invoked.  Thanks for silent fail, Bliz.
 
     -- FlyoutMenu
     self:initFlyoutMenu()
