@@ -165,6 +165,16 @@ local function initializeOptionsMenu()
                 end,
             },
 
+            excluderHelpText = {
+                order = 28,
+                type = 'description',
+                fontSize = "small",
+                name = [[
+
+Tip: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions.
+]],
+            },
+
             -------------------------------------------------------------------------------
             -- Place Holder options
             -------------------------------------------------------------------------------
