@@ -1,6 +1,6 @@
 ## Title: UFO - Universal FlyOuts
 ## Author: Scott Ingram
-## Version: 10.2.5
+## Version: 10.2.5b
 ## Interface: 100205
 ## AddonCompartmentFunc: GLOBAL_UIUFO_BlizCompartment_OnClick
 ## AddonCompartmentFuncOnEnter: GLOBAL_UIUFO_BlizCompartment_OnEnter
