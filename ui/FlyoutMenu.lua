@@ -244,6 +244,15 @@ function FlyoutMenu:updateForGerm(germ)
         end
     end)
 
+    if not self.hasOnHide then
+        zebug.info:print("setting OnHide for",self:GetName())
+        self:SetScript("OnHide", function(self)
+            --print('FlyoutMenu Script.ON_HIDE for',self:GetName())
+            SecureHandlerExecute(germ, "flyoutMenu:ClearBindings()")
+        end)
+        self.hasOnHide = true
+    end
+
     germ:SetAttribute("UFO_FLYOUT_MOD_TIME", flyoutDef:getModStamp())
     self:setBorderGeometry()
 end
