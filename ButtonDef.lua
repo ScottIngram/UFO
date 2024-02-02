@@ -422,10 +422,6 @@ end
 function ButtonDef:asSecureClickHandlerAttributes()
     local altId = BrokenProfessions[self.name]
 
-    if false then
-        return ButtonType.MACRO, "macrotext", sprintf([=[/run print("CLICKED: %s -> %s")]=], self.type, self:getName())
-    end
-
     if (self.type == ButtonType.PET) then
         -- this fails with "invalid attribute name"
         --local snippet = "C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"

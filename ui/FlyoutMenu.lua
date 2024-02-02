@@ -90,7 +90,7 @@ local CLOSE_ON_CLICK_SCRIPTLET = [=[
 
     local doClose = germ:GetAttribute("doCloseOnClick")
     if doClose then
-        print("CLOSING: ", germ:GetName() )
+        --print("CLOSING: ", germ:GetName() )
         flyoutMenu:Hide()
         flyoutMenu:SetAttribute("doCloseFlyout", false)
 		flyoutMenu:ClearBindings()
@@ -102,9 +102,6 @@ function FlyoutMenu:installHandlerForCloseOnClick()
 
     self:forEachButton(function(button)
         SecureHandlerWrapScript(button, "PostClick", button, CLOSE_ON_CLICK_SCRIPTLET)
-        SecureHandlerWrapScript(button, "OnClick", button, "if down then print('* mouse button is DOWN.') end")
-        SecureHandlerWrapScript(button, "OnClick", button, "if not down then print('* mouse button is UP.') end")
-
         SecureHandlerExecute(button, CLOSE_ON_CLICK_SCRIPTLET) -- initialize the scriptlet's "global" vars
     end)
 
