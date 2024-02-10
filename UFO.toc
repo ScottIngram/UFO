@@ -17,7 +17,7 @@
 libs\libs.xml
 
 # libs common to my various projects
-ScottFreeUtils\index.xml
+ScottFreeWowLibs\index.xml
 
 # UFO specific code
 constantsUfo.lua
@@ -41,7 +41,7 @@ ui\IconPicker.lua
 UFO.lua
 
 # export Ufo functions defined by the above into the Global _G namespace so they are visible for XML callbacks
-ScottFreeUtils\ExportToGlobal.lua
+ScottFreeWowLibs\ExportToGlobal.lua
 
 # must come after GlobalExport
 ui\ui.xml
