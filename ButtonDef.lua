@@ -62,6 +62,7 @@ BrokenProfessions = {
     [L10N.JEWELCRAFTING] = 755, -- but not these!  Blizzard is consistent only in their inconsistency!  Blizconsistency!!!
     [L10N.BLACKSMITHING] = 164,
     [L10N.LEATHERWORKING] = 165,
+    [L10N.ENGINEERING] = 202,
 }
 
 -------------------------------------------------------------------------------
