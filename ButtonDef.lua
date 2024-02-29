@@ -179,7 +179,7 @@ function ButtonDef:isUsable()
         -- TODO: figure out how to find a mount
         return true -- GetMountInfoByID(mountId)
     elseif t == ButtonType.TOY then
-        return PlayerHasToy(id)
+        return  PlayerHasToy(id) -- and C_ToyBox.IsToyUsable(id) -- nope, unreliable and overreaching
     elseif t == ButtonType.SPELL then
         --zebug.trace:print("IsSpellKnownOrOverridesKnown",IsSpellKnownOrOverridesKnown(id))
         return IsSpellKnownOrOverridesKnown(id)
@@ -391,14 +391,16 @@ function ButtonDef:getFromCursor()
         btnDef = nil
     end
 
-    if type then
-        -- discovering the name requires knowing its type
-        btnDef:getName()
-    end
+    if btnDef then
+        if type then
+            -- discovering the name requires knowing its type
+            btnDef:getName()
+        end
 
-    if Ufo.pickedUpBtn then
-        -- TODO: should this be done as part of receiveDrop instead?
-        btnDef.noRnd = Ufo.pickedUpBtn.noRnd
+        if Ufo.pickedUpBtn then
+            -- TODO: should this be done as part of receiveDrop instead?
+            btnDef.noRnd = Ufo.pickedUpBtn.noRnd
+        end
     end
 
     Ufo.pickedUpBtn = nil
