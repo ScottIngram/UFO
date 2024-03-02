@@ -1,5 +1,7 @@
 # this file is used by curseforge
 
+package-as: UFO
+
 externals:
   ScottFreeWowLibs:
     url: git://github.com/ScottIngram/ScottFreeWowLibs
