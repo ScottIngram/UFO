@@ -1,0 +1,5 @@
+# this file is used by curseforge
+
+externals:
+  ScottFreeWowLibs:
+    url: git://github.com/ScottIngram/ScottFreeWowLibs
