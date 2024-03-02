@@ -81,7 +81,7 @@ function EventHandlers:UPDATE_BINDINGS()
     if not hasShitCalmedTheFuckDown then return end
     zebug.trace:print("Heard event: UPDATE_BINDINGS")
     if isInCombatLockdownQuiet("Ignoring event UPDATE_BINDINGS because it") then return end
-    GermCommander:updateAll()
+    --GermCommander:updateAll()
 end
 
 function EventHandlers:CURSOR_CHANGED()

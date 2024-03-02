@@ -58,6 +58,7 @@ local LEN_CLICK_ID_MARKER = string.len(CLICK_ID_MARKER)
 function searchForFlyoutMenuScriptlet()
     return [=[
 	germ = self
+    local FLYOUT_MENU_NAME = self:GetAttribute("FLYOUT_MENU_NAME")
 
     -- use a global var to cache the flyout menu
     if not flyoutMenu then
@@ -65,15 +66,10 @@ function searchForFlyoutMenuScriptlet()
         local kids = table.new(germ:GetChildren())
         for i, kid in ipairs(kids) do
             local kidName = kid:GetName()
-            if kidName then
-                local wantedSuffix = "]=].. FlyoutMenu.nameSuffix ..[=["
-                local n = string.len(wantedSuffix)
-                local kidSuffix = string.sub(kidName, 0-n) -- last n letters
-
-                if kidSuffix == wantedSuffix then
-                    flyoutMenu = kid
-                    break
-                end
+            if kidName == FLYOUT_MENU_NAME then
+                flyoutMenu = kid
+                keybindKeeper = flyoutMenu -- not really needed. I added this while debugging a taint problem
+                break
             end
         end
     end
@@ -98,11 +94,11 @@ function getOpenerClickerScriptlet()
 	if doCloseFlyout and isOpen then
 		flyoutMenu:Hide()
 		flyoutMenu:SetAttribute("doCloseFlyout", false)
-		flyoutMenu:ClearBindings()
+		keybindKeeper:ClearBindings()
 		return
     end
 
-    flyoutMenu:SetBindingClick(true, "Escape", germ, mouseClick)
+    keybindKeeper:SetBindingClick(true, "Escape", germ, mouseClick)
 
 -- TODO: move this into FlyoutMenu:updateForGerm()
 
@@ -163,12 +159,12 @@ function getOpenerClickerScriptlet()
                 if numButtons < 11 then
                     -- TODO: make first keybind same as the UFO's
                     local numberKey = (numButtons == 10) and "0" or tostring(numButtons)
-                    flyoutMenu:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
+                    keybindKeeper:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
                     if numberKey == "1" then
                         -- make the UFO's first button's keybind be the same as the UFO itself
                         local germKey = self:GetAttribute("UFO_KEYBIND_1")
                         if germKey then
-                            flyoutMenu:SetBindingClick(true, germKey, btn, "]=].. MouseClick.LEFT ..[=[")
+                            keybindKeeper:SetBindingClick(true, germKey, btn, "]=].. MouseClick.LEFT ..[=[")
                         end
                     end
                 end
@@ -253,6 +249,7 @@ function Germ:new(flyoutId, btnSlotIndex)
     self:initFlyoutMenu()
     self.flyoutMenu:installHandlerForCloseOnClick()
     self:SetAttribute("flyoutDirection", self:getDirection())
+    self:SetAttribute("FLYOUT_MENU_NAME", self.flyoutMenu:GetName())
 
     -- Click behavior
     --self:RegisterForClicks("AnyUp") -- this does nothing

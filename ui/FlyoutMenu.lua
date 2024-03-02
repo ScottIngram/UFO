@@ -74,6 +74,10 @@ function FlyoutMenu:forEachButton(handler)
     end
 end
 
+function FlyoutMenu:getBtn1()
+    return self:getBtnKids()[1]
+end
+
 -- use non-local "global" variables to save values between executions
 -- because GetParent() returns nil during combat lockdown
 local CLOSE_ON_CLICK_SCRIPTLET = [=[
@@ -250,9 +254,11 @@ function FlyoutMenu:updateForGerm(germ)
 
     if not self.hasOnHide then
         zebug.info:print("setting OnHide for",self:GetName())
-        self:SetScript("OnHide", function(self)
+        local btn1 = self:getBtn1()
+        btn1:SetScript("OnHide", function(btn1)
             --print('FlyoutMenu Script.ON_HIDE for',self:GetName())
-            SecureHandlerExecute(germ, "flyoutMenu:ClearBindings()")
+            -- I guess, it should really be called MaybeSecureHandlerExecuteFuckYouHahahaEnjoyDebuggingOurShittyApiSincereluBlizzard()
+            SecureHandlerExecute(germ, "keybindKeeper:ClearBindings()")
         end)
         self.hasOnHide = true
     end

@@ -19,7 +19,8 @@ GermCommander = { }
 -- Data
 -------------------------------------------------------------------------------
 
-local germs = {} -- copies of flyouts that sit on the action bars
+---@type table<number,Germ>
+local germs = {}
 local previousSpec
 local currentSpec
 
@@ -28,7 +29,7 @@ local currentSpec
 -------------------------------------------------------------------------------
 
 local function hideAllGerms()
-    for name, germ in pairs(germs) do
+    for btnSlotIndex, germ in pairs(germs) do
         germ:myHide()
     end
 end
