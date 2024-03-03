@@ -1,0 +1,22 @@
+name: Release maker and packager
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ '*' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          fetch-depth: 0 # reads history for commit changelog
+
+      - name: Create Package
+        uses: BigWigsMods/packager@master
+        env:
+           CF_API_KEY: ${{ secrets.CF_API_KEY }}
+           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
