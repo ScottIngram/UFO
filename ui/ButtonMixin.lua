@@ -174,6 +174,7 @@ end
 function ButtonMixin:updateCount()
     local btnDef = self:getDef()
     local itemId = btnDef and btnDef.itemId
+    if not itemId then return end
     local hasItem = exists(itemId)
 
     if not hasItem then
@@ -192,7 +193,7 @@ function ButtonMixin:updateCount()
     end
     local includeBank = false
     local includeCharges = true
-    local count = GetItemCount(itemId, includeBank, includeCharges)
+    local count = C_Item.GetItemCount(itemId, includeBank, includeCharges)
     local tooMany = ( count > (self.maxDisplayCount or 9999 ) )
     zebug.trace:print("itemId",itemId, "hasItem",hasItem, "name",name, "itemType",itemType, "max",self.maxDisplayCount, "count",count, "tooMany",tooMany)
 

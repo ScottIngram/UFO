@@ -188,7 +188,7 @@ function ButtonDef:isUsable()
         return IsSpellKnownOrOverridesKnown(id, true)
     elseif t == ButtonType.ITEM then
         -- isUseable = C_PlayerInfo.CanUseItem(itemID)
-        local n = GetItemCount(id)
+        local n = C_Item.GetItemCount(id)
         return n > 0
     elseif t == ButtonType.MACRO then
         zebug.info:print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
