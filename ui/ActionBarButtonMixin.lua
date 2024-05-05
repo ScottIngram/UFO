@@ -73,6 +73,7 @@ function ActionBarButtonMixin:extractBarBtnInfo(btnSlotIndex)
     return {
         btnSlotIndex = btnSlotIndex,
         barNum       = barNum,
+        btnNum       = btnNum,
         actionBarDef = actionBarDef,
         barName      = barName,
         barYafName   = actionBarDef.yafName,
