@@ -387,7 +387,15 @@ function Germ:handleGermUpdateEvent()
 
     -- Update border and determine arrow position
     local arrowDistance;
-    local isMouseOverButton = GetMouseFocus() == self;
+
+    -- support v10 and v11 until launch
+    local isMouseOverButton
+    if self.IsMouseMotionFocus then -- v11
+        isMouseOverButton = self:IsMouseMotionFocus()
+    elseif GetMouseFocus then -- v10
+        isMouseOverButton = GetMouseFocus() == self
+    end
+
     local isFlyoutShown = self.flyoutMenu:IsShown()
     if isFlyoutShown or isMouseOverButton then
         self.FlyoutBorderShadow:Show();

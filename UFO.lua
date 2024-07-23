@@ -105,6 +105,12 @@ end
 
 local HandlersForOtherAddons = {}
 
+function HandlersForOtherAddons:Blizzard_PlayerSpells()
+    --v11 Bliz moved the spell book into its own internal, load-on-demand addon
+    zebug.trace:print("Heard addon load: Blizzard_PlayerSpells", PlayerSpellsFrame)
+    Catalog:createToggleButton(PlayerSpellsFrame)
+end
+
 function HandlersForOtherAddons:Blizzard_Collections()
     zebug.trace:print("Heard addon load: Blizzard_Collections")
     Catalog:createToggleButton(CollectionsJournal)
@@ -157,7 +163,11 @@ function initalizeAddonStuff()
     registerSlashCmd("ufo", slashFuncs)
     Catalog:definePopupDialogWindow()
     ButtonDef:registerToolTipRecorder()
-    Catalog:createToggleButton(SpellBookFrame)
+
+    -- support WoW before v11
+    if SpellBookFrame then
+        Catalog:createToggleButton(SpellBookFrame)
+    end
     IconPicker:init()
 
     -- flags to wait out the chaos happening when the UI first loads / reloads.

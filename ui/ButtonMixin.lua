@@ -87,7 +87,11 @@ end
 function ButtonMixin:updateCooldownsAndCountsAndStatesEtc()
     local btnDef = self:getDef()
     local spellId = btnDef and btnDef.spellId
-    if (spellId) then
+    if spellId then
+        if not self.spellID then
+            -- internal Bliz code expects this field
+            self.spellID = spellId
+        end
         SpellFlyoutButton_UpdateState(self)
     end
 
@@ -106,10 +110,18 @@ function ButtonMixin:updateUsable()
 
         if itemId or spellId then
             if itemId then
-                _, spellId = GetItemSpell(itemId)
-                isUsable = IsUsableSpell(spellId)
+                _, spellId = C_Item.GetItemSpell(itemId)
+                if C_Spell.IsSpellUsable then --v11
+                    isUsable = C_Spell.IsSpellUsable(spellId or 0)
+                else --v10
+                    isUsable = IsUsableSpell(spellId)
+                end
             else
-                isUsable, notEnoughMana = IsUsableSpell(spellId)
+                if C_Spell.IsSpellUsable then --v11
+                    isUsable, notEnoughMana = C_Spell.IsSpellUsable(spellId)
+                else --v10
+                    isUsable, notEnoughMana = IsUsableSpell(spellId)
+                end
             end
         end
 
@@ -136,6 +148,14 @@ function ButtonMixin:updateCooldown()
     if exists(spellId) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
         zebug.trace:print("spellId",spellId)
+        self.spellID = spellId --v11 -- internal Bliz code expects this field
+
+        -- all of the following was because I copied my retail config with the not-on-beta Charming Courier
+        --local isOk, err = pcall( function()  SpellFlyoutButton_UpdateCooldown(self) end  )
+        --if not isOk then
+        --    zebug.error:print("my updateCooldown failed! ERROR was",err, "self.spellID",self.spellID)
+        --end
+
         SpellFlyoutButton_UpdateCooldown(self)
         return
     end
@@ -154,8 +174,14 @@ function ButtonMixin:updateCooldown()
     local start, duration, enable = 0, 0.75, true;
     local id = btnDef and btnDef:getIdForBlizApi()
     if id then
-        start, duration, enable = GetItemCooldown(id);
-        if duration > (Config.opts.hideCooldownsWhen or 99999) then return end
+        if type == ButtonType.PET or type == ButtonType.BROKENP then
+            id = AUTO_ATTACK_SPELL_ID --v11 has stricter param checks in some of its API calls
+        end
+        -- debugging to unsilence Bliz's err silencing so I can find out what's going wrong.
+        --local isOk, err = pcall( function() start, duration, enable = C_Container.GetItemCooldown(btnDef.cooldownProxy or id) end  )
+        --if err then zebug.error:print("DIED on C_Container.GetItemCooldown() where id",id) end
+        start, duration, enable = C_Container.GetItemCooldown(btnDef.cooldownProxy or id)
+        if (duration or 0) > (Config.opts.hideCooldownsWhen or 99999) then return end
         CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
     else
         -- without an id, this must be the empty placeholder slot.  Make it sparkle.  Once.
@@ -189,7 +215,7 @@ function ButtonMixin:updateCount()
 
     local name, itemType, display
     if hasItem then
-        name, _, _, _, _, itemType = GetItemInfo(itemId)
+        name, _, _, _, _, itemType = C_Item.GetItemInfo(itemId)
     end
     local includeBank = false
     local includeCharges = true

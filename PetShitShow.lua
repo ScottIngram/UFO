@@ -77,5 +77,10 @@ function PetShitShow:canHazPet()
     if DB:canHazPet() then
         return true
     end
-    return DB:canHazPet(HasPetSpells())
+
+    if HasPetSpells then
+        return DB:canHazPet( HasPetSpells() ) --v10
+    else
+        return DB:canHazPet( C_SpellBook.HasPetSpells() ) --v11
+    end
 end

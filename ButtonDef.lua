@@ -6,8 +6,6 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new()
-
 -------------------------------------------------------------------------------
 -- ButtonType
 -- identifies a button as a Spell, Item, Pet, etc. as used by most(some?) APIs including GetCursorInfo.
@@ -37,10 +35,10 @@ ButtonType = {
 ---@field key string which field should be used as the ID
 -- the key is a ButtonType as returned by GetCursorInfo while the user is dragging it around on the mouse.
 BlizApiFieldDef = {
-    [ButtonType.SPELL] = { pickerUpper = PickupSpell, typeForBliz = ButtonType.SPELL, },
-    [ButtonType.MOUNT] = { pickerUpper = PickupSpell, typeForBliz = ButtonType.SPELL, },
-    [ButtonType.ITEM ] = { pickerUpper = PickupItem,  typeForBliz = ButtonType.ITEM,  },
-    [ButtonType.TOY  ] = { pickerUpper = PickupItem,  typeForBliz = ButtonType.TOY, key = "itemId"  },
+    [ButtonType.SPELL] = { pickerUpper = C_Spell.PickupSpell, typeForBliz = ButtonType.SPELL, },
+    [ButtonType.MOUNT] = { pickerUpper = C_Spell.PickupSpell, typeForBliz = ButtonType.SPELL, },
+    [ButtonType.ITEM ] = { pickerUpper = C_Item.PickupItem, typeForBliz = ButtonType.ITEM,  },
+    [ButtonType.TOY  ] = { pickerUpper = C_Item.PickupItem, typeForBliz = ButtonType.TOY, key = "itemId"  },
     [ButtonType.MACRO] = { pickerUpper = PickupMacro, typeForBliz = ButtonType.MACRO --[[, key = "name"]] },
     [ButtonType.SNAFU] = { pickerUpper = nil,         typeForBliz = ButtonType.SPELL, key = "mountId" },
     [ButtonType.PET  ] = { pickerUpper = C_PetJournal.PickupPet, typeForBliz = ButtonType.PET, key = "petGuid" },
@@ -151,7 +149,7 @@ function ButtonDef:redefine(id, name)
 end
 
 -- A few different types of buttons share Bliz APIs.
--- For example, you get a mount's icon by calling GetSpellTexture(mountId)
+-- For example, you get a mount's icon by calling C_Spell.GetSpellTexture(mountId)
 -- This method remaps the various ID fields to match what Bliz API expects
 ---@return number
 function ButtonDef:getIdForBlizApi()
@@ -202,9 +200,17 @@ function ButtonDef:getIcon()
     local t = self.type
     local id = self:getIdForBlizApi()
     if t == ButtonType.SPELL or t == ButtonType.MOUNT or t == ButtonType.PSPELL then
-        return GetSpellTexture(id)
+        if C_Spell.GetSpellTexture then --v11
+            return C_Spell.GetSpellTexture(id)
+        else --v10
+            return GetSpellTexture(id)
+        end
     elseif t == ButtonType.ITEM or t == ButtonType.TOY then
-        return GetItemIcon(id)
+        if C_Item.GetItemIconByID then --v11
+            return C_Item.GetItemIconByID(id)
+        else --v10
+            return GetItemIcon(id)
+        end
     elseif t == ButtonType.MACRO then
         if self:isUsable() then
             local _, texture, _ = GetMacroInfo(id)
@@ -228,11 +234,16 @@ function ButtonDef:getName()
     local t = self.type
     local id = self:getIdForBlizApi()
     if t == ButtonType.SPELL or t == ButtonType.MOUNT or t == ButtonType.PSPELL then
-        self.name =  GetSpellInfo(id)
+        if GetSpellInfo then --v10
+            self.name = GetSpellInfo(id)
+        elseif C_Spell.GetSpellInfo then --v11
+            local foo = C_Spell.GetSpellInfo(id)
+            self.name = foo and foo.name
+        end
     elseif t == ButtonType.ITEM or t == ButtonType.TOY then
-        self.name =  GetItemInfo(id)
+        self.name =  C_Item.GetItemInfo(id)
     elseif t == ButtonType.TOY then
-        self.name =  GetItemInfo(id)
+        self.name =  C_Item.GetItemInfo(id)
     elseif t == ButtonType.MACRO then
         self.name =  GetMacroInfo(self.macroId)
     elseif t == ButtonType.PET then
@@ -330,7 +341,7 @@ function ButtonDef:readToolTipForToyType()
     for i, ttLine in ipairs(ttData.lines) do
         zebug.trace:print("ttLine.leftText",ttLine.leftText)
         if ttLine.leftText == L10N.TOY then
-            zebug.trace:out(")",30,"TOY !!!")
+            zebug.trace:out(30,")","TOY !!!")
             return true
         end
     end
@@ -414,9 +425,14 @@ function ButtonDef:pickupToCursor()
     local pickup = BlizApiFieldDef[type].pickerUpper
     Ufo.pickedUpBtn = self
 
-    zebug.trace:print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId)
+    zebug.trace:print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId, "pickup", pickup, "PickupSpell",PickupSpell)
 
-    pickup(id)
+    local isOk, err = pcall( function()  pickup(id) end  )
+    if not isOk then
+        zebug.error:print("pickupToCursor failed! ERROR is",err)
+    end
+    --pickup(id)
+    zebug.trace:print("grabbed id", id)
 end
 
 ---@return ButtonType buttonType what kind of action is performed by the btn
@@ -457,8 +473,7 @@ function ButtonDef:asSecureClickHandlerAttributes()
         return ButtonType.MACRO, "macrotext", macroText
     else
         local blizType = self:getTypeForBlizApi()
+        zebug.info:print("catch-all block... blizType",blizType, "self.name",self.name)
         return blizType, blizType, self.name
     end
 end
-
-local secureButton

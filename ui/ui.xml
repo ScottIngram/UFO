@@ -247,7 +247,10 @@
         </NormalTexture>
     </Button>
 
-    <Frame name="UIUFO_Catalog" parent="SpellBookFrame" frameStrata="MEDIUM" inherits="TranslucentFrameTemplate" hidden="true">
+    <Frame name="UIUFO_DUM_DUM" hidden="true">
+    </Frame>
+
+    <Frame name="UIUFO_Catalog" parent="UIUFO_DUM_DUM" frameStrata="MEDIUM" inherits="TranslucentFrameTemplate" hidden="true">
         <Size>
             <AbsDimension x="150" y="525"/>
         </Size>
@@ -294,7 +297,7 @@
     </Frame>
 
     <Script>
-        LoadAddOn("Blizzard_MacroUI")
+        C_AddOns.LoadAddOn("Blizzard_MacroUI")
         UfoIconPickerMixin = CreateFromMixins(IconSelectorPopupFrameTemplateMixin, MacroPopupFrameMixin, GLOBAL_IconPickerMixin)
     </Script>
 

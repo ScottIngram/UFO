@@ -60,6 +60,7 @@ end
 local toggleBtns = {}
 
 function Catalog:createToggleButton(blizFrame)
+    assert(blizFrame, "can't find blizFrame")
     local blizFrameName = blizFrame:GetName()
     local btnName = "UIUFO_BtnToToggleCatalog_On".. blizFrameName
     local btnFrame = _G[btnName]
@@ -68,12 +69,12 @@ function Catalog:createToggleButton(blizFrame)
         return
     end
     local xBtnName = blizFrameName .."CloseButton"
-    local xBtnFrame = _G[xBtnName]
-    zebug.trace:print("parentName", blizFrameName, "xBtnName", xBtnName, "btnName",btnName)
+    local xBtnFrame = blizFrame.MaximizeMinimizeButton or _G[xBtnName]
+    zebug.trace:print("parentName", blizFrameName, "xBtnName", xBtnName, "btnName",btnName, "blizFrame.MaximizeMinimizeButton",blizFrame.MaximizeMinimizeButton)
 
     btnFrame = CreateFrame(FrameType.BUTTON, btnName, blizFrame, "UIPanelButtonTemplate")
     btnFrame:SetSize(80,22)
-    btnFrame:SetPoint(Anchor.RIGHT, xBtnName, Anchor.LEFT, 2, 1)
+    btnFrame:SetPoint(Anchor.RIGHT, xBtnFrame, Anchor.LEFT, 2, 1)
     btnFrame:SetFrameStrata(xBtnFrame:GetFrameStrata())
     btnFrame:SetFrameLevel(xBtnFrame:GetFrameLevel()+1 )
     btnFrame.Text:SetText("UFO")
@@ -316,8 +317,12 @@ function Catalog:open()
     end
 
     if not anyOpenBlizFrame then
-        ToggleSpellBook("spell")
-        anyOpenBlizFrame = SpellBookFrame
+        if PlayerSpellsUtil and PlayerSpellsUtil.ToggleSpellBookFrame then -- v11
+            PlayerSpellsUtil.ToggleSpellBookFrame()
+        else --v10
+            ToggleSpellBook("spell")
+        end
+        anyOpenBlizFrame = SpellBookFrame or PlayerSpellsFrame
     end
 
     zebug.trace:dump(toggleBtns)
