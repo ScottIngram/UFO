@@ -20,6 +20,7 @@ MouseClick = Ufo.MouseClick
 ---@field clickers table germ behavior for various mouse clicks
 ---@field keybindBehavior GermClickBehavior when a keybind is activated, it will perform this action
 ---@field flyoutButtonsWillBind boolean when a UFO is open, are its buttons bound to number keys?
+---@field muteLogin boolean don't print out status messages on log in
 Options = { }
 
 ---@class Config -- IntelliJ-EmmyLua annotation
@@ -38,6 +39,7 @@ function Config:getOptionDefaults()
         supportCombat   = true,
         doCloseOnClick  = true,
         usePlaceHolders = true,
+        muteLogin       = false,
         hideCooldownsWhen = 99999,
         keybindBehavior = GermClickBehavior.OPEN,
         flyoutButtonsWillBind = true,
@@ -91,7 +93,7 @@ local function initializeOptionsMenu()
                 order = 10,
                 name = "Auto-Close UFO",
                 desc = "Closes the UFO after clicking any of its buttons",
-                width = "full",
+                width = "medium",
                 type = "toggle",
                 set = function(optionsMenu, val)
                     opts.doCloseOnClick = val
@@ -99,6 +101,19 @@ local function initializeOptionsMenu()
                 end,
                 get = function()
                     return opts.doCloseOnClick
+                end,
+            },
+            doMute = {
+                order = 12,
+                name = "Mute Login Messages",
+                desc = "Don't print out Addon info during login.",
+                width = "medium",
+                type = "toggle",
+                set = function(optionsMenu, val)
+                    opts.muteLogin = val
+                end,
+                get = function()
+                    return opts.muteLogin
                 end,
             },
             hideCooldownsWhen = {

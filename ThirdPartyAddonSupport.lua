@@ -32,7 +32,7 @@ function ThirdPartyAddonSupport:detectSupportedAddons()
     for addon, methods in pairs(SUPPORTED_ADDONS) do
         zebug.info:print("Checking - addon",addon)
         if C_AddOns.IsAddOnLoaded(addon) then
-            msgUser(L10N.DETECTED .. " " .. addon)
+            msgUser(L10N.DETECTED .. " " .. addon, IS_OPTIONAL)
             SUPPORTED_ADDONS[addon].activate()
         end
     end

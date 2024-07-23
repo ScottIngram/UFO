@@ -38,6 +38,11 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
     initalizeAddonStuff() -- moved this here from PLAYER_LOGIN() because the Bliz API was just generally shitting the bed
     if isInCombatLockdown("Ignoring event PLAYER_ENTERING_WORLD because it") then return end
     GermCommander:updateAll() -- moved this here from PLAYER_LOGIN() because the Bliz API was misrepresenting the bar directions >:(
+    if isInitialLogin then
+        local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
+        local msg = L10N.LOADED .. " v"..version
+        msgUser(msg, IS_OPTIONAL)
+    end
 end
 
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
@@ -94,9 +99,6 @@ end
 
 function EventHandlers:PLAYER_LOGIN()
     zebug.trace:print("Heard event: PLAYER_LOGIN")
-    local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
-    local msg = L10N.LOADED .. " v"..version
-    msgUser(msg)
 end
 
 -------------------------------------------------------------------------------
