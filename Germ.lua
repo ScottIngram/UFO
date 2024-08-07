@@ -605,6 +605,7 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnLeave(germ)
+    GameTooltip:Hide()
     germ:handleGermUpdateEvent()
 end
 
