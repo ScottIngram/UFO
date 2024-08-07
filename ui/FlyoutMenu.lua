@@ -74,6 +74,7 @@ function FlyoutMenu:forEachButton(handler)
     end
 end
 
+---@return ButtonOnFlyoutMenu
 function FlyoutMenu:getBtn1()
     return self:getBtnKids()[1]
 end

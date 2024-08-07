@@ -445,6 +445,12 @@ function Germ:handleGermUpdateEvent()
 end
 
 function Germ:setToolTip()
+    local btn1 = self.flyoutMenu:getBtn1()
+    if btn1 and btn1:hasDef() then
+        btn1:setTooltip()
+        return
+    end
+
     local flyoutDef = FlyoutDefsDb:get(self.flyoutId)
     local label = flyoutDef.name or flyoutDef.id
 
