@@ -31,9 +31,9 @@ BLIZ_BAR_METADATA = {
     [10] = {name="Action",              visibleIf="bar:1,bonusbar:4"}, -- primary "ActionBar" - page #1 - bonusbar 4 - druid MOONKIN
     [11] = {name="Action",              visibleIf="bar:1,bonusbar:5"}, -- primary "ActionBar" - page #1 - bonusbar 5 - dragon riding
     [12] = {name="Action",              visibleIf="bar:1,bonusbar:6"--[[just a guess]]}, -- unknown?
-    [13] = {name="MultiBar5"}, -- config UI -> Action Bars -> checkbox #6
-    [14] = {name="MultiBar6"}, -- config UI -> Action Bars -> checkbox #7
-    [15] = {name="MultiBar7"}, -- config UI -> Action Bars -> checkbox #8
+    [13] = {name="MultiBar5",           yafName="MultiActionBar5"}, -- config UI -> Action Bars -> checkbox #6
+    [14] = {name="MultiBar6",           yafName="MultiActionBar6"}, -- config UI -> Action Bars -> checkbox #7
+    [15] = {name="MultiBar7",           yafName="MultiActionBar7"}, -- config UI -> Action Bars -> checkbox #8
 }
 
 
