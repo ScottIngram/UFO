@@ -59,22 +59,27 @@ end
 
 local toggleBtns = {}
 
-function Catalog:createToggleButton(blizFrame)
-    assert(blizFrame, "can't find blizFrame")
-    local blizFrameName = blizFrame:GetName()
-    local btnName = "UIUFO_BtnToToggleCatalog_On".. blizFrameName
+function Catalog:createToggleButtonIfWeCan(maybeFrame)
+    if not maybeFrame then return end
+    self:createToggleButton(maybeFrame)
+end
+
+function Catalog:createToggleButton(parentFrame, xBtnOverride)
+    assert(parentFrame, "can't find parent frame")
+    local parentFrameName = parentFrame:GetName()
+    local btnName = "UIUFO_BtnToToggleCatalog_On".. parentFrameName
     local btnFrame = _G[btnName]
     if btnFrame then
         -- we've already made it
         return
     end
-    local xBtnName = blizFrameName .."CloseButton"
-    local xBtnFrame = blizFrame.MaximizeMinimizeButton or _G[xBtnName]
-    zebug.trace:print("parentName", blizFrameName, "xBtnName", xBtnName, "btnName",btnName, "blizFrame.MaximizeMinimizeButton",blizFrame.MaximizeMinimizeButton)
+    local xBtnName = parentFrameName .."CloseButton"
+    local xBtnFrame = parentFrame.MaximizeMinimizeButton or _G[xBtnName]
+    zebug.trace:print("parentName", parentFrameName, "xBtnName", xBtnName, "btnName",btnName, "blizFrame.MaximizeMinimizeButton", parentFrame.MaximizeMinimizeButton)
 
-    btnFrame = CreateFrame(FrameType.BUTTON, btnName, blizFrame, "UIPanelButtonTemplate")
+    btnFrame = CreateFrame(FrameType.BUTTON, btnName, parentFrame, "UIPanelButtonTemplate")
     btnFrame:SetSize(80,22)
-    btnFrame:SetPoint(Anchor.RIGHT, xBtnFrame, Anchor.LEFT, 2, 1)
+    btnFrame:SetPoint(Anchor.RIGHT, xBtnOverride or xBtnFrame, Anchor.LEFT, 2, 1)
     btnFrame:SetFrameStrata(xBtnFrame:GetFrameStrata())
     btnFrame:SetFrameLevel(xBtnFrame:GetFrameLevel()+1 )
     btnFrame.Text:SetText("UFO")
@@ -82,7 +87,7 @@ function Catalog:createToggleButton(blizFrame)
     btnFrame:SetScript(Script.ON_CLICK, Catalog.clickUfoButton)
     btnFrame:Show()
 
-    toggleBtns[blizFrame] = btnFrame
+    toggleBtns[parentFrame] = btnFrame
 end
 
 ---@param mouseClick MouseClick

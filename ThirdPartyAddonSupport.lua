@@ -124,6 +124,11 @@ function supportLargerMacroIconSelection()
     LargerMacroIconSelection:Initialize(UIUFO_IconPicker)
 end
 
+function supportMacroToolkit()
+    Catalog:createToggleButton(MacroToolkitFrame, MacroToolkitFrameCloseButton)
+    MacroShitShow:init()
+end
+
 -------------------------------------------------------------------------------
 -- Constants
 -- I have to put these after the function declarations due to Lua's one-pass compiler.
@@ -147,6 +152,9 @@ SUPPORTED_ADDONS = {
     },
     LargerMacroIconSelection = {
         activate = supportLargerMacroIconSelection,
+    },
+    MacroToolkit = {
+        activate = supportMacroToolkit,
     }
 }
 

@@ -166,10 +166,12 @@ function initalizeAddonStuff()
     Catalog:definePopupDialogWindow()
     ButtonDef:registerToolTipRecorder()
 
-    -- support WoW before v11
-    if SpellBookFrame then
-        Catalog:createToggleButton(SpellBookFrame)
-    end
+    -- check to see if the usually on-demand Bliz windows have already been loaded (by some other addon)
+    Catalog:createToggleButtonIfWeCan(SpellBookFrame) -- support WoW v10
+    Catalog:createToggleButtonIfWeCan(PlayerSpellsFrame)
+    Catalog:createToggleButtonIfWeCan(CollectionsJournal)
+    Catalog:createToggleButtonIfWeCan(MacroFrame)
+
     IconPicker:init()
 
     -- flags to wait out the chaos happening when the UI first loads / reloads.
