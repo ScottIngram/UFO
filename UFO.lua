@@ -124,6 +124,11 @@ function HandlersForOtherAddons:Blizzard_MacroUI()
     MacroShitShow:init()
 end
 
+function HandlersForOtherAddons:Blizzard_ProfessionsBook()
+    zebug.trace:print("Heard addon load: Blizzard_ProfessionsBook")
+    Catalog:createToggleButton(ProfessionsBookFrame)
+end
+
 function HandlersForOtherAddons:LargerMacroIconSelection()
     zebug.trace:print("Heard addon load: LargerMacroIconSelection")
     supportLargerMacroIconSelection()
@@ -171,6 +176,7 @@ function initalizeAddonStuff()
     Catalog:createToggleButtonIfWeCan(PlayerSpellsFrame)
     Catalog:createToggleButtonIfWeCan(CollectionsJournal)
     Catalog:createToggleButtonIfWeCan(MacroFrame)
+    Catalog:createToggleButtonIfWeCan(ProfessionsBookFrame)
 
     IconPicker:init()
 

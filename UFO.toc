@@ -26,6 +26,7 @@ DB.lua
 Config.lua
 ThirdPartyAddonSupport.lua
 PetShitShow.lua
+ProfessionShitShow.lua
 FlyoutDefsDb.lua
 FlyoutDef.lua
 ButtonDef.lua

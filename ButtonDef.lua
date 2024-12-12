@@ -439,9 +439,9 @@ end
 ---@return string key for the SecureActionButtonTemplate:SetAttribute(key, val)
 ---@return string val for the SecureActionButtonTemplate:SetAttribute(key, val)
 function ButtonDef:asSecureClickHandlerAttributes()
-    local altId = BrokenProfessions[self.name]
-
-    if (self.type == ButtonType.PET) then
+    -- Check special (as in "short bus" special) cases for special needs
+    if ButtonType.PET == self.type then
+        -- COMPANION PET
         -- this fails with "invalid attribute name"
         --local snippet = "C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
         --return "UFO_customscript", "_UFO_customscript", snippet
@@ -450,14 +450,20 @@ function ButtonDef:asSecureClickHandlerAttributes()
         -- TODO: fix bug where this fails in combat - perhaps control:CallMethod(keyName, ...) ?
         local petMacro = "/run C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
         return ButtonType.MACRO, "macrotext", petMacro
-    elseif altId and (self.type == ButtonType.SPELL) then
-        --local snippet = "C_TradeSkillUI.OpenTradeSkill(" .. altId .. ")" -- fails with:  attempt to index global 'C_TradeSkillUI' (a nil value)
-        --return "UFO_PROF_FIXER", "_UFO_PROF_FIXER", snippet
-
-        local profMacro = sprintf("/run C_TradeSkillUI.OpenTradeSkill(%d)", altId)
-        --zebug.error:print("name",self.name, "altId",altId, "profMacro",profMacro)
-        return ButtonType.MACRO, "macrotext", profMacro
-    elseif self.type == ButtonType.BROKENP then
+    elseif ButtonType.SPELL == self.type then
+        -- PROFESSIONS
+        --local altId = BrokenProfessions[self.name]
+        local professionSnafuId = ProfessionShitShow:get(self.name)
+        --zebug.error:print("name",self.name, "id",self.spellId, "altId",altId, "professionSnafuId", professionSnafuId)
+        if professionSnafuId then
+            local profMacro = sprintf("/run C_TradeSkillUI.OpenTradeSkill(%d)", professionSnafuId)
+            zebug.trace:print("name",self.name, "professionSnafuId", professionSnafuId, "profMacro",profMacro)
+            return ButtonType.MACRO, "macrotext", profMacro
+        end
+        -- if the prof name was NOT found in the ProfessionShitShow mapping, then,
+        -- it was something like "Herbalism Journal" and not "Herbalism"
+        -- if so, then, the "fall-through" block below will cast it as type "spell" and that works for any "journal"
+    elseif ButtonType.BROKENP == self.type then
         local brokenPetCommand = BrokenPetCommand[self.brokenPetCommandId]
         if brokenPetCommand.macro then
             local bpc = BrokenPetCommand[self.brokenPetCommandId]
