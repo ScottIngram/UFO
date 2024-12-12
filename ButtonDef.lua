@@ -480,9 +480,9 @@ function ButtonDef:asSecureClickHandlerAttributes()
     elseif ButtonType.ITEM == self.type then
         -- because using items by name implies rank 1 and never rank 2 or 3 we must use by the item's ID
         return ButtonType.ITEM, ButtonType.ITEM, "item:".. self.itemId -- but not just itemId, it must be item:itemId - I hate you Bliz
-    else
-        local blizType = self:getTypeForBlizApi()
-        zebug.info:print("catch-all block... blizType",blizType, "self.name",self.name)
-        return blizType, blizType, self.name
     end
+
+    local blizType = self:getTypeForBlizApi()
+    zebug.info:print("catch-all block... blizType",blizType, "self.name",self.name)
+    return blizType, blizType, self.name
 end
