@@ -9,7 +9,7 @@
 ## SavedVariables: UFO_SV_ACCOUNT
 ## SavedVariablesPerCharacter: UFO_SV_TOON
 ## Notes: custom actionbar flyout menus
-## X-Category: Action Bars
+## Category: Action Bars
 ## X-License: Mozilla Public License Version 2.0
 ## X-Curse-Project-ID: 904467
 
@@ -18,6 +18,10 @@ libs\libs.xml
 
 # libs common to my various projects
 ScottFreeWowLibs\index.xml
+
+# copies of old outdated Bliz code that I need to replace
+OLD_BLIZ_SpellFlyout.lua
+OLD_BLIZ_SpellFlyout.xml
 
 # UFO specific code
 constantsUfo.lua

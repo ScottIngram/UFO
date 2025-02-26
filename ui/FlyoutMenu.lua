@@ -68,7 +68,7 @@ end
 
 function FlyoutMenu:forEachButton(handler)
     for i, button in ipairs(self:getBtnKids()) do
-        if button:GetObjectType() == "CheckButton" then
+        if button.ufoType == ButtonOnFlyoutMenu.ufoType then
             handler(button,i)
         end
     end
@@ -333,7 +333,7 @@ function FlyoutMenu:setBorderGeometry()
         self.Background.HorizontalMiddle:SetPoint(Anchor.LEFT, distance, 0);
     end
     self:SetBorderColor(0.7, 0.7, 0.7);
-    self:SetBorderSize(47);
+    --self:SetBorderSize(47);
 end
 
 ---@param flyoutMenu FlyoutMenu

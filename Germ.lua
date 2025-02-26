@@ -396,6 +396,12 @@ function Germ:handleGermUpdateEvent()
         isMouseOverButton = GetMouseFocus() == self
     end
 
+    -- tmp fix for v11.1.0
+    if (not self.FlyoutArrowContainer or
+            not self.FlyoutBorderShadow) then
+        return;
+    end
+
     local isFlyoutShown = self.flyoutMenu:IsShown()
     if isFlyoutShown or isMouseOverButton then
         self.FlyoutBorderShadow:Show();
@@ -446,7 +452,7 @@ end
 
 function Germ:setToolTip()
     local btn1 = self.flyoutMenu:getBtn1()
-    if btn1 and btn1:hasDef() then
+    if btn1 and btn1.hasDef and btn1:hasDef() then
         btn1:setTooltip()
         return
     end
