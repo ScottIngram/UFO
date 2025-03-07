@@ -20,7 +20,7 @@ local zebug = Zebug:new()
 ButtonOnFlyoutMenu = {
     ufoType = "ButtonOnFlyoutMenu",
 }
-ButtonMixin:inject(ButtonOnFlyoutMenu)
+GLOBAL_ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -198,6 +198,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     Ufo.pickedUpBtn = nil
 end
 
+-- only used by FlyoutMenu:updateForCatalog()
 function ButtonOnFlyoutMenu:setGeometry(direction, prevBtn)
     self:ClearAllPoints()
     if prevBtn then
@@ -245,13 +246,13 @@ function ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc(self)
 end
 
 -------------------------------------------------------------------------------
--- GLOBAL Functions Supporting FlyoutBtn XML Callbacks
+-- XML Callbacks
 -------------------------------------------------------------------------------
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(self)
+function ButtonOnFlyoutMenu:onLoad()
     -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
-    ButtonOnFlyoutMenu:oneOfUs(self)
+    --ButtonOnFlyoutMenu:oneOfUs(self) - nope, this is now performed vix xml's mixin
 
     -- initialize my fields
     self.maxDisplayCount = 99 -- limits how big of a number to show on stacks
@@ -274,7 +275,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(self)
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp(self)
+function ButtonOnFlyoutMenu:onMouseUp()
     local isDragging = GetCursorInfo()
     if isDragging then
         fuckYouHardBlizzard(self)
@@ -282,7 +283,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp(self)
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(self)
+function ButtonOnFlyoutMenu:onReceiveDrag()
     fuckYouHardBlizzard(self)
 end
 
@@ -295,7 +296,7 @@ function fuckYouHardBlizzard(self)
 end
 
 ---@param self ButtonOnFlyoutMenu
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnEnter(self)
+function ButtonOnFlyoutMenu:onEnter()
     self:setTooltip()
 
     -- push catalog buttons out of the way for easier btn relocation
@@ -305,7 +306,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnEnter(self)
     flyoutMenu:displaceButtonsOnHover(self:getId())
 end
 
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLeave(self)
+function ButtonOnFlyoutMenu:onLeave()
     GameTooltip:Hide()
     ---@type FlyoutMenu
     local flyoutMenu = self:GetParent()
@@ -345,6 +346,6 @@ end
 
 -- pickup an existing button from an existing flyout
 ---@param self ButtonOnFlyoutMenu
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(self)
+function ButtonOnFlyoutMenu:onDragStart()
     self:onDragStartDoPickup()
 end

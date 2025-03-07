@@ -19,9 +19,9 @@ libs\libs.xml
 # libs common to my various projects
 ScottFreeWowLibs\index.xml
 
-# copies of old outdated Bliz code that I need to replace
-OLD_BLIZ_SpellFlyout.lua
-OLD_BLIZ_SpellFlyout.xml
+# copies of old outdated Bliz code that I need to replace -- TODO: v11.1 replace it!
+OLD_BLIZ_CATA_SpellFlyout.lua
+OLD_BLIZ_CATA_SpellFlyout.xml
 
 # UFO specific code
 constantsUfo.lua

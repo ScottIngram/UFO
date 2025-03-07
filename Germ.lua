@@ -22,14 +22,14 @@ local zebug = Zebug:new()
 ---@field clickScriptUpdaters table secure scriptlets that must be run during any update()
 ---@field bbInfo table definition of the actionbar/button where the Germ lives
 
----@type Germ|ButtonMixin
+---@type Germ|ButtonMixin|FlyoutButtonMixin
 Germ = {
     ufoType = "Germ",
     clickScriptUpdaters = {},
     clickers = {},
 }
-ButtonMixin:inject(Germ)
-ActionBarButtonMixin:inject(Germ)
+--ButtonMixin:inject(Germ) - now performed by XML's mixin
+GLOBAL_Germ = Germ
 
 ---@class GermClickBehavior
 GermClickBehavior = {
@@ -115,7 +115,8 @@ function getOpenerClickerScriptlet()
     end
 
     local uiButtons = table.new(flyoutMenu:GetChildren())
-    if uiButtons[1]:GetObjectType() ~= "CheckButton" then
+    while uiButtons[1] and uiButtons[1]:GetObjectType() ~= "CheckButton" do
+    --if uiButtons[1]:GetObjectType() ~= "CheckButton" then
         table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
     end
 
@@ -204,18 +205,26 @@ end
 -------------------------------------------------------------------------------
 
 function Germ:new(flyoutId, btnSlotIndex)
-    local bbInfo = self:extractBarBtnInfo(btnSlotIndex)
-    local parentActionBarBtn = self:getActionBarBtn(bbInfo)
+    local bbInfo = ActionBarButtonHelper:extractBarBtnInfo(btnSlotIndex)
+    local parentActionBarBtn = ActionBarButtonHelper:getActionBarBtn(bbInfo)
 
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
     self.myName = myName -- TODO: figure out why leaving this line out breaks self:GetName() in FlyoutMenu.new even though self == Germ
 
-    local protoGerm = CreateFrame(FrameType.CHECK_BUTTON, self.myName, parentActionBarBtn, "SecureActionButtonTemplate, ActionButtonTemplate")
+    local protoGerm = CreateFrame(
+            FrameType.CHECK_BUTTON,
+            self.myName,
+            parentActionBarBtn,
+            -- including FlyoutButtonTemplate last will position the arrows but also nukes my left/right/middle click handlers
+            --"SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate, FlyoutButtonTemplate"
+            --"SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate"
+            "GermTemplate"
+    )
 
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
     ---@type Germ
-    local self = deepcopy(Germ, protoGerm)
+    local self = deepcopy(Germ, protoGerm) -- now "handled" via XML's mixin... but if I remove it the arrows point in the wrong direction
 
     self.myName = myName
     _G[myName] = self -- so that keybindings can reference it
@@ -227,6 +236,11 @@ function Germ:new(flyoutId, btnSlotIndex)
     self.visibleIf    = parentActionBarBtn.visibleIf
     self.myLabel      = self:getFlyoutDef().name
     self.bbInfo       = bbInfo
+
+    self.actionValueSetterSecureScriptlette = "self:SetAttribute('action'," ..tostring(self.btnSlotIndex).. ")" -- note: this will "hardcode" the btnSlotIndex which will become a problem if I ever decide to recylce Germs and move them
+
+    --zebug.error:print("OnLeave",self.OnLeave)
+    --self.OnLeave = nil - I think I was trying to solve the FO btn collapse
 
     -- UI positioning
     self:ClearAllPoints()
@@ -280,6 +294,7 @@ function Germ:initFlyoutMenu()
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu.new(self)
         self.flyoutMenu:updateForGerm(self)
+        self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
     else
         self.flyoutMenu = UIUFO_FlyoutMenuForGerm
     end
@@ -308,6 +323,10 @@ function Germ:getDirection()
     return parent.bar:GetSpellFlyoutDirection()
 end
 
+-- method alias to fix SpellFlyoutMixin:Toggle() inside Interface/AddOns/Blizzard_ActionBar/Mainline/SpellFlyout.lua
+Germ.GetPopupDirection = Germ.getDirection
+-- TODO v11.1 isn't this fragile and susceptible to Bliz whims?  Do I need to implement my own version of SpellFlyoutMixin:Toggle() ?
+
 function Germ:updateAllBtnCooldownsEtc()
     --zebug.trace:print(self:getFlyoutId())
     self.flyoutMenu:updateAllBtnCooldownsEtc()
@@ -326,6 +345,7 @@ function Germ:getFlyoutId()
     return self.flyoutId
 end
 
+-- called by GermCommander:update()
 function Germ:update(flyoutId)
     self.flyoutId = flyoutId
     self.myLabel = self:getFlyoutDef().name
@@ -352,6 +372,14 @@ function Germ:update(flyoutId)
     self.flyoutMenu:updateForGerm(self)
 
     self:setVisibilityDriver() -- TODO: remove after we stop sledge hammering all the germs every time
+
+    -- inside ActionBarActionButtonMixin:Update() it sets self:Name based on a call to [Global]GetActionText(actionBarSlot)
+    -- which will always be the UFO Macro's name, "ZUFO" so nope.
+    self.Name:SetText(self.myLabel)
+
+    self:UpdateArrowRotation()
+    self:UpdateArrowPosition()
+    self:UpdateBorderShadow() -- TODO: v11.1 is this doing anything?  the arrow isn't behaving properly - FIX
 
     ---------------------
     -- SECURE TEMPLATE --
@@ -382,72 +410,102 @@ function Germ:reInitializeMySecureClickers()
     end
 end
 
+-- why isn't this just part of self:update()
 function Germ:handleGermUpdateEvent()
-    self:updateCooldownsAndCountsAndStatesEtc()
+    -- bliz mixin - bugged - CalculateButton() assumes parent must be an action bar button and falls back to ActionButton1
+    -- the internal's of Bliz' ActionBarActionButtonMixin:Update()
+    -- assume "this" is ActionBarActionButton and clobbers my self.action with "self.action=1"
+    -- so unclobber it
+    --zebug.error:print("self.btnSlotIndex",self.btnSlotIndex, "self.action",self.action)
+    --self.action = self.btnSlotIndex -- this alone is enough to taint
+    SecureHandlerExecute(self, self.actionValueSetterSecureScriptlette) -- DNF
+    self:update(self.flyoutId)
+    self:UpdateFlyout() -- Call Bliz -- TODO: v11.1 should I consolidate these two ?
+    self:updateCooldownsAndCountsAndStatesEtc() -- TODO: v11.1 verify this is working properly.  do I need to do more?
 
     -- Update border and determine arrow position
     local arrowDistance;
 
-    -- support v10 and v11 until launch
-    local isMouseOverButton
-    if self.IsMouseMotionFocus then -- v11
-        isMouseOverButton = self:IsMouseMotionFocus()
-    elseif GetMouseFocus then -- v10
-        isMouseOverButton = GetMouseFocus() == self
-    end
-
-    -- tmp fix for v11.1.0
-    if (not self.FlyoutArrowContainer or
-            not self.FlyoutBorderShadow) then
-        return;
-    end
-
+    local isMouseOverButton = self:IsMouseMotionFocus()
     local isFlyoutShown = self.flyoutMenu:IsShown()
     if isFlyoutShown or isMouseOverButton then
-        self.FlyoutBorderShadow:Show();
+        self.BorderShadow:Show();
         arrowDistance = 5;
     else
-        self.FlyoutBorderShadow:Hide();
+        self.BorderShadow:Hide();
         arrowDistance = 2;
     end
 
+    self:UpdateArrowRotation() -- TODO v11.1 aren't I doing this in multiple places?  consolidate.
+    self:UpdateArrowPosition();
+    self:UpdateBorderShadow();
+
     -- Update arrow
-    local isButtonDown = self:GetButtonState() == "PUSHED"
-    local flyoutArrowTexture = self.FlyoutArrowContainer.FlyoutArrowNormal
+    self:UpdateArrowTexture()
+    self:UpdateBorderShadow()
+    --self:UpdateArrowShown()
+    --self.Arrow:SetShown(true)
+    self:SetPopup(self.flyoutMenu)
 
-    if isButtonDown then
-        flyoutArrowTexture = self.FlyoutArrowContainer.FlyoutArrowPushed;
+    -- self.flyoutMenu:AttachToButton(self) -- this is causing the arrows for every btnOnFlyout to appear
+    --zebug.error:print("GetArrowRotation",self:GetArrowRotation())
 
-        self.FlyoutArrowContainer.FlyoutArrowNormal:Hide();
-        self.FlyoutArrowContainer.FlyoutArrowHighlight:Hide();
-    elseif isMouseOverButton then
-        flyoutArrowTexture = self.FlyoutArrowContainer.FlyoutArrowHighlight;
+    --[[
+        self:UpdateArrowRotation()
+        self:UpdateArrowPosition();
+        self:UpdateBorderShadow();
+    ]]
 
-        self.FlyoutArrowContainer.FlyoutArrowNormal:Hide();
-        self.FlyoutArrowContainer.FlyoutArrowPushed:Hide();
-    else
-        self.FlyoutArrowContainer.FlyoutArrowHighlight:Hide();
-        self.FlyoutArrowContainer.FlyoutArrowPushed:Hide();
+    --[[
+    function FlyoutButtonMixin:OnPopupToggled()
+        self:UpdateArrowRotation();
+        self:UpdateArrowPosition();
+        self:UpdateBorderShadow();
     end
+    ]]
 
-    self.FlyoutArrowContainer:Show();
-    flyoutArrowTexture:Show();
-    flyoutArrowTexture:ClearAllPoints();
+    -- TODO: v11.1 - the arrows aren't "springing" properly.  would any of the code below help?
 
-    local direction = self:GetAttribute("flyoutDirection");
-    if (direction == "LEFT") then
-        flyoutArrowTexture:SetPoint(Anchor.LEFT, self, Anchor.LEFT, -arrowDistance, 0);
-        SetClampedTextureRotation(flyoutArrowTexture, 270);
-    elseif (direction == "RIGHT") then
-        flyoutArrowTexture:SetPoint(Anchor.RIGHT, self, Anchor.RIGHT, arrowDistance, 0);
-        SetClampedTextureRotation(flyoutArrowTexture, 90);
-    elseif (direction == "DOWN") then
-        flyoutArrowTexture:SetPoint(Anchor.BOTTOM, self, Anchor.BOTTOM, 0, -arrowDistance);
-        SetClampedTextureRotation(flyoutArrowTexture, 180);
-    else
-        flyoutArrowTexture:SetPoint(Anchor.TOP, self, Anchor.TOP, 0, arrowDistance);
-        SetClampedTextureRotation(flyoutArrowTexture, 0);
-    end
+    --[[
+        local isButtonDown = self:GetButtonState() == "PUSHED"
+        local flyoutArrowTexture = self.Arrow.FlyoutArrowNormal
+
+        if isButtonDown then
+            flyoutArrowTexture = self.Arrow.FlyoutArrowPushed;
+
+            self.Arrow.FlyoutArrowNormal:Hide();
+            --self.Arrow.FlyoutArrowHighlight:Hide();
+        elseif isMouseOverButton then
+            flyoutArrowTexture = self.Arrow.FlyoutArrowHighlight;
+
+            self.Arrow.FlyoutArrowNormal:Hide();
+            self.Arrow.FlyoutArrowPushed:Hide();
+        else
+            self.Arrow.FlyoutArrowHighlight:Hide();
+            self.Arrow.FlyoutArrowPushed:Hide();
+        end
+
+        self.Arrow:Show();
+        flyoutArrowTexture:Show();
+        flyoutArrowTexture:ClearAllPoints();
+    ]]
+
+    --[[
+        local direction = self:GetAttribute("flyoutDirection");
+        if (direction == "LEFT") then
+            flyoutArrowTexture:SetPoint(Anchor.LEFT, self, Anchor.LEFT, -arrowDistance, 0);
+            SetClampedTextureRotation(flyoutArrowTexture, 270);
+        elseif (direction == "RIGHT") then
+            flyoutArrowTexture:SetPoint(Anchor.RIGHT, self, Anchor.RIGHT, arrowDistance, 0);
+            SetClampedTextureRotation(flyoutArrowTexture, 90);
+        elseif (direction == "DOWN") then
+            flyoutArrowTexture:SetPoint(Anchor.BOTTOM, self, Anchor.BOTTOM, 0, -arrowDistance);
+            SetClampedTextureRotation(flyoutArrowTexture, 180);
+        else
+            flyoutArrowTexture:SetPoint(Anchor.TOP, self, Anchor.TOP, 0, arrowDistance);
+            SetClampedTextureRotation(flyoutArrowTexture, 0);
+        end
+    ]]
 end
 
 function Germ:setToolTip()
@@ -633,6 +691,8 @@ end
 
 ---@param germ Germ
 function handlers.OnPreClick(germ, mouseClick, down)
+    -- am I not being called?  maybe the mixin is over riding me
+    zebug.error:print("am I not being called?","weeee!")
     germ:SetChecked(germ:GetChecked())
     onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
 

@@ -1,13 +1,60 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
 
-    <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate" virtual="TRUE" inherits="SmallActionButtonTemplate, SecureActionButtonTemplate">
+    <!-- stolen from FlyoutButtonTemplate in  Interface/AddOns/Blizzard_Flyout/Flyout.xml -->
+    <Button name="GermTemplate"
+            virtual="true"
+            inherits="SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate"
+            mixin="GLOBAL_Germ, GLOBAL_ButtonMixin, FlyoutButtonMixin"
+    >
+        <KeyValues>
+            <KeyValue key="popupDirection" value="DOWN" type="string"/>
+            <KeyValue key="popupOffset" value="-3" type="number"/>
+            <KeyValue key="popupCrossAxisSize" value="38" type="number"/>
+            <KeyValue key="openArrowOffset" value="3" type="number"/>
+            <KeyValue key="closedArrowOffset" value="5" type="number"/>
+            <KeyValue key="arrowMainAxisSize" value="15" type="number"/>
+            <KeyValue key="arrowCrossAxisSize" value="6" type="number"/>
+            <KeyValue key="arrowNormalTexture" value="UI-HUD-ActionBar-Flyout" type="string"/>
+            <KeyValue key="arrowDownTexture" value="UI-HUD-ActionBar-Flyout-Down" type="string"/>
+            <KeyValue key="arrowOverTexture" value="UI-HUD-ActionBar-Flyout-Mouseover" type="string"/>
+        </KeyValues>
+        <Layers>
+            <Layer level="ARTWORK" textureSubLevel="1">
+                <Texture parentKey="BorderShadow" atlas="UI-HUD-ActionBar-IconFrame-FlyoutBorderShadow" hidden="true">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="-4" y="4"/>
+                        <Anchor point="BOTTOMRIGHT" x="4" y="-4"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="OVERLAY" textureSubLevel="2">
+                <Texture parentKey="Arrow"/>
+            </Layer>
+        </Layers>
         <Scripts>
-            <OnLoad  function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad" />
-            <OnEnter function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnEnter" />
-            <OnLeave function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLeave" />
-            <OnDragStart function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart" />
-            <OnReceiveDrag function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag" />
-            <OnMouseUp function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp" />
+            <OnLoad method="OnLoad"/>
+            <!--<OnHide method="OnHide"/>-->
+            <!-- <OnClick method="OnClick"/> -->
+            <!--<OnEnter method="OnEnter"/>-->
+            <!--<OnLeave method="OnLeave"/>-->
+            <!--<OnMouseDown method="OnMouseDown"/>-->
+            <!--<OnMouseUp method="OnMouseUp"/>-->
+            <!--<OnDragStart method="OnDragStart"/>-->
+        </Scripts>
+    </Button>
+
+    <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate"
+            virtual="true"
+            inherits="SmallActionButtonTemplate, SecureActionButtonTemplate"
+            mixin="GLOBAL_ButtonOnFlyoutMenu, GLOBAL_ButtonMixin"
+    >
+        <Scripts>
+            <OnLoad  method="onLoad" />
+            <OnEnter method="onEnter" />
+            <OnLeave method="onLeave" />
+            <OnDragStart method="onDragStartDoPickup" />
+            <OnReceiveDrag method="onReceiveDrag" />
+            <OnMouseUp method="onMouseUp" />
             <PreClick>
                 self:SetChecked(false)
             </PreClick>
@@ -15,11 +62,36 @@
         <NormalTexture/>
     </CheckButton>
 
-    <Frame name="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true" virtual="TRUE" inherits="SecureHandlerBaseTemplate,SpellFlyout">
+    <Frame name="SpellFlyout_BLIZ"
+           toplevel="true"
+           hidden="true"
+           frameStrata="DIALOG"
+           frameLevel="10"
+           inherits="SecureFrameTemplate, ResizeLayoutFrame, FlyoutPopupTemplate"
+           mixin="SpellFlyoutMixin"
+           enableMouse="true"
+    ></Frame>
+
+    <Frame name="UIUFO_FlyoutMenuTemplate"
+           virtual="true"
+           frameStrata="DIALOG"
+           frameLevel="10"
+           parent="UIParent"
+           hidden="true"
+           inherits="SecureFrameTemplate, FlyoutPopupTemplate"
+           mixin="GLOBAL_FlyoutMenu"
+    >
+        <!-- If you inherit from FlyoutPopupTemplate it will create its own border Background, so don't make your own -->
+        <!-- If you don't inherit from FlyoutPopupTemplate then you must mixin FlyoutPopupMixin -->
+        <!-- mixin="GLOBAL_FlyoutMenu, SpellFlyoutMixin"-->
+<!-- removing Size didn't fix the 2 flyouts or them having different sizes... it had no apparent effect -->
+<!--
         <Size>
             <AbsDimension x="44" y="44"/>
         </Size>
+-->
         <Frames>
+<!--
             <Frame parentKey="Background" setAllPoints="true">
                 <Layers>
                     <Layer level="BACKGROUND">
@@ -33,6 +105,7 @@
                     <KeyValue key="ignoreInlayout" value="true" type="boolean"/>
                 </KeyValues>
             </Frame>
+-->
             <CheckButton name="$parent_Button1" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="1" />
             <CheckButton name="$parent_Button2" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="2" />
             <CheckButton name="$parent_Button3" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="3" />
@@ -72,22 +145,37 @@
             -->
         </Frames>
         <Scripts>
-            <OnUpdate function="GLOBAL_UIUFO_FlyoutMenu_OnUpdate"/>
-            <OnShow  function="GLOBAL_UIUFO_FlyoutMenu_OnShow"/>
-            <OnHide  function="GLOBAL_UIUFO_FlyoutMenu_OnHide"/>
-            <OnLeave function="GLOBAL_UIUFO_FlyoutMenu_OnLeave" />
+            <OnUpdate method="onUpdate"/>
+            <OnShow  method="onShow"/>
+            <OnHide  method="onHide"/>
+            <OnLeave method="onLeave" />
         </Scripts>
     </Frame>
 
-    <Frame name="UIUFO_FlyoutMenuForGerm" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
+    <!-- this is the singleton version that is only used when the config option "usable in combat" is false -->
+    <Frame name="UIUFO_FlyoutMenuForGerm"
+           inherits="UIUFO_FlyoutMenuTemplate"
+           mixin="GLOBAL_FlyoutMenu"
+           frameStrata="DIALOG"
+           frameLevel="10"
+           parent="UIParent"
+           hidden="true"
+    >
         <Scripts>
-            <OnLoad function="GLOBAL_UIUFO_FlyoutMenuForGerm_OnLoad"/>
+            <OnLoad method="onLoadForGerm"/>
         </Scripts>
     </Frame>
 
-    <Frame name="UIUFO_FlyoutMenuForCatalog" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
+    <Frame name="UIUFO_FlyoutMenuForCatalog"
+           inherits="UIUFO_FlyoutMenuTemplate"
+           mixin="GLOBAL_FlyoutMenu"
+           frameStrata="DIALOG"
+           frameLevel="10"
+           parent="UIParent"
+           hidden="true"
+    >
         <Scripts>
-            <OnLoad function="GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad"/>
+            <OnLoad method="onLoadForCatalog"/>
         </Scripts>
     </Frame>
 

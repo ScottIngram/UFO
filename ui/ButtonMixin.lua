@@ -12,6 +12,7 @@ local zebug = Zebug:new()
 ---@class ButtonMixin -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname... set by "child" "classes"
 ButtonMixin = { }
+GLOBAL_ButtonMixin = ButtonMixin
 
 -------------------------------------------------------------------------------
 --  Constants
