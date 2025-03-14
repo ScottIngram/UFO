@@ -262,11 +262,8 @@ function FlyoutMenu:updateForGerm(germ)
     if not self.hasOnHide then
         zebug.info:print("setting OnHide for",self:GetName())
         local btn1 = self:getBtn1()
-        btn1:SetScript("OnHide", function(btn1)
-            --print('FlyoutMenu Script.ON_HIDE for',self:GetName())
-            -- I guess, it should really be called MaybeSecureHandlerExecuteFuckYouHahahaEnjoyDebuggingOurShittyApiSincereluBlizzard()
-            SecureHandlerExecute(germ, "keybindKeeper:ClearBindings()")
-        end)
+        btn1:SetFrameRef("flyout",self)
+        btn1:SetAttribute("_onhide", "flyout:ClearBindings()") -- v11.1 replaces btn1:SetScript() and SecureHandlerExecute(germ, "keybindKeeper:ClearBindings()")
         self.hasOnHide = true
     end
 

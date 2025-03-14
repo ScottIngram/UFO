@@ -7,6 +7,7 @@
 
 ---@class Ufo -- IntelliJ-EmmyLua annotation
 ---@field myTitle string Ufo.toc Title
+---@field iconTexture string Ufo.toc IconTexture
 ---@field thatWasMe boolean flag used to stop event handler responses to UFO actions related to macros
 ---@field droppedUfoOntoActionBar boolean flag used to stop event handler responses to UFO actions related to drag and drop
 ---@field pickedUpBtn table table of data for a UFO on the mouse cursor
@@ -158,6 +159,7 @@ function initalizeAddonStuff()
     if isUfoInitialized then return end
 
     Ufo.myTitle = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Title")
+    Ufo.iconTexture = C_AddOns.GetAddOnMetadata(ADDON_NAME, "IconTexture")
 
     DB:initializeFlyouts()
     DB:initializePlacements()

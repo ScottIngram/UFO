@@ -34,6 +34,11 @@ function ButtonOnFlyoutMenu:oneOfUs(btnOnFlyout)
     deepcopy(ButtonOnFlyoutMenu, btnOnFlyout)
 end
 
+function ButtonOnFlyoutMenu:getName()
+    local btnDef = self:getDef()
+    return (btnDef and btnDef:getName()) or "UnKnOwN"
+end
+
 function ButtonOnFlyoutMenu:getId()
     -- the button ID never changes because it's never actually dragged or moved.
     -- It's the underlying btnDef that moves from one button to another.
@@ -67,7 +72,8 @@ function ButtonOnFlyoutMenu:setDef(btnDef)
     local flyoutMenu = self:GetParent()
     if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
         self:updateSecureClicker(MouseClick.ANY)
-        self:SetAttribute("UFO_NO_RND", btnDef and btnDef.noRnd or nil) -- SECURE TEMPLATE
+        -- TODO: v11.1 build this into my ButtonMixin
+        safelySetAttribute(self, "UFO_NO_RND", btnDef and btnDef.noRnd or nil) -- SECURE TEMPLATE
     else
         self:setExcluderVisibility()
     end
@@ -260,7 +266,7 @@ function ButtonOnFlyoutMenu:onLoad()
     -- initialize the Bliz ActionButton
     self:SmallActionButtonMixin_OnLoad()
     self.PushedTexture:SetSize(31.6, 30.9)
-    self:getCountFrame():SetPoint("BOTTOMRIGHT", 0, 0)
+    --self:getCountFrame():SetPoint("BOTTOMRIGHT", 0, 0) -- this seems tgo be happening automatically now... NOPE, is bug!  Bliz code assume actionSlot=1 TODO: v11.1 fix
 
     -- Drag Handler
     self:RegisterForDrag("LeftButton")
@@ -272,6 +278,8 @@ function ButtonOnFlyoutMenu:onLoad()
     --self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
     self:RegisterForClicks("AnyDown", "AnyUp")
     -- see also ButtonMixin:updateSecureClicker
+
+    SecureHandler_OnLoad(self) -- TODO: v11.1 evaluate if this is actually safe or is it causing taint
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation

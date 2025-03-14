@@ -51,6 +51,17 @@ function FlyoutDef:oneOfUs(self)
     -- tie the "self" instance to the privateData table (which in turn is tied to  the class)
     setmetatable(self, { __index = privateCache })
 
+    -- on any modification always update the lastMod
+    -- well, this causes the initial load to silently fail and UFO does nothing until a reload
+    -- maybe because no defs get loaded SAVED_VARIABLES ?
+--[[
+    local mt = getmetatable(self)
+    mt.__newindex = function(self, key, value)
+        rawset(self, key, value)
+        rawset(self, "lastMod", time())
+    end
+]]
+
     self:setModStamp()
 
     return self
@@ -72,6 +83,12 @@ end
 
 function FlyoutDef:getModStamp()
     return self.lastMod
+end
+
+---@param time number a time ( as returned by a call to the time() function )
+---@return boolean true if self has been modified more recently than the given time
+function FlyoutDef:isModNewerThan(time)
+    return (time or 0) >= self:getModStamp()
 end
 
 function FlyoutDef:invalidateCache()

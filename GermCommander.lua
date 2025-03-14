@@ -181,7 +181,7 @@ function GermCommander:createPlaceholder()
     Ufo.thatWasMe = true
     local exists = GetMacroInfo(PLACEHOLDER_MACRO_NAME)
     if not exists then
-        local icon = C_AddOns.GetAddOnMetadata(ADDON_NAME, "IconTexture")
+        local icon = Ufo.iconTexture
         zebug.info:print("name",PLACEHOLDER_MACRO_NAME, "icon",icon, "PLACEHOLDER_MACRO_TEXT", PLACEHOLDER_MACRO_TEXT)
         CreateMacro(PLACEHOLDER_MACRO_NAME, icon, PLACEHOLDER_MACRO_TEXT)
     end
