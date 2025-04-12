@@ -111,7 +111,7 @@ function FlyoutMenu:installHandlerForCloseOnClick()
     if self.isCloserInitialized or not self.isForGerm then return end
 
     self:forEachButton(function(button)
-        SecureHandlerWrapScript(button, "PostClick", button, CLOSE_ON_CLICK_SCRIPTLET)
+        SecureHandlerWrapScript(button, "PostClick", button, CLOSE_ON_CLICK_SCRIPTLET) -- Is the the cause of "Cannot call restricted closure from insecure code" ??? NOPE
         SecureHandlerExecute(button, CLOSE_ON_CLICK_SCRIPTLET) -- initialize the scriptlet's "global" vars
     end)
 
@@ -439,7 +439,10 @@ function FlyoutMenu:onUpdate(elapsed)
     self:updateAllBtnCooldownsEtc()
 end
 
+-- Is the the cause of "Cannot call restricted closure from insecure code" ???
+-- it's set in the XML via <OnShow  method="onShow"/>
 function FlyoutMenu:onShow()
+    zebug.error:print("WOOOO? am even I being called???") -- nope, I commented out the XML.  no effect on "Cannot call restricted closure from insecure code"
     local originalEventsRegistered = self.eventsRegistered -- SpellFlyout_OnShow will reset this so snapshot it
     SpellFlyout_OnShow(self) -- call Blizzard handler
     -- TODO: v11.1 - is the above dead and gone by way of Cata ?!  Do I need to call self:OnShow()

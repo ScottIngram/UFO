@@ -6,6 +6,20 @@
             inherits="SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate"
             mixin="GLOBAL_Germ, GLOBAL_ButtonMixin, FlyoutButtonMixin"
     >
+        <!-- INHERITED Mixins:
+            SecureActionButtonMixin
+            BaseActionButtonMixin
+            FlyoutButtonMixin
+            QuickKeybindButtonTemplateMixin
+        -->
+        <!-- SecureActionButtonTemplate via Interface/AddOns/Blizzard_FrameXML/Mainline/SecureTemplates.xml inherits="SecureFrameTemplate" MIXIN="SecureActionButtonMixin" -->
+        <!-- +- SecureFrameTemplate via Interface/AddOns/Blizzard_FrameXML/Mainline/SecureTemplatesBase.xml inherits/mixin = nil -->
+        <!-- ActionButtonTemplate via Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButtonTemplate.xml inherits="ActionButtonSpellFXTemplate, FlyoutButtonTemplate" MIXIN="BaseActionButtonMixin"  -->
+        <!-- +- ActionButtonSpellFXTemplate via Interface/AddOns/Blizzard_FrameXML/Mainline/ActionButtonTemplate.xml inherits/mixin = nil -->
+        <!-- +- FlyoutButtonTemplate via Interface/AddOns/Blizzard_Flyout/Flyout.xml inherits nil MIXIN="FlyoutButtonMixin" -->
+        <!-- ActionBarButtonCodeTemplate via Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButtonTemplate.xml inherits="SecureActionButtonTemplate, QuickKeybindButtonTemplate, ActionButtonSpellFXTemplate" MIXIN="BaseActionButtonMixin"  -->
+        <!-- +- QuickKeybindButtonTemplate via Interface/AddOns/Blizzard_QuickKeybind/QuickKeybind.xml inherits=nil MIXIN="QuickKeybindButtonTemplateMixin" -->
+
         <KeyValues>
             <KeyValue key="popupDirection" value="DOWN" type="string"/>
             <KeyValue key="popupOffset" value="-3" type="number"/>
@@ -145,10 +159,21 @@
             -->
         </Frames>
         <Scripts>
+<!--
             <OnUpdate method="onUpdate"/>
-            <OnShow  method="onShow"/>
+            <OnShow  method="onShow"/> &lt;!&ndash; removing this had no effect on the "Cannot call restricted closure from insecure code" &ndash;&gt;
             <OnHide  method="onHide"/>
             <OnLeave method="onLeave" />
+-->
+<!--
+            <OnUpdate>
+                print("!OnUpdate!");
+            </OnUpdate>
+            <OnShow>
+                print("ShOw!");
+            </OnShow>
+-->
+
         </Scripts>
     </Frame>
 
@@ -161,9 +186,12 @@
            parent="UIParent"
            hidden="true"
     >
+        <!-- no effect if removed during Germ == ActionButton -->
+<!--
         <Scripts>
             <OnLoad method="onLoadForGerm"/>
         </Scripts>
+-->
     </Frame>
 
     <Frame name="UIUFO_FlyoutMenuForCatalog"

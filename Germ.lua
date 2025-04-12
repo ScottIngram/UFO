@@ -86,6 +86,7 @@ function getOpenerClickerScriptlet()
     end
 
     OPENER_CLICKER_SCRIPTLET = [=[
+--print("OPENER_CLICKER_SCRIPTLET <START>")
 	local germ = self
 	local mouseClick = button
 	local isClicked = down
@@ -94,17 +95,21 @@ function getOpenerClickerScriptlet()
     local isOpen = flyoutMenu:IsShown()
 
 	if doCloseFlyout and isOpen then
+--print("OPENER_CLICKER_SCRIPTLET ... closing and exiting")
 		flyoutMenu:Hide()
 		flyoutMenu:SetAttribute("doCloseFlyout", false)
 		keybindKeeper:ClearBindings()
 		return
     end
 
+--print("OPENER_CLICKER_SCRIPTLET ... 1")
     keybindKeeper:SetBindingClick(true, "Escape", germ, mouseClick)
 
 -- TODO: move this into FlyoutMenu:updateForGerm()
 
+--print("OPENER_CLICKER_SCRIPTLET ... 2")
     flyoutMenu:SetParent(germ)  -- holdover from single FM
+--print("OPENER_CLICKER_SCRIPTLET ... 3")
     flyoutMenu:ClearAllPoints()
     if direction == "UP" then
         flyoutMenu:SetPoint("BOTTOM", germ, "TOP", 0, 0)
@@ -122,6 +127,7 @@ function getOpenerClickerScriptlet()
         table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
     end
 
+--print("OPENER_CLICKER_SCRIPTLET ... 4")
 	local prevBtn = nil;
     local numButtons = 0
     for i, btn in ipairs(uiButtons) do
@@ -174,12 +180,14 @@ function getOpenerClickerScriptlet()
             end
 
             prevBtn = btn
+--print("OPENER_CLICKER_SCRIPTLET ... showing button")
             btn:Show()
         else
             btn:Hide()
         end
     end
 
+--print("OPENER_CLICKER_SCRIPTLET ... 5")
     local w = prevBtn and prevBtn:GetWidth() or 10
     local h = prevBtn and prevBtn:GetHeight() or 10
     local minN = (numButtons == 0) and 1 or numButtons
@@ -192,7 +200,9 @@ function getOpenerClickerScriptlet()
         flyoutMenu:SetWidth((w + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
     end
 
+--print("OPENER_CLICKER_SCRIPTLET ... SHOWING flyout")
     flyoutMenu:Show()
+--print("OPENER_CLICKER_SCRIPTLET ... SetAttribute() doCloseFlyout = true")
     flyoutMenu:SetAttribute("doCloseFlyout", true)
 
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
@@ -225,11 +235,17 @@ function Germ:new(flyoutId, btnSlotIndex)
 
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
-    ---@type Germ
-    local self = deepcopy(Germ, protoGerm) -- now "handled" via XML's mixin... but if I remove it the arrows point in the wrong direction
+    -- Germ == ActionButton
+    ---@type Germ|ButtonMixin|FlyoutButtonMixin
+    local self = deepcopy(Germ, parentActionBarBtn) -- mixin="GLOBAL_Germ, GLOBAL_ButtonMixin, FlyoutButtonMixin"
+    deepcopy(ButtonMixin, self)
+    deepcopy(FlyoutButtonMixin, self)
+    --local self = deepcopy(Germ, protoGerm) -- now "handled" via XML's mixin... but if I remove it the arrows point in the wrong direction
 
     --self.myName = myName
     _G[myName] = self -- so that keybindings can reference it
+
+    --self:makeSafeSetAttribute() -- experiment that didn't pan out
 
     -- initialize my fields
     self.btnSlotIndex = btnSlotIndex
@@ -239,25 +255,33 @@ function Germ:new(flyoutId, btnSlotIndex)
     self.myLabel      = self:getFlyoutDef().name
     self.bbInfo       = bbInfo
 
-    self.actionValueSetterSecureScriptlette = "self:SetAttribute('action'," ..tostring(self.btnSlotIndex).. ")" -- note: this will "hardcode" the btnSlotIndex which will become a problem if I ever decide to recylce Germs and move them
-
     --zebug.error:print("OnLeave",self.OnLeave)
     --self.OnLeave = nil - I think I was trying to solve the FO btn collapse
 
     -- UI positioning
+--[[
+    -- removed for Germ == ActionButton
     self:ClearAllPoints()
     self:SetAllPoints(parentActionBarBtn)
     self:SetFrameStrata(STRATA_DEFAULT)
     self:SetFrameLevel(STRATA_LEVEL_DEFAULT)
     self:SetToplevel(true)
     self:setVisibilityDriver()
+]]
 
     -- UI reactions
+    -- try to replace all of these with self:SetAttribute("_onhide"(e.g.), "flyout:ClearBindings()") secure style handlers
+    -- while I was experimenting with self == parentActionBarBtn, removing the SetScripts below had no effect
+
     self:SetScript(Script.ON_UPDATE,       handlers.OnUpdate)
     self:SetScript(Script.ON_ENTER,        handlers.OnEnter)
     self:SetScript(Script.ON_LEAVE,        handlers.OnLeave)
     self:SetScript(Script.ON_RECEIVE_DRAG, handlers.OnReceiveDrag)
-    self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
+
+    -- TEMPORARY removal
+    -- removed during Germ == ActionButton
+    --self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
+
     self:SetScript(Script.ON_DRAG_START,   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
     --self:SetScript(Script.ON_HIDE, function(self) print('***GERM*** Script.ON_HIDE for',self:GetName()); end) -- This is NEVER invoked.  Thanks for silent fail, Bliz.
 
@@ -325,10 +349,14 @@ function Germ:myHide()
 end
 
 function Germ:getDirection()
+    -- Germ == ActionButton
+    return self.bar:GetSpellFlyoutDirection()
+
     -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
     -- ask the bar instance what direction to fly
-    local parent = self:GetParent()
-    return parent.bar:GetSpellFlyoutDirection()
+    -- removed for Germ == ActionButton
+    --local parent = self:GetParent()
+    --return parent.bar:GetSpellFlyoutDirection()
 end
 
 -- method alias to fix SpellFlyoutMixin:Toggle() inside Interface/AddOns/Blizzard_ActionBar/Mainline/SpellFlyout.lua
@@ -451,6 +479,17 @@ function Germ:reInitializeMySecureClickers()
     end
 end
 
+function Germ:fixMyActionAttribute()
+    if not self.actionValueSetterSecureScriptlette then
+        -- note: this will "hardcode" the btnSlotIndex which will become a problem if I ever decide to recylce Germs and move them
+        self.actionValueSetterSecureScriptlette = "self:SetAttribute('action'," ..tostring(self.btnSlotIndex).. ")"
+    end
+
+    exeOnceNotInCombat("fix self.action ".. self:getName(), function()
+        SecureHandlerExecute(self, self.actionValueSetterSecureScriptlette)
+    end)
+end
+
 -- why isn't this just part of self:update()
 function Germ:handleGermUpdateEvent()
     -- bliz mixin - bugged - CalculateButton() assumes parent must be an action bar button and falls back to ActionButton1
@@ -461,11 +500,10 @@ function Germ:handleGermUpdateEvent()
     --self.action = self.btnSlotIndex -- this alone is enough to taint
     --evidently, even SecureHandlerExecute("self:SetAttribute") will cause taint, so let's wrap it in anti-combat code
     --SecureHandlerExecute(self, self.actionValueSetterSecureScriptlette) -- DNF
-    if self:GetAttribute('action') == 1 then
-        --SecureHandlerExecute(self, self.actionValueSetterSecureScriptlette)
-        exeOnceNotInCombat("GERM:handleGermUpdateEvent() fix self.action : ".. self:getName(), function() SecureHandlerExecute(self, self.actionValueSetterSecureScriptlette) end)
-        --exeOnceNotInCombat("GERM:handleGermUpdateEvent() fix self.action", function() self.action = self.btnSlotIndex end)
+    if self:GetAttribute('action') ~= self.btnSlotIndex then
+        self:fixMyActionAttribute()
     end
+
     self:update(self.flyoutId)
     self:UpdateFlyout() -- Call Bliz -- TODO: v11.1 should I consolidate these two ?
     self:updateCooldownsAndCountsAndStatesEtc() -- TODO: v11.1 verify this is working properly.  do I need to do more?
@@ -642,12 +680,16 @@ function Germ:doKeybinding()
 end
 
 function Germ:clearKeybinding()
-    if isInCombatLockdown("Keybind removal") then return end
     if not (self.keybinds) then return end
 
-    ClearOverrideBindings(self)
-    self:setHotKeyOverlay(nil)
-    self.keybinds = nil
+    exeOnceNotInCombat("Keybind removal "..self:getName(), function()
+        -- FUNC START
+        ClearOverrideBindings(self)
+        self:setHotKeyOverlay(nil)
+        self.keybinds = nil
+        -- FUNC END
+    end)
+
 end
 
 -------------------------------------------------------------------------------
@@ -659,7 +701,7 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnMouseUp(germ)
-    zebug.trace:name("OnMouseUp"):print("name",germ:GetName())
+    zebug.error:name("OnMouseUp"):print("name",germ:GetName())
     local isDragging = GetCursorInfo()
     if isDragging then
         handlers.OnReceiveDrag(germ)
@@ -733,7 +775,7 @@ function handlers.OnUpdate(germ, elapsed)
     end
     onUpdateTimer = 0
     germ:handleGermUpdateEvent()
-    germ:updateAllBtnCooldownsEtc() -- nah, let the flyout do this.
+    germ:updateAllBtnCooldownsEtc() -- nah, let the flyout do this. -- or the buttons themselves.  and have them sub/unsub based on vis
 end
 
 ---@param germ Germ
@@ -820,6 +862,7 @@ function getHandlerMaker(behavior)
     return result
 end
 
+-- open / show
 ---@param mouseClick MouseClick
 function HandlerMaker:OpenFlyout(mouseClick)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
@@ -828,7 +871,7 @@ function HandlerMaker:OpenFlyout(mouseClick)
     zebug.info:name("HandlerMakers:OpenFlyout"):print("germ",self.myLabel, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
     -- TODO v11.1 - wrap in exeNotInCombat() ?
     self:SetAttribute(secureMouseClickId,scriptName)
-    self:SetAttribute("_"..scriptName, getOpenerClickerScriptlet())
+    self:SetAttribute("_"..scriptName, getOpenerClickerScriptlet()) -- OPENER
 end
 
 ---@param mouseClick MouseClick

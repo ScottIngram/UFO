@@ -271,7 +271,7 @@ function ButtonOnFlyoutMenu:onLoad()
     -- Drag Handler
     self:RegisterForDrag("LeftButton")
     local pickupAction = [[print("WEEE"); return "action", self:GetAttribute("action")]]
-    --self:SetAttribute("_ondragstart", pickupAction)
+    --self:SetAttribute("_ondragstart", pickupAction)-- try to use this
     --self:SetAttribute("_onreceivedrag", pickupAction)
 
     -- Click handler
@@ -279,11 +279,14 @@ function ButtonOnFlyoutMenu:onLoad()
     self:RegisterForClicks("AnyDown", "AnyUp")
     -- see also ButtonMixin:updateSecureClicker
 
+    --self:makeSafeSetAttribute() -- experiment that didn't pan out
+
     SecureHandler_OnLoad(self) -- TODO: v11.1 evaluate if this is actually safe or is it causing taint
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onMouseUp()
+    -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
     local isDragging = GetCursorInfo()
     if isDragging then
         fuckYouHardBlizzard(self)

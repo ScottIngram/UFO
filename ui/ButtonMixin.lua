@@ -46,6 +46,7 @@ REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID = {
 -------------------------------------------------------------------------------
 
 function ButtonMixin:inject(other)
+    -- DEPRECATED in favor of XML mixin="GLOBAL_ButtonMixin"
     for name, func in pairs(ButtonMixin) do
         other[name] = func
     end
@@ -258,7 +259,7 @@ end
 
 -- because in the world of Bliz SECURE
 -- if your type = "type3"
--- then your key must be key.."3"
+-- then your key must be key.."3" where key is typically "spell" or "item" etc.
 ---@param secureMouseClickId SecureMouseClickId
 function ButtonMixin:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
     local mouseBtnNumber = self:getMouseBtnNumber(secureMouseClickId)
@@ -301,5 +302,45 @@ function ButtonMixin:updateSecureClicker(mouseClick)
             self:SetAttribute("type", nil)
             self.mySecureClickerDef = btnDef
         end)
+    end
+end
+
+-------------------------------------------------------------------------------
+-- ExTrA SECURE TEMPLATE / RESTRICTED ENVIRONMENT - aka fUcK yOu BlIz
+-- bliz base class code keeps calling my code and then
+-- complains about taint (ref: stick in spokes of bicycle meme)
+-- Which, yes, may mean that I'm extending Bliz mixins/templates that they don't intend for us -- and if so, label that shit plz.
+-- But until I figure out that can of worms, here's a sledgehammer to beat back the BS
+-------------------------------------------------------------------------------
+
+-- replace the built-in SetAttribute with one that can only happen out of combat
+function ButtonMixin:makeSafeSetAttribute()
+
+    if not self.originalSetAttribute then
+        local originalSetAttribute = self.SetAttribute
+        assert("self:SetAttribute() is NULL", originalSetAttribute)
+
+        self.originalSetAttribute = originalSetAttribute
+
+        -- FUNC START
+        self.SetAttribute = function(zelf, key, value, isTrusted)
+            local inCombatLockdown = InCombatLockdown()
+            zebug.trace:print("self.SetAttribute for",(self.getName and self:getName()) or "misc obj", "key",key, "value",value, "isTrusted",isTrusted)
+            if isTrusted then
+                zebug.info:print("ufo is allowed to call originalSetAttribute with name", key, "value", value)
+                if key == "pressAndHoldAction" then
+                    --zebug.error:print("P&H! - getName",(self.getName and self:getName()) or "no getName", "isTrusted", isTrusted, "inCombat",inCombatLockdown)
+                    return;
+                end
+                return originalSetAttribute(zelf, key, value)
+            else
+                if key == "pressAndHoldAction" then
+                    --zebug.warn:print("P&H? - getName",(self.getName and self:getName()) or "no getName", "isTrusted", isTrusted, "inCombat",inCombatLockdown)
+                end
+                safelySetAttribute(zelf, key, value)
+            end
+        end
+        -- FUNC END
+
     end
 end
