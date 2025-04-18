@@ -22,6 +22,7 @@ local zebug = Zebug:new()
 ---@field clickScriptUpdaters table secure scriptlets that must be run during any update()
 ---@field bbInfo table definition of the actionbar/button where the Germ lives
 ---@field myName string duh
+---@field label string human friendly identifier
 
 ---@type Germ|ButtonMixin|FlyoutButtonMixin
 Germ = {
@@ -225,8 +226,8 @@ function Germ:new(flyoutId, btnSlotIndex)
 
     local protoGerm = CreateFrame(
             FrameType.CHECK_BUTTON,
-            self.myName,
-            parentActionBarBtn,
+            myName,
+            parentActionBarBtn, -- can I make the action bar instead to satisfy SecureButtonTemplate code?
             -- including FlyoutButtonTemplate last will position the arrows but also nukes my left/right/middle click handlers
             --"SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate, FlyoutButtonTemplate"
             --"SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate"
@@ -236,11 +237,13 @@ function Germ:new(flyoutId, btnSlotIndex)
     -- copy Germ's methods, functions, etc to the UI btn
     -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
     -- Germ == ActionButton
-    ---@type Germ|ButtonMixin|FlyoutButtonMixin
+--[[
     local self = deepcopy(Germ, parentActionBarBtn) -- mixin="GLOBAL_Germ, GLOBAL_ButtonMixin, FlyoutButtonMixin"
     deepcopy(ButtonMixin, self)
     deepcopy(FlyoutButtonMixin, self)
-    --local self = deepcopy(Germ, protoGerm) -- now "handled" via XML's mixin... but if I remove it the arrows point in the wrong direction
+]]
+    ---@type Germ|ButtonMixin|FlyoutButtonMixin
+    local self = deepcopy(Germ, protoGerm) -- now "handled" via XML's mixin... but if I remove it the arrows point in the wrong direction
 
     --self.myName = myName
     _G[myName] = self -- so that keybindings can reference it
@@ -249,17 +252,16 @@ function Germ:new(flyoutId, btnSlotIndex)
 
     -- initialize my fields
     self.btnSlotIndex = btnSlotIndex
-    self.action       = btnSlotIndex -- used deep inside the Bliz APIs
+    --self.action       = btnSlotIndex -- used deep inside the Bliz APIs -- only effective when I was bare backing ActionButton
     self.flyoutId     = flyoutId
     self.visibleIf    = parentActionBarBtn.visibleIf
-    self.myLabel      = self:getFlyoutDef().name
+    self.label        = self:getFlyoutDef().name
     self.bbInfo       = bbInfo
 
     --zebug.error:print("OnLeave",self.OnLeave)
     --self.OnLeave = nil - I think I was trying to solve the FO btn collapse
 
     -- UI positioning
---[[
     -- removed for Germ == ActionButton
     self:ClearAllPoints()
     self:SetAllPoints(parentActionBarBtn)
@@ -267,7 +269,6 @@ function Germ:new(flyoutId, btnSlotIndex)
     self:SetFrameLevel(STRATA_LEVEL_DEFAULT)
     self:SetToplevel(true)
     self:setVisibilityDriver()
-]]
 
     -- UI reactions
     -- try to replace all of these with self:SetAttribute("_onhide"(e.g.), "flyout:ClearBindings()") secure style handlers
@@ -310,6 +311,25 @@ function Germ:getName()
     return self.myName or tostring(self)
 end
 
+function Germ:getLabel()
+    self.label = self:getFlyoutDef().name
+    return self.label
+end
+
+function Germ:getBtnSlotIndex()
+    return self.btnSlotIndex
+end
+
+---@return string
+function Germ:getFlyoutId()
+    return self.flyoutId
+end
+
+---@return string
+function Germ:getFlyoutName()
+    return self:getFlyoutDef():getName()
+end
+
 function Germ:setAllClickHandlers()
     -- I could have done this in a loop, but, this is FAR clearer and easier to understand
     local flyoutId = self.flyoutId
@@ -324,7 +344,7 @@ end
 function Germ:initFlyoutMenu()
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu.new(self)
-        zebug.info:line("20","updateForGerm from Germ:initFlyoutMenu")
+        zebug.info:ifMe1st(self):line("20","updateForGerm from Germ:initFlyoutMenu")
         self.flyoutMenu:updateForGerm(self)
         self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
     else
@@ -350,13 +370,13 @@ end
 
 function Germ:getDirection()
     -- Germ == ActionButton
-    return self.bar:GetSpellFlyoutDirection()
+    --return self.bar:GetSpellFlyoutDirection()
 
     -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
     -- ask the bar instance what direction to fly
     -- removed for Germ == ActionButton
-    --local parent = self:GetParent()
-    --return parent.bar:GetSpellFlyoutDirection()
+    local parent = self:GetParent()
+    return parent.bar:GetSpellFlyoutDirection()
 end
 
 -- method alias to fix SpellFlyoutMixin:Toggle() inside Interface/AddOns/Blizzard_ActionBar/Mainline/SpellFlyout.lua
@@ -373,36 +393,32 @@ function Germ:updateAllBtnHotKeyLabels()
     self.flyoutMenu:updateForGerm(self)
 end
 
-function Germ:getBtnSlotIndex()
-    return self.btnSlotIndex
-end
-
----@return string
-function Germ:getFlyoutId()
-    return self.flyoutId
-end
-
 local maxUpdateFrequency = 0.5
 
+-- TODO: rename and refactor
 function Germ:update(flyoutId)
+    self.flyoutId = flyoutId
+
     -- limit frequency of updates
     -- but don't make each germ compete with the others.  give each a unique ID
-    if not self.updaterId then
-        self.updaterId = "updaterFor" .. self:getName()
+    if not self.throttledUpdate then
+        local func = function()
+            return self:_secretUpdate()
+        end
+        -- every instance of Germ gets its own copy of throttledUpdate.
+        -- thus, EACH instance can execute its own update without competing with the other instances
+        self.throttledUpdate = Throttler:new(func, maxUpdateFrequency, self:getFlyoutName() )
     end
 
-    throttle(self.updaterId, maxUpdateFrequency, function()
-        self:_secretUpdate(flyoutId)
-    end)
+    self.throttledUpdate:exe()
 end
 
 -- TODO v11.1 - figure out what all actually needs to be updated under which circumstances
-function Germ:_secretUpdate(flyoutId)
-    self.flyoutId = flyoutId
-    self.myLabel = self:getFlyoutDef().name
+function Germ:_secretUpdate()
+    local flyoutId = self.flyoutId
 
     local btnSlotIndex = self.btnSlotIndex
-    zebug.trace:line(30, "germ",self.myLabel, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName())
+    zebug.trace:line(30, "germ",self.label, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName())
 
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     if not flyoutDef then
@@ -422,7 +438,7 @@ function Germ:_secretUpdate(flyoutId)
 
     -- inside ActionBarActionButtonMixin:Update() it sets self:Name based on a call to [Global]GetActionText(actionBarSlot)
     -- which will always be the UFO Macro's name, "ZUFO" so nope.
-    self.Name:SetText(self.myLabel)
+    self.Name:SetText(self.label)
 
     self:UpdateArrowRotation()
     self:UpdateArrowPosition()
@@ -442,7 +458,7 @@ function Germ:_secretUpdate(flyoutId)
 
         self:setVisibilityDriver() -- TODO: remove after we stop sledge hammering all the germs every time
 
-        self:SetAttribute("UFO_NAME",  self.myLabel)
+        self:SetAttribute("UFO_NAME",  self.label)
         self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
 
         local lastClickerUpdate = self.clickersLastUpdate or 0
@@ -468,23 +484,25 @@ function Germ:_secretUpdate(flyoutId)
             end
         end
 
-
     end)
 end
 
 function Germ:reInitializeMySecureClickers()
     for secureMouseClickId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
-        zebug.trace:print("germ",self.myLabel, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
+        zebug.trace:print("germ",self.label, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
         SecureHandlerExecute(self, updaterScriptlet)
     end
 end
 
+-- created for Germ == ActionButton
 function Germ:fixMyActionAttribute()
     if not self.actionValueSetterSecureScriptlette then
         -- note: this will "hardcode" the btnSlotIndex which will become a problem if I ever decide to recylce Germs and move them
         self.actionValueSetterSecureScriptlette = "self:SetAttribute('action'," ..tostring(self.btnSlotIndex).. ")"
     end
 
+    -- I can execute SecureHandlerExecute even when in combat, yes?
+    -- No? "Insecure code can’t use SecureHandler Execute during combat"
     exeOnceNotInCombat("fix self.action ".. self:getName(), function()
         SecureHandlerExecute(self, self.actionValueSetterSecureScriptlette)
     end)
@@ -492,10 +510,11 @@ end
 
 -- why isn't this just part of self:update()
 function Germ:handleGermUpdateEvent()
-    -- bliz mixin - bugged - CalculateButton() assumes parent must be an action bar button and falls back to ActionButton1
+    -- bliz mixin - bugged - CalculateAction() assumes parent must be an action bar button and falls back to ActionButton1
     -- the internal's of Bliz' ActionBarActionButtonMixin:Update()
     -- assume "this" is ActionBarActionButton and clobbers my self.action with "self.action=1"
     -- so unclobber it
+    -- QUESTION: can I just do that?  Make the Germ's parent
     --zebug.error:print("self.btnSlotIndex",self.btnSlotIndex, "self.action",self.action)
     --self.action = self.btnSlotIndex -- this alone is enough to taint
     --evidently, even SecureHandlerExecute("self:SetAttribute") will cause taint, so let's wrap it in anti-combat code
@@ -612,6 +631,7 @@ function Germ:setToolTip()
     GameTooltip:SetText(label)
 end
 
+---@return FlyoutDef
 function Germ:getFlyoutDef()
     return FlyoutDefsDb:get(self.flyoutId)
 end
@@ -868,7 +888,7 @@ function HandlerMaker:OpenFlyout(mouseClick)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
     zebug.info:name("HandlerMakers:OpenFlyout"):print("self",self, "mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
     local scriptName = "OPENER_SCRIPT_FOR_" .. secureMouseClickId
-    zebug.info:name("HandlerMakers:OpenFlyout"):print("germ",self.myLabel, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
+    zebug.info:name("HandlerMakers:OpenFlyout"):print("germ",self.label, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
     -- TODO v11.1 - wrap in exeNotInCombat() ?
     self:SetAttribute(secureMouseClickId,scriptName)
     self:SetAttribute("_"..scriptName, getOpenerClickerScriptlet()) -- OPENER
@@ -885,7 +905,7 @@ function HandlerMaker:ActivateBtn1(mouseClick)
     local btn1Name = btn1.name
     local type, key, val = btn1:asSecureClickHandlerAttributes()
     local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
-    zebug.info:name("HandlerMakers:ActivateBtn1"):print("germ",self.myLabel, "btn1Name",btn1Name, "btn1Type",btn1Type, "secureMouseClickId", secureMouseClickId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseClick, "val", val)
+    zebug.info:name("HandlerMakers:ActivateBtn1"):print("germ",self.label, "btn1Name",btn1Name, "btn1Type",btn1Type, "secureMouseClickId", secureMouseClickId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseClick, "val", val)
     -- TODO v11.1 - wrap in exeNotInCombat() ?
     self:SetAttribute(secureMouseClickId, type)
     self:SetAttribute(keyAdjustedToMatchMouseClick, val)
@@ -994,7 +1014,7 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
         self:SetAttribute(adjKey, val)
     ]=]
 
-    zebug.info:print("germ",self.myLabel, "secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
+    zebug.info:print("germ",self.label, "secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
     self.clickScriptUpdaters[secureMouseClickId] = scriptToSetNextRandomBtn
 
     -- install the script which will install the buttons which will perform the action
@@ -1042,7 +1062,7 @@ function Germ:removeOldHandler(mouseClick)
         local stop  = LEN_CLICK_ID_MARKER + string.len(mouseClick)
         local scriptsClick = string.sub(postBody or "", start, stop)
         isForThisClick = (scriptsClick == mouseClick)
-        zebug.info:print("germ", self.myLabel, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
+        zebug.info:print("germ", self.label, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
         if not isForThisClick then
             rescue( header, preBody, postBody, scriptsClick )
         end
@@ -1053,7 +1073,7 @@ function Germ:removeOldHandler(mouseClick)
         local success = pcall(function()
             SecureHandlerWrapScript(params[1], "OnClick", params[1], params[2], params[3])
         end )
-        zebug.info:print("germ", self.myLabel, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
+        zebug.info:print("germ", self.label, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
     end
 end
 

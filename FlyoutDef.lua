@@ -77,6 +77,11 @@ function FlyoutDef:new()
     return FlyoutDef:oneOfUs(self)
 end
 
+---@return string
+function FlyoutDef:getName()
+    return self.name
+end
+
 function FlyoutDef:setModStamp()
     self.lastMod = time()
 end

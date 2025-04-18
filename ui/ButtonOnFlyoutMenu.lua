@@ -45,6 +45,8 @@ function ButtonOnFlyoutMenu:getId()
     return self:GetID()
 end
 
+ButtonOnFlyoutMenu.getLabel = ButtonOnFlyoutMenu.getName
+
 ---@return FlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:getParent()
     return self:GetParent()

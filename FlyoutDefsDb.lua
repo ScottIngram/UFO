@@ -86,8 +86,8 @@ function FlyoutDefsDb:reValidateFlyoutId(flyoutId)
     return flyoutId
 end
 
----@return FlyoutDef
 ---@param flyoutId string
+---@return FlyoutDef
 function FlyoutDefsDb:get(flyoutId)
     zebug.trace:line(40)
     flyoutId = self:validateFlyoutId(flyoutId)

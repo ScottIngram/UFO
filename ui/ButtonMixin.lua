@@ -85,11 +85,15 @@ function ButtonMixin:setIcon(icon)
 
     local iconFrame = self:getIconFrame()
 
+    --self:getIconFrame():SetTexture(icon)
+    -- IS THIS BROKEN?
+
+
     -- block the Bliz mixins from erroneously setting the icon to look like the contents of the action bar button (ie, the ZUFO macro)
     if not self.originalIconSetTextureFunc then
         self.originalIconSetTextureFunc = iconFrame.SetTexture
         iconFrame.SetTexture = function()
-            zebug.trace:line(40, "BLOCKED BLIZ SetTexture for germ", self:GetName())
+            zebug.trace:ifMe1st(self):line(20, "BLOCKED BLIZ SetTexture for germ", self:getLabel())
         end
     end
     self.originalIconSetTextureFunc(iconFrame, icon) -- the iconFrame is the self for the original SetTexture
@@ -275,16 +279,21 @@ function ButtonMixin:updateSecureClicker(mouseClick)
     local btnDef = self:getDef()
 
     -- don't waste time repeating work
+    -- oops! this is too simplistic as it fails to detect changes inside the btnDef
+    -- need something more like FlyoutDef:isModNewerThan()
     local noChange = (self.mySecureClickerDef == btnDef)
+--[[
     if noChange then
         return
     end
+]]
 
     if btnDef then
         local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
         local type, key, val = btnDef:asSecureClickHandlerAttributes()
         local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
         zebug.trace:print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseClick, "val", val)
+
         -- TODO: v11.1 this concat is expensive. optimize.
         local id = "BUTTON-MIXIN:updateSecureClicker for " .. self:getName().. " with btnDef : ".. btnDef:getName();
         exeOnceNotInCombat(id, function()
