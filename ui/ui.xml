@@ -3,14 +3,92 @@
     <!-- stolen from FlyoutButtonTemplate in  Interface/AddOns/Blizzard_Flyout/Flyout.xml -->
     <Button name="GermTemplate"
             virtual="true"
-            inherits="SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate"
-            mixin="GLOBAL_Germ, GLOBAL_ButtonMixin, FlyoutButtonMixin"
+            inherits="ActionButtonTemplate, SecureActionButtonTemplate"
+            mixin="GLOBAL_Germ, GLOBAL_ButtonMixin"
     >
+
+<!-- revised inheritance tree
+    ActionButtonTemplate ::              mixin="BaseActionButtonMixin"
+        + ActionButtonSpellFXTemplate :: none
+        + FlyoutButtonTemplate ::        mixin="FlyoutButtonMixin"
+    SecureActionButtonTemplate ::        mixin="SecureActionButtonMixin"
+        + SecureFrameTemplate ::         none
+
+
+
+-->
+        <!-- SecureActionButtonTemplate via Interface/AddOns/Blizzard_FrameXML/Mainline/SecureTemplates.xml inherits="SecureFrameTemplate" MIXIN="SecureActionButtonMixin" -->
+        <!-- +- SecureFrameTemplate via Interface/AddOns/Blizzard_FrameXML/Mainline/SecureTemplatesBase.xml inherits/mixin = nil -->
+        <!-- ActionButtonTemplate via Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButtonTemplate.xml inherits="ActionButtonSpellFXTemplate, FlyoutButtonTemplate" MIXIN="BaseActionButtonMixin"  -->
+        <!-- +- ActionButtonSpellFXTemplate via Interface/AddOns/Blizzard_FrameXML/Mainline/ActionButtonTemplate.xml inherits/mixin = nil -->
+        <!-- +- FlyoutButtonTemplate via Interface/AddOns/Blizzard_Flyout/Flyout.xml inherits nil MIXIN="FlyoutButtonMixin" -->
+        <!-- ActionBarButtonCodeTemplate via Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButtonTemplate.xml inherits="SecureActionButtonTemplate, QuickKeybindButtonTemplate, ActionButtonSpellFXTemplate" MIXIN="BaseActionButtonMixin"  -->
+        <!-- +- QuickKeybindButtonTemplate via Interface/AddOns/Blizzard_QuickKeybind/QuickKeybind.xml inherits=nil MIXIN="QuickKeybindButtonTemplateMixin" -->
+
+
+        <!-- w6, h15 instead of 45x45
+
+
+        WORKS - inherits="ActionButtonTemplate, SecureActionButtonTemplate" -> OK arrow size. OK arrow dir.  OK popup. Ok first/rnd click
+        BREAKS arrow size - inherits="ActionButtonTemplate, ActionBarButtonCodeTemplate"
+
+        START w/ FlyoutButtonMixin - mixin="GLOBAL_Germ, GLOBAL_ButtonMixin, FlyoutButtonMixin" - no need to fix GetPopupDirection
+        DO explicitly declare <OnLoad method="OnLoad"/>
+
+        inherits="SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate" -> OK arrow size. OK arrow dir.  OK popup. Ok first/rnd click
+
+
+        do NOT explicitly declare <OnLoad method="OnLoad"/>
+
+        inherits="SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate" -> HUGE arrow size. OK arrow dir.  OK popup. Ok first/rnd click
+
+
+
+
+
+        END w/ FlyoutButtonMixin - mixin="GLOBAL_Germ, GLOBAL_ButtonMixin, FlyoutButtonMixin" - REQUIRES Germ to fix GetPopupDirection
+        DO explicitly declare <OnLoad method="OnLoad"/>
+
+        inherits="SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate" -> OK arrow size. WRONG arrow dir.  OK popup. Ok first/rnd click
+        inherits="ActionButtonTemplate, SecureActionButtonTemplate, ActionBarButtonCodeTemplate" -> ditto
+        inherits="SecureActionButtonTemplate, ActionBarButtonCodeTemplate, ActionButtonTemplate" -> SAME as w/o - OK arrow size. WRONG arrow dir.  BROKE popup doesn't pop up. BROKE first/rnd click
+        inherits="ActionBarButtonCodeTemplate, SecureActionButtonTemplate, ActionButtonTemplate" -> SAME as w/o - ditto
+
+
+        END w/ FlyoutButtonMixin - mixin="GLOBAL_Germ, GLOBAL_ButtonMixin, FlyoutButtonMixin"
+        do NOT explicitly declare <OnLoad method="OnLoad"/>
+
+        inherits="SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate" -> HUGE arrow size. WRONG arrow dir.  OK popup. Ok first/rnd click
+        inherits="ActionButtonTemplate, SecureActionButtonTemplate, ActionBarButtonCodeTemplate" -> ditto
+        inherits="SecureActionButtonTemplate, ActionBarButtonCodeTemplate, ActionButtonTemplate" -> SAME as w/ - OK arrow size. WRONG arrow dir.  BROKE popup doesn't pop up. BROKE first/rnd click
+        inherits="ActionBarButtonCodeTemplate, SecureActionButtonTemplate, ActionButtonTemplate" -> SAME as w/ - ditto
+
+
+        NO FlyoutButtonMixin - mixin="GLOBAL_Germ, GLOBAL_ButtonMixin"
+        DO explicitly declare <OnLoad method="OnLoad"/>
+
+        inherits="SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate" -> SAME as w/o - HUGE arrow size. OK arrow dir.  OK popup. Ok first/rnd click
+        inherits="ActionButtonTemplate, SecureActionButtonTemplate, ActionBarButtonCodeTemplate" -> SAME as w/o - ditto
+        inherits="SecureActionButtonTemplate, ActionBarButtonCodeTemplate, ActionButtonTemplate" -> SAME as w/o - OK arrow size. OK arrow dir.  BROKE popup doesn't pop up. BROKE first/rnd click
+        inherits="ActionBarButtonCodeTemplate, SecureActionButtonTemplate, ActionButtonTemplate" -> SAME as w/o - ditto
+
+
+DESIRED CONFIG: but must figure out why HUGE
+        NO FlyoutButtonMixin - mixin="GLOBAL_Germ, GLOBAL_ButtonMixin"
+        do NOT explicitly declare <OnLoad method="OnLoad"/>
+
+        inherits="SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate" -> SAME as w/ - HUGE arrow size. OK arrow dir.  OK popup. Ok first/rnd click
+        inherits="ActionButtonTemplate, SecureActionButtonTemplate, ActionBarButtonCodeTemplate" -> SAME as w/ - ditto
+        inherits="SecureActionButtonTemplate, ActionBarButtonCodeTemplate, ActionButtonTemplate" -> SAME as w/ - OK arrow size. OK arrow dir.  BROKE popup doesn't pop up. BROKE first/rnd click
+        inherits="ActionBarButtonCodeTemplate, SecureActionButtonTemplate, ActionButtonTemplate" -> SAME as w/ - ditto
+
+        -->
         <!-- INHERITED Mixins:
             SecureActionButtonMixin
             BaseActionButtonMixin
-            FlyoutButtonMixin
+            FlyoutButtonMixin - but if I don't put it in my mixin attribute then the arrow is HUGE
             QuickKeybindButtonTemplateMixin
+            ActionBarActionButtonDerivedMixin (via ActionBarButtonCodeTemplate) = ActionBarActionButtonMixin
         -->
         <!-- SecureActionButtonTemplate via Interface/AddOns/Blizzard_FrameXML/Mainline/SecureTemplates.xml inherits="SecureFrameTemplate" MIXIN="SecureActionButtonMixin" -->
         <!-- +- SecureFrameTemplate via Interface/AddOns/Blizzard_FrameXML/Mainline/SecureTemplatesBase.xml inherits/mixin = nil -->
@@ -20,18 +98,25 @@
         <!-- ActionBarButtonCodeTemplate via Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButtonTemplate.xml inherits="SecureActionButtonTemplate, QuickKeybindButtonTemplate, ActionButtonSpellFXTemplate" MIXIN="BaseActionButtonMixin"  -->
         <!-- +- QuickKeybindButtonTemplate via Interface/AddOns/Blizzard_QuickKeybind/QuickKeybind.xml inherits=nil MIXIN="QuickKeybindButtonTemplateMixin" -->
 
-        <KeyValues>
-            <KeyValue key="popupDirection" value="DOWN" type="string"/>
-            <KeyValue key="popupOffset" value="-3" type="number"/>
-            <KeyValue key="popupCrossAxisSize" value="38" type="number"/>
-            <KeyValue key="openArrowOffset" value="3" type="number"/>
-            <KeyValue key="closedArrowOffset" value="5" type="number"/>
-            <KeyValue key="arrowMainAxisSize" value="15" type="number"/>
-            <KeyValue key="arrowCrossAxisSize" value="6" type="number"/>
-            <KeyValue key="arrowNormalTexture" value="UI-HUD-ActionBar-Flyout" type="string"/>
-            <KeyValue key="arrowDownTexture" value="UI-HUD-ActionBar-Flyout-Down" type="string"/>
-            <KeyValue key="arrowOverTexture" value="UI-HUD-ActionBar-Flyout-Mouseover" type="string"/>
-        </KeyValues>
+
+        <!-- these vals are respected now that I've properly set up my inheritance... but, let's just use the default values  -->
+<!--
+                <KeyValues>
+                    <KeyValue key="popupDirection" value="DOWN" type="string"/>
+                    <KeyValue key="popupOffset" value="-3" type="number"/>
+                    <KeyValue key="popupCrossAxisSize" value="50" type="number"/>
+                    <KeyValue key="openArrowOffset" value="5" type="number"/>
+                    <KeyValue key="closedArrowOffset" value="5" type="number"/>
+                    <KeyValue key="arrowMainAxisSize" value="18" type="number"/>
+                    <KeyValue key="arrowCrossAxisSize" value="7" type="number"/>
+                    <KeyValue key="arrowNormalTexture" value="UI-HUD-ActionBar-Flyout" type="string"/>
+                    <KeyValue key="arrowDownTexture" value="UI-HUD-ActionBar-Flyout-Down" type="string"/>
+                    <KeyValue key="arrowOverTexture" value="UI-HUD-ActionBar-Flyout-Mouseover" type="string"/>
+                </KeyValues>
+-->
+
+<!-- let's just use the default values  -->
+<!--
         <Layers>
             <Layer level="ARTWORK" textureSubLevel="1">
                 <Texture parentKey="BorderShadow" atlas="UI-HUD-ActionBar-IconFrame-FlyoutBorderShadow" hidden="true">
@@ -45,8 +130,11 @@
                 <Texture parentKey="Arrow"/>
             </Layer>
         </Layers>
+-->
+<!--
         <Scripts>
-            <OnLoad method="OnLoad"/>
+-->
+            <!--<OnLoad method="OnLoad"/>--> <!-- if I omit this then the flyout arrow is HUGE... so looks like ONLY I am calling the  FlyoutButtonMixin:On_Load ?!?!  -->
             <!--<OnHide method="OnHide"/>-->
             <!-- <OnClick method="OnClick"/> -->
             <!--<OnEnter method="OnEnter"/>-->
@@ -54,7 +142,9 @@
             <!--<OnMouseDown method="OnMouseDown"/>-->
             <!--<OnMouseUp method="OnMouseUp"/>-->
             <!--<OnDragStart method="OnDragStart"/>-->
+<!--
         </Scripts>
+-->
     </Button>
 
     <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate"

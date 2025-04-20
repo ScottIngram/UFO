@@ -24,7 +24,7 @@ local zebug = Zebug:new()
 ---@field myName string duh
 ---@field label string human friendly identifier
 
----@type Germ|ButtonMixin|FlyoutButtonMixin
+---@type Germ|ButtonMixin|BaseActionButtonMixin|FlyoutButtonMixin|SecureActionButtonMixin
 Germ = {
     ufoType = "Germ",
     clickScriptUpdaters = {},
@@ -243,7 +243,39 @@ function Germ:new(flyoutId, btnSlotIndex)
     deepcopy(FlyoutButtonMixin, self)
 ]]
     ---@type Germ|ButtonMixin|FlyoutButtonMixin
-    local self = deepcopy(Germ, protoGerm) -- now "handled" via XML's mixin... but if I remove it the arrows point in the wrong direction
+    local self = protoGerm -- deepcopy(Germ, protoGerm) -- now "handled" via XML's mixin... but if I remove it the arrows point in the wrong direction - but NOT if I put the Bliz class "FlyoutButtonMixin" as the first member of the mixin attribute
+
+
+
+    --ActionBarActionButtonMixin:OnLoad
+    --zebug.error:print("ActionBarActionButtonMixin.OnEvent",ActionBarActionButtonMixin.OnEvent, "self.OnEvent",self.OnEvent)
+    -- self.OnEvent = ActionBarActionButtonMixin.OnEvent
+
+--[[
+    zebug.error:print("ActionBarActionButtonMixin.OnLoad",ActionBarActionButtonMixin.OnLoad, "self.OnLoad",self.OnLoad)
+    zebug.error:print("ActionBarActionEventsFrame.OnLoad",ActionBarActionEventsFrame.OnLoad, "self.OnLoad",self.OnLoad)
+    zebug.error:print("ActionBarActionEventsFrame.OnLoad",ActionBarActionEventsFrame.OnLoad, "parentActionBarBtn.OnLoad",parentActionBarBtn.OnLoad)
+    zebug.error:print("ActionBarActionEventsFrame.OnEvent",ActionBarActionEventsFrame.OnEvent, "parentActionBarBtn.OnEvent",parentActionBarBtn.OnEvent)
+
+    self:SetScript("OnEvent", self.OnEvent)
+    self:RegisterEvent("PLAYER_ENTERING_WORLD");
+    self:RegisterEvent("ACTIONBAR_SLOT_CHANGED");
+    self:RegisterEvent("UPDATE_BINDINGS");
+    self:RegisterEvent("GAME_PAD_ACTIVE_CHANGED");
+    self:RegisterEvent("UPDATE_SHAPESHIFT_FORM");
+    self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN");
+    self:RegisterEvent("PET_BAR_UPDATE");
+    self:RegisterUnitEvent("UNIT_FLAGS", "pet");
+    self:RegisterUnitEvent("UNIT_AURA", "pet");
+    self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED");
+    self:RegisterEvent("SPELL_UPDATE_ICON");
+
+    ActionBarActionEventsFrameMixin.OnLoad(self)
+]]
+
+
+    -- fix the dir - needed when mixin includes explicit FlyoutButtonMixin AND it's at the END but not if at START
+    --self.GetPopupDirection = Germ.getDirection
 
     --self.myName = myName
     _G[myName] = self -- so that keybindings can reference it
@@ -379,10 +411,6 @@ function Germ:getDirection()
     return parent.bar:GetSpellFlyoutDirection()
 end
 
--- method alias to fix SpellFlyoutMixin:Toggle() inside Interface/AddOns/Blizzard_ActionBar/Mainline/SpellFlyout.lua
-Germ.GetPopupDirection = Germ.getDirection
--- TODO v11.1 isn't this fragile and susceptible to Bliz whims?  Do I need to implement my own version of SpellFlyoutMixin:Toggle() ?
-
 function Germ:updateAllBtnCooldownsEtc()
     --zebug.trace:print(self:getFlyoutId())
     self.flyoutMenu:updateAllBtnCooldownsEtc()
@@ -495,6 +523,7 @@ function Germ:reInitializeMySecureClickers()
 end
 
 -- created for Germ == ActionButton
+--[[
 function Germ:fixMyActionAttribute()
     if not self.actionValueSetterSecureScriptlette then
         -- note: this will "hardcode" the btnSlotIndex which will become a problem if I ever decide to recylce Germs and move them
@@ -507,6 +536,7 @@ function Germ:fixMyActionAttribute()
         SecureHandlerExecute(self, self.actionValueSetterSecureScriptlette)
     end)
 end
+]]
 
 -- why isn't this just part of self:update()
 function Germ:handleGermUpdateEvent()
@@ -519,12 +549,15 @@ function Germ:handleGermUpdateEvent()
     --self.action = self.btnSlotIndex -- this alone is enough to taint
     --evidently, even SecureHandlerExecute("self:SetAttribute") will cause taint, so let's wrap it in anti-combat code
     --SecureHandlerExecute(self, self.actionValueSetterSecureScriptlette) -- DNF
+
+--[[
     if self:GetAttribute('action') ~= self.btnSlotIndex then
         self:fixMyActionAttribute()
     end
+]]
 
     self:update(self.flyoutId)
-    self:UpdateFlyout() -- Call Bliz -- TODO: v11.1 should I consolidate these two ?
+--    self:UpdateFlyout() -- Call Bliz -- TODO: v11.1 should I consolidate these two ?
     self:updateCooldownsAndCountsAndStatesEtc() -- TODO: v11.1 verify this is working properly.  do I need to do more?
 
     -- Update border and determine arrow position
@@ -540,6 +573,7 @@ function Germ:handleGermUpdateEvent()
         arrowDistance = 2;
     end
 
+    -- the following are called by FlyoutButtonMixin:OnLoad() via BaseActionButtonMixin:BaseActionButtonMixin_OnLoad() via SmallActionButtonMixin:SmallActionButtonMixin_OnLoad
     self:UpdateArrowRotation() -- TODO v11.1 aren't I doing this in multiple places?  consolidate.
     self:UpdateArrowPosition();
     self:UpdateBorderShadow();
@@ -1077,3 +1111,38 @@ function Germ:removeOldHandler(mouseClick)
     end
 end
 
+-- self.OnEvent = ActionBarActionButtonMixin.OnEvent
+--[[
+function Germ:OnEvent(event, ...)
+    zebug.error:print("wee?",event)
+    ActionBarActionButtonMixin:OnEvent(event, ...)
+end
+]]
+
+-------------------------------------------------------------------------------
+-- OVERRIDES for methods defined in ActionBarActionButtonMixin
+-- Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButton.lua
+-- because Germ isn't on an action bar and thus:
+-- * calling GetActionInfo(self.action) knows nothing of UFOs
+-- *
+-- maybe I need to re-implement all of ActionBarActionButtonMixin ?
+-- ActionBarActionButtonMixin:Update() calls -> ActionBarActionEventsFrame:RegisterFrame(self)
+-------------------------------------------------------------------------------
+
+-- method alias to fix SpellFlyoutMixin:Toggle() inside Interface/AddOns/Blizzard_ActionBar/Mainline/SpellFlyout.lua
+-- TODO v11.1 isn't this fragile and susceptible to Bliz whims?  Do I need to implement my own version of SpellFlyoutMixin:Toggle() ?
+-- I think this is getting clobbered by CreateFrame + mixin happening after this definition - NOT ANYMORE now that I've reduced it down to  mixin="GLOBAL_Germ, GLOBAL_ButtonMixin"
+Germ.GetPopupDirection = Germ.getDirection
+
+-- function ClearNewActionHighlight
+
+-- Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButton.lua -> function ActionButton_SetupOverlayGlow(button) -> button.SpellActivationAlert
+
+-------------------------------------------------------------------------------
+-- FlyoutButtonMixin OVERRIDES
+-- see Interface/AddOns/Blizzard_Flyout/Flyout.lua
+-------------------------------------------------------------------------------
+
+function Germ:IsPopupOpen()
+    return self.flyoutMenu and self.flyoutMenu:IsShown()
+end

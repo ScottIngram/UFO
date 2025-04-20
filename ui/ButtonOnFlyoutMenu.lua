@@ -16,7 +16,7 @@ local zebug = Zebug:new()
 ---@field id number unique identifier
 ---@field nopeIcon Frame w/ a little X indicator
 
----@type ButtonOnFlyoutMenu|ButtonMixin
+---@type ButtonOnFlyoutMenu|ButtonMixin|SmallActionButtonMixin|BaseActionButtonMixin
 ButtonOnFlyoutMenu = {
     ufoType = "ButtonOnFlyoutMenu",
 }
@@ -54,6 +54,10 @@ end
 
 function ButtonOnFlyoutMenu:isEmpty()
     return not self:hasDef()
+end
+
+function ButtonOnFlyoutMenu:isForCatalog()
+    return self:getParent().isForCatalog
 end
 
 function ButtonOnFlyoutMenu:hasDef()
@@ -266,8 +270,12 @@ function ButtonOnFlyoutMenu:onLoad()
     self.maxDisplayCount = 99 -- limits how big of a number to show on stacks
 
     -- initialize the Bliz ActionButton
-    self:SmallActionButtonMixin_OnLoad()
-    self.PushedTexture:SetSize(31.6, 30.9)
+    -- if I call neither of these: no badly sized overlay (yay) but a popup arrow appears (boo)
+    self:SmallActionButtonMixin_OnLoad() -- this does some things right but some things wrong
+    --self:BaseActionButtonMixin_OnLoad()
+
+
+    --self.PushedTexture:SetSize(31.6, 30.9)
     --self:getCountFrame():SetPoint("BOTTOMRIGHT", 0, 0) -- this seems tgo be happening automatically now... NOPE, is bug!  Bliz code assume actionSlot=1 TODO: v11.1 fix
 
     -- Drag Handler
@@ -308,6 +316,62 @@ function fuckYouHardBlizzard(self)
     end
 end
 
+function ButtonOnFlyoutMenu:hideButtonFrame()
+--[[
+    self:ClearNormalTexture()
+    self.NormalTexture:Show() -- 4615764
+    self.NormalTexture:SetSize(32,31) -- 4615764
+]]
+end
+
+function ButtonOnFlyoutMenu:showButtonFrame()
+--[[
+    self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame");-- UI-HUD-ActionBar-IconFrame-AddRow
+    self.NormalTexture:SetTexture(4615764) -- 4615764
+]]
+end
+
+
+function ButtonOnFlyoutMenu:UpdateButtonArt()
+
+    SmallActionButtonMixin.UpdateButtonArt(self) -- the IsPressed highlight RIGHT size, but, it has the bad small frame
+    --BaseActionButtonMixin.UpdateButtonArt(self);  -- BADx2 - the IsPressed highlight WRONG size, AND, it has the bad small frame
+
+--[[
+    zebug.error:ifMe1st(self):print("self:isForCatalog()", self:isForCatalog())
+    if self:isForCatalog() then
+        self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame"); -- what if set(nil) ? nil has no effect
+    else
+        self:ClearNormalTexture()
+    end
+]]
+
+
+
+    --self:hideButtonFrame()
+    self:ClearNormalTexture() -- get rid of the odd nameless Atlas member that is the wrong size
+    self.NormalTexture:Show() -- show the square
+    self.NormalTexture:SetSize(32,31)
+
+
+    --[[
+        _ = self.SlotArt        and self.SlotArt:Hide()
+        _ = self.SlotBackground and self.SlotBackground:Hide()
+    ]]
+    --self.NormalTexture:SetSize(160, 160) -- what is this?
+    --self.PushedTexture:SetSize(35, 35) -- fixes IsPressed highlight
+
+    --self.NormalTexture:SetSize(99, 160) -- what is this?
+--self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame"); -- what if set(nil) ? nil has no effect
+    --self.NormalTexture:SetSize(1600, 160) -- what is this?
+--self:ClearNormalTexture()
+    --self:SetPushedAtlas("UI-HUD-ActionBar-IconFrame-Down");
+    -- self.PushedTexture:SetDrawLayer("OVERLAY");
+    --self.PushedTexture:SetSize(46, 45);
+    --self.PushedTexture:SetSize(35, 35);
+
+end
+
 ---@param self ButtonOnFlyoutMenu
 function ButtonOnFlyoutMenu:onEnter()
     self:setTooltip()
@@ -332,7 +396,7 @@ end
 function ButtonOnFlyoutMenu:setTooltip()
     if self:isEmpty() then
         -- this is the empty btn in the catalog... or is it?
-        if not self:getParent().isForCatalog then
+        if not self:isForCatalog() then
             local btnId = self:getId()
             local flyoutId = self:getParent():getId()
             zebug.info:print("No btnDef found for flyoutId",flyoutId, "btnId",btnId)
