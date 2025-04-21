@@ -1,13 +1,32 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
 
-    <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate" virtual="TRUE" inherits="SmallActionButtonTemplate, SecureActionButtonTemplate">
+    <!-- stolen from FlyoutButtonTemplate in  Interface/AddOns/Blizzard_Flyout/Flyout.xml -->
+    <Button name="GermTemplate"
+            virtual="true"
+            inherits="ActionButtonTemplate, SecureActionButtonTemplate"
+            mixin="GLOBAL_Germ, GLOBAL_ButtonMixin"
+    />
+
+    <!--inheritance tree
+        ActionButtonTemplate ::              mixin = BaseActionButtonMixin
+            + ActionButtonSpellFXTemplate :: mixin = none
+            + FlyoutButtonTemplate ::        mixin = FlyoutButtonMixin
+        SecureActionButtonTemplate ::        mixin = SecureActionButtonMixin
+            + SecureFrameTemplate ::         mixin = none
+    -->
+
+    <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate"
+            virtual="true"
+            inherits="SmallActionButtonTemplate, SecureActionButtonTemplate"
+            mixin="GLOBAL_ButtonOnFlyoutMenu, GLOBAL_ButtonMixin"
+    >
         <Scripts>
-            <OnLoad  function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad" />
-            <OnEnter function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnEnter" />
-            <OnLeave function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLeave" />
-            <OnDragStart function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart" />
-            <OnReceiveDrag function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag" />
-            <OnMouseUp function="GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp" />
+            <OnLoad  method="onLoad" />
+            <OnEnter method="onEnter" />
+            <OnLeave method="onLeave" />
+            <OnDragStart method="onDragStartDoPickup" />
+            <OnReceiveDrag method="onReceiveDrag" />
+            <OnMouseUp method="onMouseUp" />
             <PreClick>
                 self:SetChecked(false)
             </PreClick>
@@ -15,24 +34,16 @@
         <NormalTexture/>
     </CheckButton>
 
-    <Frame name="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true" virtual="TRUE">
-        <Size>
-            <AbsDimension x="44" y="44"/>
-        </Size>
+    <Frame name="UIUFO_FlyoutMenuTemplate"
+           virtual="true"
+           frameStrata="DIALOG"
+           frameLevel="10"
+           parent="UIParent"
+           hidden="true"
+           inherits="SecureFrameTemplate, FlyoutPopupTemplate"
+           mixin="GLOBAL_FlyoutMenu"
+    >
         <Frames>
-            <Frame parentKey="Background" setAllPoints="true">
-                <Layers>
-                    <Layer level="BACKGROUND">
-                        <Texture parentKey="End" atlas="UI-HUD-ActionBar-IconFrame-FlyoutButton" useAtlasSize="true"/>
-                        <Texture parentKey="HorizontalMiddle" atlas="_UI-HUD-ActionBar-IconFrame-FlyoutMidLeft" useAtlasSize="true" horizTile="true" hidden="true"/>
-                        <Texture parentKey="VerticalMiddle" atlas="!UI-HUD-ActionBar-IconFrame-FlyoutMid" useAtlasSize="true" vertTile="true" hidden="true"/>
-                        <Texture parentKey="Start" atlas="UI-HUD-ActionBar-IconFrame-FlyoutBottom" useAtlasSize="true"/>
-                    </Layer>
-                </Layers>
-                <KeyValues>
-                    <KeyValue key="ignoreInlayout" value="true" type="boolean"/>
-                </KeyValues>
-            </Frame>
             <CheckButton name="$parent_Button1" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="1" />
             <CheckButton name="$parent_Button2" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="2" />
             <CheckButton name="$parent_Button3" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="3" />
@@ -72,22 +83,43 @@
             -->
         </Frames>
         <Scripts>
-            <OnUpdate function="GLOBAL_UIUFO_FlyoutMenu_OnUpdate"/>
-            <OnShow  function="GLOBAL_UIUFO_FlyoutMenu_OnShow"/>
-            <OnHide  function="GLOBAL_UIUFO_FlyoutMenu_OnHide"/>
-            <OnLeave function="GLOBAL_UIUFO_FlyoutMenu_OnLeave" />
+<!--
+            <OnUpdate method="onUpdate"/>
+            <OnShow  method="onShow"/> &lt;!&ndash; removing this had no effect on the "Cannot call restricted closure from insecure code" &ndash;&gt;
+            <OnHide  method="onHide"/>
+            <OnLeave method="onLeave" />
+-->
+
         </Scripts>
     </Frame>
 
-    <Frame name="UIUFO_FlyoutMenuForGerm" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
+    <!-- this is the singleton version that is only used when the config option "usable in combat" is false -->
+    <Frame name="UIUFO_FlyoutMenuForGerm"
+           inherits="UIUFO_FlyoutMenuTemplate"
+           mixin="GLOBAL_FlyoutMenu"
+           frameStrata="DIALOG"
+           frameLevel="10"
+           parent="UIParent"
+           hidden="true"
+    >
+        <!-- no effect if removed during Germ == ActionButton -->
+<!--
         <Scripts>
-            <OnLoad function="GLOBAL_UIUFO_FlyoutMenuForGerm_OnLoad"/>
+            <OnLoad method="onLoadForGerm"/>
         </Scripts>
+-->
     </Frame>
 
-    <Frame name="UIUFO_FlyoutMenuForCatalog" inherits="UIUFO_FlyoutMenuTemplate" frameStrata="DIALOG" frameLevel="10" parent="UIParent" hidden="true">
+    <Frame name="UIUFO_FlyoutMenuForCatalog"
+           inherits="UIUFO_FlyoutMenuTemplate"
+           mixin="GLOBAL_FlyoutMenu"
+           frameStrata="DIALOG"
+           frameLevel="10"
+           parent="UIParent"
+           hidden="true"
+    >
         <Scripts>
-            <OnLoad function="GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad"/>
+            <OnLoad method="onLoadForCatalog"/>
         </Scripts>
     </Frame>
 

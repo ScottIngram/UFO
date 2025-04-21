@@ -16,11 +16,11 @@ local zebug = Zebug:new()
 ---@field id number unique identifier
 ---@field nopeIcon Frame w/ a little X indicator
 
----@type ButtonOnFlyoutMenu|ButtonMixin
+---@type ButtonOnFlyoutMenu|ButtonMixin|SmallActionButtonMixin|BaseActionButtonMixin|VisibleRegion|Region
 ButtonOnFlyoutMenu = {
     ufoType = "ButtonOnFlyoutMenu",
 }
-ButtonMixin:inject(ButtonOnFlyoutMenu)
+GLOBAL_ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -34,11 +34,18 @@ function ButtonOnFlyoutMenu:oneOfUs(btnOnFlyout)
     deepcopy(ButtonOnFlyoutMenu, btnOnFlyout)
 end
 
+function ButtonOnFlyoutMenu:getName()
+    local btnDef = self:getDef()
+    return (btnDef and btnDef:getName()) or "UnKnOwN"
+end
+
 function ButtonOnFlyoutMenu:getId()
     -- the button ID never changes because it's never actually dragged or moved.
     -- It's the underlying btnDef that moves from one button to another.
     return self:GetID()
 end
+
+ButtonOnFlyoutMenu.getLabel = ButtonOnFlyoutMenu.getName
 
 ---@return FlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:getParent()
@@ -47,6 +54,10 @@ end
 
 function ButtonOnFlyoutMenu:isEmpty()
     return not self:hasDef()
+end
+
+function ButtonOnFlyoutMenu:isForCatalog()
+    return self:getParent().isForCatalog
 end
 
 function ButtonOnFlyoutMenu:hasDef()
@@ -67,7 +78,8 @@ function ButtonOnFlyoutMenu:setDef(btnDef)
     local flyoutMenu = self:GetParent()
     if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
         self:updateSecureClicker(MouseClick.ANY)
-        self:SetAttribute("UFO_NO_RND", btnDef and btnDef.noRnd or nil) -- SECURE TEMPLATE
+        -- TODO: v11.1 build this into my ButtonMixin
+        safelySetAttribute(self, "UFO_NO_RND", btnDef and btnDef.noRnd or nil) -- SECURE TEMPLATE
     else
         self:setExcluderVisibility()
     end
@@ -198,6 +210,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     Ufo.pickedUpBtn = nil
 end
 
+-- only used by FlyoutMenu:updateForCatalog()
 function ButtonOnFlyoutMenu:setGeometry(direction, prevBtn)
     self:ClearAllPoints()
     if prevBtn then
@@ -245,36 +258,45 @@ function ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc(self)
 end
 
 -------------------------------------------------------------------------------
--- GLOBAL Functions Supporting FlyoutBtn XML Callbacks
+-- XML Callbacks
 -------------------------------------------------------------------------------
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLoad(self)
+function ButtonOnFlyoutMenu:onLoad()
     -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
-    ButtonOnFlyoutMenu:oneOfUs(self)
+    --ButtonOnFlyoutMenu:oneOfUs(self) - nope, this is now performed vix xml's mixin
 
     -- initialize my fields
     self.maxDisplayCount = 99 -- limits how big of a number to show on stacks
 
     -- initialize the Bliz ActionButton
-    self:SmallActionButtonMixin_OnLoad()
-    self.PushedTexture:SetSize(31.6, 30.9)
-    self:getCountFrame():SetPoint("BOTTOMRIGHT", 0, 0)
+    -- if I call neither of these: no badly sized overlay (yay) but a popup arrow appears (boo)
+    self:SmallActionButtonMixin_OnLoad() -- this does some things right but some things wrong
+    --self:BaseActionButtonMixin_OnLoad()
+
+
+    --self.PushedTexture:SetSize(31.6, 30.9)
+    --self:getCountFrame():SetPoint("BOTTOMRIGHT", 0, 0) -- this seems tgo be happening automatically now... NOPE, is bug!  Bliz code assume actionSlot=1 TODO: v11.1 fix
 
     -- Drag Handler
     self:RegisterForDrag("LeftButton")
     local pickupAction = [[print("WEEE"); return "action", self:GetAttribute("action")]]
-    --self:SetAttribute("_ondragstart", pickupAction)
+    --self:SetAttribute("_ondragstart", pickupAction)-- try to use this
     --self:SetAttribute("_onreceivedrag", pickupAction)
 
     -- Click handler
     --self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
     self:RegisterForClicks("AnyDown", "AnyUp")
     -- see also ButtonMixin:updateSecureClicker
+
+    --self:makeSafeSetAttribute() -- experiment that didn't pan out
+
+    SecureHandler_OnLoad(self) -- TODO: v11.1 evaluate if this is actually safe or is it causing taint
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp(self)
+function ButtonOnFlyoutMenu:onMouseUp()
+    -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
     local isDragging = GetCursorInfo()
     if isDragging then
         fuckYouHardBlizzard(self)
@@ -282,7 +304,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnMouseUp(self)
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnReceiveDrag(self)
+function ButtonOnFlyoutMenu:onReceiveDrag()
     fuckYouHardBlizzard(self)
 end
 
@@ -294,8 +316,64 @@ function fuckYouHardBlizzard(self)
     end
 end
 
+function ButtonOnFlyoutMenu:hideButtonFrame()
+--[[
+    self:ClearNormalTexture()
+    self.NormalTexture:Show() -- 4615764
+    self.NormalTexture:SetSize(32,31) -- 4615764
+]]
+end
+
+function ButtonOnFlyoutMenu:showButtonFrame()
+--[[
+    self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame");-- UI-HUD-ActionBar-IconFrame-AddRow
+    self.NormalTexture:SetTexture(4615764) -- 4615764
+]]
+end
+
+
+function ButtonOnFlyoutMenu:UpdateButtonArt()
+
+    SmallActionButtonMixin.UpdateButtonArt(self) -- the IsPressed highlight RIGHT size, but, it has the bad small frame
+    --BaseActionButtonMixin.UpdateButtonArt(self);  -- BADx2 - the IsPressed highlight WRONG size, AND, it has the bad small frame
+
+--[[
+    zebug.error:ifMe1st(self):print("self:isForCatalog()", self:isForCatalog())
+    if self:isForCatalog() then
+        self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame"); -- what if set(nil) ? nil has no effect
+    else
+        self:ClearNormalTexture()
+    end
+]]
+
+
+
+    --self:hideButtonFrame()
+    self:ClearNormalTexture() -- get rid of the odd nameless Atlas member that is the wrong size
+    self.NormalTexture:Show() -- show the square
+    self.NormalTexture:SetSize(32,31)
+
+
+    --[[
+        _ = self.SlotArt        and self.SlotArt:Hide()
+        _ = self.SlotBackground and self.SlotBackground:Hide()
+    ]]
+    --self.NormalTexture:SetSize(160, 160) -- what is this?
+    --self.PushedTexture:SetSize(35, 35) -- fixes IsPressed highlight
+
+    --self.NormalTexture:SetSize(99, 160) -- what is this?
+--self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame"); -- what if set(nil) ? nil has no effect
+    --self.NormalTexture:SetSize(1600, 160) -- what is this?
+--self:ClearNormalTexture()
+    --self:SetPushedAtlas("UI-HUD-ActionBar-IconFrame-Down");
+    -- self.PushedTexture:SetDrawLayer("OVERLAY");
+    --self.PushedTexture:SetSize(46, 45);
+    --self.PushedTexture:SetSize(35, 35);
+
+end
+
 ---@param self ButtonOnFlyoutMenu
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnEnter(self)
+function ButtonOnFlyoutMenu:onEnter()
     self:setTooltip()
 
     -- push catalog buttons out of the way for easier btn relocation
@@ -305,7 +383,7 @@ function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnEnter(self)
     flyoutMenu:displaceButtonsOnHover(self:getId())
 end
 
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnLeave(self)
+function ButtonOnFlyoutMenu:onLeave()
     GameTooltip:Hide()
     ---@type FlyoutMenu
     local flyoutMenu = self:GetParent()
@@ -318,7 +396,7 @@ end
 function ButtonOnFlyoutMenu:setTooltip()
     if self:isEmpty() then
         -- this is the empty btn in the catalog... or is it?
-        if not self:getParent().isForCatalog then
+        if not self:isForCatalog() then
             local btnId = self:getId()
             local flyoutId = self:getParent():getId()
             zebug.info:print("No btnDef found for flyoutId",flyoutId, "btnId",btnId)
@@ -345,6 +423,6 @@ end
 
 -- pickup an existing button from an existing flyout
 ---@param self ButtonOnFlyoutMenu
-function GLOBAL_UIUFO_ButtonOnFlyoutMenu_OnDragStart(self)
+function ButtonOnFlyoutMenu:onDragStart()
     self:onDragStartDoPickup()
 end

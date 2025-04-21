@@ -9,7 +9,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new()
+local zebug = Zebug:getSharedByName("GERMS_FLYOUTS_BUTTONS")
 
 ---@class FlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -18,6 +18,7 @@ local zebug = Zebug:new()
 ---@field isForCatalog boolean
 ---@field nameSuffix string part of its name used to identify it as a flyout frame
 ---@field displaceBtnsHere number used to push buttons out of the way during "OnHover"
+---@type FlyoutMenu|SpellFlyoutMixin|FlyoutPopupMixin|VisibleRegion|Region
 local FlyoutMenu = {
     ufoType = "FlyoutMenu",
     isForGerm = false,
@@ -25,6 +26,8 @@ local FlyoutMenu = {
     nameSuffix = "_FlyoutMenu"
 }
 Ufo.FlyoutMenu = FlyoutMenu
+GLOBAL_FlyoutMenu = FlyoutMenu
+_G["FlyoutMenu"] = FlyoutMenu
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -38,13 +41,20 @@ function FlyoutMenu:oneOfUs(fomu)
     return deepcopy(self, fomu)
 end
 
+---@return FlyoutMenu|SpellFlyoutMixin|FlyoutPopupMixin
 function FlyoutMenu.new(germ)
     local myName = germ:GetName() .. FlyoutMenu.nameSuffix
-    local protoSelf = CreateFrame(FrameType.FRAME, myName, germ, "UIUFO_FlyoutMenuTemplate")
+    ---@type FlyoutMenu|SpellFlyoutMixin|FlyoutPopupMixin
+    local protoSelf = CreateFrame(FrameType.FRAME, myName, germ, "UIUFO_FlyoutMenuTemplate") -- XML's mixin = FlyoutMenu
     ---@type FlyoutMenu
-    local self = FlyoutMenu:oneOfUs(protoSelf)
-    doBlizOnLoad(self)
-    return self
+    --local self = FlyoutMenu:oneOfUs(protoSelf)
+    --doBlizOnLoad(self)
+    return protoSelf
+end
+
+function FlyoutMenu:getLabel()
+    self.label = self:getDef().name
+    return self.label
 end
 
 ---@return ButtonOnFlyoutMenu
@@ -58,7 +68,7 @@ function FlyoutMenu:getBtnKids()
     local btnKids = self.btnKids
     if not btnKids then
         btnKids = { self:GetChildren() }
-        if btnKids[1]:GetObjectType() ~= "CheckButton" then
+        while btnKids[1] and btnKids[1]:GetObjectType() ~= "CheckButton" do
             table.remove(btnKids, 1)
         end
         self.btnKids = btnKids
@@ -68,7 +78,7 @@ end
 
 function FlyoutMenu:forEachButton(handler)
     for i, button in ipairs(self:getBtnKids()) do
-        if button:GetObjectType() == "CheckButton" then
+        if button.ufoType == ButtonOnFlyoutMenu.ufoType then
             handler(button,i)
         end
     end
@@ -106,7 +116,7 @@ function FlyoutMenu:installHandlerForCloseOnClick()
     if self.isCloserInitialized or not self.isForGerm then return end
 
     self:forEachButton(function(button)
-        SecureHandlerWrapScript(button, "PostClick", button, CLOSE_ON_CLICK_SCRIPTLET)
+        SecureHandlerWrapScript(button, "PostClick", button, CLOSE_ON_CLICK_SCRIPTLET) -- Is the the cause of "Cannot call restricted closure from insecure code" ??? NOPE
         SecureHandlerExecute(button, CLOSE_ON_CLICK_SCRIPTLET) -- initialize the scriptlet's "global" vars
     end)
 
@@ -240,7 +250,8 @@ function FlyoutMenu:updateForGerm(germ)
         if btnDef then
             zebug.trace:print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
             btnFrame:setIcon( btnDef:getIcon() )
-            btnFrame:setGeometry(self.direction)
+            --btnFrame:setGeometry(self.direction) -- this call breaks the btns on the flyout - they all collapse into the same spot
+            --TODO: figure out why
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SECURE TEMPLATE
 
             -- label the keybinds
@@ -256,11 +267,8 @@ function FlyoutMenu:updateForGerm(germ)
     if not self.hasOnHide then
         zebug.info:print("setting OnHide for",self:GetName())
         local btn1 = self:getBtn1()
-        btn1:SetScript("OnHide", function(btn1)
-            --print('FlyoutMenu Script.ON_HIDE for',self:GetName())
-            -- I guess, it should really be called MaybeSecureHandlerExecuteFuckYouHahahaEnjoyDebuggingOurShittyApiSincereluBlizzard()
-            SecureHandlerExecute(germ, "keybindKeeper:ClearBindings()")
-        end)
+        btn1:SetFrameRef("flyout",self)
+        btn1:SetAttribute("_onhide", "flyout:ClearBindings()") -- v11.1 replaces btn1:SetScript() and SecureHandlerExecute(germ, "keybindKeeper:ClearBindings()")
         self.hasOnHide = true
     end
 
@@ -279,66 +287,67 @@ function updateHotKeyLabel(btnFrame, btnNumber)
 end
 
 function FlyoutMenu:setBorderGeometry()
+    local bg = self.Background
     local distance = 3
     local dir = self.direction
 
-    self.Background.End:ClearAllPoints()
-    self.Background.Start:ClearAllPoints()
-    self.Background.VerticalMiddle:ClearAllPoints()
-    self.Background.HorizontalMiddle:ClearAllPoints()
+    bg.End:ClearAllPoints()
+    bg.Start:ClearAllPoints()
+    bg.VerticalMiddle:ClearAllPoints()
+    bg.HorizontalMiddle:ClearAllPoints()
 
     if (dir == "UP") then
-        self.Background.End:SetPoint(Anchor.TOP, 0, SPELLFLYOUT_INITIAL_SPACING);
-        SetClampedTextureRotation(self.Background.End, 0);
-        SetClampedTextureRotation(self.Background.VerticalMiddle, 0);
-        self.Background.Start:SetPoint(Anchor.TOP, self.Background.VerticalMiddle, Anchor.BOTTOM);
-        SetClampedTextureRotation(self.Background.Start, 0);
-        self.Background.HorizontalMiddle:Hide();
-        self.Background.VerticalMiddle:Show();
-        --self.Background.VerticalMiddle:ClearAllPoints();
-        self.Background.VerticalMiddle:SetPoint(Anchor.TOP, self.Background.End, Anchor.BOTTOM);
-        self.Background.VerticalMiddle:SetPoint(Anchor.BOTTOM, 0, distance);
+        bg.End:SetPoint(Anchor.TOP, 0, SPELLFLYOUT_INITIAL_SPACING);
+        SetClampedTextureRotation(bg.End, 0);
+        SetClampedTextureRotation(bg.VerticalMiddle, 0);
+        bg.Start:SetPoint(Anchor.TOP, bg.VerticalMiddle, Anchor.BOTTOM);
+        SetClampedTextureRotation(bg.Start, 0);
+        bg.HorizontalMiddle:Hide();
+        bg.VerticalMiddle:Show();
+        --bg.VerticalMiddle:ClearAllPoints();
+        bg.VerticalMiddle:SetPoint(Anchor.TOP, bg.End, Anchor.BOTTOM);
+        bg.VerticalMiddle:SetPoint(Anchor.BOTTOM, 0, distance);
     elseif (dir == "DOWN") then
-        self.Background.End:SetPoint(Anchor.BOTTOM, 0, -SPELLFLYOUT_INITIAL_SPACING);
-        SetClampedTextureRotation(self.Background.End, 180);
-        SetClampedTextureRotation(self.Background.VerticalMiddle, 180);
-        self.Background.Start:SetPoint(Anchor.BOTTOM, self.Background.VerticalMiddle, Anchor.TOP);
-        SetClampedTextureRotation(self.Background.Start, 180);
-        self.Background.HorizontalMiddle:Hide();
-        self.Background.VerticalMiddle:Show();
-        --self.Background.VerticalMiddle:ClearAllPoints();
-        self.Background.VerticalMiddle:SetPoint(Anchor.BOTTOM, self.Background.End, Anchor.TOP);
-        self.Background.VerticalMiddle:SetPoint(Anchor.TOP, 0, -distance);
+        bg.End:SetPoint(Anchor.BOTTOM, 0, -SPELLFLYOUT_INITIAL_SPACING);
+        SetClampedTextureRotation(bg.End, 180);
+        SetClampedTextureRotation(bg.VerticalMiddle, 180);
+        bg.Start:SetPoint(Anchor.BOTTOM, bg.VerticalMiddle, Anchor.TOP);
+        SetClampedTextureRotation(bg.Start, 180);
+        bg.HorizontalMiddle:Hide();
+        bg.VerticalMiddle:Show();
+        --bg.VerticalMiddle:ClearAllPoints();
+        bg.VerticalMiddle:SetPoint(Anchor.BOTTOM, bg.End, Anchor.TOP);
+        bg.VerticalMiddle:SetPoint(Anchor.TOP, 0, -distance);
     elseif (dir == "LEFT") then
-        self.Background.End:SetPoint(Anchor.LEFT, -SPELLFLYOUT_INITIAL_SPACING, 0);
-        SetClampedTextureRotation(self.Background.End, 270);
-        SetClampedTextureRotation(self.Background.HorizontalMiddle, 180);
-        self.Background.Start:SetPoint(Anchor.LEFT, self.Background.HorizontalMiddle, Anchor.RIGHT);
-        SetClampedTextureRotation(self.Background.Start, 270);
-        self.Background.VerticalMiddle:Hide();
-        self.Background.HorizontalMiddle:Show();
-        --self.Background.HorizontalMiddle:ClearAllPoints();
-        self.Background.HorizontalMiddle:SetPoint(Anchor.LEFT, self.Background.End, Anchor.RIGHT);
-        self.Background.HorizontalMiddle:SetPoint(Anchor.RIGHT, -distance, 0);
+        bg.End:SetPoint(Anchor.LEFT, -SPELLFLYOUT_INITIAL_SPACING, 0);
+        SetClampedTextureRotation(bg.End, 270);
+        SetClampedTextureRotation(bg.HorizontalMiddle, 180);
+        bg.Start:SetPoint(Anchor.LEFT, bg.HorizontalMiddle, Anchor.RIGHT);
+        SetClampedTextureRotation(bg.Start, 270);
+        bg.VerticalMiddle:Hide();
+        bg.HorizontalMiddle:Show();
+        --bg.HorizontalMiddle:ClearAllPoints();
+        bg.HorizontalMiddle:SetPoint(Anchor.LEFT, bg.End, Anchor.RIGHT);
+        bg.HorizontalMiddle:SetPoint(Anchor.RIGHT, -distance, 0);
     elseif (dir == "RIGHT") then
-        self.Background.End:SetPoint(Anchor.RIGHT, SPELLFLYOUT_INITIAL_SPACING, 0);
-        SetClampedTextureRotation(self.Background.End, 90);
-        SetClampedTextureRotation(self.Background.HorizontalMiddle, 0);
-        self.Background.Start:SetPoint(Anchor.RIGHT, self.Background.HorizontalMiddle, Anchor.LEFT);
-        SetClampedTextureRotation(self.Background.Start, 90);
-        self.Background.VerticalMiddle:Hide();
-        self.Background.HorizontalMiddle:Show();
-        --self.Background.HorizontalMiddle:ClearAllPoints();
-        self.Background.HorizontalMiddle:SetPoint(Anchor.RIGHT, self.Background.End, Anchor.LEFT);
-        self.Background.HorizontalMiddle:SetPoint(Anchor.LEFT, distance, 0);
+        bg.End:SetPoint(Anchor.RIGHT, SPELLFLYOUT_INITIAL_SPACING, 0);
+        SetClampedTextureRotation(bg.End, 90);
+        SetClampedTextureRotation(bg.HorizontalMiddle, 0);
+        bg.Start:SetPoint(Anchor.RIGHT, bg.HorizontalMiddle, Anchor.LEFT);
+        SetClampedTextureRotation(bg.Start, 90);
+        bg.VerticalMiddle:Hide();
+        bg.HorizontalMiddle:Show();
+        --bg.HorizontalMiddle:ClearAllPoints();
+        bg.HorizontalMiddle:SetPoint(Anchor.RIGHT, bg.End, Anchor.LEFT);
+        bg.HorizontalMiddle:SetPoint(Anchor.LEFT, distance, 0);
     end
     self:SetBorderColor(0.7, 0.7, 0.7);
-    self:SetBorderSize(47);
+    --self:SetBorderSize(47);
 end
 
 ---@param flyoutMenu FlyoutMenu
 function doBlizOnLoad(flyoutMenu)
-    SpellFlyout_OnLoad(flyoutMenu)
+    --SpellFlyout_OnLoad(flyoutMenu) - breaks... um... something.  I removed this days ago :-/
 end
 
 ---@param btn ButtonOnFlyoutMenu
@@ -392,32 +401,29 @@ function FlyoutMenu:clearMouseOverKid(kid)
 end
 
 -------------------------------------------------------------------------------
--- GLOBAL Functions Supporting FlyoutMenu XML Callbacks
+-- XML Callbacks
 -------------------------------------------------------------------------------
 
----@param flyoutMenu FlyoutMenu
-function GLOBAL_UIUFO_FlyoutMenu_OnLeave(flyoutMenu)
-    flyoutMenu:restoreButtonsAfterHover()
+function FlyoutMenu:onLeave()
+    self:restoreButtonsAfterHover()
 end
 
----@param flyoutMenu FlyoutMenu
-function GLOBAL_UIUFO_FlyoutMenuForGerm_OnLoad(flyoutMenu)
-    doBlizOnLoad(flyoutMenu)
-    zebug.info:name("ForGerm_OnLoad"):print("flyoutMenu",flyoutMenu:GetName())
+function FlyoutMenu:onLoadForGerm()
+    doBlizOnLoad(self)
+    zebug.info:name("ForGerm_OnLoad"):print("flyoutMenu", self:GetName())
     -- initialize fields
-    FlyoutMenu:oneOfUs(flyoutMenu)
-    Germ.flyoutMenu = flyoutMenu -- not used anywhere?
-    flyoutMenu.isForGerm = true
-    flyoutMenu.isSharedByAllGerms = true
+    FlyoutMenu:oneOfUs(self)
+    Germ.flyoutMenu = self -- not used anywhere?
+    self.isForGerm = true
+    self.isSharedByAllGerms = true
 end
 
----@param flyoutMenu FlyoutMenu
-function GLOBAL_UIUFO_FlyoutMenuForCatalog_OnLoad(flyoutMenu)
-    doBlizOnLoad(flyoutMenu)
-    zebug.info:name("ForCatalog_OnLoad"):print("flyoutMenu",flyoutMenu:GetName())
+function FlyoutMenu:onLoadForCatalog()
+    doBlizOnLoad(self)
+    zebug.info:name("ForCatalog_OnLoad"):print("flyoutMenu", self:GetName())
 
     -- initialize fields
-    local self = FlyoutMenu:oneOfUs(flyoutMenu)
+    local self = FlyoutMenu:oneOfUs(self)
     Catalog.flyoutMenu = self
     self.isForCatalog = true
     self:forEachButton(ButtonOnFlyoutMenu.installExcluder)
@@ -427,8 +433,7 @@ end
 local ON_UPDATE_TIMER_FREQUENCY = 1.0
 local onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
 
----@param flyoutMenu FlyoutMenu
-function GLOBAL_UIUFO_FlyoutMenu_OnUpdate(flyoutMenu, elapsed)
+function FlyoutMenu:onUpdate(elapsed)
     onUpdateTimer = onUpdateTimer + elapsed
     if onUpdateTimer < ON_UPDATE_TIMER_FREQUENCY then
         return
@@ -436,14 +441,17 @@ function GLOBAL_UIUFO_FlyoutMenu_OnUpdate(flyoutMenu, elapsed)
     onUpdateTimer = 0
 
     zebug.trace:print("elapsed",elapsed)
-    flyoutMenu:updateAllBtnCooldownsEtc()
+    self:updateAllBtnCooldownsEtc()
 end
 
----@param flyoutMenu FlyoutMenu
-function GLOBAL_UIUFO_FlyoutMenu_OnShow(flyoutMenu)
-    local originalEventsRegistered = flyoutMenu.eventsRegistered -- SpellFlyout_OnShow will reset this so snapshot it
-    SpellFlyout_OnShow(flyoutMenu) -- call Blizzard handler
-    flyoutMenu:updateAllBtnCooldownsEtc()
+-- Is the the cause of "Cannot call restricted closure from insecure code" ???
+-- it's set in the XML via <OnShow  method="onShow"/>
+function FlyoutMenu:onShow()
+    zebug.error:print("WOOOO? am even I being called???") -- nope, I commented out the XML.  no effect on "Cannot call restricted closure from insecure code"
+    local originalEventsRegistered = self.eventsRegistered -- SpellFlyout_OnShow will reset this so snapshot it
+    SpellFlyout_OnShow(self) -- call Blizzard handler
+    -- TODO: v11.1 - is the above dead and gone by way of Cata ?!  Do I need to call self:OnShow()
+    self:updateAllBtnCooldownsEtc()
 
     -- Cooldown indicators are enabled by the above which is usually sufficient.
     -- But, the following event registrations support the rare condition of
@@ -451,18 +459,20 @@ function GLOBAL_UIUFO_FlyoutMenu_OnShow(flyoutMenu)
     -- At that point, flyoutMenu:updateAllBtnCooldownsEtc() must be called again via these events
     -- because there won't be a OnShow event to do so.
     if not originalEventsRegistered then
-        flyoutMenu:RegisterEvent("BAG_UPDATE_COOLDOWN") -- to support items
-        flyoutMenu:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN") -- to support items
+        self:RegisterEvent("BAG_UPDATE_COOLDOWN") -- to support items
+        self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN") -- to support items
+        -- TODO: v11.1 - do I need to listen to more events?  Different / more specific ones?
     end
 end
 
-function GLOBAL_UIUFO_FlyoutMenu_OnHide(flyoutMenu)
-    if (flyoutMenu.eventsRegistered == true) then
+function FlyoutMenu:onHide()
+    if (self.eventsRegistered == true) then
         -- supplement SpellFlyout_OnHide() with extra events specifically for items
-        flyoutMenu:UnregisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
-        flyoutMenu:UnregisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
+        self:UnregisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
+        self:UnregisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
     end
-    SpellFlyout_OnHide(flyoutMenu) -- call Blizzard handler (it sets eventsRegistered = false)
+    SpellFlyout_OnHide(self) -- call Blizzard handler (it sets eventsRegistered = false)
+    -- TODO: v11.1 - is the above dead and gone by way of Cata ?!  Do I need to call self:OnHide()
 end
 
 function FlyoutMenu:updateAllBtnCooldownsEtc()

@@ -10,8 +10,10 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 local zebug = Zebug:new()
 
 ---@class ButtonMixin -- IntelliJ-EmmyLua annotation
----@field ufoType string The classname... set by "child" "classes"
+---@field originalIconSetTextureFunc function Bliz's assigned SetTexture given to the .icon frame
+---@field overrideIconSetTextureFunc function our new SetTexture for the .icon frame
 ButtonMixin = { }
+GLOBAL_ButtonMixin = ButtonMixin
 
 -------------------------------------------------------------------------------
 --  Constants
@@ -44,21 +46,22 @@ REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID = {
 -------------------------------------------------------------------------------
 
 function ButtonMixin:inject(other)
+    -- DEPRECATED in favor of XML mixin="GLOBAL_ButtonMixin"
     for name, func in pairs(ButtonMixin) do
         other[name] = func
     end
 end
 
 function ButtonMixin:getIconFrame()
-    return _G[ self:GetName().."Icon" ]
+    return self.icon or _G[ self:GetName().."Icon" ]
 end
 
 function ButtonMixin:getCooldownFrame()
-    return _G[ self:GetName().."Cooldown" ]
+    return self.cooldown or _G[ self:GetName().."Cooldown" ]
 end
 
 function ButtonMixin:getCountFrame()
-    return _G[ self:GetName().."Count" ]
+    return self.count or self.Count or _G[ self:GetName().."Count" ]
 end
 
 function ButtonMixin:getHotKeyFrame()
@@ -71,7 +74,6 @@ function ButtonMixin:setHotKeyOverlay(keybindText)
         local text = GetBindingText(keybindText, 1) or keybindText
         overlay:SetText(text)
     end
-
 end
 
 local ICON_PREFIX = "INTERFACE\\ICONS\\"
@@ -81,7 +83,20 @@ function ButtonMixin:setIcon(icon)
         icon = (ICON_PREFIX .. icon)
     end
 
-    self:getIconFrame():SetTexture(icon)
+    local iconFrame = self:getIconFrame()
+
+    --self:getIconFrame():SetTexture(icon)
+    -- IS THIS BROKEN?
+
+
+    -- block the Bliz mixins from erroneously setting the icon to look like the contents of the action bar button (ie, the ZUFO macro)
+    if not self.originalIconSetTextureFunc then
+        self.originalIconSetTextureFunc = iconFrame.SetTexture
+        iconFrame.SetTexture = function()
+            zebug.trace:ifMe1st(self):line(20, "BLOCKED BLIZ SetTexture for germ", self:getLabel())
+        end
+    end
+    self.originalIconSetTextureFunc(iconFrame, icon) -- the iconFrame is the self for the original SetTexture
 end
 
 function ButtonMixin:updateCooldownsAndCountsAndStatesEtc()
@@ -248,7 +263,7 @@ end
 
 -- because in the world of Bliz SECURE
 -- if your type = "type3"
--- then your key must be key.."3"
+-- then your key must be key.."3" where key is typically "spell" or "item" etc.
 ---@param secureMouseClickId SecureMouseClickId
 function ButtonMixin:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
     local mouseBtnNumber = self:getMouseBtnNumber(secureMouseClickId)
@@ -262,22 +277,79 @@ end
 ---@param mouseClick MouseClick
 function ButtonMixin:updateSecureClicker(mouseClick)
     local btnDef = self:getDef()
+
+    -- don't waste time repeating work
+    -- oops! this is too simplistic as it fails to detect changes inside the btnDef
+    -- need something more like FlyoutDef:isModNewerThan()
+    local noChange = (self.mySecureClickerDef == btnDef)
+--[[
+    if noChange then
+        return
+    end
+]]
+
     if btnDef then
         local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
         local type, key, val = btnDef:asSecureClickHandlerAttributes()
         local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
         zebug.trace:print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseClick, "val", val)
-        self:SetAttribute(secureMouseClickId, type)
-        self:SetAttribute(keyAdjustedToMatchMouseClick, val)
 
-        -- for use by Germ
-        if self.ufoType == ButtonOnFlyoutMenu.ufoType then
-            self:SetAttribute("UFO_KEY", key)
-            self:SetAttribute("UFO_VAL", val)
-        end
-
+        -- TODO: v11.1 this concat is expensive. optimize.
+        local id = "BUTTON-MIXIN:updateSecureClicker for " .. self:getName().. " with btnDef : ".. btnDef:getName();
+        exeOnceNotInCombat(id, function()
+            self:SetAttribute(secureMouseClickId, type)
+            self:SetAttribute(keyAdjustedToMatchMouseClick, val)
+            -- for use by Germ
+            if self.ufoType == ButtonOnFlyoutMenu.ufoType then
+                self:SetAttribute("UFO_KEY", key)
+                self:SetAttribute("UFO_VAL", val)
+            end
+            self.mySecureClickerDef = btnDef
+        end)
     else
-        self:SetAttribute("type", nil)
+        exeOnceNotInCombat("BUTTON-MIXIN:updateSecureClicker w/o btnDef : anon", function()
+            self:SetAttribute("type", nil)
+            self.mySecureClickerDef = btnDef
+        end)
     end
+end
 
+-------------------------------------------------------------------------------
+-- ExTrA SECURE TEMPLATE / RESTRICTED ENVIRONMENT - aka fUcK yOu BlIz
+-- bliz base class code keeps calling my code and then
+-- complains about taint (ref: stick in spokes of bicycle meme)
+-- Which, yes, may mean that I'm extending Bliz mixins/templates that they don't intend for us -- and if so, label that shit plz.
+-- But until I figure out that can of worms, here's a sledgehammer to beat back the BS
+-------------------------------------------------------------------------------
+
+-- replace the built-in SetAttribute with one that can only happen out of combat
+function ButtonMixin:makeSafeSetAttribute()
+
+    if not self.originalSetAttribute then
+        local originalSetAttribute = self.SetAttribute
+        assert("self:SetAttribute() is NULL", originalSetAttribute)
+
+        self.originalSetAttribute = originalSetAttribute
+
+        -- FUNC START
+        self.SetAttribute = function(zelf, key, value, isTrusted)
+            local inCombatLockdown = InCombatLockdown()
+            zebug.trace:print("self.SetAttribute for",(self.getName and self:getName()) or "misc obj", "key",key, "value",value, "isTrusted",isTrusted)
+            if isTrusted then
+                zebug.info:print("ufo is allowed to call originalSetAttribute with name", key, "value", value)
+                if key == "pressAndHoldAction" then
+                    --zebug.error:print("P&H! - getName",(self.getName and self:getName()) or "no getName", "isTrusted", isTrusted, "inCombat",inCombatLockdown)
+                    return;
+                end
+                return originalSetAttribute(zelf, key, value)
+            else
+                if key == "pressAndHoldAction" then
+                    --zebug.warn:print("P&H? - getName",(self.getName and self:getName()) or "no getName", "isTrusted", isTrusted, "inCombat",inCombatLockdown)
+                end
+                safelySetAttribute(zelf, key, value)
+            end
+        end
+        -- FUNC END
+
+    end
 end
