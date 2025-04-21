@@ -9,7 +9,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new()
+local zebug = Zebug:getSharedByName("GERMS_FLYOUTS_BUTTONS")
 
 ---@class FlyoutMenu -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
@@ -18,7 +18,7 @@ local zebug = Zebug:new()
 ---@field isForCatalog boolean
 ---@field nameSuffix string part of its name used to identify it as a flyout frame
 ---@field displaceBtnsHere number used to push buttons out of the way during "OnHover"
----@type FlyoutMenu|SpellFlyoutMixin|FlyoutPopupMixin
+---@type FlyoutMenu|SpellFlyoutMixin|FlyoutPopupMixin|VisibleRegion|Region
 local FlyoutMenu = {
     ufoType = "FlyoutMenu",
     isForGerm = false,
@@ -50,6 +50,11 @@ function FlyoutMenu.new(germ)
     --local self = FlyoutMenu:oneOfUs(protoSelf)
     --doBlizOnLoad(self)
     return protoSelf
+end
+
+function FlyoutMenu:getLabel()
+    self.label = self:getDef().name
+    return self.label
 end
 
 ---@return ButtonOnFlyoutMenu

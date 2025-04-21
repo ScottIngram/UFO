@@ -16,7 +16,7 @@ local zebug = Zebug:new()
 ---@field id number unique identifier
 ---@field nopeIcon Frame w/ a little X indicator
 
----@type ButtonOnFlyoutMenu|ButtonMixin|SmallActionButtonMixin|BaseActionButtonMixin
+---@type ButtonOnFlyoutMenu|ButtonMixin|SmallActionButtonMixin|BaseActionButtonMixin|VisibleRegion|Region
 ButtonOnFlyoutMenu = {
     ufoType = "ButtonOnFlyoutMenu",
 }
