@@ -479,3 +479,14 @@ function FlyoutMenu:updateAllBtnCooldownsEtc()
     zebug.trace:print("self:getId()",self:getId())
     self:forEachButton(ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc)
 end
+
+-------------------------------------------------------------------------------
+-- FlyoutPopupMixin OVERRIDES
+-- see Interface/AddOns/Blizzard_Flyout/Flyout.lua
+-------------------------------------------------------------------------------
+
+function FlyoutMenu:DetatchFromButton()
+    -- NOP
+    -- unlike the Bliz built-in flyouts, rather than reusing a single flyout object that is passed around from one action bar button to another
+    -- each UFO keeps its own flyout object.  Thus, detaching it is a bad idea.
+end

@@ -93,7 +93,7 @@ function ButtonMixin:setIcon(icon)
     if not self.originalIconSetTextureFunc then
         self.originalIconSetTextureFunc = iconFrame.SetTexture
         iconFrame.SetTexture = function()
-            zebug.trace:ifMe1st(self):line(20, "BLOCKED BLIZ SetTexture for germ", self:getLabel())
+            zebug.info:line(20, "BLOCKED BLIZ SetTexture for germ", self:getLabel())
         end
     end
     self.originalIconSetTextureFunc(iconFrame, icon) -- the iconFrame is the self for the original SetTexture

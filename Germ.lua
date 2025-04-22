@@ -1146,3 +1146,9 @@ Germ.GetPopupDirection = Germ.getDirection
 function Germ:IsPopupOpen()
     return self.flyoutMenu and self.flyoutMenu:IsShown()
 end
+
+function Germ:ClearPopup()
+    -- NOP
+    -- unlike the Bliz built-in flyouts, rather than reusing a single flyout object that is passed around from one action bar button to another
+    -- each UFO keeps its own flyout object.  Thus, detaching it is a bad idea.
+end
