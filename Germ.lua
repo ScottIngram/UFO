@@ -218,8 +218,8 @@ end
 -------------------------------------------------------------------------------
 
 function Germ:new(flyoutId, btnSlotIndex)
-    local bbInfo = ActionBarButtonHelper:extractBarBtnInfo(btnSlotIndex)
-    local parentActionBarBtn = ActionBarButtonHelper:getActionBarBtn(bbInfo)
+    local bbInfo = ActionBarHelper:extractBarBtnInfo(btnSlotIndex)
+    local parentActionBarBtn = ActionBarHelper:getActionBarBtn(bbInfo)
 
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
     self.myName = myName -- TODO: figure out why leaving this line out breaks self:GetName() in FlyoutMenu.new even though self == Germ

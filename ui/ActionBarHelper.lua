@@ -1,4 +1,4 @@
--- ActionBarButtonHelper
+-- ActionBarHelper
 
 -------------------------------------------------------------------------------
 -- Module Loading
@@ -9,8 +9,8 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 local zebug = Zebug:new()
 
----@class ActionBarButtonHelper -- IntelliJ-EmmyLua annotation
-ActionBarButtonHelper = { }
+---@class ActionBarHelper -- IntelliJ-EmmyLua annotation
+ActionBarHelper = { }
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -41,13 +41,13 @@ BLIZ_BAR_METADATA = {
 --  Methods
 -------------------------------------------------------------------------------
 
-function ActionBarButtonHelper:inject(other)
+function ActionBarHelper:inject(other)
     for name, func in pairs(self) do
         other[name] = func
     end
 end
 
-function ActionBarButtonHelper:getActionBarBtn(bbInfo)
+function ActionBarHelper:getActionBarBtn(bbInfo)
     local actionBarBtn
     if ThirdPartyAddonSupport.isAnyActionBarAddonActive then
         actionBarBtn = ThirdPartyAddonSupport:getParent(bbInfo)
@@ -59,7 +59,7 @@ function ActionBarButtonHelper:getActionBarBtn(bbInfo)
     return actionBarBtn
 end
 
-function ActionBarButtonHelper:extractBarBtnInfo(btnSlotIndex)
+function ActionBarHelper:extractBarBtnInfo(btnSlotIndex)
     local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
     local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
     if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
