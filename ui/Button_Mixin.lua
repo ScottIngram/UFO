@@ -1,4 +1,4 @@
--- ButtonMixin
+-- Button_Mixin
 
 -------------------------------------------------------------------------------
 -- Module Loading
@@ -9,11 +9,11 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 local zebug = Zebug:new()
 
----@class ButtonMixin -- IntelliJ-EmmyLua annotation
+---@class Button_Mixin -- IntelliJ-EmmyLua annotation
 ---@field originalIconSetTextureFunc function Bliz's assigned SetTexture given to the .icon frame
 ---@field overrideIconSetTextureFunc function our new SetTexture for the .icon frame
-ButtonMixin = { }
-GLOBAL_ButtonMixin = ButtonMixin
+Button_Mixin = { }
+GLOBAL_Button_Mixin = Button_Mixin
 
 -------------------------------------------------------------------------------
 --  Constants
@@ -45,30 +45,23 @@ REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID = {
 --  Methods
 -------------------------------------------------------------------------------
 
-function ButtonMixin:inject(other)
-    -- DEPRECATED in favor of XML mixin="GLOBAL_ButtonMixin"
-    for name, func in pairs(ButtonMixin) do
-        other[name] = func
-    end
-end
-
-function ButtonMixin:getIconFrame()
+function Button_Mixin:getIconFrame()
     return self.icon or _G[ self:GetName().."Icon" ]
 end
 
-function ButtonMixin:getCooldownFrame()
+function Button_Mixin:getCooldownFrame()
     return self.cooldown or _G[ self:GetName().."Cooldown" ]
 end
 
-function ButtonMixin:getCountFrame()
+function Button_Mixin:getCountFrame()
     return self.count or self.Count or _G[ self:GetName().."Count" ]
 end
 
-function ButtonMixin:getHotKeyFrame()
+function Button_Mixin:getHotKeyFrame()
     return self.HotKey
 end
 
-function ButtonMixin:setHotKeyOverlay(keybindText)
+function Button_Mixin:setHotKeyOverlay(keybindText)
     local overlay = self.HotKey
     if overlay then
         local text = GetBindingText(keybindText, 1) or keybindText
@@ -78,7 +71,7 @@ end
 
 local ICON_PREFIX = "INTERFACE\\ICONS\\"
 
-function ButtonMixin:setIcon(icon)
+function Button_Mixin:setIcon(icon)
     if icon and type(icon) ~= "number" and string.sub(icon,1,string.len(ICON_PREFIX)) ~= ICON_PREFIX then
         icon = (ICON_PREFIX .. icon)
     end
@@ -93,21 +86,23 @@ function ButtonMixin:setIcon(icon)
     if not self.originalIconSetTextureFunc then
         self.originalIconSetTextureFunc = iconFrame.SetTexture
         iconFrame.SetTexture = function()
-            zebug.info:line(20, "BLOCKED BLIZ SetTexture for germ", self:getLabel())
+            zebug.error:line(20, "BLOCKED BLIZ SetTexture for germ", self:getLabel())
         end
     end
     self.originalIconSetTextureFunc(iconFrame, icon) -- the iconFrame is the self for the original SetTexture
 end
 
-function ButtonMixin:updateCooldownsAndCountsAndStatesEtc()
+function Button_Mixin:updateCooldownsAndCountsAndStatesEtc()
+    -- should I call self:Update() aka ActionBarActionButtonMixin:Update() ... um, maybe I'm not an ActionBarActionButtonMixin
     local btnDef = self:getDef()
     local spellId = btnDef and btnDef.spellId
     if spellId then
         if not self.spellID then
             -- internal Bliz code expects this field
-            self.spellID = spellId
+            self.spellID = spellId -- TAINT?
         end
-        SpellFlyoutButton_UpdateState(self)
+        local isThisTheSpell = C_Spell.IsCurrentSpell(spellId)
+        self:SetChecked(isThisTheSpell);
     end
 
     self:updateUsable()
@@ -115,7 +110,7 @@ function ButtonMixin:updateCooldownsAndCountsAndStatesEtc()
     self:updateCount()
 end
 
-function ButtonMixin:updateUsable()
+function Button_Mixin:updateUsable()
     local isUsable = true
     local notEnoughMana = false
     local btnDef = self:getDef()
@@ -153,7 +148,7 @@ function ButtonMixin:updateUsable()
     end
 end
 
-function ButtonMixin:updateCooldown()
+function Button_Mixin:updateCooldown()
     local btnDef = self:getDef()
     local type = btnDef and btnDef.type
     local itemId = btnDef and btnDef.itemId
@@ -165,13 +160,7 @@ function ButtonMixin:updateCooldown()
         zebug.trace:print("spellId",spellId)
         self.spellID = spellId --v11 -- internal Bliz code expects this field
 
-        -- all of the following was because I copied my retail config with the not-on-beta Charming Courier
-        --local isOk, err = pcall( function()  SpellFlyoutButton_UpdateCooldown(self) end  )
-        --if not isOk then
-        --    zebug.error:print("my updateCooldown failed! ERROR was",err, "self.spellID",self.spellID)
-        --end
-
-        SpellFlyoutButton_UpdateCooldown(self)
+        ActionButton_UpdateCooldown(self);
         return
     end
 
@@ -212,7 +201,22 @@ function ButtonMixin:updateCooldown()
 
 end
 
-function ButtonMixin:updateCount()
+function OLD_CATA_SpellFlyoutButton_UpdateCount (self)
+    local text = _G[self:GetName().."Count"];
+
+    if ( IsConsumableSpell(self.spellID)) then
+        local count = C_Spell.GetSpellCastCount(self.spellID);
+        if ( count > (self.maxDisplayCount or 9999 ) ) then
+            text:SetText("*");
+        else
+            text:SetText(count);
+        end
+    else
+        text:SetText("");
+    end
+end
+
+function Button_Mixin:updateCount()
     local btnDef = self:getDef()
     local itemId = btnDef and btnDef.itemId
     if not itemId then return end
@@ -223,7 +227,8 @@ function ButtonMixin:updateCount()
         if exists(spellId) then
             zebug.trace:print("spellID",self.spellID)
             -- use Bliz's built-in handler for the stuff it understands, ie, not items
-            SpellFlyoutButton_UpdateCount(self)
+            OLD_CATA_SpellFlyoutButton_UpdateCount(self)
+            -- whatabout ActionBarActionButtonMixin:UpdateCount
             return
         end
     end
@@ -256,7 +261,7 @@ end
 -------------------------------------------------------------------------------
 
 ---@param secureMouseClickId SecureMouseClickId
-function ButtonMixin:getMouseBtnNumber(secureMouseClickId)
+function Button_Mixin:getMouseBtnNumber(secureMouseClickId)
     local mouseBtnNumber = string.sub(secureMouseClickId, -1) -- last digit of "type1" or "type3" etc
     return tonumber(mouseBtnNumber) and mouseBtnNumber or nil
 end
@@ -265,7 +270,7 @@ end
 -- if your type = "type3"
 -- then your key must be key.."3" where key is typically "spell" or "item" etc.
 ---@param secureMouseClickId SecureMouseClickId
-function ButtonMixin:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
+function Button_Mixin:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
     local mouseBtnNumber = self:getMouseBtnNumber(secureMouseClickId)
     if mouseBtnNumber then
         return key .. mouseBtnNumber
@@ -275,7 +280,7 @@ function ButtonMixin:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key
 end
 
 ---@param mouseClick MouseClick
-function ButtonMixin:updateSecureClicker(mouseClick)
+function Button_Mixin:updateSecureClicker(mouseClick)
     local btnDef = self:getDef()
 
     -- don't waste time repeating work
@@ -323,7 +328,7 @@ end
 -------------------------------------------------------------------------------
 
 -- replace the built-in SetAttribute with one that can only happen out of combat
-function ButtonMixin:makeSafeSetAttribute()
+function Button_Mixin:makeSafeSetAttribute()
 
     if not self.originalSetAttribute then
         local originalSetAttribute = self.SetAttribute
@@ -352,4 +357,16 @@ function ButtonMixin:makeSafeSetAttribute()
         -- FUNC END
 
     end
+end
+
+-------------------------------------------------------------------------------
+-- OVERRIDES of
+-- SmallActionButtonMixin methods
+-- acquired via SmallActionButtonTemplate
+-- See Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButton.lua
+-------------------------------------------------------------------------------
+
+function Button_Mixin:OnButtonStateChanged()
+    -- defined in ButtonStateBehaviorMixin:OnButtonStateChanged() as "Derive and configure your button to the correct state."
+    --zebug.error:print("Am I a ButtonStateBehaviorMixin ?") -- yes, I am a ButtonStateBehaviorMixin
 end
