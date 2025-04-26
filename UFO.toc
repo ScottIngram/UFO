@@ -2,9 +2,9 @@
 ## Author: Scott Ingram
 ## Version: 11.1.5
 ## Interface: 110105
-## AddonCompartmentFunc: GLOBAL_UIUFO_BlizCompartment_OnClick
-## AddonCompartmentFuncOnEnter: GLOBAL_UIUFO_BlizCompartment_OnEnter
-## AddonCompartmentFuncOnLeave: GLOBAL_UIUFO_BlizCompartment_OnLeave
+## AddonCompartmentFunc: GLOBAL_UFO_BlizCompartment_OnClick
+## AddonCompartmentFuncOnEnter: GLOBAL_UFO_BlizCompartment_OnEnter
+## AddonCompartmentFuncOnLeave: GLOBAL_UFO_BlizCompartment_OnLeave
 ## IconTexture: 369278
 ## SavedVariables: UFO_SV_ACCOUNT
 ## SavedVariablesPerCharacter: UFO_SV_TOON

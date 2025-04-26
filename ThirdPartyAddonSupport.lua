@@ -121,7 +121,7 @@ end
 -------------------------------------------------------------------------------
 
 function supportLargerMacroIconSelection()
-    LargerMacroIconSelection:Initialize(UIUFO_IconPicker)
+    LargerMacroIconSelection:Initialize(UFO_IconPicker)
 end
 
 function supportMacroToolkit()

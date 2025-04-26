@@ -67,7 +67,7 @@ end
 function Catalog:createToggleButton(parentFrame, xBtnOverride)
     assert(parentFrame, "can't find parent frame")
     local parentFrameName = parentFrame:GetName()
-    local btnName = "UIUFO_BtnToToggleCatalog_On".. parentFrameName
+    local btnName = "UFO_BtnToToggleCatalog_On".. parentFrameName
     local btnFrame = _G[btnName]
     if btnFrame then
         -- we've already made it
@@ -102,7 +102,7 @@ function Catalog:clickUfoButton(mouseClick, isDown)
 end
 
 function Catalog:toggle(clickedBtn, forceOpen)
-    local catalogFrame = UIUFO_Catalog
+    local catalogFrame = UFO_Catalog
     local blizFrame = clickedBtn:GetParent()
     local blizFrameName = blizFrame:GetName()
     local oldBlizFrame = catalogFrame:GetParent()
@@ -153,7 +153,7 @@ function Catalog:toggle(clickedBtn, forceOpen)
 end
 
 function Catalog:update()
-    local scrollPane = UIUFO_CatalogScrollPane
+    local scrollPane = UFO_CatalogScrollPane
     local flyoutsCount = FlyoutDefsDb:howMany()
     local theAddButton = flyoutsCount + 1
     HybridScrollFrame_Update(scrollPane, theAddButton * EQUIPMENTSET_BUTTON_HEIGHT + 20, scrollPane:GetHeight())
@@ -168,7 +168,7 @@ function Catalog:update()
     zebug.trace:print("flyoutsCount",flyoutsCount, "flyoutIdOnTheMouse", flyoutIdOnTheMouse, "newMouseOver", btnUnderTheMouse and btnUnderTheMouse.flyoutIndex, "isDragging",isDragging )
 
     ---@type FlyoutMenu
-    local flyoutMenu = UIUFO_FlyoutMenuForCatalog
+    local flyoutMenu = UFO_FlyoutMenuForCatalog
     flyoutMenu:Hide()
 
     for i = 1, #visibleBtnFrames do
@@ -337,7 +337,7 @@ end
 
 function Catalog:selectRow(row)
     zebug.info:print("row", row)
-    UIUFO_CatalogScrollPane.selectedIdx = row
+    UFO_CatalogScrollPane.selectedIdx = row
     Catalog:update()
 end
 
@@ -373,14 +373,14 @@ end
 -- GLOBAL Functions Supporting Catalog XML Callbacks
 -------------------------------------------------------------------------------
 
-function GLOBAL_UIUFO_CatalogEntry_OnLeave(btnInCatalog)
+function GLOBAL_UFO_CatalogEntry_OnLeave(btnInCatalog)
     zebug.info:print("leaving button", btnInCatalog.flyoutIndex)
     GameTooltip_Hide()
     btnUnderTheMouse = nil
     Catalog:update()
 end
 
-function GLOBAL_UIUFO_CatalogEntry_OnEnter(btnInCatalog)
+function GLOBAL_UFO_CatalogEntry_OnEnter(btnInCatalog)
     local flyoutId = GermCommander:getFlyoutIdFromCursor()
 
     if flyoutId then
@@ -393,7 +393,7 @@ function GLOBAL_UIUFO_CatalogEntry_OnEnter(btnInCatalog)
     Catalog:update()
 end
 
-function GLOBAL_UIUFO_CatalogEntry_OnDragStart(btnInCatalog)
+function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
     local flyoutId = btnInCatalog.flyoutId
     flyoutIndexOnTheMouse = btnInCatalog.flyoutIndex
     if exists(flyoutId) then
@@ -408,24 +408,24 @@ function GLOBAL_UIUFO_CatalogEntry_OnDragStart(btnInCatalog)
     Catalog:update()
 end
 
-function GLOBAL_UIUFO_CatalogScrollPane_OnLoad(scrollPane)
+function GLOBAL_UFO_CatalogScrollPane_OnLoad(scrollPane)
     HybridScrollFrame_OnLoad(scrollPane)
     scrollPane.update = Catalog.update
-    HybridScrollFrame_CreateButtons(scrollPane, "UIUFO_CatalogEntry")
+    HybridScrollFrame_CreateButtons(scrollPane, "UFO_CatalogEntry")
 end
 
-function GLOBAL_UIUFO_CatalogScrollPane_OnShow(scrollPane)
-    HybridScrollFrame_CreateButtons(scrollPane, "UIUFO_CatalogEntry")
+function GLOBAL_UFO_CatalogScrollPane_OnShow(scrollPane)
+    HybridScrollFrame_CreateButtons(scrollPane, "UFO_CatalogEntry")
     Catalog:update()
 end
 
-function GLOBAL_UIUFO_CatalogScrollPane_OnHide(scrollPane)
+function GLOBAL_UFO_CatalogScrollPane_OnHide(scrollPane)
     IconPicker:Hide()
-    UIUFO_FlyoutMenuForCatalog:Hide()
+    UFO_FlyoutMenuForCatalog:Hide()
 end
 
 ---@param mouseClick MouseClick
-function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, mouseClick)
+function GLOBAL_UFO_BlizCompartment_OnClick(addonName, mouseClick)
     zebug.trace:print("addonName",addonName, "mouseClick", mouseClick, "SpellBookFrame",SpellBookFrame)
 
     if mouseClick == MouseClick.LEFT then
@@ -436,7 +436,7 @@ function GLOBAL_UIUFO_BlizCompartment_OnClick(addonName, mouseClick)
 end
 
 local muhToolTip
-function GLOBAL_UIUFO_BlizCompartment_OnEnter(addonName, menuButtonFrame)
+function GLOBAL_UFO_BlizCompartment_OnEnter(addonName, menuButtonFrame)
     zebug.trace:print("addonName",addonName, "menuButtonFrame", menuButtonFrame:GetName())
     GameTooltip:SetOwner(menuButtonFrame, TooltipAnchor.LEFT);
     if not muhToolTip then
@@ -450,7 +450,7 @@ function GLOBAL_UIUFO_BlizCompartment_OnEnter(addonName, menuButtonFrame)
     GameTooltip:SetText(muhToolTip);
 end
 
-function GLOBAL_UIUFO_BlizCompartment_OnLeave(addonName, menuButtonFrame)
+function GLOBAL_UFO_BlizCompartment_OnLeave(addonName, menuButtonFrame)
     zebug.trace:print("addonName",addonName, "menuButtonFrame", menuButtonFrame:GetName())
     GameTooltip_Hide();
 end
@@ -460,19 +460,19 @@ end
 local C_UI_ON_UPDATE_TIMER_FREQUENCY = 0.25
 local onUpdateTimerForConfigUi = 0
 
-function GLOBAL_UIUFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
+function GLOBAL_UFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
     onUpdateTimerForConfigUi = onUpdateTimerForConfigUi + elapsed
     if onUpdateTimerForConfigUi < C_UI_ON_UPDATE_TIMER_FREQUENCY then
         return
     end
-    --print("GLOBAL_UIUFO_CatalogScrollPane_OnUpdate() UFO_CatalogScrollPane_onUpdateTimer =", onUpdateTimerForConfigUi)
+    --print("GLOBAL_UFO_CatalogScrollPane_OnUpdate() UFO_CatalogScrollPane_onUpdateTimer =", onUpdateTimerForConfigUi)
     onUpdateTimerForConfigUi = 0
     UFO_CatalogScrollPane_DoUpdate(scrollPane)
 end
 
-function GLOBAL_UIUFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
-    zebug.info:name("GLOBAL_UIUFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
-    local scrollPane = UIUFO_CatalogScrollPane
+function GLOBAL_UFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
+    zebug.info:name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
+    local scrollPane = UFO_CatalogScrollPane
 
     if ADD_BUTTON_NAME == btnInCatalog.name then
         Catalog:selectRow(nil)
@@ -480,7 +480,7 @@ function GLOBAL_UIUFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
     elseif LANDING_BUTTON_NAME == btnInCatalog.name then
         local flyoutIdOnTheMouse = GermCommander:getFlyoutIdFromCursor()
         local isDragging = flyoutIdOnTheMouse and btnUnderTheMouse
-        zebug.info:name("GLOBAL_UIUFO_CatalogEntryButton_OnClick"):print("flyoutIdOnTheMouse",flyoutIdOnTheMouse, "isDragging",isDragging)
+        zebug.info:name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("flyoutIdOnTheMouse",flyoutIdOnTheMouse, "isDragging",isDragging)
         FlyoutDefsDb:move(flyoutIdOnTheMouse, btnInCatalog.flyoutIndex)
         btnUnderTheMouse = nil
         flyoutIndexOnTheMouse = nil
@@ -521,8 +521,8 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)
     end
 end
 
-function GLOBAL_UIUFO_CatalogEntryButtonsMouseOver_OnShow(btn)
-    zebug.info:name("GLOBAL_UIUFO_CatalogEntryButtonsMouseOver_OnShow"):print("btn",btn:GetName())
+function GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow(btn)
+    zebug.info:name("GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow"):print("btn",btn:GetName())
     if GermCommander:isDraggingProxy() then
         btn:Hide()
     else
@@ -530,7 +530,7 @@ function GLOBAL_UIUFO_CatalogEntryButtonsMouseOver_OnShow(btn)
     end
 end
 
-function GLOBAL_UIUFO_CatalogEntryDeleteButton_OnClick(deleteBtnFrame)
+function GLOBAL_UFO_CatalogEntryDeleteButton_OnClick(deleteBtnFrame)
     local parent = deleteBtnFrame:GetParent()
     local popupLabel = parent.label
     local dialog = StaticPopup_Show("UFO_CONFIRM_DELETE", popupLabel);
@@ -542,7 +542,7 @@ function GLOBAL_UIUFO_CatalogEntryDeleteButton_OnClick(deleteBtnFrame)
     end
 end
 
-function GLOBAL_UIUFO_CatalogEntryEditButton_OnClick(editBtn)
+function GLOBAL_UFO_CatalogEntryEditButton_OnClick(editBtn)
     local btnInCatalog = editBtn:GetParent()
     IconPicker:open(btnInCatalog)
     Catalog:selectRow(btnInCatalog.flyoutIndex)
