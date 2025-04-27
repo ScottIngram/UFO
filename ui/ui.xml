@@ -1,32 +1,59 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
 
-    <!-- stolen from FlyoutButtonTemplate in  Interface/AddOns/Blizzard_Flyout/Flyout.xml -->
     <Button name="GermTemplate"
             virtual="true"
-            inherits="ActionButtonTemplate, SecureActionButtonTemplate"
-            mixin="GLOBAL_Germ, GLOBAL_ButtonMixin"
-    />
-
-    <!--inheritance tree
-        ActionButtonTemplate ::              mixin = BaseActionButtonMixin
-            + ActionButtonSpellFXTemplate :: mixin = none
-            + FlyoutButtonTemplate ::        mixin = FlyoutButtonMixin
-        SecureActionButtonTemplate ::        mixin = SecureActionButtonMixin
-            + SecureFrameTemplate ::         mixin = none
-    -->
-
-    <CheckButton name="UIUFO_ButtonOnFlyoutMenuTemplate"
-            virtual="true"
-            inherits="SmallActionButtonTemplate, SecureActionButtonTemplate"
-            mixin="GLOBAL_ButtonOnFlyoutMenu, GLOBAL_ButtonMixin"
+            inherits="
+                ActionButtonTemplate,
+                SecureActionButtonTemplate
+            "
+            mixin="
+                GLOBAL_Germ,
+                GLOBAL_Button_Mixin
+            "
     >
+        <!--inheritance tree
+            ActionButtonTemplate              :: mixin = BaseActionButtonMixin
+                + ActionButtonSpellFXTemplate :: mixin = none
+                + FlyoutButtonTemplate        :: mixin = FlyoutButtonMixin
+            SecureActionButtonTemplate        :: mixin = SecureActionButtonMixin
+                + SecureFrameTemplate         :: mixin = none
+
+                BaseActionButtonMixin <- FlyoutButtonMixin <- ButtonStateBehaviorMixin
+        -->
+    </Button>
+
+
+    <CheckButton name="UFO_ButtonOnFlyoutMenu_Template"
+            virtual="true"
+            inherits="
+                SpellFlyoutPopupButtonTemplate,
+                SecureActionButtonTemplate
+            "
+            mixin="
+                GLOBAL_ButtonOnFlyoutMenu,
+                GLOBAL_Button_Mixin
+            "
+    >
+    <!--inheritance tree
+        SpellFlyoutPopupButtonTemplate            :: mixin = SpellFlyoutPopupButtonMixin
+            + SmallActionButtonTemplate           :: mixin = SmallActionButtonMixin
+                + ActionButtonTemplate            :: mixin = BaseActionButtonMixin
+                    + ActionButtonSpellFXTemplate :: mixin = none
+                    + FlyoutButtonTemplate        :: mixin = FlyoutButtonMixin
+            + FlyoutPopupButtonTemplate           :: mixin = FlyoutPopupButtonMixin
+            + SecureFrameTemplate                 :: mixin = none
+        SecureActionButtonTemplate                :: mixin = SecureActionButtonMixin
+            + SecureFrameTemplate                 :: mixin = none
+
+            BaseActionButtonMixin <- FlyoutButtonMixin <- ButtonStateBehaviorMixin
+    -->
         <Scripts>
             <OnLoad  method="onLoad" />
             <OnEnter method="onEnter" />
             <OnLeave method="onLeave" />
+            <OnMouseUp method="onMouseUp" />
             <OnDragStart method="onDragStartDoPickup" />
             <OnReceiveDrag method="onReceiveDrag" />
-            <OnMouseUp method="onMouseUp" />
             <PreClick>
                 self:SetChecked(false)
             </PreClick>
@@ -34,96 +61,72 @@
         <NormalTexture/>
     </CheckButton>
 
-    <Frame name="UIUFO_FlyoutMenuTemplate"
+    <Frame name="UFO_FlyoutMenuTemplate"
+           inherits="FlyoutPopupTemplate, SecureFrameTemplate"
+           mixin="GLOBAL_FlyoutMenu"
            virtual="true"
            frameStrata="DIALOG"
            frameLevel="10"
            parent="UIParent"
            hidden="true"
-           inherits="SecureFrameTemplate, FlyoutPopupTemplate"
-           mixin="GLOBAL_FlyoutMenu"
     >
         <Frames>
-            <CheckButton name="$parent_Button1" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="1" />
-            <CheckButton name="$parent_Button2" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="2" />
-            <CheckButton name="$parent_Button3" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="3" />
-            <CheckButton name="$parent_Button4" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="4" />
-            <CheckButton name="$parent_Button5" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="5" />
-            <CheckButton name="$parent_Button6" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="6" />
-            <CheckButton name="$parent_Button7" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="7" />
-            <CheckButton name="$parent_Button8" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="8" />
-            <CheckButton name="$parent_Button9" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="9" />
-            <CheckButton name="$parent_Button10" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="10" />
-            <CheckButton name="$parent_Button11" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="11" />
-            <CheckButton name="$parent_Button12" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="12" />
-            <CheckButton name="$parent_Button13" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="13" />
-            <CheckButton name="$parent_Button14" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="14" />
-            <CheckButton name="$parent_Button15" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="15" />
-            <CheckButton name="$parent_Button16" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="16" />
-            <CheckButton name="$parent_Button17" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="17" />
-            <CheckButton name="$parent_Button18" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="18" />
-            <CheckButton name="$parent_Button19" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="19" />
-            <CheckButton name="$parent_Button20" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="20" />
-            <CheckButton name="$parent_Button21" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="21" />
-            <CheckButton name="$parent_Button22" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="22" />
-            <CheckButton name="$parent_Button23" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="23" />
-            <CheckButton name="$parent_Button24" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="24" />
-            <CheckButton name="$parent_Button25" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="25" />
-            <CheckButton name="$parent_Button26" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="26" />
-            <CheckButton name="$parent_Button27" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="27" />
-            <CheckButton name="$parent_Button28" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="28" />
-            <CheckButton name="$parent_Button29" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="29" />
-            <CheckButton name="$parent_Button30" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="30" />
-            <!--
-            <CheckButton name="$parent_Button31" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="31" />
-            <CheckButton name="$parent_Button32" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="32" />
-            <CheckButton name="$parent_Button33" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="33" />
-            <CheckButton name="$parent_Button34" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="34" />
-            <CheckButton name="$parent_Button35" inherits="UIUFO_ButtonOnFlyoutMenuTemplate" id="35" />
-            -->
+            <CheckButton name="$parent_Button1" inherits="UFO_ButtonOnFlyoutMenu_Template" id="1" />
+            <CheckButton name="$parent_Button2" inherits="UFO_ButtonOnFlyoutMenu_Template" id="2" />
+            <CheckButton name="$parent_Button3" inherits="UFO_ButtonOnFlyoutMenu_Template" id="3" />
+            <CheckButton name="$parent_Button4" inherits="UFO_ButtonOnFlyoutMenu_Template" id="4" />
+            <CheckButton name="$parent_Button5" inherits="UFO_ButtonOnFlyoutMenu_Template" id="5" />
+            <CheckButton name="$parent_Button6" inherits="UFO_ButtonOnFlyoutMenu_Template" id="6" />
+            <CheckButton name="$parent_Button7" inherits="UFO_ButtonOnFlyoutMenu_Template" id="7" />
+            <CheckButton name="$parent_Button8" inherits="UFO_ButtonOnFlyoutMenu_Template" id="8" />
+            <CheckButton name="$parent_Button9" inherits="UFO_ButtonOnFlyoutMenu_Template" id="9" />
+            <CheckButton name="$parent_Button10" inherits="UFO_ButtonOnFlyoutMenu_Template" id="10" />
+            <CheckButton name="$parent_Button11" inherits="UFO_ButtonOnFlyoutMenu_Template" id="11" />
+            <CheckButton name="$parent_Button12" inherits="UFO_ButtonOnFlyoutMenu_Template" id="12" />
+            <CheckButton name="$parent_Button13" inherits="UFO_ButtonOnFlyoutMenu_Template" id="13" />
+            <CheckButton name="$parent_Button14" inherits="UFO_ButtonOnFlyoutMenu_Template" id="14" />
+            <CheckButton name="$parent_Button15" inherits="UFO_ButtonOnFlyoutMenu_Template" id="15" />
+            <CheckButton name="$parent_Button16" inherits="UFO_ButtonOnFlyoutMenu_Template" id="16" />
+            <CheckButton name="$parent_Button17" inherits="UFO_ButtonOnFlyoutMenu_Template" id="17" />
+            <CheckButton name="$parent_Button18" inherits="UFO_ButtonOnFlyoutMenu_Template" id="18" />
+            <CheckButton name="$parent_Button19" inherits="UFO_ButtonOnFlyoutMenu_Template" id="19" />
+            <CheckButton name="$parent_Button20" inherits="UFO_ButtonOnFlyoutMenu_Template" id="20" />
+            <CheckButton name="$parent_Button21" inherits="UFO_ButtonOnFlyoutMenu_Template" id="21" />
+            <CheckButton name="$parent_Button22" inherits="UFO_ButtonOnFlyoutMenu_Template" id="22" />
+            <CheckButton name="$parent_Button23" inherits="UFO_ButtonOnFlyoutMenu_Template" id="23" />
+            <CheckButton name="$parent_Button24" inherits="UFO_ButtonOnFlyoutMenu_Template" id="24" />
+            <CheckButton name="$parent_Button25" inherits="UFO_ButtonOnFlyoutMenu_Template" id="25" />
+            <CheckButton name="$parent_Button26" inherits="UFO_ButtonOnFlyoutMenu_Template" id="26" />
+            <CheckButton name="$parent_Button27" inherits="UFO_ButtonOnFlyoutMenu_Template" id="27" />
+            <CheckButton name="$parent_Button28" inherits="UFO_ButtonOnFlyoutMenu_Template" id="28" />
+            <CheckButton name="$parent_Button29" inherits="UFO_ButtonOnFlyoutMenu_Template" id="29" />
+            <CheckButton name="$parent_Button30" inherits="UFO_ButtonOnFlyoutMenu_Template" id="30" />
+            <CheckButton name="$parent_Button31" inherits="UFO_ButtonOnFlyoutMenu_Template" id="31" />
+            <CheckButton name="$parent_Button32" inherits="UFO_ButtonOnFlyoutMenu_Template" id="32" />
+            <CheckButton name="$parent_Button33" inherits="UFO_ButtonOnFlyoutMenu_Template" id="33" />
+            <CheckButton name="$parent_Button34" inherits="UFO_ButtonOnFlyoutMenu_Template" id="34" />
+            <CheckButton name="$parent_Button35" inherits="UFO_ButtonOnFlyoutMenu_Template" id="35" />
         </Frames>
-        <Scripts>
-<!--
-            <OnUpdate method="onUpdate"/>
-            <OnShow  method="onShow"/> &lt;!&ndash; removing this had no effect on the "Cannot call restricted closure from insecure code" &ndash;&gt;
-            <OnHide  method="onHide"/>
-            <OnLeave method="onLeave" />
--->
-
-        </Scripts>
     </Frame>
 
     <!-- this is the singleton version that is only used when the config option "usable in combat" is false -->
-    <Frame name="UIUFO_FlyoutMenuForGerm"
-           inherits="UIUFO_FlyoutMenuTemplate"
-           mixin="GLOBAL_FlyoutMenu"
-           frameStrata="DIALOG"
-           frameLevel="10"
-           parent="UIParent"
-           hidden="true"
+    <Frame name="UFO_FlyoutMenuForGerm"
+           inherits="UFO_FlyoutMenuTemplate"
     >
-        <!-- no effect if removed during Germ == ActionButton -->
-<!--
         <Scripts>
             <OnLoad method="onLoadForGerm"/>
         </Scripts>
--->
     </Frame>
 
-    <Frame name="UIUFO_FlyoutMenuForCatalog"
-           inherits="UIUFO_FlyoutMenuTemplate"
-           mixin="GLOBAL_FlyoutMenu"
-           frameStrata="DIALOG"
-           frameLevel="10"
-           parent="UIParent"
-           hidden="true"
+    <Frame name="UFO_FlyoutMenuForCatalog"
+           inherits="UFO_FlyoutMenuTemplate"
     >
         <Scripts>
             <OnLoad method="onLoadForCatalog"/>
         </Scripts>
     </Frame>
 
-    <Button name="UIUFO_CatalogEntry" virtual="true">
+    <Button name="UFO_CatalogEntry" virtual="true">
         <Size x="105" y="44"/>
         <Anchors>
             <Anchor point="LEFT" x="2" y="0"/>
@@ -202,7 +205,7 @@
                     </Layer>
                 </Layers>
                 <Scripts>
-                    <OnShow function="GLOBAL_UIUFO_CatalogEntryButtonsMouseOver_OnShow" />
+                    <OnShow function="GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow" />
                     <OnEnter>
                         self.texture:SetAlpha(1.0);
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -218,7 +221,7 @@
                     <OnMouseUp>
                         self.texture:SetPoint("TOPLEFT", 0, 0);
                     </OnMouseUp>
-                    <OnClick function="GLOBAL_UIUFO_CatalogEntryDeleteButton_OnClick" />
+                    <OnClick function="GLOBAL_UFO_CatalogEntryDeleteButton_OnClick" />
                 </Scripts>
             </Button>
             <Button name="$parentEditButton" parentKey="EditButton" hidden="true">
@@ -234,7 +237,7 @@
                     </Layer>
                 </Layers>
                 <Scripts>
-                    <OnShow function="GLOBAL_UIUFO_CatalogEntryButtonsMouseOver_OnShow" />
+                    <OnShow function="GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow" />
                     <OnEnter>
                         self.texture:SetAlpha(1.0);
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -250,20 +253,20 @@
                     <OnMouseUp>
                         self.texture:SetPoint("TOPLEFT", 0, 0);
                     </OnMouseUp>
-                    <OnClick function="GLOBAL_UIUFO_CatalogEntryEditButton_OnClick" />
+                    <OnClick function="GLOBAL_UFO_CatalogEntryEditButton_OnClick" />
                 </Scripts>
             </Button>
         </Frames>
         <Scripts>
-            <OnEnter function="GLOBAL_UIUFO_CatalogEntry_OnEnter" />
-            <OnLeave function="GLOBAL_UIUFO_CatalogEntry_OnLeave" />
+            <OnEnter function="GLOBAL_UFO_CatalogEntry_OnEnter" />
+            <OnLeave function="GLOBAL_UFO_CatalogEntry_OnLeave" />
             <OnLoad>
                 self:RegisterForDrag("LeftButton");
                 SetClampedTextureRotation(self.BgBottom, 180);
                 SetClampedTextureRotation(self.Arrow, 90);
             </OnLoad>
-            <OnClick function="GLOBAL_UIUFO_CatalogEntryButton_OnClick" />
-            <OnDragStart function="GLOBAL_UIUFO_CatalogEntry_OnDragStart" />
+            <OnClick function="GLOBAL_UFO_CatalogEntryButton_OnClick" />
+            <OnDragStart function="GLOBAL_UFO_CatalogEntry_OnDragStart" />
         </Scripts>
         <NormalTexture name="$parentIcon" parentKey="icon">
             <Size>
@@ -279,10 +282,10 @@
         </NormalTexture>
     </Button>
 
-    <Frame name="UIUFO_DUM_DUM" hidden="true">
+    <Frame name="UFO_DUM_DUM" hidden="true">
     </Frame>
 
-    <Frame name="UIUFO_Catalog" parent="UIUFO_DUM_DUM" frameStrata="MEDIUM" inherits="TranslucentFrameTemplate" hidden="true">
+    <Frame name="UFO_Catalog" parent="UFO_DUM_DUM" frameStrata="MEDIUM" inherits="TranslucentFrameTemplate" hidden="true">
         <Size>
             <AbsDimension x="150" y="525"/>
         </Size>
@@ -291,16 +294,16 @@
             <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="35" y="-5" />
         </Anchors>
         <Frames>
-            <Frame name="UIUFO_CatalogInset" inherits="InsetFrameTemplate" >
+            <Frame name="UFO_CatalogInset" inherits="InsetFrameTemplate" >
                 <Anchors>
                     <Anchor point="TOPLEFT" x="8" y="-8"/>
                     <Anchor point="BOTTOMRIGHT"  x="-8" y="8"/>
                 </Anchors>
             </Frame>
-            <ScrollFrame name="UIUFO_CatalogScrollPane" inherits="HybridScrollFrameTemplate">
+            <ScrollFrame name="UFO_CatalogScrollPane" inherits="HybridScrollFrameTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="UIUFO_CatalogInset" x="4" y="-4"/>
-                    <Anchor point="BOTTOMRIGHT" relativeTo="UIUFO_CatalogInset" x="-27" y="2"/>
+                    <Anchor point="TOPLEFT" relativeTo="UFO_CatalogInset" x="4" y="-4"/>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="UFO_CatalogInset" x="-27" y="2"/>
                 </Anchors>
                 <Frames>
                     <Slider name="$parentScrollBar" inherits="HybridScrollBarTemplate" parentKey="scrollBar">
@@ -317,12 +320,12 @@
                 <Scripts>
                     <OnLoad>
                         self.scrollBar.doNotHide  = 1;
-                        self:SetFrameLevel(UIUFO_CatalogInset:GetFrameLevel()+1);
-                        GLOBAL_UIUFO_CatalogScrollPane_OnLoad(self);
+                        self:SetFrameLevel(UFO_CatalogInset:GetFrameLevel()+1);
+                        GLOBAL_UFO_CatalogScrollPane_OnLoad(self);
                     </OnLoad>
-                    <OnShow function="GLOBAL_UIUFO_CatalogScrollPane_OnShow"/>
-                    <OnHide function="GLOBAL_UIUFO_CatalogScrollPane_OnHide"/>
-                    <OnUpdate function="GLOBAL_UIUFO_CatalogScrollPane_OnUpdate"/>
+                    <OnShow function="GLOBAL_UFO_CatalogScrollPane_OnShow"/>
+                    <OnHide function="GLOBAL_UFO_CatalogScrollPane_OnHide"/>
+                    <OnUpdate function="GLOBAL_UFO_CatalogScrollPane_OnUpdate"/>
                 </Scripts>
             </ScrollFrame>
         </Frames>
@@ -334,12 +337,12 @@
     </Script>
 
     <Frame
-            name="UIUFO_IconPicker"
+            name="UFO_IconPicker"
             mixin="UfoIconPickerMixin"
             inherits="IconSelectorPopupFrameTemplate"
             toplevel="true"
             frameStrata="HIGH"
-            parent="UIUFO_Catalog"
+            parent="UFO_Catalog"
             movable="true"
             enableMouse="true"
             hidden="true"

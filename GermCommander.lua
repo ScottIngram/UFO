@@ -19,7 +19,7 @@ GermCommander = { }
 -- Data
 -------------------------------------------------------------------------------
 
----@type table<number,Germ>
+---@type table<number,Germ|GERM_TYPE>
 local germs = {}
 local previousSpec
 local currentSpec
@@ -166,7 +166,6 @@ function GermCommander:updateClickHandlerForAllGerms(mouseClick)
     end
 end
 
----@return Germ
 function GermCommander:recallGerm(btnSlotIndex)
     return germs[btnSlotIndex]
 end

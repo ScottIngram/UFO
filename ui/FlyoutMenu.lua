@@ -11,45 +11,36 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 local zebug = Zebug:getSharedByName("GERMS_FLYOUTS_BUTTONS")
 
----@class FlyoutMenu -- IntelliJ-EmmyLua annotation
+
+---@class FlyoutMenu : FlyoutPopupTemplate
 ---@field ufoType string The classname
 ---@field id string
 ---@field isForGerm boolean
 ---@field isForCatalog boolean
 ---@field nameSuffix string part of its name used to identify it as a flyout frame
 ---@field displaceBtnsHere number used to push buttons out of the way during "OnHover"
----@type FlyoutMenu|SpellFlyoutMixin|FlyoutPopupMixin|VisibleRegion|Region
-local FlyoutMenu = {
+
+---@type FlyoutMenu
+FlyoutMenu = {
     ufoType = "FlyoutMenu",
     isForGerm = false,
     isForCatalog = false,
     nameSuffix = "_FlyoutMenu"
 }
-Ufo.FlyoutMenu = FlyoutMenu
 GLOBAL_FlyoutMenu = FlyoutMenu
-_G["FlyoutMenu"] = FlyoutMenu
+
+---@alias FM_INHERITANCE FlyoutPopupTemplate | SecureFrameTemplate | Frame
+---@alias FM_TYPE FlyoutMenu | FM_INHERITANCE
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
--- coerce the incoming table into a FlyoutMenu instance
----@return FlyoutMenu
-function FlyoutMenu:oneOfUs(fomu)
-    -- merge the Bliz ActionButton object
-    -- with this class's methods, functions, etc
-    return deepcopy(self, fomu)
-end
-
----@return FlyoutMenu|SpellFlyoutMixin|FlyoutPopupMixin
-function FlyoutMenu.new(germ)
+function FlyoutMenu:new(germ)
     local myName = germ:GetName() .. FlyoutMenu.nameSuffix
-    ---@type FlyoutMenu|SpellFlyoutMixin|FlyoutPopupMixin
-    local protoSelf = CreateFrame(FrameType.FRAME, myName, germ, "UIUFO_FlyoutMenuTemplate") -- XML's mixin = FlyoutMenu
-    ---@type FlyoutMenu
-    --local self = FlyoutMenu:oneOfUs(protoSelf)
-    --doBlizOnLoad(self)
-    return protoSelf
+    ---@type FM_TYPE
+    local self = CreateFrame(FrameType.FRAME, myName, germ, "UFO_FlyoutMenuTemplate") -- XML's mixin = FlyoutMenu
+    return self
 end
 
 function FlyoutMenu:getLabel()
@@ -345,11 +336,6 @@ function FlyoutMenu:setBorderGeometry()
     --self:SetBorderSize(47);
 end
 
----@param flyoutMenu FlyoutMenu
-function doBlizOnLoad(flyoutMenu)
-    --SpellFlyout_OnLoad(flyoutMenu) - breaks... um... something.  I removed this days ago :-/
-end
-
 ---@param btn ButtonOnFlyoutMenu
 function FlyoutMenu:displaceButtonsOnHover(index)
     if not self.isForCatalog then
@@ -409,75 +395,33 @@ function FlyoutMenu:onLeave()
 end
 
 function FlyoutMenu:onLoadForGerm()
-    doBlizOnLoad(self)
     zebug.info:name("ForGerm_OnLoad"):print("flyoutMenu", self:GetName())
     -- initialize fields
-    FlyoutMenu:oneOfUs(self)
-    Germ.flyoutMenu = self -- not used anywhere?
     self.isForGerm = true
     self.isSharedByAllGerms = true
 end
 
 function FlyoutMenu:onLoadForCatalog()
-    doBlizOnLoad(self)
     zebug.info:name("ForCatalog_OnLoad"):print("flyoutMenu", self:GetName())
 
     -- initialize fields
-    local self = FlyoutMenu:oneOfUs(self)
     Catalog.flyoutMenu = self
     self.isForCatalog = true
     self:forEachButton(ButtonOnFlyoutMenu.installExcluder)
 end
 
--- throttle OnUpdate because it can fire as often as FPS and is very resource intensive
-local ON_UPDATE_TIMER_FREQUENCY = 1.0
-local onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
-
-function FlyoutMenu:onUpdate(elapsed)
-    onUpdateTimer = onUpdateTimer + elapsed
-    if onUpdateTimer < ON_UPDATE_TIMER_FREQUENCY then
-        return
-    end
-    onUpdateTimer = 0
-
-    zebug.trace:print("elapsed",elapsed)
-    self:updateAllBtnCooldownsEtc()
-end
-
--- Is the the cause of "Cannot call restricted closure from insecure code" ???
--- it's set in the XML via <OnShow  method="onShow"/>
-function FlyoutMenu:onShow()
-    zebug.error:print("WOOOO? am even I being called???") -- nope, I commented out the XML.  no effect on "Cannot call restricted closure from insecure code"
-    local originalEventsRegistered = self.eventsRegistered -- SpellFlyout_OnShow will reset this so snapshot it
-    SpellFlyout_OnShow(self) -- call Blizzard handler
-    -- TODO: v11.1 - is the above dead and gone by way of Cata ?!  Do I need to call self:OnShow()
-    self:updateAllBtnCooldownsEtc()
-
-    -- Cooldown indicators are enabled by the above which is usually sufficient.
-    -- But, the following event registrations support the rare condition of
-    -- a flyout is still open while one of its spells/items/etc is being cast/used/etc and completes.
-    -- At that point, flyoutMenu:updateAllBtnCooldownsEtc() must be called again via these events
-    -- because there won't be a OnShow event to do so.
-    if not originalEventsRegistered then
-        self:RegisterEvent("BAG_UPDATE_COOLDOWN") -- to support items
-        self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN") -- to support items
-        -- TODO: v11.1 - do I need to listen to more events?  Different / more specific ones?
-    end
-end
-
-function FlyoutMenu:onHide()
-    if (self.eventsRegistered == true) then
-        -- supplement SpellFlyout_OnHide() with extra events specifically for items
-        self:UnregisterEvent("BAG_UPDATE_COOLDOWN"); -- to support items
-        self:UnregisterEvent("ACTIONBAR_UPDATE_COOLDOWN"); -- to support items
-    end
-    SpellFlyout_OnHide(self) -- call Blizzard handler (it sets eventsRegistered = false)
-    -- TODO: v11.1 - is the above dead and gone by way of Cata ?!  Do I need to call self:OnHide()
-end
-
 function FlyoutMenu:updateAllBtnCooldownsEtc()
     zebug.trace:print("self:getId()",self:getId())
     self:forEachButton(ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc)
+end
+
+function FlyoutMenu:FOR_DEMO_PURPOSES_ONLY()
+    -- methods that get called by the Bliz built-ins
+    self:OnLoad()
+    self:OnClick()
+    self:SetTooltip()
+    self:OnLeave()
+    self:OnDragStart()
 end
 
 -------------------------------------------------------------------------------

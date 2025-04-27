@@ -15,7 +15,7 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 local zebug = Zebug:new()
 
----@class Germ -- IntelliJ-EmmyLua annotation
+---@class Germ
 ---@field ufoType string The classname
 ---@field flyoutId number Identifies which flyout is currently copied into this germ
 ---@field flyoutMenu FlyoutMenu The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
@@ -24,15 +24,17 @@ local zebug = Zebug:new()
 ---@field myName string duh
 ---@field label string human friendly identifier
 
----@type Germ|ButtonMixin|BaseActionButtonMixin|FlyoutButtonMixin|SecureActionButtonMixin
+---@type Germ
 Germ = {
     ufoType = "Germ",
     clickScriptUpdaters = {},
     clickers = {},
     instanceId = nil, -- I mean, I could use the table.toString() itself, but, let's make something human readable
 }
---ButtonMixin:inject(Germ) - now performed by XML's mixin
 GLOBAL_Germ = Germ
+
+---@alias GERM_INHERITANCE Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame
+---@alias GERM_TYPE Germ | GERM_INHERITANCE
 
 ---@class GermClickBehavior
 GermClickBehavior = {
@@ -224,7 +226,7 @@ function Germ:new(flyoutId, btnSlotIndex)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
     self.myName = myName -- TODO: figure out why leaving this line out breaks self:GetName() in FlyoutMenu.new even though self == Germ
 
-    local protoGerm = CreateFrame(
+    local self = CreateFrame(
             FrameType.CHECK_BUTTON,
             myName,
             parentActionBarBtn, -- can I make the action bar instead to satisfy SecureButtonTemplate code?
@@ -234,28 +236,11 @@ function Germ:new(flyoutId, btnSlotIndex)
             "GermTemplate"
     )
 
-    -- copy Germ's methods, functions, etc to the UI btn
-    -- I can't use the setmetatable() trick here because the Bliz frame already has a metatable... TODO: can I metatable a metatable?
-    -- Germ == ActionButton
---[[
-    local self = deepcopy(Germ, parentActionBarBtn) -- mixin="GLOBAL_Germ, GLOBAL_ButtonMixin, FlyoutButtonMixin"
-    deepcopy(ButtonMixin, self)
-    deepcopy(FlyoutButtonMixin, self)
-]]
-    ---@type Germ|ButtonMixin|FlyoutButtonMixin
-    local self = protoGerm -- deepcopy(Germ, protoGerm) -- now "handled" via XML's mixin... but if I remove it the arrows point in the wrong direction - but NOT if I put the Bliz class "FlyoutButtonMixin" as the first member of the mixin attribute
+    _G[myName] = self -- so that keybindings can reference it
 
-
-
-    --ActionBarActionButtonMixin:OnLoad
-    --zebug.error:print("ActionBarActionButtonMixin.OnEvent",ActionBarActionButtonMixin.OnEvent, "self.OnEvent",self.OnEvent)
-    -- self.OnEvent = ActionBarActionButtonMixin.OnEvent
-
---[[
-    zebug.error:print("ActionBarActionButtonMixin.OnLoad",ActionBarActionButtonMixin.OnLoad, "self.OnLoad",self.OnLoad)
-    zebug.error:print("ActionBarActionEventsFrame.OnLoad",ActionBarActionEventsFrame.OnLoad, "self.OnLoad",self.OnLoad)
-    zebug.error:print("ActionBarActionEventsFrame.OnLoad",ActionBarActionEventsFrame.OnLoad, "parentActionBarBtn.OnLoad",parentActionBarBtn.OnLoad)
-    zebug.error:print("ActionBarActionEventsFrame.OnEvent",ActionBarActionEventsFrame.OnEvent, "parentActionBarBtn.OnEvent",parentActionBarBtn.OnEvent)
+    --[[
+    -- Events found in ActionBarButtonEventsFrameMixin:OnLoad()
+    -- do I need to subscribe to these?
 
     self:SetScript("OnEvent", self.OnEvent)
     self:RegisterEvent("PLAYER_ENTERING_WORLD");
@@ -269,16 +254,7 @@ function Germ:new(flyoutId, btnSlotIndex)
     self:RegisterUnitEvent("UNIT_AURA", "pet");
     self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED");
     self:RegisterEvent("SPELL_UPDATE_ICON");
-
-    ActionBarActionEventsFrameMixin.OnLoad(self)
 ]]
-
-
-    -- fix the dir - needed when mixin includes explicit FlyoutButtonMixin AND it's at the END but not if at START
-    --self.GetPopupDirection = Germ.getDirection
-
-    --self.myName = myName
-    _G[myName] = self -- so that keybindings can reference it
 
     --self:makeSafeSetAttribute() -- experiment that didn't pan out
 
@@ -289,9 +265,6 @@ function Germ:new(flyoutId, btnSlotIndex)
     self.visibleIf    = parentActionBarBtn.visibleIf
     self.label        = self:getFlyoutDef().name
     self.bbInfo       = bbInfo
-
-    --zebug.error:print("OnLeave",self.OnLeave)
-    --self.OnLeave = nil - I think I was trying to solve the FO btn collapse
 
     -- UI positioning
     -- removed for Germ == ActionButton
@@ -311,10 +284,7 @@ function Germ:new(flyoutId, btnSlotIndex)
     self:SetScript(Script.ON_LEAVE,        handlers.OnLeave)
     self:SetScript(Script.ON_RECEIVE_DRAG, handlers.OnReceiveDrag)
 
-    -- TEMPORARY removal
-    -- removed during Germ == ActionButton
-    --self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
-
+    self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
     self:SetScript(Script.ON_DRAG_START,   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
     --self:SetScript(Script.ON_HIDE, function(self) print('***GERM*** Script.ON_HIDE for',self:GetName()); end) -- This is NEVER invoked.  Thanks for silent fail, Bliz.
 
@@ -375,12 +345,12 @@ end
 
 function Germ:initFlyoutMenu()
     if Config.opts.supportCombat then
-        self.flyoutMenu = FlyoutMenu.new(self)
+        self.flyoutMenu = FlyoutMenu:new(self)
         zebug.info:ifMe1st(self):line("20","updateForGerm from Germ:initFlyoutMenu")
         self.flyoutMenu:updateForGerm(self)
         self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
     else
-        self.flyoutMenu = UIUFO_FlyoutMenuForGerm
+        self.flyoutMenu = UFO_FlyoutMenuForGerm
     end
     self.flyoutMenu.isForGerm = true
 end
@@ -679,7 +649,7 @@ function Germ:getBtnDef(n)
     return self:getUsableFlyoutDef():getButtonDef(n)
 end
 
--- required by ButtonMixin
+-- required by Button_Mixin
 function Germ:getDef()
     -- treat the first button in the flyout as the "definition" for the Germ
     return self:getBtnDef(1)
@@ -755,7 +725,7 @@ end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnMouseUp(germ)
-    zebug.error:name("OnMouseUp"):print("name",germ:GetName())
+    zebug.info:name("OnMouseUp"):print("name",germ:GetName())
     local isDragging = GetCursorInfo()
     if isDragging then
         handlers.OnReceiveDrag(germ)
@@ -885,7 +855,7 @@ end
 -- to enable the Germ's button to do things in response to mouse clicks
 -------------------------------------------------------------------------------
 
----@type Germ|ButtonMixin
+---@type Germ|Button_Mixin
 local HandlerMaker = { }
 
 ---@param mouseClick MouseClick
@@ -1129,17 +1099,12 @@ end
 -- ActionBarActionButtonMixin:Update() calls -> ActionBarActionEventsFrame:RegisterFrame(self)
 -------------------------------------------------------------------------------
 
--- method alias to fix SpellFlyoutMixin:Toggle() inside Interface/AddOns/Blizzard_ActionBar/Mainline/SpellFlyout.lua
--- TODO v11.1 isn't this fragile and susceptible to Bliz whims?  Do I need to implement my own version of SpellFlyoutMixin:Toggle() ?
--- I think this is getting clobbered by CreateFrame + mixin happening after this definition - NOT ANYMORE now that I've reduced it down to  mixin="GLOBAL_Germ, GLOBAL_ButtonMixin"
 Germ.GetPopupDirection = Germ.getDirection
 
--- function ClearNewActionHighlight
-
--- Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButton.lua -> function ActionButton_SetupOverlayGlow(button) -> button.SpellActivationAlert
-
 -------------------------------------------------------------------------------
--- FlyoutButtonMixin OVERRIDES
+-- OVERRIDES of
+-- FlyoutButtonMixin methods
+-- acquired via ActionButtonTemplate -> FlyoutButtonTemplate
 -- see Interface/AddOns/Blizzard_Flyout/Flyout.lua
 -------------------------------------------------------------------------------
 
@@ -1152,3 +1117,15 @@ function Germ:ClearPopup()
     -- unlike the Bliz built-in flyouts, rather than reusing a single flyout object that is passed around from one action bar button to another
     -- each UFO keeps its own flyout object.  Thus, detaching it is a bad idea.
 end
+
+-------------------------------------------------------------------------------
+-- OVERRIDES of
+-- SmallActionButtonMixin methods
+-- acquired via SmallActionButtonTemplate
+-- See Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButton.lua
+-------------------------------------------------------------------------------
+
+function Germ:UpdateButtonArt()
+    --BaseActionButtonMixin.UpdateButtonArt(self); -- this was the default self:UpdateButtonArt(). removing it has no effect.
+end
+

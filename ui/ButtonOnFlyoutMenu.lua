@@ -11,28 +11,23 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 local zebug = Zebug:new()
 
----@class ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+---@class ButtonOnFlyoutMenu
 ---@field ufoType string The classname
 ---@field id number unique identifier
 ---@field nopeIcon Frame w/ a little X indicator
 
----@type ButtonOnFlyoutMenu|ButtonMixin|SmallActionButtonMixin|BaseActionButtonMixin|VisibleRegion|Region
+---@type ButtonOnFlyoutMenu
 ButtonOnFlyoutMenu = {
     ufoType = "ButtonOnFlyoutMenu",
 }
 GLOBAL_ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 
+---@alias BOFM_INHERITANCE  Button_Mixin | SpellFlyoutPopupButtonMixin | SmallActionButtonTemplate | SecureActionButtonTemplate | Frame
+---@alias BOFM_TYPE ButtonOnFlyoutMenu | BOFM_INHERITANCE
+
 -------------------------------------------------------------------------------
 -- Functions / Methods
 -------------------------------------------------------------------------------
-
--- can't do my usual metatable magic because (I think) the Bliz UI objects already have.
--- so, instead, just copy all of my methods onto the Bliz UI object
-function ButtonOnFlyoutMenu:oneOfUs(btnOnFlyout)
-    -- merge the Bliz ActionButton object
-    -- with this class's methods, functions, etc
-    deepcopy(ButtonOnFlyoutMenu, btnOnFlyout)
-end
 
 function ButtonOnFlyoutMenu:getName()
     local btnDef = self:getDef()
@@ -78,13 +73,15 @@ function ButtonOnFlyoutMenu:setDef(btnDef)
     local flyoutMenu = self:GetParent()
     if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
         self:updateSecureClicker(MouseClick.ANY)
-        -- TODO: v11.1 build this into my ButtonMixin
+        -- TODO: v11.1 build this into my Button_Mixin
         safelySetAttribute(self, "UFO_NO_RND", btnDef and btnDef.noRnd or nil) -- SECURE TEMPLATE
     else
         self:setExcluderVisibility()
     end
 end
 
+-- TODO: eval if these are still used now that I've migrated away from the old CATA code
+-- TODO: eval if these are tainty.  If so, can I SetAttribute instead?
 function ButtonOnFlyoutMenu:copyDefToBlizFields()
     local d = self.btnDef or {}
     -- the names on the left are used deep inside Bliz code by the likes of SpellFlyoutButton_UpdateCooldown() etc
@@ -257,138 +254,12 @@ function ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc(self)
     self:updateCooldownsAndCountsAndStatesEtc()
 end
 
--------------------------------------------------------------------------------
--- XML Callbacks
--------------------------------------------------------------------------------
-
----@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function ButtonOnFlyoutMenu:onLoad()
-    -- coerce the Bliz ActionButton into a ButtonOnFlyoutMenu
-    --ButtonOnFlyoutMenu:oneOfUs(self) - nope, this is now performed vix xml's mixin
-
-    -- initialize my fields
-    self.maxDisplayCount = 99 -- limits how big of a number to show on stacks
-
-    -- initialize the Bliz ActionButton
-    -- if I call neither of these: no badly sized overlay (yay) but a popup arrow appears (boo)
-    self:SmallActionButtonMixin_OnLoad() -- this does some things right but some things wrong
-    --self:BaseActionButtonMixin_OnLoad()
-
-
-    --self.PushedTexture:SetSize(31.6, 30.9)
-    --self:getCountFrame():SetPoint("BOTTOMRIGHT", 0, 0) -- this seems tgo be happening automatically now... NOPE, is bug!  Bliz code assume actionSlot=1 TODO: v11.1 fix
-
-    -- Drag Handler
-    self:RegisterForDrag("LeftButton")
-    local pickupAction = [[print("WEEE"); return "action", self:GetAttribute("action")]]
-    --self:SetAttribute("_ondragstart", pickupAction)-- try to use this
-    --self:SetAttribute("_onreceivedrag", pickupAction)
-
-    -- Click handler
-    --self:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
-    self:RegisterForClicks("AnyDown", "AnyUp")
-    -- see also ButtonMixin:updateSecureClicker
-
-    --self:makeSafeSetAttribute() -- experiment that didn't pan out
-
-    SecureHandler_OnLoad(self) -- TODO: v11.1 evaluate if this is actually safe or is it causing taint
-end
-
----@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function ButtonOnFlyoutMenu:onMouseUp()
-    -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
-    local isDragging = GetCursorInfo()
-    if isDragging then
-        fuckYouHardBlizzard(self)
-    end
-end
-
----@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function ButtonOnFlyoutMenu:onReceiveDrag()
-    fuckYouHardBlizzard(self)
-end
-
 function fuckYouHardBlizzard(self)
     -- YAY!  Bliz's code is eating exceptions now so I've got to catch and report them my damn self!
     local isOk, err = pcall( function()  self:onReceiveDragAddIt() end  )
     if not isOk then
         zebug.error:print("Drag and drop failed! ERROR",err)
     end
-end
-
-function ButtonOnFlyoutMenu:hideButtonFrame()
---[[
-    self:ClearNormalTexture()
-    self.NormalTexture:Show() -- 4615764
-    self.NormalTexture:SetSize(32,31) -- 4615764
-]]
-end
-
-function ButtonOnFlyoutMenu:showButtonFrame()
---[[
-    self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame");-- UI-HUD-ActionBar-IconFrame-AddRow
-    self.NormalTexture:SetTexture(4615764) -- 4615764
-]]
-end
-
-
-function ButtonOnFlyoutMenu:UpdateButtonArt()
-
-    SmallActionButtonMixin.UpdateButtonArt(self) -- the IsPressed highlight RIGHT size, but, it has the bad small frame
-    --BaseActionButtonMixin.UpdateButtonArt(self);  -- BADx2 - the IsPressed highlight WRONG size, AND, it has the bad small frame
-
---[[
-    zebug.error:ifMe1st(self):print("self:isForCatalog()", self:isForCatalog())
-    if self:isForCatalog() then
-        self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame"); -- what if set(nil) ? nil has no effect
-    else
-        self:ClearNormalTexture()
-    end
-]]
-
-
-
-    --self:hideButtonFrame()
-    self:ClearNormalTexture() -- get rid of the odd nameless Atlas member that is the wrong size
-    self.NormalTexture:Show() -- show the square
-    self.NormalTexture:SetSize(32,31)
-
-
-    --[[
-        _ = self.SlotArt        and self.SlotArt:Hide()
-        _ = self.SlotBackground and self.SlotBackground:Hide()
-    ]]
-    --self.NormalTexture:SetSize(160, 160) -- what is this?
-    --self.PushedTexture:SetSize(35, 35) -- fixes IsPressed highlight
-
-    --self.NormalTexture:SetSize(99, 160) -- what is this?
---self:SetNormalAtlas("UI-HUD-ActionBar-IconFrame"); -- what if set(nil) ? nil has no effect
-    --self.NormalTexture:SetSize(1600, 160) -- what is this?
---self:ClearNormalTexture()
-    --self:SetPushedAtlas("UI-HUD-ActionBar-IconFrame-Down");
-    -- self.PushedTexture:SetDrawLayer("OVERLAY");
-    --self.PushedTexture:SetSize(46, 45);
-    --self.PushedTexture:SetSize(35, 35);
-
-end
-
----@param self ButtonOnFlyoutMenu
-function ButtonOnFlyoutMenu:onEnter()
-    self:setTooltip()
-
-    -- push catalog buttons out of the way for easier btn relocation
-    ---@type FlyoutMenu
-    local flyoutMenu = self:GetParent()
-    flyoutMenu:setMouseOverKid(self)
-    flyoutMenu:displaceButtonsOnHover(self:getId())
-end
-
-function ButtonOnFlyoutMenu:onLeave()
-    GameTooltip:Hide()
-    ---@type FlyoutMenu
-    local flyoutMenu = self:GetParent()
-    flyoutMenu:clearMouseOverKid(self)
-    flyoutMenu:restoreButtonsAfterHover()
 end
 
 -- taken from SpellFlyoutButton_SetTooltip in bliz API SpellFlyout.lua
@@ -421,8 +292,91 @@ function ButtonOnFlyoutMenu:setTooltip()
     end
 end
 
--- pickup an existing button from an existing flyout
----@param self ButtonOnFlyoutMenu
-function ButtonOnFlyoutMenu:onDragStart()
-    self:onDragStartDoPickup()
+-------------------------------------------------------------------------------
+-- XML Callbacks - see ui/ui.xml
+-------------------------------------------------------------------------------
+
+-- TODO: should this be in Button_Mixin so that Germ can enjoy it too?
+---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+function ButtonOnFlyoutMenu:onLoad()
+    -- leverage inheritance - invoke parent's OnLoad()
+    self:SmallActionButtonMixin_OnLoad()
+    SecureHandler_OnLoad(self) -- TODO: v11.1 evaluate if this is actually safe or is it causing taint
+
+    -- initialize my fields
+    self.maxDisplayCount = 99 -- limits how big of a number to show on stacks
+
+    -- Register for events
+    self:RegisterForDrag("LeftButton")
+    self:RegisterForClicks("AnyDown", "AnyUp")
+    -- TODO - register for spell and cooldown events
 end
+
+---@param self ButtonOnFlyoutMenu
+function ButtonOnFlyoutMenu:onEnter()
+    self:setTooltip()
+
+    -- push catalog buttons out of the way for easier btn relocation
+    ---@type FlyoutMenu
+    local flyoutMenu = self:GetParent()
+    flyoutMenu:setMouseOverKid(self)
+    flyoutMenu:displaceButtonsOnHover(self:getId())
+end
+
+function ButtonOnFlyoutMenu:onLeave()
+    GameTooltip:Hide()
+    ---@type FlyoutMenu
+    local flyoutMenu = self:GetParent()
+    flyoutMenu:clearMouseOverKid(self)
+    flyoutMenu:restoreButtonsAfterHover()
+end
+
+---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+function ButtonOnFlyoutMenu:onMouseUp()
+    -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
+    local isDragging = GetCursorInfo()
+    if isDragging then
+        fuckYouHardBlizzard(self)
+    end
+end
+
+---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
+function ButtonOnFlyoutMenu:onReceiveDrag()
+    fuckYouHardBlizzard(self)
+end
+
+
+--[[
+        <CheckButton name="SpellFlyoutPopupButtonTemplate" inherits="SmallActionButtonTemplate,FlyoutPopupButtonTemplate, SecureFrameTemplate" ...
+		<Scripts>
+			<OnLoad method="OnLoad" inherit="append"/>
+			<OnClick method="OnClick"/>
+			<OnEnter method="SetTooltip"/>
+			<OnLeave method="OnLeave"/>
+			<OnDragStart method="OnDragStart"/>
+		</Scripts>
+]]
+
+function ButtonOnFlyoutMenu:FOR_DEMO_PURPOSES_ONLY()
+    -- methods that get called by the Bliz built-ins
+    self:OnLoad()
+    self:OnClick()
+    self:SetTooltip()
+    self:OnLeave()
+    self:OnDragStart()
+end
+
+-------------------------------------------------------------------------------
+-- OVERRIDES of
+-- SmallActionButtonMixin methods
+-- acquired via SmallActionButtonTemplate
+-- See Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButton.lua
+-------------------------------------------------------------------------------
+
+function ButtonOnFlyoutMenu:UpdateButtonArt()
+    SmallActionButtonMixin.UpdateButtonArt(self)
+    self:ClearNormalTexture() -- get rid of the odd nameless Atlas member that is the wrong size
+    self.NormalTexture:Show() -- show the square
+    self.NormalTexture:SetSize(32,31)
+end
+

@@ -28,8 +28,8 @@ local isAlreadyOpenForFlyoutId
 
 function IconPicker:init()
     -- replace self with the fully amalgamated / instantiated mixin version so that "self" has all methods available
-    Ufo.IconPicker = UIUFO_IconPicker
-    IconPicker = UIUFO_IconPicker
+    Ufo.IconPicker = UFO_IconPicker
+    IconPicker = UFO_IconPicker
 end
 
 function IconPicker:open(btnInCatalog)

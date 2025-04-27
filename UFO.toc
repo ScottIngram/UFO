@@ -30,8 +30,8 @@ ProfessionShitShow.lua
 FlyoutDefsDb.lua
 FlyoutDef.lua
 ButtonDef.lua
-ui\ButtonMixin.lua
-ui\ActionBarButtonMixin.lua
+ui\Button_Mixin.lua
+ui\ActionBarHelper.lua
 Germ.lua
 GermCommander.lua
 MacroShitShow.lua
