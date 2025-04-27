@@ -6,7 +6,7 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 IS_OPTIONAL = true
 AUTO_ATTACK_SPELL_ID = 6603
-MAX_FLYOUT_SIZE = 30
+MAX_FLYOUT_SIZE = 35
 NON_SPEC_SLOT = 5
 SPELLFLYOUT_DEFAULT_SPACING = 4
 SPELLFLYOUT_INITIAL_SPACING = 7
