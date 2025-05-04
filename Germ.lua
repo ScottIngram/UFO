@@ -15,7 +15,10 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 local zebug = Zebug:new()
 
----@class Germ
+---@alias GERM_INHERITANCE UfoMixIn | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame | ScriptObject
+---@alias GERM_TYPE Germ | GERM_INHERITANCE
+
+---@class Germ : GERM_TYPE
 ---@field ufoType string The classname
 ---@field flyoutId number Identifies which flyout is currently copied into this germ
 ---@field flyoutMenu FlyoutMenu The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
@@ -24,7 +27,7 @@ local zebug = Zebug:new()
 ---@field myName string duh
 ---@field label string human friendly identifier
 
----@type Germ
+---@type GERM_TYPE | Germ
 Germ = {
     ufoType = "Germ",
     clickScriptUpdaters = {},
@@ -226,6 +229,7 @@ function Germ:new(flyoutId, btnSlotIndex)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
     self.myName = myName -- TODO: figure out why leaving this line out breaks self:GetName() in FlyoutMenu.new even though self == Germ
 
+    ---@type GERM_TYPE | Germ
     local self = CreateFrame(
             FrameType.CHECK_BUTTON,
             myName,
