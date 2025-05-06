@@ -25,6 +25,8 @@ locales\index.xml
 UfoMixin.lua
 DB.lua
 Config.lua
+SpecHelper.lua
+Cursor.lua
 ThirdPartyAddonSupport.lua
 PetShitShow.lua
 ProfessionShitShow.lua
@@ -32,7 +34,8 @@ FlyoutDefsDb.lua
 FlyoutDef.lua
 ButtonDef.lua
 ui\Button_Mixin.lua
-ui\ActionBarHelper.lua
+BlizActionBarButton.lua
+UfoProxy.lua
 Germ.lua
 GermCommander.lua
 MacroShitShow.lua
