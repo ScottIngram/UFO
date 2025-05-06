@@ -65,8 +65,9 @@
            inherits="FlyoutPopupTemplate, SecureFrameTemplate"
            mixin="GLOBAL_FlyoutMenu"
            virtual="true"
-           frameStrata="DIALOG"
-           frameLevel="10"
+           frameStrata="MEDIUM"
+           frameLevel="75"
+           toplevel="true"
            parent="UIParent"
            hidden="true"
     >
