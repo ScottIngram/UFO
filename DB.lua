@@ -15,6 +15,10 @@ local DB = {}
 local ADDON_NAME, Ufo = ...
 Ufo.DB = DB
 
+---@alias SpecId : number
+---@alias FlyoutId string
+---@alias Placement table<number,FlyoutId>
+
 -------------------------------------------------------------------------------
 -- Flyouts
 -------------------------------------------------------------------------------
@@ -50,6 +54,7 @@ function DB:initializePlacements()
 end
 
 -- the placement of flyouts on the action bars is stored separately for each toon
+---@return table<SpecId,Placement>
 function DB:getAllSpecsPlacementsConfig()
     return UFO_SV_TOON.placementsForAllSpecs
 end
