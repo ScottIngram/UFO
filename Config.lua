@@ -176,7 +176,7 @@ local function initializeOptionsMenu()
                     GermCommander:updateAllGermsWithButtonsWillBind()
                 end,
                 get = function()
-                    return Config:get("flyoutButtonsWillBind")
+                    return Config:get("doKeybindTheButtonsOnTheFlyout")
                 end,
             },
 
@@ -224,9 +224,15 @@ You may disable placeholder macros, but, doing so will require extra UI configur
                     opts.usePlaceHolders = val
                     zebug.info:name("opt:usePlaceHolders()"):print("new val",val)
                     if val then
-                        GermCommander:ensureAllGermsHavePlaceholders()
+                        GermCommander:ensureAllGermsHavePlaceholders("config_delta")
                     else
+                        Ufo.deletedPlaceholder = "Config: DELETE PLACEHOLDER"
+                        zebug.warn:name("opt:usePlaceHolders()"):print("DELETE ",PLACEHOLDER_MACRO_NAME,"START")
+
                         DeleteMacro(Ufo.PLACEHOLDER_MACRO_NAME)
+                        -- they claim lua is single threaded.  lets see i WoW's engine is synchronous
+                        zebug.warn:name("opt:usePlaceHolders()"):print("DELETE ",PLACEHOLDER_MACRO_NAME, "DONE")
+                        Ufo.deletedPlaceholder = nil
                     end
                 end,
                 get = function()

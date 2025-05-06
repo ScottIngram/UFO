@@ -57,15 +57,15 @@ function MacroShitShow:init()
     return not WAS_INITIALIZED
 end
 
-function MacroShitShow:analyzeMacroUpdate()
+function MacroShitShow:analyzeMacroUpdate(eventId)
     -- The Bliz API helpfully informs me that something, anything, who knows what,
     -- but yes macro related might have just happened.  Figure out WTF it was.
 
-    zebug.info:print("Ufo.thatWasMe",Ufo.thatWasMe)
-    if Ufo.thatWasMe then
+    zebug.info:print("Ufo.thatWasMeThatDidThatMacro",Ufo.thatWasMeThatDidThatMacro)
+    if Ufo.thatWasMeThatDidThatMacro then
         -- the event was caused by an action of this addon and as such we shall ignore it
         zebug.trace:print("ignoring proxy draggable creation/death")
-        Ufo.thatWasMe = false
+        Ufo.thatWasMeThatDidThatMacro = nil
         return -- EXIT
     end
 
@@ -87,7 +87,7 @@ function MacroShitShow:analyzeMacroUpdate()
         macrosIndex = delta.macrosIndex
         zebug.info:line(50,"triggering global updates!")
         Catalog:update()
-        GermCommander:updateAll()
+        GermCommander:handleEventMacrosChanged(eventId) -- was updateAll()
     else
         zebug.trace:print("no macro changes")
     end

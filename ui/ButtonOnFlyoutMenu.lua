@@ -107,7 +107,7 @@ function ButtonOnFlyoutMenu:handleExcluderClick(mouseClick, isDown)
 
         local flyoutDef = self:getParent():getDef()
         flyoutDef:setModStamp()
-        GermCommander:updateGermsFor(flyoutDef.id)
+        GermCommander:updateGermsFor(flyoutDef.id, "excluder-click")
     end
 end
 

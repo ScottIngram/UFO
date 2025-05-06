@@ -8,14 +8,17 @@
 ---@class Ufo -- IntelliJ-EmmyLua annotation
 ---@field myTitle string Ufo.toc Title
 ---@field iconTexture string Ufo.toc IconTexture
----@field thatWasMe boolean flag used to stop event handler responses to UFO actions related to macros
----@field droppedUfoOntoActionBar boolean flag used to stop event handler responses to UFO actions related to drag and drop
+---@field thatWasMeThatDidThatMacro boolean flag used to stop event handler responses to UFO actions related to macros
+---@field droppedPlaceholderOntoActionBar boolean flag used to stop event handler responses to UFO actions related to drag and drop
+---@field manifestedPlaceholder boolean flag used to stop event handler responses to UFO actions related to drag and drop
 ---@field pickedUpBtn table table of data for a UFO on the mouse cursor
+---@field hasShitCalmedTheFuckDown boolean all the loading sequences and initialization chaos is done and the Bliz APIs will provide reliable info (HA!)
 
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 zebug = Zebug:new()
+local zebug = Zebug:new(Zebug.TRACE)
 
 -- Purely to satisfy my IDE
 DB = Ufo.DB
@@ -26,7 +29,7 @@ L10N = Ufo.L10N
 -------------------------------------------------------------------------------
 
 local isUfoInitialized = false
-local hasShitCalmedTheFuckDown = false
+local width = 30
 
 -------------------------------------------------------------------------------
 -- Event Handlers
@@ -34,72 +37,88 @@ local hasShitCalmedTheFuckDown = false
 
 local EventHandlers = { }
 
-function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
-    zebug.trace:print("Heard event: PLAYER_ENTERING_WORLD", "isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi)
-    initalizeAddonStuff() -- moved this here from PLAYER_LOGIN() because the Bliz API was just generally shitting the bed
-    if isInCombatLockdown("Ignoring event PLAYER_ENTERING_WORLD because it") then return end
-    GermCommander:updateAll() -- moved this here from PLAYER_LOGIN() because the Bliz API was misrepresenting the bar directions >:(
-    if isInitialLogin then
-        local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
-        local msg = L10N.LOADED .. " v"..version
-        msgUser(msg, IS_OPTIONAL)
-    end
+function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi, me, eventCounter)
+    local eventCounter = eventCounter or isReloadingUi -- because either warcraft.wiki.gg or Bliz is full of shit
+    local eventId = makeEventId(me, eventCounter)
+    zebug.error:name(eventId):out(width, "=","START! isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi, "!START!")
+    initalizeAddonStuff()
+    --if isInCombatLockdown("Ignoring event PLAYER_ENTERING_WORLD because it") then return end
+    GermCommander:updateAll(eventId)
+    zebug.error:name(eventId):out(width, "=","END!")
 end
 
-function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId)
-    if not hasShitCalmedTheFuckDown then return end
-    zebug.trace:print("Heard event: ACTIONBAR_SLOT_CHANGED","actionBarSlotId",actionBarSlotId)
-    if isInCombatLockdownQuiet("Ignoring event ACTIONBAR_SLOT_CHANGED because it") then return end
-
-    GermCommander:handleActionBarSlotChanged(actionBarSlotId)
+function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId, me, eventCounter)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+    local eventId = makeEventId(me, eventCounter)
+    zebug.error:name(eventId):out(width, ">","!START --------------- !START! actionBarSlotId", actionBarSlotId)
+    GermCommander:handleActionBarSlotChangedEvent(actionBarSlotId, eventId)
+    zebug.error:name(eventId):out(width, ">","!END --------------- END!")
 end
 
-function EventHandlers:PLAYER_SPECIALIZATION_CHANGED()
-    if not hasShitCalmedTheFuckDown then return end
-    zebug.trace:print("Heard event: PLAYER_SPECIALIZATION_CHANGED")
-    if isInCombatLockdownQuiet("Ignoring event PLAYER_SPECIALIZATION_CHANGED because it") then return end
-    GermCommander:updateAll()
+--[[
+function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+    local eventId = makeEventId(me, eventCounter)
+    local cursor = Cursor:get()
+    zebug.info:name(eventId):out(width, "c","START! ", cursor, "!START!")
+    Ufo.cursorSnapshot = ButtonDef:getFromCursor()
+    zebug.info:name(eventId):print("cursorSnapshot", Ufo.cursorSnapshot)
+    zebug.info:name(eventId):out(width, "c","END!")
+end
+]]
+
+function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(id, me, eventCounter)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+    --if isInCombatLockdownQuiet("Ignoring event PLAYER_SPECIALIZATION_CHANGED because it") then return end
+    local eventId = makeEventId(me, eventCounter)
+    zebug.trace:name(eventId):out(width, "S","!START --------------- !START!")
+    GermCommander:updateAll(eventId)
+    zebug.trace:name(eventId):out(width, "S","!END --------------- END!")
 end
 
-function EventHandlers:UPDATE_MACROS()
-    if not hasShitCalmedTheFuckDown then return end
-    zebug.trace:line(40,"Heard event: UPDATE_MACROS")
-    if isInCombatLockdownQuiet("Ignoring event UPDATE_MACROS because it") then return end
-    MacroShitShow:analyzeMacroUpdate()
+function EventHandlers:UPDATE_MACROS(me, eventCounter)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+    --if isInCombatLockdownQuiet("Ignoring event UPDATE_MACROS because it") then return end
+    local eventId = makeEventId(me, eventCounter)
+    zebug.trace:name(eventId):out(width, "M","!START --------------- !START!", "Ufo.thatWasMeThatDidThatMacro",Ufo.thatWasMeThatDidThatMacro)
+    MacroShitShow:analyzeMacroUpdate(eventId)
+    zebug.trace:name(eventId):out(width, "M","!END --------------- END!")
 end
 
-function EventHandlers:UNIT_INVENTORY_CHANGED()
-    if not hasShitCalmedTheFuckDown then return end
-    zebug.trace:print("Heard event: UNIT_INVENTORY_CHANGED")
-    if isInCombatLockdownQuiet("Ignoring event UNIT_INVENTORY_CHANGED because it") then return end
+function EventHandlers:UNIT_INVENTORY_CHANGED(id, me, eventCounter)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+    --if isInCombatLockdownQuiet("Ignoring event UNIT_INVENTORY_CHANGED because it") then return end
+    local eventId = makeEventId(me, eventCounter)
+    zebug.trace:name(eventId):out(width, "I","START! Bags be different now? !START!")
 
-    GermCommander:handleEventChangedInventory()
+    local eventId = "UNIT_INVENTORY_CHANGED" .. eventCounter
+    GermCommander:handleEventChangedInventory(eventId)
+    zebug.trace:name(eventId):out(width, "I","END!")
 end
 
-function EventHandlers:UPDATE_VEHICLE_ACTIONBAR()
-    if not hasShitCalmedTheFuckDown then return end
-    zebug.trace:print("Heard event: UPDATE_VEHICLE_ACTIONBAR")
-    if isInCombatLockdownQuiet("Ignoring event UPDATE_VEHICLE_ACTIONBAR because it") then return end
-    GermCommander:handleEventPetChanged()
+function EventHandlers:UPDATE_VEHICLE_ACTIONBAR(me, eventCounter)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+    --if isInCombatLockdownQuiet("Ignoring event UPDATE_VEHICLE_ACTIONBAR because it") then return end
+    local eventId = makeEventId(me, eventCounter)
+    zebug.trace:name(eventId):out(width, "X","START! vehicle wut? !START!")
+    GermCommander:handleEventPetChanged(eventId)
+    zebug.trace:name(eventId):out(width, "X","END!")
 end
 
-function EventHandlers:UPDATE_BINDINGS()
-    if not hasShitCalmedTheFuckDown then return end
-    zebug.trace:print("Heard event: UPDATE_BINDINGS")
-    if isInCombatLockdownQuiet("Ignoring event UPDATE_BINDINGS because it") then return end
+function EventHandlers:UPDATE_BINDINGS(me, eventCounter)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+    local eventId = makeEventId(me, eventCounter)
+    zebug.trace:name(eventId):print("bound!")
+    --if isInCombatLockdownQuiet("Ignoring event UPDATE_BINDINGS because it") then return end
     --GermCommander:updateAll()
 end
 
-function EventHandlers:CURSOR_CHANGED()
-    if not hasShitCalmedTheFuckDown then return end
-    --zebug.trace:line(40,"Heard event: CURSOR_CHANGED",C_TradeSkillUI.GetProfessionForCursorItem())
-    local type, spellId = GetCursorInfo()
-    zebug.trace:print("type",type, "spellId",spellId)
-    GermCommander:delayedAsynchronousConditionalDeleteProxy()
+function EventHandlers:PLAYER_LOGIN()
+    zebug.error:name("PLAYER_LOGIN"):print("Welcome!")
 end
 
-function EventHandlers:PLAYER_LOGIN()
-    zebug.trace:print("Heard event: PLAYER_LOGIN")
+function makeEventId(name, n)
+    return tostring(name or "UnKnOwN eVeNt") .. "_" .. tostring(n or "UnKnOwN N")
 end
 
 -------------------------------------------------------------------------------
@@ -167,7 +186,7 @@ function initalizeAddonStuff()
     Config:initializeOptionsMenu()
 
     MacroShitShow:init()
-    GermCommander:delayedAsynchronousConditionalDeleteProxy()
+    UfoProxy:delayedAsyncDeleteProxy("Ufo:initalizeAddonStuff()")
     ThirdPartyAddonSupport:detectSupportedAddons()
     registerSlashCmd("ufo", slashFuncs)
     Catalog:definePopupDialogWindow()
@@ -182,9 +201,13 @@ function initalizeAddonStuff()
 
     IconPicker:init()
 
+    local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
+    local msg = L10N.LOADED .. " v"..version
+    msgUser(msg, IS_OPTIONAL)
+
     -- flags to wait out the chaos happening when the UI first loads / reloads.
     isUfoInitialized = true
-    C_Timer.After(1, function() hasShitCalmedTheFuckDown = true end)
+    C_Timer.After(1, function() Ufo.hasShitCalmedTheFuckDown = true end)
 end
 
 -------------------------------------------------------------------------------

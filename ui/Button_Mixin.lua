@@ -71,7 +71,7 @@ end
 
 local ICON_PREFIX = "INTERFACE\\ICONS\\"
 
-function Button_Mixin:setIcon(icon)
+function Button_Mixin:setIcon(icon, eventId)
     if icon and type(icon) ~= "number" and string.sub(icon,1,string.len(ICON_PREFIX)) ~= ICON_PREFIX then
         icon = (ICON_PREFIX .. icon)
     end
@@ -86,9 +86,10 @@ function Button_Mixin:setIcon(icon)
     if not self.originalIconSetTextureFunc then
         self.originalIconSetTextureFunc = iconFrame.SetTexture
         iconFrame.SetTexture = function()
-            zebug.error:line(20, "BLOCKED BLIZ SetTexture for germ", self:getLabel())
+            zebug.error:label(self):line(20, "BLOCKED BLIZ SetTexture for germ")
         end
     end
+    zebug.info:label(self):print("setting icon",icon, "eventId",eventId)
     self.originalIconSetTextureFunc(iconFrame, icon) -- the iconFrame is the self for the original SetTexture
 end
 
@@ -135,7 +136,7 @@ function Button_Mixin:updateUsable()
             end
         end
 
-        zebug.trace:print("isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
+        zebug.trace:label(self):print("isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
     end
 
     local iconFrame = self:getIconFrame();
@@ -153,11 +154,11 @@ function Button_Mixin:updateCooldown()
     local type = btnDef and btnDef.type
     local itemId = btnDef and btnDef.itemId
     local spellId = btnDef and btnDef.spellId
-    zebug.trace:print("type",type, "itemId",itemId, "spellId",spellId)
+    zebug.trace:label(self):print("type",type, "itemId",itemId, "spellId",spellId)
 
     if exists(spellId) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
-        zebug.trace:print("spellId",spellId)
+        zebug.trace:label(self):print("spellId",spellId)
         self.spellID = spellId --v11 -- internal Bliz code expects this field
 
         ActionButton_UpdateCooldown(self);
@@ -197,7 +198,7 @@ function Button_Mixin:updateCooldown()
         end
     end
 
-    zebug.trace:print("type",type, "start",start, "duration",duration, "enable",enable )
+    zebug.trace:label(self):print("type",type, "start",start, "duration",duration, "enable",enable )
 
 end
 
@@ -225,7 +226,7 @@ function Button_Mixin:updateCount()
     if not hasItem then
         local spellId = btnDef and btnDef.spellId
         if exists(spellId) then
-            zebug.trace:print("spellID",self.spellID)
+            zebug.trace:label(self):print("spellID",self.spellID)
             -- use Bliz's built-in handler for the stuff it understands, ie, not items
             OLD_CATA_SpellFlyoutButton_UpdateCount(self)
             -- whatabout ActionBarActionButtonMixin:UpdateCount
@@ -241,7 +242,7 @@ function Button_Mixin:updateCount()
     local includeCharges = true
     local count = C_Item.GetItemCount(itemId, includeBank, includeCharges)
     local tooMany = ( count > (self.maxDisplayCount or 9999 ) )
-    zebug.trace:print("itemId",itemId, "hasItem",hasItem, "name",name, "itemType",itemType, "max",self.maxDisplayCount, "count",count, "tooMany",tooMany)
+    zebug.trace:label(self):print("itemId",itemId, "hasItem",hasItem, "name",name, "itemType",itemType, "max",self.maxDisplayCount, "count",count, "tooMany",tooMany)
 
     local max = self.maxDisplayCount or 9999
     if count > max then
@@ -297,7 +298,7 @@ function Button_Mixin:updateSecureClicker(mouseClick)
         local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
         local type, key, val = btnDef:asSecureClickHandlerAttributes()
         local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
-        zebug.trace:print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseClick, "val", val)
+        zebug.trace:label(self):print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseClick, "val", val)
 
         -- TODO: v11.1 this concat is expensive. optimize.
         local id = "BUTTON-MIXIN:updateSecureClicker for " .. self:getName().. " with btnDef : ".. btnDef:getName();
@@ -339,7 +340,7 @@ function Button_Mixin:makeSafeSetAttribute()
         -- FUNC START
         self.SetAttribute = function(zelf, key, value, isTrusted)
             local inCombatLockdown = InCombatLockdown()
-            zebug.trace:print("self.SetAttribute for",(self.getName and self:getName()) or "misc obj", "key",key, "value",value, "isTrusted",isTrusted)
+            zebug.trace:label(self):print("self.SetAttribute for",(self.getName and self:getName()) or "misc obj", "key",key, "value",value, "isTrusted",isTrusted)
             if isTrusted then
                 zebug.info:print("ufo is allowed to call originalSetAttribute with name", key, "value", value)
                 if key == "pressAndHoldAction" then

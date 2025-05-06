@@ -41,7 +41,13 @@ function Catalog:definePopupDialogWindow()
         text = L10N.CONFIRM_DELETE,
         button1 = YES,
         button2 = NO,
-        OnAccept = function (dialog) IconPicker:Hide(); FlyoutDefsDb:delete(dialog.flyoutId); Catalog:update(); GermCommander:updateAll(); end,
+        -- OnAccept = function (dialog) IconPicker:Hide(); FlyoutDefsDb:delete(dialog.flyoutId); Catalog:update("Catalog:acceptIcon"); GermCommander:updateAll(); end,
+        OnAccept = function (dialog)
+            IconPicker:Hide()
+            GermCommander:updateGermsFor(dialog.flyoutId, "Catalog: DELETE UFO")
+            FlyoutDefsDb:delete(dialog.flyoutId)
+            Catalog:update("Catalog:acceptIcon")
+        end,
         OnCancel = function (dialog) end,
         hideOnEscape = 1,
         timeout = 0,
@@ -166,7 +172,7 @@ function Catalog:update()
     local isDragging = flyoutIdOnTheMouse and btnUnderTheMouse
     local hoverIndex = isDragging and tonumber(btnUnderTheMouse.flyoutIndex) -- this can be nil if hovering over the Add+ button
 
-    zebug.trace:print("flyoutsCount",flyoutsCount, "flyoutIdOnTheMouse", flyoutIdOnTheMouse, "newMouseOver", btnUnderTheMouse and btnUnderTheMouse.flyoutIndex, "isDragging",isDragging )
+    zebug.trace:print("flyoutsCount",flyoutsCount, "on the mouse", flyoutDefOnTheMouse, "newMouseOver", btnUnderTheMouse and btnUnderTheMouse.flyoutIndex, "isDragging",isDragging )
 
     ---@type FlyoutMenu
     local flyoutMenu = UFO_FlyoutMenuForCatalog
@@ -295,20 +301,8 @@ function Catalog:update()
     end
 end
 
-function Catalog:clearProxyOnCursorChange()
-    local flyoutId = GermCommander:getFlyoutIdFromCursor()
-    if not flyoutId then
-        if btnOnTheMouse then
-            btnOnTheMouse = nil
-            zebug.info:print("weeeee!")
-            GermCommander:deleteProxy()
-            self:update()
-        end
-    end
-end
-
-function Catalog:clearProxyAndCursor()
-    GermCommander:deleteProxy()
+function Catalog:clearProxyAndCursor(eventId)
+    UfoProxy:deleteProxyMacro(eventId)
     ClearCursor()
 end
 
@@ -398,7 +392,7 @@ function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
     local flyoutId = btnInCatalog.flyoutId
     flyoutIndexOnTheMouse = btnInCatalog.flyoutIndex
     if exists(flyoutId) then
-        FlyoutMenu:pickup(flyoutId)
+        UfoProxy:pickupUfoOntoCursor(flyoutId, "CatalogEntry_OnDragStart")
     end
     local scrollPane = btnInCatalog:GetParent():GetParent()
     scrollPane.selectedIdx = nil
@@ -486,7 +480,7 @@ function GLOBAL_UFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
         btnUnderTheMouse = nil
         flyoutIndexOnTheMouse = nil
         btnOnTheMouse = nil
-        Catalog:clearProxyAndCursor()
+        Catalog:clearProxyAndCursor("CatalogEntryButton_OnClick()")
         Catalog:update()
         PlaySound(1202) -- PutDownCloth_Leather01
     else

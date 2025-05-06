@@ -236,7 +236,7 @@ function FlyoutMenu:updateForCatalog(flyoutId)
 end
 
 ---@param germ Germ
-function FlyoutMenu:updateForGerm(germ)
+function FlyoutMenu:updateForGerm(germ, eventId)
     self:SetParent(germ)
     self.direction = germ:getDirection()
     local flyoutId = germ:getFlyoutId()
@@ -254,7 +254,7 @@ function FlyoutMenu:updateForGerm(germ)
 
         if btnDef then
             zebug.trace:print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
-            btnFrame:setIcon( btnDef:getIcon() )
+            btnFrame:setIcon( btnDef:getIcon(), eventId )
             --btnFrame:setGeometry(self.direction) -- this call breaks the btns on the flyout - they all collapse into the same spot
             --TODO: figure out why
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SECURE TEMPLATE
@@ -283,7 +283,7 @@ end
 
 function updateHotKeyLabel(btnFrame, btnNumber)
     local hotKeyLabel
-    if Config:get("flyoutButtonsWillBind") then
+    if Config:get("doKeybindTheButtonsOnTheFlyout") then
         if btnNumber < 11 then
             hotKeyLabel = (btnNumber == 10) and "0" or tostring(btnNumber)
         end
@@ -350,7 +350,6 @@ function FlyoutMenu:setBorderGeometry()
     --self:SetBorderSize(47);
 end
 
----@param btn ButtonOnFlyoutMenu
 function FlyoutMenu:displaceButtonsOnHover(index)
     if not self.isForCatalog then
         return

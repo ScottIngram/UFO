@@ -54,20 +54,21 @@ end
 local isAlreadyUpdatingAll
 local throttleSecs = 2
 
-function GermCommander:throttledUpdateAll()
+function GermCommander:throttledUpdateAll(eventId)
     if isAlreadyUpdatingAll then return end
     isAlreadyUpdatingAll = true
-    C_Timer.After(throttleSecs, function()
+    C_Timer.After(throttleSecs, function(eventId)
         -- START FUNC
         isAlreadyUpdatingAll = nil
-        self:updateAll()
+        self:updateAll(eventId)
         -- END FUNC
     end)
 end
 
 ---@param flyoutId number
-function GermCommander:updateGermsFor(flyoutId)
+function GermCommander:updateGermsFor(flyoutId, eventId)
     if isInCombatLockdown("Reconfiguring") then return end
+    zebug.info:label(eventId):print("updating all Germs with",flyoutId)
 
     local placements = self:getPlacementConfigForCurrentSpec()
     for btnSlotIndex, flyoutIdFoo in pairs(placements) do
@@ -78,9 +79,11 @@ function GermCommander:updateGermsFor(flyoutId)
     end
 end
 
-function GermCommander:updateAll()
-    zebug.trace:line(40)
-    if isInCombatLockdown("Reconfiguring") then return end
+function GermCommander:updateAll(eventId)
+    zebug.trace:line(40, "eventId",eventId)
+    --if isInCombatLockdown("Reconfiguring") then return end
+
+    -- closeAllGerms() -- this is only required because we sledge hammer all the germs every time. TODO don't do!
 
     hideAllGerms() -- this is only required because we sledge hammer all the germs every time.
 
@@ -91,8 +94,8 @@ function GermCommander:updateAll()
 end
 
 ---@param btnSlotIndex number
-function GermCommander:update(btnSlotIndex, flyoutId)
-    if isInCombatLockdown("Reconfiguring") then return end
+function GermCommander:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
+    --if isInCombatLockdown("Reconfiguring") then return end
 
     if not flyoutId then
         local placements = self:getPlacementConfigForCurrentSpec()
@@ -117,7 +120,8 @@ function GermCommander:update(btnSlotIndex, flyoutId)
         end
     else
         -- because one toon can delete a flyout while other toons still have it on their bars
-        zebug.warn:print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
+        -- also, this routine is invoked when the user deletes a UFO from the catalog
+        zebug.warn:label(eventId):print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
         self:deletePlacement(btnSlotIndex)
     end
 end
@@ -304,16 +308,16 @@ end
 function GermCommander:savePlacement(btnSlotIndex, flyoutId)
     btnSlotIndex = tonumber(btnSlotIndex)
     flyoutId = FlyoutDefsDb:validateFlyoutId(flyoutId)
-    zebug.info:print("btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId)
-    self:getPlacementConfigForCurrentSpec()[btnSlotIndex] = flyoutId
+    zebug.info:label(eventId):print("btnSlotIndex",btnSlotIndex, "flyoutId",flyLabel(flyoutId), "for event", eventId)
+    Spec:getPlacementConfigForCurrentSpec()[btnSlotIndex] = flyoutId
 end
 
-function GermCommander:deletePlacement(btnSlotIndex)
+function GermCommander:deletePlacement(btnSlotIndex, eventId)
     btnSlotIndex = tonumber(btnSlotIndex)
     local placements = self:getPlacementConfigForCurrentSpec()
     local flyoutId = placements[btnSlotIndex]
-    zebug.info:print("GermCommander:deletePlacement() DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyoutId)
-    zebug.trace:dumpy("BEFORE placements", placements)
+    zebug.info:label(eventId):print("DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyLabel(flyoutId), "for event", eventId)
+    zebug.trace:label(eventId):dumpy("BEFORE placements", placements)
     -- the germ UI Frame stays in place but is now empty
     placements[btnSlotIndex] = nil
 

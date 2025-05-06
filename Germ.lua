@@ -361,8 +361,8 @@ end
 function Germ:initFlyoutMenu()
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu:new(self)
-        zebug.info:ifMe1st(self):line("20","updateForGerm from Germ:initFlyoutMenu")
-        self.flyoutMenu:updateForGerm(self)
+        zebug.info:name(eventId):line("20","initFlyoutMenu",self.flyoutMenu)
+        self.flyoutMenu:updateForGerm(self, eventId)
         self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
     else
         self.flyoutMenu = UFO_FlyoutMenuForGerm
@@ -415,30 +415,38 @@ function Germ:update(flyoutId)
     -- limit frequency of updates
     -- but don't make each germ compete with the others.  give each a unique ID
     if not self.throttledUpdate then
-        local func = function()
-            return self:_secretUpdate()
+        local func = function(eventId)
+            zebug.info:name("throttled _secretUpdate"):label(eventId):line("20","updateForGerm from Germ:updateAllBtnHotKeyLabels")
+            return self:_secretUpdate(eventId)
         end
         -- every instance of Germ gets its own copy of throttledUpdate.
         -- thus, EACH instance can execute its own update without competing with the other instances
         self.throttledUpdate = Throttler:new(func, maxUpdateFrequency, self:getFlyoutName() )
     end
 
-    self.throttledUpdate:exe()
+    self.throttledUpdate:exe(eventId)
 end
 
 -- TODO v11.1 - figure out what all actually needs to be updated under which circumstances
-function Germ:_secretUpdate()
+function Germ:_secretUpdate(eventId,amDelayed)
+    if not eventId then
+        zebug.error:name("_secretUpdate"):label(self):line(50, "eventId is nil !!! amDelayed",amDelayed)
+        zebug.error:name("_secretUpdate"):print("STACK DUMP", debugstack())
+        assert(eventId, "eventId is nil !!!")
+    end
+    ---@type GERM_TYPE
+    local self = self
     local flyoutId = self.flyoutId
 
     local btnSlotIndex = self.btnSlotIndex
-    zebug.trace:line(30, "germ",self.label, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName())
+    zebug.trace:name("_secretUpdate"):label(eventId):line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName(), "amDelayed",amDelayed)
 
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     if not flyoutDef then
         -- because one toon can delete a flyout while other toons still have it on their bars
         local msg = "Flyout".. flyoutId .."no longer exists.  Removing it from your action bars."
         msgUser(msg)
-        GermCommander:deletePlacement(btnSlotIndex)
+        GermCommander:deletePlacement(btnSlotIndex, eventId)
         return
     end
 
@@ -447,7 +455,7 @@ function Germ:_secretUpdate()
 
     -- set the Germ's icon so that it reflects only USABLE buttons
     local icon = usableFlyout:getIcon() or flyoutDef.fallbackIcon or DEFAULT_ICON
-    self:setIcon(icon)
+    self:setIcon(icon, eventId)
 
     -- inside ActionBarActionButtonMixin:Update() it sets self:Name based on a call to [Global]GetActionText(actionBarSlot)
     -- which will always be the UFO Macro's name, "ZUFO" so nope.
@@ -466,8 +474,8 @@ function Germ:_secretUpdate()
     local qId = "GERM:_secretUpdate() SECURE TEMPLATE : ".. self:getName()
     exeOnceNotInCombat(qId, function()
 
-        zebug.info:line("20","updateForGerm from Germ:update()")
-        self.flyoutMenu:updateForGerm(self)
+        zebug.trace:name(qId):label(eventId):line("20", "eventId",eventId)
+        self.flyoutMenu:updateForGerm(self, eventId)
 
         self:setVisibilityDriver() -- TODO: remove after we stop sledge hammering all the germs every time
 
@@ -477,11 +485,11 @@ function Germ:_secretUpdate()
         local lastClickerUpdate = self.clickersLastUpdate or 0
 
         if self:getFlyoutDef():isModNewerThan(lastClickerUpdate) then
-            zebug.info:print("NO CHANGES! lastClickerUpdate",lastClickerUpdate)
+            zebug.trace:name(qId):label(eventId):print("NO CHANGES! lastClickerUpdate",lastClickerUpdate, "eventId", eventId)
             --return
         end
 
-        zebug.info:print("changed! lastClickerUpdate",lastClickerUpdate)
+        zebug.trace:name(qId):label(eventId):print("changed! lastClickerUpdate",lastClickerUpdate, "eventId", eventId)
         self.clickersLastUpdate = time()
 
         -- some clickers need to be re-initialized whenever the flyout's buttons change
@@ -502,7 +510,7 @@ end
 
 function Germ:reInitializeMySecureClickers()
     for secureMouseClickId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
-        zebug.trace:print("germ",self.label, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
+        --zebug.trace:print("germ",self.label, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
         SecureHandlerExecute(self, updaterScriptlet)
     end
 end
@@ -738,13 +746,38 @@ end
 -- some of the actions below which will in turn trigger other handlers elsewhere
 -------------------------------------------------------------------------------
 
----@param germ Germ -- IntelliJ-EmmyLua annotation
+local hWidth = 50
+local counter = { } -- eventId
+function Germ:nextEventId(eventName)
+    if not counter[eventName] then
+        counter[eventName] = 1
+    else
+        counter[eventName] = counter[eventName] + 1
+    end
+
+    return (self:getLabel() or "UnKnOwN gErM") .. eventName .. counter[eventName]
+end
+
+---@param germ GERM_TYPE
+function handlers.OnMouseDown(germ)
+    local eventId = germ:nextEventId("/OnMouseDown_")
+    zebug.trace:name(eventId):out(hWidth, "^",":START: Click! :START:")
+    germ:OnMouseDown()
+    --GermCommander:updateAll(eventId) -- um, why was I doing this?
+    zebug.trace:name(eventId):out(hWidth, "^",":END:")
+
+end
+
+---@param germ GERM_TYPE -- IntelliJ-EmmyLua annotation
 function handlers.OnMouseUp(germ)
-    zebug.info:name("OnMouseUp"):print("name",germ:GetName())
+    local eventId = germ:nextEventId("/OnMouseDown_")
+    zebug.trace:name(eventId):out(hWidth, "V",":START: Click! :START:")
+    germ:OnMouseUp()
     local isDragging = GetCursorInfo()
     if isDragging then
         handlers.OnReceiveDrag(germ)
     end
+    zebug.trace:name(eventId):out(hWidth, "V",":END:")
 end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
@@ -752,7 +785,10 @@ function handlers.OnReceiveDrag(germ)
     zebug.trace:name("OnReceiveDrag"):print("name",germ:GetName())
     if isInCombatLockdown("Drag and drop") then return end
 
-    local cursor = GetCursorInfo()
+    local eventId = germ:nextEventId("/OnReceiveDrag_")
+    zebug.trace:name(eventId):out(hWidth, "0",":START: Plop! :START:")
+
+    local cursor = Cursor:get()
     if cursor then
         PlaceAction(germ:getBtnSlotIndex())
         GermCommander:updateAll() -- draw the dropped UFO -- TODO: update ONLY the one specific germ
@@ -765,8 +801,8 @@ function handlers.OnPickupAndDrag(germ)
         if isInCombatLockdown("Drag and drop") then return end
         zebug.info:name("OnPickupAndDrag"):print("name",germ:GetName())
 
-        local btnSlotIndex = germ:getBtnSlotIndex()
-        GermCommander:deletePlacement(btnSlotIndex)
+    local eventId = germ:nextEventId("/OnPickupAndDrag_")
+    zebug.trace:name(eventId):label(self):out(hWidth, "+",":START: Yoink! :START:")
 
         local type, macroId = GetCursorInfo()
         if type then
@@ -792,13 +828,19 @@ end
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnEnter(germ)
     germ:setToolTip()
-    germ:handleGermUpdateEvent()
+    local eventId = germ:nextEventId("/OnEnter_")
+    zebug.trace:name(eventId):out(hWidth, ">",":START: no means no :START:")
+    germ:handleGermUpdateEvent(eventId)
+    zebug.trace:name(eventId):out(hWidth, ">",":END:")
 end
 
 ---@param germ Germ -- IntelliJ-EmmyLua annotation
 function handlers.OnLeave(germ)
     GameTooltip:Hide()
-    germ:handleGermUpdateEvent()
+    local eventId = germ:nextEventId("/OnLeave_")
+    zebug.trace:name(eventId):out(hWidth, "<",":START: poopy :START:")
+    germ:handleGermUpdateEvent(eventId)
+    zebug.trace:name(eventId):out(hWidth, "<",":END:")
 end
 
 -- throttle OnUpdate because it fires as often as FPS and is very resource intensive
@@ -808,13 +850,27 @@ local onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
 
 ---@param germ Germ
 function handlers.OnUpdate(germ, elapsed)
+    local eventId = germ:nextEventId("/OnUpdate_")
+    zebug.trace:name(eventId.." START"):out(hWidth, ".",":START: gogogogo :START:")
+    germ:handleGermUpdateEvent(eventId)
+    germ:updateAllBtnCooldownsEtc() -- nah, let the flyout do this. -- or the buttons themselves.  and have them sub/unsub based on vis
+    zebug.trace:name(eventId.." .END."):out(hWidth, ".",":END:")
+end
+
+---@param germ GERM_TYPE
+function handlers.OLD_OnUpdate(germ, elapsed)
     onUpdateTimer = onUpdateTimer + elapsed
     if onUpdateTimer < ON_UPDATE_TIMER_FREQUENCY then
         return
     end
     onUpdateTimer = 0
-    germ:handleGermUpdateEvent()
+
+    local eventId = germ:nextEventId("/OnUpdate_")
+    zebug.trace:name(eventId):out(hWidth, ".",":START: poopy :START:")
+
+    germ:handleGermUpdateEvent(eventId)
     germ:updateAllBtnCooldownsEtc() -- nah, let the flyout do this. -- or the buttons themselves.  and have them sub/unsub based on vis
+    zebug.trace:name(eventId):out(hWidth, ".",":END:")
 end
 
 ---@param germ Germ
@@ -846,6 +902,7 @@ function handlers.OnPreClick(germ, mouseClick, down)
     germ.flyoutMenu:updateForGerm(germ)
     flyoutMenu:SetAttribute("doCloseFlyout", doCloseFlyout)
     zebug.trace:print("doCloseFlyout",doCloseFlyout)
+    zebug.trace:name(eventId):out(hWidth, "=",":END:")
 end
 
 local oldGerm
