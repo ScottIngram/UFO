@@ -149,6 +149,7 @@ end
 function ButtonDef:whatsMyBlizApiIdField()
     assert(self.type, "can't discern ID key without a type.")
     local blizDef = BlizApiFieldDef[self.type]
+    if not blizDef then return nil end
     local type    = blizDef.typeForBliz
     local idKey   = blizDef.key or (type .."Id") -- spellId or itemId or petGuid or etcId
     return idKey
@@ -362,6 +363,7 @@ function ButtonDef:readToolTipForToyType()
     return false
 end
 
+-- TODO: fixx bug - doesn't understand Bliz flyouts such as Dragon Riding
 ---@return ButtonDef
 function ButtonDef:getFromCursor()
     ---@type ButtonDef

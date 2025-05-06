@@ -13,7 +13,7 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-local zebug = Zebug:new()
+local zebug = Zebug:new(Zebug.TRACE)
 
 ---@alias GERM_INHERITANCE UfoMixIn | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame | ScriptObject
 ---@alias GERM_TYPE Germ | GERM_INHERITANCE
@@ -21,7 +21,7 @@ local zebug = Zebug:new()
 ---@class Germ : GERM_TYPE
 ---@field ufoType string The classname
 ---@field flyoutId number Identifies which flyout is currently copied into this germ
----@field flyoutMenu FlyoutMenu The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
+---@field flyoutMenu FM_TYPE The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
 ---@field clickScriptUpdaters table secure scriptlets that must be run during any update()
 ---@field bbInfo table definition of the actionbar/button where the Germ lives
 ---@field myName string duh
@@ -32,13 +32,9 @@ Germ = {
     ufoType = "Germ",
     clickScriptUpdaters = {},
     clickers = {},
-    instanceId = nil, -- I mean, I could use the table.toString() itself, but, let's make something human readable
 }
 UfoMixIn:mixInto(Germ)
 GLOBAL_Germ = Germ
-
----@alias GERM_INHERITANCE Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame
----@alias GERM_TYPE Germ | GERM_INHERITANCE
 
 ---@class GermClickBehavior
 GermClickBehavior = {
@@ -64,252 +60,60 @@ local GERM_UI_NAME_PREFIX = "UfoGerm"
 local CLICK_ID_MARKER = "-- CLICK_ID_MARKER:"
 local LEN_CLICK_ID_MARKER = string.len(CLICK_ID_MARKER)
 
-function searchForFlyoutMenuScriptlet()
-    return [=[
-	germ = self
-    local FLYOUT_MENU_NAME = self:GetAttribute("FLYOUT_MENU_NAME")
-
-    -- use a global var to cache the flyout menu
-    if not flyoutMenu then
-        -- search the kids for the flyout menu
-        local kids = table.new(germ:GetChildren())
-        for i, kid in ipairs(kids) do
-            local kidName = kid:GetName()
-            if kidName == FLYOUT_MENU_NAME then
-                flyoutMenu = kid
-                keybindKeeper = flyoutMenu -- not really needed. I added this while debugging a taint problem
-                break
-            end
-        end
-    end
-    ]=]
-end
-
-local OPENER_CLICKER_SCRIPTLET
-
-function getOpenerClickerScriptlet()
-    if OPENER_CLICKER_SCRIPTLET then
-        return OPENER_CLICKER_SCRIPTLET
-    end
-
-    OPENER_CLICKER_SCRIPTLET = [=[
---print("OPENER_CLICKER_SCRIPTLET <START>")
-	local germ = self
-	local mouseClick = button
-	local isClicked = down
-	local direction = germ:GetAttribute("flyoutDirection")
-    local doCloseFlyout = flyoutMenu:GetAttribute("doCloseFlyout")
-    local isOpen = flyoutMenu:IsShown()
-
-	if doCloseFlyout and isOpen then
---print("OPENER_CLICKER_SCRIPTLET ... closing and exiting")
-		flyoutMenu:Hide()
-		flyoutMenu:SetAttribute("doCloseFlyout", false)
-		keybindKeeper:ClearBindings()
-		return
-    end
-
---print("OPENER_CLICKER_SCRIPTLET ... 1")
-    keybindKeeper:SetBindingClick(true, "Escape", germ, mouseClick)
-
--- TODO: move this into FlyoutMenu:updateForGerm()
-
---print("OPENER_CLICKER_SCRIPTLET ... 2")
-    flyoutMenu:SetParent(germ)  -- holdover from single FM
---print("OPENER_CLICKER_SCRIPTLET ... 3")
-    flyoutMenu:ClearAllPoints()
-    if direction == "UP" then
-        flyoutMenu:SetPoint("BOTTOM", germ, "TOP", 0, 0)
-    elseif direction == "DOWN" then
-        flyoutMenu:SetPoint("TOP", germ, "BOTTOM", 0, 0)
-    elseif direction == "LEFT" then
-        flyoutMenu:SetPoint("RIGHT", germ, "LEFT", 0, 0)
-    elseif direction == "RIGHT" then
-        flyoutMenu:SetPoint("LEFT", germ, "RIGHT", 0, 0)
-    end
-
-    local uiButtons = table.new(flyoutMenu:GetChildren())
-    while uiButtons[1] and uiButtons[1]:GetObjectType() ~= "CheckButton" do
-    --if uiButtons[1]:GetObjectType() ~= "CheckButton" then
-        table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
-    end
-
---print("OPENER_CLICKER_SCRIPTLET ... 4")
-	local prevBtn = nil;
-    local numButtons = 0
-    for i, btn in ipairs(uiButtons) do
-        local isInUse = btn:GetAttribute("UFO_NAME")
-        --print(i, numButtons, isInUse)
-        if isInUse then
-            numButtons = numButtons + 1
-
-            --print("SNIPPET... i:",i, "btn:",btn:GetName())
-            btn:ClearAllPoints()
-
-            local parent = prevBtn or "$parent"
-            if prevBtn then
-                if direction == "UP" then
-                    btn:SetPoint("BOTTOM", parent, "TOP", 0, ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[)
-                elseif direction == "DOWN" then
-                    btn:SetPoint("TOP", parent, "BOTTOM", 0, -]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[)
-                elseif direction == "LEFT" then
-                    btn:SetPoint("RIGHT", parent, "LEFT", -]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[, 0)
-                elseif direction == "RIGHT" then
-                    btn:SetPoint("LEFT", parent, "RIGHT", ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[, 0)
-                end
-            else
-                if direction == "UP" then
-                    btn:SetPoint("BOTTOM", parent, 0, ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[)
-                elseif direction == "DOWN" then
-                    btn:SetPoint("TOP", parent, 0, -]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[)
-                elseif direction == "LEFT" then
-                    btn:SetPoint("RIGHT", parent, -]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[, 0)
-                elseif direction == "RIGHT" then
-                    btn:SetPoint("LEFT", parent, ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[, 0)
-                end
-            end
-
-            -- keybind each button to 1-9 and 0
-            local flyoutButtonsWillBind = germ:GetAttribute("flyoutButtonsWillBind")
-            if flyoutButtonsWillBind then
-                if numButtons < 11 then
-                    -- TODO: make first keybind same as the UFO's
-                    local numberKey = (numButtons == 10) and "0" or tostring(numButtons)
-                    keybindKeeper:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
-                    if numberKey == "1" then
-                        -- make the UFO's first button's keybind be the same as the UFO itself
-                        local germKey = self:GetAttribute("UFO_KEYBIND_1")
-                        if germKey then
-                            keybindKeeper:SetBindingClick(true, germKey, btn, "]=].. MouseClick.LEFT ..[=[")
-                        end
-                    end
-                end
-            end
-
-            prevBtn = btn
---print("OPENER_CLICKER_SCRIPTLET ... showing button")
-            btn:Show()
-        else
-            btn:Hide()
-        end
-    end
-
---print("OPENER_CLICKER_SCRIPTLET ... 5")
-    local w = prevBtn and prevBtn:GetWidth() or 10
-    local h = prevBtn and prevBtn:GetHeight() or 10
-    local minN = (numButtons == 0) and 1 or numButtons
-
-    if direction == "UP" or direction == "DOWN" then
-        flyoutMenu:SetWidth(w)
-        flyoutMenu:SetHeight((h + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
-    else
-        flyoutMenu:SetHeight(h)
-        flyoutMenu:SetWidth((w + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
-    end
-
---print("OPENER_CLICKER_SCRIPTLET ... SHOWING flyout")
-    flyoutMenu:Show()
---print("OPENER_CLICKER_SCRIPTLET ... SetAttribute() doCloseFlyout = true")
-    flyoutMenu:SetAttribute("doCloseFlyout", true)
-
-    --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
-    --flyoutMenu:AddToAutoHide(germ)
-]=]
-
-    return OPENER_CLICKER_SCRIPTLET
-end
-
 -------------------------------------------------------------------------------
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
-function Germ:new(flyoutId, btnSlotIndex)
-    local bbInfo = ActionBarHelper:extractBarBtnInfo(btnSlotIndex)
-    local parentActionBarBtn = ActionBarHelper:getActionBarBtn(bbInfo)
-
+function Germ:new(flyoutId, btnSlotIndex, eventId)
+    local parentActionBarBtn, bbInfo = BlizActionBarButton:new(btnSlotIndex)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
-    self.myName = myName -- TODO: figure out why leaving this line out breaks self:GetName() in FlyoutMenu.new even though self == Germ
 
     ---@type GERM_TYPE | Germ
     local self = CreateFrame(
             FrameType.CHECK_BUTTON,
             myName,
-            parentActionBarBtn, -- can I make the action bar instead to satisfy SecureButtonTemplate code?
-            -- including FlyoutButtonTemplate last will position the arrows but also nukes my left/right/middle click handlers
-            --"SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate, FlyoutButtonTemplate"
-            --"SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate"
+            parentActionBarBtn,
             "GermTemplate"
     )
 
     _G[myName] = self -- so that keybindings can reference it
 
-    --[[
-    -- Events found in ActionBarButtonEventsFrameMixin:OnLoad()
-    -- do I need to subscribe to these?
-
-    self:SetScript("OnEvent", self.OnEvent)
-    self:RegisterEvent("PLAYER_ENTERING_WORLD");
-    self:RegisterEvent("ACTIONBAR_SLOT_CHANGED");
-    self:RegisterEvent("UPDATE_BINDINGS");
-    self:RegisterEvent("GAME_PAD_ACTIVE_CHANGED");
-    self:RegisterEvent("UPDATE_SHAPESHIFT_FORM");
-    self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN");
-    self:RegisterEvent("PET_BAR_UPDATE");
-    self:RegisterUnitEvent("UNIT_FLAGS", "pet");
-    self:RegisterUnitEvent("UNIT_AURA", "pet");
-    self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED");
-    self:RegisterEvent("SPELL_UPDATE_ICON");
-]]
-
-    --self:makeSafeSetAttribute() -- experiment that didn't pan out
+    -- one-time only initialization --
 
     -- initialize my fields
+    self.myName       = myName
     self.btnSlotIndex = btnSlotIndex
-    --self.action       = btnSlotIndex -- used deep inside the Bliz APIs -- only effective when I was bare backing ActionButton
     self.flyoutId     = flyoutId
-    self.visibleIf    = parentActionBarBtn.visibleIf
-    self.label        = self:getFlyoutDef().name
+    self.label        = self:getFlyoutDef().name -- TODO remove?
     self.bbInfo       = bbInfo
 
-    -- UI positioning
-    -- removed for Germ == ActionButton
-    self:ClearAllPoints()
-    self:SetAllPoints(parentActionBarBtn)
-    self:SetFrameStrata(STRATA_DEFAULT)
-    self:SetFrameLevel(STRATA_LEVEL_DEFAULT)
-    self:SetToplevel(true)
-    self:setVisibilityDriver()
-
-    -- UI reactions
-    -- try to replace all of these with self:SetAttribute("_onhide"(e.g.), "flyout:ClearBindings()") secure style handlers
-    -- while I was experimenting with self == parentActionBarBtn, removing the SetScripts below had no effect
-
-    self:SetScript(Script.ON_UPDATE,       handlers.OnUpdate)
+    -- install event handlers
+    --self:SetScript(Script.ON_UPDATE,       handlers.OnUpdate)
+-- TEMP    self:SetScript(Script.ON_UPDATE,       Throttler:new(handlers.OnUpdate, 1, self.label ):asFunc() )
     self:SetScript(Script.ON_ENTER,        handlers.OnEnter)
     self:SetScript(Script.ON_LEAVE,        handlers.OnLeave)
     self:SetScript(Script.ON_RECEIVE_DRAG, handlers.OnReceiveDrag)
-
+    self:SetScript(Script.ON_MOUSE_DOWN,   handlers.OnMouseDown)
     self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
     self:SetScript(Script.ON_DRAG_START,   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
-    --self:SetScript(Script.ON_HIDE, function(self) print('***GERM*** Script.ON_HIDE for',self:GetName()); end) -- This is NEVER invoked.  Thanks for silent fail, Bliz.
+    self:HookScript(Script.ON_HIDE, function(self) zebug.warn:line(50,'***GERM*** Script.ON_HIDE for',self:GetName(),self); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc
+    self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
+    self:RegisterForDrag("LeftButton")
+
+    -- manipulate methods
+    self:installMyToString()
+    self.originalHide = self:override("Hide", self.hide)
+    self.clear = Pacifier:pacify(self, "clear")
+
+    -- UI positioning
+    self:ClearAllPoints()
+    self:SetAllPoints(parentActionBarBtn)
+
+    self:setVisibilityDriver(parentActionBarBtn.btnDesc.visibleIf)
 
     -- FlyoutMenu
-    self:initFlyoutMenu()
-    self.flyoutMenu:installHandlerForCloseOnClick()
-    -- TODO v11.1 - wrap in exeNotInCombat() ? in case "/reload" during combat
-    self:SetAttribute("flyoutDirection", self:getDirection())
-    self:SetAttribute("FLYOUT_MENU_NAME", self.flyoutMenu:GetName())
-
-    -- Click behavior
-    --self:RegisterForClicks("AnyUp") -- this does nothing
-    --self:RegisterForClicks("AnyDown") -- this works but clobbers OnDragStart
-    self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
-    self:setAllClickHandlers()
-    self:SetAttribute("flyoutButtonsWillBind", Config:get("flyoutButtonsWillBind"))
-
-    -- Drag and Drop behavior
-    self:RegisterForDrag("LeftButton")
-    --SecureHandlerWrapScript(self, "OnDragStart", self, "return "..QUOTE.."message"..QUOTE , "print(123456789)") -- this does nothing.  TODO: understand why
+    self:initFlyoutMenu(eventId)
+    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId() -- depends on initFlyoutMenu() above
 
     return self
 end
@@ -325,11 +129,15 @@ function Germ:toString()
 end
 
 function Germ:getName()
-    return self.myName or tostring(self)
+    return self:GetName()
+end
+
+function Germ:copyToCursor(eventId)
+    self:copyFlyoutToCursor(self.flyoutId, eventId)
 end
 
 function Germ:getLabel()
-    self.label = self:getFlyoutDef().name
+    self.label = self.flyoutId and self:getFlyoutDef().name
     return self.label
 end
 
@@ -347,43 +155,77 @@ function Germ:getFlyoutName()
     return self:getFlyoutDef():getName()
 end
 
-function Germ:setAllClickHandlers()
-    -- I could have done this in a loop, but, this is FAR clearer and easier to understand
-    local flyoutId = self.flyoutId
-    self:setMouseClickHandler(MouseClick.LEFT,   Config:getClickBehavior(flyoutId, MouseClick.LEFT))
-    self:setMouseClickHandler(MouseClick.MIDDLE, Config:getClickBehavior(flyoutId, MouseClick.MIDDLE))
-    self:setMouseClickHandler(MouseClick.RIGHT,  Config:getClickBehavior(flyoutId, MouseClick.RIGHT))
-    self:setMouseClickHandler(MouseClick.FOUR,   Config:getClickBehavior(flyoutId, MouseClick.FOUR))
-    self:setMouseClickHandler(MouseClick.FIVE,   Config:getClickBehavior(flyoutId, MouseClick.FIVE))
-    self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior)
-end
-
-function Germ:initFlyoutMenu()
+function Germ:initFlyoutMenu(eventId)
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu:new(self)
         zebug.info:name(eventId):line("20","initFlyoutMenu",self.flyoutMenu)
         self.flyoutMenu:updateForGerm(self, eventId)
         self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
+
+        -- now in the XML
+        --self.flyoutMenu:SetFrameStrata(STRATA_DEFAULT)
+        --self.flyoutMenu:SetFrameLevel(STRATA_LEVEL_DEFAULT)
+        --self.flyoutMenu:SetToplevel(true)
+
     else
         self.flyoutMenu = UFO_FlyoutMenuForGerm
     end
     self.flyoutMenu.isForGerm = true
 end
 
-function Germ:setVisibilityDriver()
-    if self.visibleIf then
-        -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
-        local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. self.visibleIf
+-- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
+function Germ:setVisibilityDriver(visibleIf)
+    self.visibleIf = visibleIf
+    zebug.error:print("visibleIf",visibleIf)
+    if visibleIf then
+        local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. visibleIf
         RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
     else
-        self:Show()
+        UnregisterStateDriver(self, "visibility")
     end
 end
 
-function Germ:myHide()
-    self:Hide()
-    UnregisterStateDriver(self, "visibility")
+function Germ:closeFlyout()
+    -- TAINT / not secure
+    self.flyoutMenu:Hide()
 end
+
+-- will replace Germ:Hide() via Germ:new()
+function Germ:hide()
+    --zebug.error:dumpy(self:getLabel(), debugstack())
+    --VisibleRegion:Hide(self) -- L-O-FUCKING-L this threw  "attempt to index global 'VisibleRegion' (a nil value)" was called from SecureStateDriver.lua:103
+    zebug.error:label(self):print("hiding.  self",self, "parent", self:GetParent())
+    UnregisterStateDriver(self, "visibility")
+    self:originalHide()
+end
+
+function Germ:clear(eventId)
+    zebug.info:label(eventId):print("germ",self)
+    self:closeFlyout()
+    self:hide()
+    self:clearKeybinding()
+    self:setVisibilityDriver(nil) -- must be restored if Germ comes back
+    -- do I want to also clear defs etc? ... um, no? should only be done by the commander?
+end
+
+--[[
+---@type function
+Germ.clear = Pacifier:pacify(function(self)
+    self:closeFlyout()
+    self:hide()
+end)
+
+function Germ:clear()
+    if not self.pacifierForClear then
+        self.pacifierForClear = Pacifier:new(self:getLabel() .. " : clear()")
+    end
+
+    self.pacifierForClear:exe(function()
+        self:closeFlyout()
+        self:hide()
+    end)
+end
+]]
 
 function Germ:getDirection()
     -- Germ == ActionButton
@@ -406,11 +248,34 @@ function Germ:updateAllBtnHotKeyLabels()
     self.flyoutMenu:updateForGerm(self)
 end
 
+function Germ:changeFlyoutId(flyoutId, eventId)
+    if flyoutId == self.flyoutId then
+        zebug.trace:label(eventId):print("Um, that's the same flyoutId as before",flyoutId)
+        return
+    end
+
+    self.isConfigChanged = true
+    self:closeFlyout()
+    self.flyoutId = flyoutId
+    self.flyoutMenu:updateForGerm(self, eventId)
+
+    -- change any/everything
+    -- go analyze the update() etc in Germ *AND* GermCommander
+
+    -- the btn1 may need to change
+    -- the clickers
+    -- the flyout
+    -- the flyoutDef
+
+    self.isConfigChanged = false
+end
+
 local maxUpdateFrequency = 0.5
 
--- TODO: rename and refactor
-function Germ:update(flyoutId)
+-- TODO: rename and refactor - split into init and update - leverage setFlyoutId()
+function Germ:update(flyoutId, eventId)
     self.flyoutId = flyoutId
+    self:getLabel() -- update the stashed self.myLabel - TODO: eliminate cheese!
 
     -- limit frequency of updates
     -- but don't make each germ compete with the others.  give each a unique ID
@@ -421,7 +286,7 @@ function Germ:update(flyoutId)
         end
         -- every instance of Germ gets its own copy of throttledUpdate.
         -- thus, EACH instance can execute its own update without competing with the other instances
-        self.throttledUpdate = Throttler:new(func, maxUpdateFrequency, self:getFlyoutName() )
+        self.throttledUpdate = Throttler:new(func, maxUpdateFrequency, self:getLabel() )
     end
 
     self.throttledUpdate:exe(eventId)
@@ -461,9 +326,11 @@ function Germ:_secretUpdate(eventId,amDelayed)
     -- which will always be the UFO Macro's name, "ZUFO" so nope.
     self.Name:SetText(self.label)
 
+    self:UpdateArrowTexture()
     self:UpdateArrowRotation()
     self:UpdateArrowPosition()
-    self:UpdateBorderShadow() -- TODO: v11.1 is this doing anything?  the arrow isn't behaving properly - FIX
+    self:UpdateBorderShadow()
+    self:updateCooldownsAndCountsAndStatesEtc() -- TODO: v11.1 verify this is working properly.  do I need to do more? -- What happens if I remove this?
 
     ---------------------
     -- SECURE TEMPLATE --
@@ -471,13 +338,14 @@ function Germ:_secretUpdate(eventId,amDelayed)
 
     -- TODO v11.1 - wrap in exeNotInCombat() ?
 
-    local qId = "GERM:_secretUpdate() SECURE TEMPLATE : ".. self:getName()
+    local qId = "GERM:_secretUpdate() : ".. self:getName()
     exeOnceNotInCombat(qId, function()
 
         zebug.trace:name(qId):label(eventId):line("20", "eventId",eventId)
         self.flyoutMenu:updateForGerm(self, eventId)
 
-        self:setVisibilityDriver() -- TODO: remove after we stop sledge hammering all the germs every time
+        -- removed this because I think it's good enough to do it only in new()
+        --self:setVisibilityDriver() -- TODO: remove after we stop sledge hammering all the germs every time
 
         self:SetAttribute("UFO_NAME",  self.label)
         self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
@@ -495,6 +363,7 @@ function Germ:_secretUpdate(eventId,amDelayed)
         -- some clickers need to be re-initialized whenever the flyout's buttons change
         self:reInitializeMySecureClickers()
 
+        -- TODO - MOVE INTO ger:changeFLyoutId() !!!
         -- all FIRST_BTN handlers must be re-initialized after flyoutDef changes because the first button of the flyout might be different than before
         ---@param mouseClick MouseClick
         ---@param behavior GermClickBehavior
@@ -532,111 +401,11 @@ end
 ]]
 
 -- why isn't this just part of self:update()
-function Germ:handleGermUpdateEvent()
-    -- bliz mixin - bugged - CalculateAction() assumes parent must be an action bar button and falls back to ActionButton1
-    -- the internal's of Bliz' ActionBarActionButtonMixin:Update()
-    -- assume "this" is ActionBarActionButton and clobbers my self.action with "self.action=1"
-    -- so unclobber it
-    -- QUESTION: can I just do that?  Make the Germ's parent
-    --zebug.error:print("self.btnSlotIndex",self.btnSlotIndex, "self.action",self.action)
-    --self.action = self.btnSlotIndex -- this alone is enough to taint
-    --evidently, even SecureHandlerExecute("self:SetAttribute") will cause taint, so let's wrap it in anti-combat code
-    --SecureHandlerExecute(self, self.actionValueSetterSecureScriptlette) -- DNF
-
---[[
-    if self:GetAttribute('action') ~= self.btnSlotIndex then
-        self:fixMyActionAttribute()
-    end
-]]
-
-    self:update(self.flyoutId)
---    self:UpdateFlyout() -- Call Bliz -- TODO: v11.1 should I consolidate these two ?
-    self:updateCooldownsAndCountsAndStatesEtc() -- TODO: v11.1 verify this is working properly.  do I need to do more?
-
-    -- Update border and determine arrow position
-    local arrowDistance;
-
-    local isMouseOverButton = self:IsMouseMotionFocus()
-    local isFlyoutShown = self.flyoutMenu:IsShown()
-    if isFlyoutShown or isMouseOverButton then
-        self.BorderShadow:Show();
-        arrowDistance = 5;
-    else
-        self.BorderShadow:Hide();
-        arrowDistance = 2;
-    end
-
-    -- the following are called by FlyoutButtonMixin:OnLoad() via BaseActionButtonMixin:BaseActionButtonMixin_OnLoad() via SmallActionButtonMixin:SmallActionButtonMixin_OnLoad
-    self:UpdateArrowRotation() -- TODO v11.1 aren't I doing this in multiple places?  consolidate.
-    self:UpdateArrowPosition();
-    self:UpdateBorderShadow();
-
-    -- Update arrow
-    self:UpdateArrowTexture()
-    self:UpdateBorderShadow()
-    --self:UpdateArrowShown()
-    --self.Arrow:SetShown(true)
-    self:SetPopup(self.flyoutMenu)
-
-    -- self.flyoutMenu:AttachToButton(self) -- this is causing the arrows for every btnOnFlyout to appear
-    --zebug.error:print("GetArrowRotation",self:GetArrowRotation())
-
-    --[[
-        self:UpdateArrowRotation()
-        self:UpdateArrowPosition();
-        self:UpdateBorderShadow();
-    ]]
-
-    --[[
-    function FlyoutButtonMixin:OnPopupToggled()
-        self:UpdateArrowRotation();
-        self:UpdateArrowPosition();
-        self:UpdateBorderShadow();
-    end
-    ]]
-
-    -- TODO: v11.1 - the arrows aren't "springing" properly.  would any of the code below help?  If so, why isn't the Bliz Mixin doing it?!
-
-    --[[
-        local isButtonDown = self:GetButtonState() == "PUSHED"
-        local flyoutArrowTexture = self.Arrow.FlyoutArrowNormal
-
-        if isButtonDown then
-            flyoutArrowTexture = self.Arrow.FlyoutArrowPushed;
-
-            self.Arrow.FlyoutArrowNormal:Hide();
-            --self.Arrow.FlyoutArrowHighlight:Hide();
-        elseif isMouseOverButton then
-            flyoutArrowTexture = self.Arrow.FlyoutArrowHighlight;
-
-            self.Arrow.FlyoutArrowNormal:Hide();
-            self.Arrow.FlyoutArrowPushed:Hide();
-        else
-            self.Arrow.FlyoutArrowHighlight:Hide();
-            self.Arrow.FlyoutArrowPushed:Hide();
-        end
-
-        self.Arrow:Show();
-        flyoutArrowTexture:Show();
-        flyoutArrowTexture:ClearAllPoints();
-    ]]
-
-    --[[
-        local direction = self:GetAttribute("flyoutDirection");
-        if (direction == "LEFT") then
-            flyoutArrowTexture:SetPoint(Anchor.LEFT, self, Anchor.LEFT, -arrowDistance, 0);
-            SetClampedTextureRotation(flyoutArrowTexture, 270);
-        elseif (direction == "RIGHT") then
-            flyoutArrowTexture:SetPoint(Anchor.RIGHT, self, Anchor.RIGHT, arrowDistance, 0);
-            SetClampedTextureRotation(flyoutArrowTexture, 90);
-        elseif (direction == "DOWN") then
-            flyoutArrowTexture:SetPoint(Anchor.BOTTOM, self, Anchor.BOTTOM, 0, -arrowDistance);
-            SetClampedTextureRotation(flyoutArrowTexture, 180);
-        else
-            flyoutArrowTexture:SetPoint(Anchor.TOP, self, Anchor.TOP, 0, arrowDistance);
-            SetClampedTextureRotation(flyoutArrowTexture, 0);
-        end
-    ]]
+-- called by the Germ's OnUpdate handler
+function Germ:handleGermUpdateEvent(eventId)
+    ---@type GERM_TYPE
+    local self = self
+    self:update(self.flyoutId, eventId)
 end
 
 function Germ:setToolTip()
@@ -780,9 +549,11 @@ function handlers.OnMouseUp(germ)
     zebug.trace:name(eventId):out(hWidth, "V",":END:")
 end
 
----@param germ Germ -- IntelliJ-EmmyLua annotation
+-- A germ on the action bar was just hit by something dropping off the user's cursor
+-- The something is either a std Bliz thingy,
+-- or, a UFO (which itself is represented by the "proxy" macro)
+---@param germ GERM_TYPE
 function handlers.OnReceiveDrag(germ)
-    zebug.trace:name("OnReceiveDrag"):print("name",germ:GetName())
     if isInCombatLockdown("Drag and drop") then return end
 
     local eventId = germ:nextEventId("/OnReceiveDrag_")
@@ -790,42 +561,47 @@ function handlers.OnReceiveDrag(germ)
 
     local cursor = Cursor:get()
     if cursor then
-        PlaceAction(germ:getBtnSlotIndex())
-        GermCommander:updateAll() -- draw the dropped UFO -- TODO: update ONLY the one specific germ
+        Cursor:dropOntoActionBar(germ:getBtnSlotIndex())
+        GermCommander:updateAll(eventId) -- draw the dropped UFO -- TODO: update ONLY the one specific germ
     end
+    zebug.trace:name(eventId):out(hWidth, "0",":END:")
 end
 
----@param germ Germ -- IntelliJ-EmmyLua annotation
+---@param germ GERM_TYPE
 function handlers.OnPickupAndDrag(germ)
-    if (LOCK_ACTIONBAR ~= "1" or IsShiftKeyDown()) then
-        if isInCombatLockdown("Drag and drop") then return end
-        zebug.info:name("OnPickupAndDrag"):print("name",germ:GetName())
+    if LOCK_ACTIONBAR then return end
+    if not IsShiftKeyDown() then return end
+    if isInCombatLockdown("Drag and drop") then return end
 
     local eventId = germ:nextEventId("/OnPickupAndDrag_")
     zebug.trace:name(eventId):label(self):out(hWidth, "+",":START: Yoink! :START:")
 
-        local type, macroId = GetCursorInfo()
-        if type then
-            local btnSlotIndex = germ:getBtnSlotIndex()
-            local droppedFlyoutId = GermCommander:getFlyoutIdFromGermProxy(type, macroId)
-            zebug.info:print("droppedFlyoutId",droppedFlyoutId, "btnSlotIndex",btnSlotIndex)
-            if droppedFlyoutId then
-                -- the user is dragging a UFO
-                GermCommander:dropUfoOntoActionBar(btnSlotIndex, droppedFlyoutId)
-            else
-                -- the user is just dragging a normal Bliz spell/item/etc.
-                PlaceAction(btnSlotIndex)
-            end
-        else
-            GermCommander:clearUfoPlaceholderFromActionBar(btnSlotIndex)
-        end
+    -- erase Ufo From the slot
+    local btnSlotIndex = germ:getBtnSlotIndex()
+    GermCommander:eraseUfoFrom(btnSlotIndex, self, eventId)
 
-        FlyoutMenu:pickup(germ.flyoutId)
-        GermCommander:updateAll()
+    -- the ON_DRAG_START event apparently precedes the cursor change
+    -- so, handle whatever is currently on the cursor, if anything.
+    local cursorBeforeItDrops = Cursor:get()
+    if cursorBeforeItDrops then
+        zebug.warn:name(eventId):label(self):print("cursorBeforeItDrops", cursorBeforeItDrops)
+        local foo = cursorBeforeItDrops:isUfoProxy()
+        if cursorBeforeItDrops:isUfoProxy() then
+            -- the user is dragging a UFO
+            local droppingThisFlyoutId = UfoProxy:getFlyoutId()
+            GermCommander:dropUfoFromCursorOntoActionBar(btnSlotIndex, droppingThisFlyoutId, eventId)
+        else
+            -- the user is just dragging a normal Bliz spell/item/etc.
+            -- Cursor:dropOntoActionBar(btnSlotIndex, eventId) -- this is already happening without me needing to do anything, yes?
+        end
     end
+
+    UfoProxy:pickupUfoOntoCursor(germ.flyoutId, eventId)
+    --GermCommander:updateAll(eventId)
+    zebug.trace:name(eventId):label(self):out(hWidth, "+",":END:")
 end
 
----@param germ Germ -- IntelliJ-EmmyLua annotation
+---@param germ GERM_TYPE -- IntelliJ-EmmyLua annotation
 function handlers.OnEnter(germ)
     germ:setToolTip()
     local eventId = germ:nextEventId("/OnEnter_")
@@ -834,7 +610,7 @@ function handlers.OnEnter(germ)
     zebug.trace:name(eventId):out(hWidth, ">",":END:")
 end
 
----@param germ Germ -- IntelliJ-EmmyLua annotation
+---@param germ GERM_TYPE -- IntelliJ-EmmyLua annotation
 function handlers.OnLeave(germ)
     GameTooltip:Hide()
     local eventId = germ:nextEventId("/OnLeave_")
@@ -845,10 +621,10 @@ end
 
 -- throttle OnUpdate because it fires as often as FPS and is very resource intensive
 -- TODO: abstract this into its own class/function - throttle
-local ON_UPDATE_TIMER_FREQUENCY = 1.5
+local ON_UPDATE_TIMER_FREQUENCY = 10
 local onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
 
----@param germ Germ
+---@param germ GERM_TYPE
 function handlers.OnUpdate(germ, elapsed)
     local eventId = germ:nextEventId("/OnUpdate_")
     zebug.trace:name(eventId.." START"):out(hWidth, ".",":START: gogogogo :START:")
@@ -873,7 +649,7 @@ function handlers.OLD_OnUpdate(germ, elapsed)
     zebug.trace:name(eventId):out(hWidth, ".",":END:")
 end
 
----@param germ Germ
+---@param germ GERM_TYPE
 function handlers.OnPreClick(germ, mouseClick, down)
     -- am I not being called?  maybe the mixin is over riding me
     zebug.error:print("am I not being called?","weeee!")
@@ -909,7 +685,7 @@ local oldGerm
 
 -- this is needed for the edge case of clicking on a different germ while the current one is still open
 -- in which case there is no OnShow event which is where the below usually happens
----@param self Germ
+---@param self GERM_TYPE
 ---@param mouseClick MouseClick
 function handlers.OnPostClick(self, mouseClick, down)
     if oldGerm and oldGerm ~= self then
@@ -1161,6 +937,162 @@ function Germ:OnEvent(event, ...)
 end
 ]]
 
+function searchForFlyoutMenuScriptlet()
+    return [=[
+	germ = self
+    local FLYOUT_MENU_NAME = self:GetAttribute("FLYOUT_MENU_NAME")
+
+    -- use a global var to cache the flyout menu
+    if not flyoutMenu then
+        -- search the kids for the flyout menu
+        local kids = table.new(germ:GetChildren())
+        for i, kid in ipairs(kids) do
+            local kidName = kid:GetName()
+            if kidName == FLYOUT_MENU_NAME then
+                flyoutMenu = kid
+                keybindKeeper = flyoutMenu -- not really needed. I added this while debugging a taint problem
+                break
+            end
+        end
+    end
+    ]=]
+end
+
+local OPENER_CLICKER_SCRIPTLET
+
+function getOpenerClickerScriptlet()
+    if OPENER_CLICKER_SCRIPTLET then
+        return OPENER_CLICKER_SCRIPTLET
+    end
+
+    OPENER_CLICKER_SCRIPTLET = [=[
+--print("OPENER_CLICKER_SCRIPTLET <START>")
+	local germ = self
+	local mouseClick = button
+	local isClicked = down
+	local direction = germ:GetAttribute("flyoutDirection")
+    local doCloseFlyout = flyoutMenu:GetAttribute("doCloseFlyout")
+    local isOpen = flyoutMenu:IsShown()
+
+	if doCloseFlyout and isOpen then
+--print("OPENER_CLICKER_SCRIPTLET ... closing and exiting")
+		flyoutMenu:Hide()
+		flyoutMenu:SetAttribute("doCloseFlyout", false)
+		keybindKeeper:ClearBindings()
+		return
+    end
+
+--print("OPENER_CLICKER_SCRIPTLET ... 1")
+    keybindKeeper:SetBindingClick(true, "Escape", germ, mouseClick)
+
+-- TODO: move this into FlyoutMenu:updateForGerm()
+
+--print("OPENER_CLICKER_SCRIPTLET ... 2")
+    flyoutMenu:SetParent(germ)  -- holdover from single FM
+--print("OPENER_CLICKER_SCRIPTLET ... 3")
+    flyoutMenu:ClearAllPoints()
+    if direction == "UP" then
+        flyoutMenu:SetPoint("BOTTOM", germ, "TOP", 0, 0)
+    elseif direction == "DOWN" then
+        flyoutMenu:SetPoint("TOP", germ, "BOTTOM", 0, 0)
+    elseif direction == "LEFT" then
+        flyoutMenu:SetPoint("RIGHT", germ, "LEFT", 0, 0)
+    elseif direction == "RIGHT" then
+        flyoutMenu:SetPoint("LEFT", germ, "RIGHT", 0, 0)
+    end
+
+    local uiButtons = table.new(flyoutMenu:GetChildren())
+    while uiButtons[1] and uiButtons[1]:GetObjectType() ~= "CheckButton" do
+    --if uiButtons[1]:GetObjectType() ~= "CheckButton" then
+        table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
+    end
+
+--print("OPENER_CLICKER_SCRIPTLET ... 4")
+	local prevBtn = nil;
+    local numButtons = 0
+    for i, btn in ipairs(uiButtons) do
+        local isInUse = btn:GetAttribute("UFO_NAME")
+        --print(i, numButtons, isInUse)
+        if isInUse then
+            numButtons = numButtons + 1
+
+            --print("SNIPPET... i:",i, "btn:",btn:GetName())
+            btn:ClearAllPoints()
+
+            local parent = prevBtn or "$parent"
+            if prevBtn then
+                if direction == "UP" then
+                    btn:SetPoint("BOTTOM", parent, "TOP", 0, ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[)
+                elseif direction == "DOWN" then
+                    btn:SetPoint("TOP", parent, "BOTTOM", 0, -]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[)
+                elseif direction == "LEFT" then
+                    btn:SetPoint("RIGHT", parent, "LEFT", -]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[, 0)
+                elseif direction == "RIGHT" then
+                    btn:SetPoint("LEFT", parent, "RIGHT", ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[, 0)
+                end
+            else
+                if direction == "UP" then
+                    btn:SetPoint("BOTTOM", parent, 0, ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[)
+                elseif direction == "DOWN" then
+                    btn:SetPoint("TOP", parent, 0, -]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[)
+                elseif direction == "LEFT" then
+                    btn:SetPoint("RIGHT", parent, -]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[, 0)
+                elseif direction == "RIGHT" then
+                    btn:SetPoint("LEFT", parent, ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[, 0)
+                end
+            end
+
+            -- keybind each button to 1-9 and 0
+            local doKeybindTheButtonsOnTheFlyout = germ:GetAttribute("doKeybindTheButtonsOnTheFlyout")
+            if doKeybindTheButtonsOnTheFlyout then
+                if numButtons < 11 then
+                    -- TODO: make first keybind same as the UFO's
+                    local numberKey = (numButtons == 10) and "0" or tostring(numButtons)
+                    keybindKeeper:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
+                    if numberKey == "1" then
+                        -- make the UFO's first button's keybind be the same as the UFO itself
+                        local germKey = self:GetAttribute("UFO_KEYBIND_1")
+                        if germKey then
+                            keybindKeeper:SetBindingClick(true, germKey, btn, "]=].. MouseClick.LEFT ..[=[")
+                        end
+                    end
+                end
+            end
+
+            prevBtn = btn
+--print("OPENER_CLICKER_SCRIPTLET ... showing button")
+            btn:Show()
+        else
+            btn:Hide()
+        end
+    end
+
+--print("OPENER_CLICKER_SCRIPTLET ... 5")
+    local w = prevBtn and prevBtn:GetWidth() or 10
+    local h = prevBtn and prevBtn:GetHeight() or 10
+    local minN = (numButtons == 0) and 1 or numButtons
+
+    if direction == "UP" or direction == "DOWN" then
+        flyoutMenu:SetWidth(w)
+        flyoutMenu:SetHeight((h + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
+    else
+        flyoutMenu:SetHeight(h)
+        flyoutMenu:SetWidth((w + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
+    end
+
+--print("OPENER_CLICKER_SCRIPTLET ... SHOWING flyout")
+    flyoutMenu:Show()
+--print("OPENER_CLICKER_SCRIPTLET ... SetAttribute() doCloseFlyout = true")
+    flyoutMenu:SetAttribute("doCloseFlyout", true)
+
+    --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
+    --flyoutMenu:AddToAutoHide(germ)
+]=]
+
+    return OPENER_CLICKER_SCRIPTLET
+end
+
+
 -------------------------------------------------------------------------------
 -- OVERRIDES for methods defined in ActionBarActionButtonMixin
 -- Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButton.lua
@@ -1200,4 +1132,167 @@ end
 function Germ:UpdateButtonArt()
     --BaseActionButtonMixin.UpdateButtonArt(self); -- this was the default self:UpdateButtonArt(). removing it has no effect.
 end
+
+
+
+
+
+
+
+
+
+
+
+
+--[[function Germ:BROKEN_new(flyoutId, btnSlotIndex, eventId)
+    local parentActionBarBtn, bbInfo = BlizActionBarButton:getButton(btnSlotIndex)
+
+    local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
+
+    ---@type GERM_TYPE | Germ
+    local self = CreateFrame(
+            FrameType.CHECK_BUTTON,
+            myName,
+            parentActionBarBtn, -- can I make the action bar instead to satisfy SecureButtonTemplate code?
+    -- including FlyoutButtonTemplate last will position the arrows but also nukes my left/right/middle click handlers
+    --"SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate, FlyoutButtonTemplate"
+    --"SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate"
+            "GermTemplate"
+    )
+
+    _G[myName] = self -- so that keybindings can reference it
+
+    -- one-time only initialization --
+
+    -- initialize my fields
+    self.myName       = myName
+    self.btnSlotIndex = btnSlotIndex
+    self.flyoutId     = flyoutId
+    self.label        = self:getFlyoutDef().name
+    self.bbInfo       = bbInfo
+
+    -- install event handlers
+    --self:SetScript(Script.ON_UPDATE,       handlers.OnUpdate)
+    --self:SetScript(Script.ON_UPDATE,       Throttler:new(handlers.OnUpdate, 1, self.label ):asFunc() )
+    self:SetScript(Script.ON_ENTER,        handlers.OnEnter)
+    self:SetScript(Script.ON_LEAVE,        handlers.OnLeave)
+    self:SetScript(Script.ON_RECEIVE_DRAG, handlers.OnReceiveDrag)
+    self:SetScript(Script.ON_MOUSE_DOWN,   handlers.OnMouseDown)
+    self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
+    self:SetScript(Script.ON_DRAG_START,   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
+    self:HookScript(Script.ON_HIDE, function(self) print('***GERM*** Script.ON_HIDE for',self:GetName(),self); end)
+
+    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId()
+
+    -- manipulate methods
+    self:installMyToString()
+    self.originalHide = self:override("Hide", self.hide)
+    self.clear = Pacifier:pacify(self, "clear")
+
+    -- UI positioning - anchor me to the action bar button
+    self:ClearAllPoints()
+    self:SetAllPoints(parentActionBarBtn)
+    --self:SetFrameStrata(STRATA_DEFAULT)
+    --self:SetFrameLevel(STRATA_LEVEL_DEFAULT)
+    --self:SetToplevel(true)
+
+    -- Behavior
+    self:setVisibilityDriver(parentActionBarBtn.btnDesc.visibleIf) -- VOLATIle
+    self:registerEventListeners()
+
+    -- FlyoutMenu
+    self:initFlyoutMenu(eventId)
+    self.flyoutMenu:installHandlerForCloseOnClick()
+    -- TODO v11.1 - wrap in exeNotInCombat() ? in case "/reload" during combat
+    self:SetAttribute("flyoutDirection", self:getDirection())
+    self:SetAttribute("FLYOUT_MENU_NAME", self.flyoutMenu:GetName())
+    self:SetAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
+
+    return self
+end
+]]
+
+
+
+
+
+function Germ:registerEventListeners()
+    -- try to replace all of these with self:SetAttribute("_onhide"(e.g.), "flyout:ClearBindings()") secure style handlers
+
+    -- Drag and Drop behavior
+    self:RegisterForDrag(MouseClick.LEFT)
+    --SecureHandlerWrapScript(self, "OnDragStart", self, "return "..QUOTE.."message"..QUOTE , "print(123456789)") -- this does nothing.  TODO: understand why
+
+    -- Click behavior
+    --self:RegisterForClicks("AnyUp") -- this does nothing
+    --self:RegisterForClicks("AnyDown") -- this works but clobbers OnDragStart
+    self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
+
+
+    --[[
+    -- Events found in ActionBarButtonEventsFrameMixin:OnLoad()
+    -- do I need to subscribe to these?
+
+    self:SetScript("OnEvent", self.OnEvent)
+    self:RegisterEvent("PLAYER_ENTERING_WORLD");
+    self:RegisterEvent("ACTIONBAR_SLOT_CHANGED");
+    self:RegisterEvent("UPDATE_BINDINGS");
+    self:RegisterEvent("GAME_PAD_ACTIVE_CHANGED");
+    self:RegisterEvent("UPDATE_SHAPESHIFT_FORM");
+    self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN");
+    self:RegisterEvent("PET_BAR_UPDATE");
+    self:RegisterUnitEvent("UNIT_FLAGS", "pet");
+    self:RegisterUnitEvent("UNIT_AURA", "pet");
+    self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED");
+    self:RegisterEvent("SPELL_UPDATE_ICON");
+]]
+end
+
+function Germ:unRegisterEventListeners()
+    self:UnregisterEvent()
+
+
+    --[[
+        -- found in SpellFlyoutMixin:OnHide()
+
+        if (self.eventsRegistered == true) then
+            self:UnregisterEvent("SPELL_UPDATE_COOLDOWN");
+            self:UnregisterEvent("CURRENT_SPELL_CAST_CHANGED");
+            self:UnregisterEvent("SPELL_UPDATE_USABLE");
+            self:UnregisterEvent("BAG_UPDATE");
+            self:UnregisterEvent("ACTIONBAR_PAGE_CHANGED");
+            self:UnregisterEvent("PET_STABLE_UPDATE");
+            self:UnregisterEvent("PET_STABLE_SHOW");
+            self:UnregisterEvent("SPELL_FLYOUT_UPDATE");
+            EventRegistry:UnregisterCallback("WorldMapMaximized", self.Close);
+            EventRegistry:UnregisterCallback("WorldMapOnShow", self.CloseIfWorldMapMaximized);
+            self.eventsRegistered = false;
+        end
+    ]]
+
+end
+
+function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId()
+    -- TODO v11.1 - wrap in exeNotInCombat() ? in case "/reload" during combat
+    -- set attributes used inside the secure scriptlettes
+    self:SetAttribute("flyoutDirection", self:getDirection())
+    self:SetAttribute("FLYOUT_MENU_NAME", self.flyoutMenu:GetName())
+    self:SetAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
+
+    local flyoutId = self.flyoutId
+    self:setMouseClickHandler(MouseClick.LEFT,   Config:getClickBehavior(flyoutId, MouseClick.LEFT))
+    self:setMouseClickHandler(MouseClick.MIDDLE, Config:getClickBehavior(flyoutId, MouseClick.MIDDLE))
+    self:setMouseClickHandler(MouseClick.RIGHT,  Config:getClickBehavior(flyoutId, MouseClick.RIGHT))
+    self:setMouseClickHandler(MouseClick.FOUR,   Config:getClickBehavior(flyoutId, MouseClick.FOUR))
+    self:setMouseClickHandler(MouseClick.FIVE,   Config:getClickBehavior(flyoutId, MouseClick.FIVE))
+    self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior)
+end
+
+
+
+
+
+
+
+
 

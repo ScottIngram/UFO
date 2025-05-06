@@ -168,8 +168,9 @@ function Catalog:update()
     local visibleBtnFrames = scrollPane.buttons -- how many buttons are actually onscreen (or almost onscreen)
     local selectedIdx = scrollPane.selectedIdx
 
-    local flyoutIdOnTheMouse = GermCommander:getFlyoutIdFromCursor()
-    local isDragging = flyoutIdOnTheMouse and btnUnderTheMouse
+    --local flyoutIdOnTheMouse = GermCommander:getFlyoutIdFromCursor()
+    local flyoutDefOnTheMouse = UfoProxy:isOnCursor()
+    local isDragging = flyoutDefOnTheMouse and btnUnderTheMouse
     local hoverIndex = isDragging and tonumber(btnUnderTheMouse.flyoutIndex) -- this can be nil if hovering over the Add+ button
 
     zebug.trace:print("flyoutsCount",flyoutsCount, "on the mouse", flyoutDefOnTheMouse, "newMouseOver", btnUnderTheMouse and btnUnderTheMouse.flyoutIndex, "isDragging",isDragging )
@@ -361,7 +362,7 @@ function Catalog:addNewFlyout(name, icon)
     flyoutDef.icon = icon
 
     Catalog:update()
-    GermCommander:updateAll()
+    -- GermCommander:updateAll("Catalog:addNewFlyout...but.why")
 end
 
 -------------------------------------------------------------------------------
@@ -375,12 +376,13 @@ function GLOBAL_UFO_CatalogEntry_OnLeave(btnInCatalog)
     Catalog:update()
 end
 
+-- TODO - handle the hover glow here and not in the update() routine
 function GLOBAL_UFO_CatalogEntry_OnEnter(btnInCatalog)
-    local flyoutId = GermCommander:getFlyoutIdFromCursor()
+    local flyoutDef = UfoProxy:isOnCursor()
 
-    if flyoutId then
+    if flyoutDef then
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-        zebug.info:print("entering button with drag", btnInCatalog.flyoutIndex, "flyoutId", flyoutId)
+        zebug.info:print("entering button with drag", btnInCatalog.flyoutIndex, "flyoutId", flyoutDef)
     end
 
     Catalog:setToolTip(btnInCatalog)
@@ -473,10 +475,10 @@ function GLOBAL_UFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
         Catalog:selectRow(nil)
         IconPicker:open()
     elseif LANDING_BUTTON_NAME == btnInCatalog.name then
-        local flyoutIdOnTheMouse = GermCommander:getFlyoutIdFromCursor()
-        local isDragging = flyoutIdOnTheMouse and btnUnderTheMouse
-        zebug.info:name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("flyoutIdOnTheMouse",flyoutIdOnTheMouse, "isDragging",isDragging)
-        FlyoutDefsDb:move(flyoutIdOnTheMouse, btnInCatalog.flyoutIndex)
+        local flyoutDefOnTheCursor = UfoProxy:isOnCursor()
+        local isDragging = flyoutDefOnTheCursor and btnUnderTheMouse
+        zebug.info:name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("on cursor", flyoutDefOnTheCursor, "isDragging",isDragging)
+        FlyoutDefsDb:move(flyoutDefOnTheCursor.id, btnInCatalog.flyoutIndex)
         btnUnderTheMouse = nil
         flyoutIndexOnTheMouse = nil
         btnOnTheMouse = nil
@@ -518,7 +520,7 @@ end
 
 function GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow(btn)
     zebug.info:name("GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow"):print("btn",btn:GetName())
-    if GermCommander:isDraggingProxy() then
+    if UfoProxy:isOnCursor() then
         btn:Hide()
     else
         Catalog:update()

@@ -16,10 +16,9 @@ local zebug = Zebug:new()
 -------------------------------------------------------------------------------
 
 ---@class FlyoutDefsDb -- IntelliJ-EmmyLua annotation
-local FlyoutDefsDb = {
+FlyoutDefsDb = {
     isInitialized = false
 }
-Ufo.FlyoutDefsDb = FlyoutDefsDb
 
 -------------------------------------------------------------------------------
 -- Class: Xedni
@@ -86,6 +85,12 @@ function FlyoutDefsDb:reValidateFlyoutId(flyoutId)
     return flyoutId
 end
 
+---@param flyoutId number
+function FlyoutDefsDb:getName(flyoutId)
+    local conf = self:trustedGet(flyoutId)
+    return conf and conf:getName()
+end
+
 ---@param flyoutId string
 ---@return FlyoutDef
 function FlyoutDefsDb:get(flyoutId)
@@ -109,6 +114,10 @@ function FlyoutDefsDb:get(flyoutId)
     zebug.trace:print("flyoutConfig", flyoutDef, "flyoutDef.name",flyoutDef.name, "flyoutDef.id",flyoutDef.id )
 
     return flyoutDef
+end
+
+function FlyoutDefsDb:trustedGet(flyoutId)
+    return self:getAll()[flyoutId]
 end
 
 ---@param flyoutIndex number
@@ -174,7 +183,7 @@ function FlyoutDefsDb:delete(flyoutId)
     Xedni:moveOrRemove(flyoutId)
 
     -- remove it from every placement
-    local placementsForEachSpec = GermCommander:getAllSpecsPlacementsConfig()
+    local placementsForEachSpec = DB:getAllSpecsPlacementsConfig()
     for spec, placementsForSpec in pairs(placementsForEachSpec) do
         zebug.trace:line(5, "flyoutId",flyoutId, "spec",spec)
         for btnSlotIndex, flyId in pairs(placementsForSpec) do

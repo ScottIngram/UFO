@@ -19,7 +19,7 @@ MouseClick = Ufo.MouseClick
 ---@field usePlaceHolders boolean eliminate the need for "Always Show Buttons" in Bliz UI "Edit Mode" config option for action bars
 ---@field clickers table germ behavior for various mouse clicks
 ---@field keybindBehavior GermClickBehavior when a keybind is activated, it will perform this action
----@field flyoutButtonsWillBind boolean when a UFO is open, are its buttons bound to number keys?
+---@field doKeybindTheButtonsOnTheFlyout boolean when a UFO is open, are its buttons bound to number keys?
 ---@field muteLogin boolean don't print out status messages on log in
 Options = { }
 
@@ -42,7 +42,7 @@ function Config:getOptionDefaults()
         muteLogin       = false,
         hideCooldownsWhen = 99999,
         keybindBehavior = GermClickBehavior.OPEN,
-        flyoutButtonsWillBind = true,
+        doKeybindTheButtonsOnTheFlyout = true,
         clickers = {
             flyouts = {
                 default = {
@@ -171,8 +171,8 @@ local function initializeOptionsMenu()
                     [true] = "Bind each button to a number (Escape to close).",
                     [false] = "An open UFO won't intercept key presses.",
                 },
-                set = function(_, flyoutButtonsWillBind)
-                    opts.flyoutButtonsWillBind = flyoutButtonsWillBind
+                set = function(_, doKeybindTheButtonsOnTheFlyout)
+                    opts.doKeybindTheButtonsOnTheFlyout = doKeybindTheButtonsOnTheFlyout
                     GermCommander:updateAllGermsWithButtonsWillBind()
                 end,
                 get = function()

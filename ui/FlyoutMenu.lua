@@ -137,7 +137,7 @@ function FlyoutMenu:setId(flyoutId)
     self.flyoutId = flyoutId
 end
 
-function FlyoutMenu:ensureId(flyoutId)
+function FlyoutMenu:idOrDie(flyoutId)
     if self == FlyoutMenu then
         assert(flyoutId, ADDON_NAME..": You must provide the flyoutId when invoking this as a CLASS method.")
     else
@@ -147,22 +147,25 @@ function FlyoutMenu:ensureId(flyoutId)
     return flyoutId
 end
 
+-- TODO - delete this - it's moved to GermCommander:copyFlyoutToCursor()
 -- when the user picks up a flyout from the catalog (or a germ from the actionbars?)
 -- we need a draggable UI element, so create a dummy macro with the same icon as the flyout
+--[[
 function FlyoutMenu:pickup(flyoutId)
     if isInCombatLockdown("Drag and drop") then return; end
 
-    flyoutId = self:ensureId(flyoutId)
+    flyoutId = self:idOrDie(flyoutId)
 
     local flyoutConf = FlyoutDefsDb:get(flyoutId)
     local icon = flyoutConf:getIcon()
-    local proxy = GermCommander:newGermProxy(flyoutId, icon)
+    local proxy = UfoProxy:new(flyoutId, icon)
     PickupMacro(proxy)
 end
+]]
 
 ---@return FlyoutDef
 function FlyoutMenu:getDef(flyoutId)
-    flyoutId = self:ensureId(flyoutId)
+    flyoutId = self:idOrDie(flyoutId)
     return FlyoutDefsDb:get(flyoutId)
 end
 
@@ -235,6 +238,9 @@ function FlyoutMenu:updateForCatalog(flyoutId)
     self:setBorderGeometry()
 end
 
+-- TODO: split into an initialize VS update
+-- perhaps defer subsequent updates to the toggle() and only update just before it becomes visible
+
 ---@param germ Germ
 function FlyoutMenu:updateForGerm(germ, eventId)
     self:SetParent(germ)
@@ -246,7 +252,7 @@ function FlyoutMenu:updateForGerm(germ, eventId)
     local usableFlyout = flyoutDef:filterOutUnusable()
     local btnNumber = 0
 
-    ---@param btnFrame ButtonOnFlyoutMenu
+    ---@param btnFrame BOFM_TYPE
     self:forEachButton(function(btnFrame, i)
         local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef)
@@ -382,7 +388,7 @@ function FlyoutMenu:addBtnAt(btnDef, btnIndex)
     local flyoutDef = self:getDef()
     flyoutDef:replaceButton(btnIndex, btnDef) -- TODO - repects displace
     self:updateForCatalog(self.flyoutId)
-    GermCommander:updateAll() -- TODO: only update germs for flyoutId
+    GermCommander:updateGermsFor(self.flyoutId, "FlyoutMenu:addBtnAt")
 end
 
 function FlyoutMenu:isMouseOverMeOrKids()

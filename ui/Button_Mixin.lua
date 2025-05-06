@@ -7,7 +7,7 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-local zebug = Zebug:new()
+local zebug = Zebug:new(Zebug.WARN)
 
 ---@class Button_Mixin -- IntelliJ-EmmyLua annotation
 ---@field originalIconSetTextureFunc function Bliz's assigned SetTexture given to the .icon frame
@@ -93,6 +93,7 @@ function Button_Mixin:setIcon(icon, eventId)
     self.originalIconSetTextureFunc(iconFrame, icon) -- the iconFrame is the self for the original SetTexture
 end
 
+-- TODO - go look at ActionBarActionButtonMixin:Update() and copy anything I'm missing
 function Button_Mixin:updateCooldownsAndCountsAndStatesEtc()
     -- should I call self:Update() aka ActionBarActionButtonMixin:Update() ... um, maybe I'm not an ActionBarActionButtonMixin
     local btnDef = self:getDef()
