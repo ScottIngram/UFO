@@ -1,4 +1,5 @@
--- ActionBarHelper
+-- BlizActionBarButton
+-- simplifies tracking what's on the action bars
 
 -------------------------------------------------------------------------------
 -- Module Loading
@@ -9,8 +10,16 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 local zebug = Zebug:new()
 
----@class ActionBarHelper
-ActionBarHelper = { }
+---@alias BABB_INHERITANCE UfoMixIn | ActionBarActionButtonMixin | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame
+---@alias BABB_TYPE BlizActionBarButton | BABB_INHERITANCE
+
+---@class BlizActionBarButton : UfoMixIn
+---@field btnDesc AbbInfo meta data about the button
+---@field ufoType string The classname
+BlizActionBarButton = {
+    ufoType = "BlizActionBarButton"
+}
+UfoMixIn:mixInto(BlizActionBarButton)
 
 ---@class AbbInfo describes various aspects of a button on the Bliz action bars
 ---@field btnSlotIndex number the index of the button among all 100+ buttons
@@ -24,17 +33,6 @@ ActionBarHelper = { }
 ---@field visibleIf string conditions used by RegisterStateDriver(self, "visibility")
 ---@field aType string type of the spell/macro/etc that's on the button, if any
 ---@field aId string id of the spell/macro/etc that's on the button, if any
-
----@alias BABB_INHERITANCE UfoMixIn | ActionBarActionButtonMixin | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame
----@alias BABB_TYPE BlizActionBarButton | BABB_INHERITANCE
-
----@class BlizActionBarButton : UfoMixIn
----@field btnDesc AbbInfo meta data about the button
----@field ufoType string The classname
-BlizActionBarButton = {
-    ufoType = "BlizActionBarButton"
-}
-UfoMixIn:mixInto(BlizActionBarButton)
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -64,16 +62,10 @@ BLIZ_BAR_METADATA = {
 --  Methods
 -------------------------------------------------------------------------------
 
-function ActionBarHelper:mixInto(other)
-    for name, func in pairs(self) do
-        other[name] = func
-    end
-end
-
 -- gets the UI frame object for the button / empty slot sitting in btnSlotIndex on the Bliz action bars.
 -- such a button could be EMPTY or contain a spell, a macro, a potion, etc.
 ---@return BlizActionBarButton, AbbInfo
-function ActionBarHelper:getButton(btnSlotIndex)
+function BlizActionBarButton:new(btnSlotIndex)
     local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
     local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
     if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
@@ -84,8 +76,6 @@ function ActionBarHelper:getButton(btnSlotIndex)
     local barYafName = actionBarDef.yafName
     local btnYafName = barYafName and (barYafName .. "Button" .. btnNum) or nil
     local actionType, actionId = GetActionInfo(btnSlotIndex)
-
---print("ActionBarHelper:getButton()  actionType, actionId -->", actionType, actionId)
 
     ---@type AbbInfo
     local btnDesc = {
@@ -114,18 +104,11 @@ function ActionBarHelper:getButton(btnSlotIndex)
     actionBarBtnFrame.btnDesc = btnDesc
 
     local mt = getmetatable(actionBarBtnFrame)
---[[
-print("getmetatable ->",mt)
-print("__index ->",mt and mt.__index)
-print("__tostring ->",mt and mt.__tostring)
-]]
-
     if not mt then
         mt = {}
         setmetatable(actionBarBtnFrame, mt)
     end
     mt.__tostring = function()
-        ---print("IgGgGgGgY WiGgGgGgGgGy WoOoOoOoO")
         return BlizActionBarButton.toString(actionBarBtnFrame)
     end
     deepcopy(BlizActionBarButton, actionBarBtnFrame)
