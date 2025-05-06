@@ -67,7 +67,7 @@ BrokenProfessions = {
 -- ButtonDef
 -- data for a single button, its spell/pet/macro/item/etc.  and methods for manipulating that data
 -------------------------------------------------------------------------------
----@class ButtonDef -- IntelliJ-EmmyLua annotation
+---@class ButtonDef : UfoMixIn
 ---@field type ButtonType
 ---@field name string
 ---@field spellId number
@@ -81,6 +81,7 @@ BrokenProfessions = {
 ButtonDef = {
     ufoType = "ButtonDef"
 }
+UfoMixIn:mixInto(ButtonDef)
 
 -------------------------------------------------------------------------------
 -- Utility Functions
@@ -122,9 +123,21 @@ end
 
 ---@return ButtonDef
 function ButtonDef:new()
+    ---@type ButtonDef
     local self = {}
     ButtonDef:oneOfUs(self)
+    self:installMyToString()
     return self
+end
+
+local s = function(v) return v or "nil"  end
+
+function ButtonDef:toString()
+    if not self.type then
+        return "<ButtonDef: EMPTY>"
+    else
+        return string.format("<ButtonDef: type=%s, name=%s>", s(self.type), s(self.name))
+    end
 end
 
 function ButtonDef:invalidateCache()

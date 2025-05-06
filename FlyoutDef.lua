@@ -14,17 +14,17 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 local zebug = Zebug:new()
 
----@class FlyoutDef -- IntelliJ-EmmyLua annotation
+---@class FlyoutDef : UfoMixIn
 ---@field id string A unique, immutable, permanent identifier.  This is not it's index in any array.
 ---@field name string
 ---@field icon string user chosen icon
 ---@field fallbackIcon string in absence of the icon field, this is used when the Bliz UI fails to load all the necessary icons on login (usually pets and toys)
 ---@field btns table
 ---@field lastMod number timestamp of the last significant modification
-local FlyoutDef = {
+FlyoutDef = {
     ufoType = "FlyoutDef",
 }
-Ufo.FlyoutDef = FlyoutDef
+UfoMixIn:mixInto(FlyoutDef)
 
 -------------------------------------------------------------------------------
 -- Methods
@@ -32,6 +32,7 @@ Ufo.FlyoutDef = FlyoutDef
 
 -- coerce the incoming table into a FlyoutDef instance
 ---@return FlyoutDef
+---@param self FlyoutDef
 function FlyoutDef:oneOfUs(self)
     zebug.trace:setMethodName("oneOfUs"):print("self",self)
     if self.ufoType == FlyoutDef.ufoType then
@@ -51,16 +52,11 @@ function FlyoutDef:oneOfUs(self)
     -- tie the "self" instance to the privateData table (which in turn is tied to  the class)
     setmetatable(self, { __index = privateCache })
 
+    self:installMyToString()
+
     -- on any modification always update the lastMod
     -- well, this causes the initial load to silently fail and UFO does nothing until a reload
     -- maybe because no defs get loaded SAVED_VARIABLES ?
---[[
-    local mt = getmetatable(self)
-    mt.__newindex = function(self, key, value)
-        rawset(self, key, value)
-        rawset(self, "lastMod", time())
-    end
-]]
 
     self:setModStamp()
 
@@ -75,6 +71,16 @@ function FlyoutDef:new()
     self.name = flyoutIndex
     flyoutIndex = flyoutIndex + 1
     return FlyoutDef:oneOfUs(self)
+end
+
+local s = function(v) return v or "nil"  end
+
+function FlyoutDef:toString()
+    if self == Cursor then
+        return "nil"
+    else
+        return string.format("<FoDef: id=%s, name=%s, size=%d>", s(self.id), s(self.name), s(self.btns and #(self.btns) or 0))
+    end
 end
 
 ---@return string

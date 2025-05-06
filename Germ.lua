@@ -34,6 +34,7 @@ Germ = {
     clickers = {},
     instanceId = nil, -- I mean, I could use the table.toString() itself, but, let's make something human readable
 }
+UfoMixIn:mixInto(Germ)
 GLOBAL_Germ = Germ
 
 ---@alias GERM_INHERITANCE Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame
@@ -311,6 +312,16 @@ function Germ:new(flyoutId, btnSlotIndex)
     --SecureHandlerWrapScript(self, "OnDragStart", self, "return "..QUOTE.."message"..QUOTE , "print(123456789)") -- this does nothing.  TODO: understand why
 
     return self
+end
+
+local s = function(v) return v or "nil"  end
+
+function Germ:toString()
+    if not self.flyoutId then
+        return "<Germ: EMPTY>"
+    else
+        return string.format("<Germ: name=%s, label=%s>", s(self:getName()), self:getLabel())
+    end
 end
 
 function Germ:getName()

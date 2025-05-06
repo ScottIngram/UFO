@@ -9,11 +9,12 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
----@class Catalog -- IntelliJ-EmmyLua annotation
+---@class Catalog : UfoMixIn
 ---@field ufoType string The classname
 Catalog = {
     ufoType = "Catalog",
 }
+UfoMixIn:mixInto(Catalog)
 
 local flyoutIndexOnTheMouse
 local btnUnderTheMouse

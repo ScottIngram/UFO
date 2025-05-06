@@ -6,13 +6,14 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
----@class ThirdPartyAddonSupport -- IntelliJ-EmmyLua annotation
+---@class ThirdPartyAddonSupport : UfoMixIn
 ---@field isAnyActionBarAddonActive boolean
 ---@field ufoType string The classname
 ThirdPartyAddonSupport = {
     ufoType = "ThirdPartyAddonSupport",
     isAnyActionBarAddonActive = false,
 }
+UfoMixIn:mixInto(ThirdPartyAddonSupport)
 
 -------------------------------------------------------------------------------
 -- Data

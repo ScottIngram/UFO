@@ -9,12 +9,13 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
----@class IconPicker -- IntelliJ-EmmyLua annotation
+---@class IconPicker : UfoMixIn
 ---@field ufoType string The classname
 IconPicker = {
     ufoType = "IconPicker",
     macroMax = 999,
 }
+UfoMixIn:mixInto(IconPicker)
 
 -- export to the global namespace (via ExportToGlobal) so it's available to ui.xml
 GLOBAL_IconPickerMixin = IconPicker

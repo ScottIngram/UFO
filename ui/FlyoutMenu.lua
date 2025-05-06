@@ -11,8 +11,7 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 local zebug = Zebug:getSharedByName("GERMS_FLYOUTS_BUTTONS")
 
-
----@class FlyoutMenu : FlyoutPopupTemplate
+---@class FlyoutMenu : UfoMixIn
 ---@field ufoType string The classname
 ---@field id string
 ---@field isForGerm boolean
@@ -27,9 +26,10 @@ FlyoutMenu = {
     isForCatalog = false,
     nameSuffix = "_FlyoutMenu"
 }
+UfoMixIn:mixInto(FlyoutMenu)
 GLOBAL_FlyoutMenu = FlyoutMenu
 
----@alias FM_INHERITANCE FlyoutPopupTemplate | SecureFrameTemplate | Frame
+---@alias FM_INHERITANCE  UfoMixIn | FlyoutPopupTemplate | SecureFrameTemplate | Frame
 ---@alias FM_TYPE FlyoutMenu | FM_INHERITANCE
 
 -------------------------------------------------------------------------------
@@ -40,7 +40,21 @@ function FlyoutMenu:new(germ)
     local myName = germ:GetName() .. FlyoutMenu.nameSuffix
     ---@type FM_TYPE
     local self = CreateFrame(FrameType.FRAME, myName, germ, "UFO_FlyoutMenuTemplate") -- XML's mixin = FlyoutMenu
+    self.isForGerm = true
+    self:setId(germ:getFlyoutId())
+    self:installMyToString()
+    self:installHandlerForCloseOnClick()
     return self
+end
+
+local s = function(v) return v or "nil"  end
+
+function FlyoutMenu:toString()
+    if not self.flyoutId then
+        return "<FM: EMPTY>"
+    else
+        return string.format("<FM: %s>", self:getLabel())
+    end
 end
 
 function FlyoutMenu:getLabel()
@@ -48,7 +62,7 @@ function FlyoutMenu:getLabel()
     return self.label
 end
 
----@return ButtonOnFlyoutMenu
+---@return BOFM_TYPE
 function FlyoutMenu:getButtonFrame(i)
     return _G[ self:GetName().."_Button"..i ]
 end
@@ -75,7 +89,7 @@ function FlyoutMenu:forEachButton(handler)
     end
 end
 
----@return ButtonOnFlyoutMenu
+---@return BOFM_TYPE
 function FlyoutMenu:getBtn1()
     return self:getBtnKids()[1]
 end

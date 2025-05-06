@@ -16,10 +16,11 @@ local zebug = Zebug:new()
 ---@field id number unique identifier
 ---@field nopeIcon Frame w/ a little X indicator
 
----@type ButtonOnFlyoutMenu
+---@type ButtonOnFlyoutMenu : UfoMixIn
 ButtonOnFlyoutMenu = {
     ufoType = "ButtonOnFlyoutMenu",
 }
+UfoMixIn:mixInto(ButtonOnFlyoutMenu)
 GLOBAL_ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 
 ---@alias BOFM_INHERITANCE  Button_Mixin | SpellFlyoutPopupButtonMixin | SmallActionButtonTemplate | SecureActionButtonTemplate | Frame
