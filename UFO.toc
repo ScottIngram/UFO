@@ -25,6 +25,7 @@ locales\index.xml
 UfoMixin.lua
 DB.lua
 Config.lua
+Placeholder.lua
 SpecHelper.lua
 Cursor.lua
 ThirdPartyAddonSupport.lua
