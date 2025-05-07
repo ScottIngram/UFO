@@ -8,7 +8,7 @@
 ---@type Ufo -- IntelliJ-EmmyLua annotation
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-local zebug = Zebug:new(Zebug.TRACE)
+local zebug = Zebug:new(Zebug.INFO)
 
 ---@class UfoProxy : UfoMixIn
 ---@field macroId number
@@ -42,7 +42,6 @@ function EventHandlers:UPDATE_MACROS(me, eventCounter)
 end
 
 function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
-    eventCounter = eventCounter or "NO-EVENT-COUNTER"
     if not Ufo.hasShitCalmedTheFuckDown then return end
     
     local eventId = makeEventId(me, eventCounter)
@@ -79,6 +78,8 @@ function UfoProxy:isOn(obj)
 
     if obj:isA(BlizActionBarButton) then
         return self:isOnBtn(obj)
+    elseif obj:isA(ButtonDef) then
+        return self:isOnBtnDef(obj)
     elseif obj:isA(Cursor) then
         return self:isOnCursor(obj)
     end
@@ -89,6 +90,13 @@ function UfoProxy:isOnBtn(btn)
     assert(btn, "btn is nil.  So, no, it's not a UfoProxy")
     assert(UfoMixIn:isA(btn), "btn isn't from a UfoMixIn so I can't check if it contains a UfoProxy.")
     return (btn:getType() == ButtonType.MACRO) and (btn:getId() == UfoProxy:getMacroId())
+end
+
+---@param btnDef ButtonDef
+function UfoProxy:isOnBtnDef(btnDef)
+    assert(btnDef, "btnDef is nil.  So, no, it's not a UfoProxy")
+    assert(UfoMixIn:isA(btnDef, ButtonDef), "obj isn't a ButtonDef so I can't check if it contains a UfoProxy.")
+    return (btnDef.type == ButtonType.MACRO) and (btnDef.macroId == UfoProxy:getMacroId())
 end
 
 ---@param cursor Cursor
@@ -147,12 +155,12 @@ function UfoProxy:delayedAsyncDeleteProxy(eventId)
         -- START callback
                 function()
                     local c = Cursor:get()
-                    zebug.trace:name(name):label(eventId):print("double checking proxy... cursor", c)
+                    zebug.info:name(name):label(eventId):print("double checking proxy... cursor", c)
                     local isDraggingProxy = self:isOnCursor()
                     if isDraggingProxy then
                         UfoProxy:delayedAsyncDeleteProxy(eventId)
                     else
-                        zebug.trace:name(name):label(eventId):print("DIE PROXY !!!")
+                        zebug.info:name(name):label(eventId):print("DIE PROXY !!!")
                         UfoProxy:deleteProxyMacro(eventId)
                     end
                 end
