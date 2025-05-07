@@ -56,6 +56,9 @@ BLIZ_BAR_METADATA = {
     [13] = {name="MultiBar5",           yafName="MultiActionBar5"}, -- config UI -> Action Bars -> checkbox #6
     [14] = {name="MultiBar6",           yafName="MultiActionBar6"}, -- config UI -> Action Bars -> checkbox #7
     [15] = {name="MultiBar7",           yafName="MultiActionBar7"}, -- config UI -> Action Bars -> checkbox #8
+    [18] = {name="OverrideActionBar",   }, -- vehicle
+    [19] = {name="ExtraAction",         }, -- center screen popup spell
+
 }
 
 -------------------------------------------------------------------------------
