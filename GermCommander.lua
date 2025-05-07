@@ -258,6 +258,7 @@ end
 --- * a Ufo proxy for a new flyoutId as before this event - update the existing Germ with the new UFO config
 --- * a Ufo Placeholder that we programmatically put there and should be ignored
 function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, eventId)
+    local btnInSlot = BlizActionBarButton:new(btnSlotIndex, eventId) -- remove when debugging btnSlotIndex > 120
 
     local precludingEvent = Ufo.droppedPlaceholderOntoActionBar or Ufo.deletedPlaceholder
     if precludingEvent then
@@ -267,11 +268,13 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, eventId)
         return
     end
 
-    local btnInSlot = BlizActionBarButton:new(btnSlotIndex, eventId) -- TODO fix bug where vehicle UI can be off the upper end of btnSlots and action bars
     local savedFlyoutIdForSlot = Spec:getUfoFlyoutIdForSlot(btnSlotIndex)
     local germInSlot = self:recallGerm(btnSlotIndex)
+    zebug.info:label(eventId):print("analyzing change to btnSlotIndex",btnSlotIndex, "config for slot", savedFlyoutIdForSlot, "existing germ", germInSlot)
 
-    zebug.info:label(eventId):print("what got dropped",btnInSlot, "config for slot", savedFlyoutIdForSlot, "existing germ", germInSlot)
+
+    --local btnInSlot = BlizActionBarButton:new(btnSlotIndex, eventId) -- for debugging btnSlotIndex > 120
+    zebug.info:label(eventId):print("what got dropped",btnInSlot)
 
     if btnInSlot:isEmpty() then
         -- the btn slot is now empty, so clear the Germ in that slot (if any)
@@ -304,17 +307,16 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, eventId)
                 germInSlot:changeFlyoutId(draggedAndDroppedFlyoutId, eventId)
             end
         else
-            -- is proxy but no savedFlyoutIdForSlot
-            -- there is no germ already there
+            -- it's a UfoProxy but no savedFlyoutIdForSlot.
+            -- there is no germ already there.
             -- save the new ID into the DB
             -- and create a new germ
             local droppedFlyoutId = btnInSlot:getFlyoutIdFromUfoProxy()
-            print("droppedFlyoutId---->",droppedFlyoutId)
             self:putUfoOntoActionBar(btnSlotIndex, droppedFlyoutId, eventId)
         end
     else
         -- a std Bliz thingy.
-        zebug.info:label(eventId):print("a std Bliz thingy. ERASE if any")
+        zebug.info:label(eventId):print("a std Bliz thingy. ERASE Ufo (if any)")
         self:eraseUfoFrom(btnInSlot, germInSlot, eventId)
     end
 
@@ -506,7 +508,11 @@ function GermCommander:putUfoOntoActionBar(btnSlotIndex, flyoutId, eventId)
 
     self:savePlacement(btnSlotIndex, flyoutId, eventId)
     if Config.opts.usePlaceHolders then
-        Placeholder:put(btnSlotIndex, eventId)
+        local clobberedBtnDef = Placeholder:put(btnSlotIndex, eventId)
+        if UfoProxy:isOn(clobberedBtnDef) then
+            zebug.info:label(eventId):print("clearing the re-picked-up UfoProxy from the cursor", clobberedBtnDef)
+            Cursor:clear()
+        end
     end
     local germ = self:recallGerm(btnSlotIndex)
     if not germ then

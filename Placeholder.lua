@@ -34,6 +34,9 @@ function Placeholder:pickup(eventId)
     Cursor:pickupMacro(PLACEHOLDER_MACRO_NAME, eventId)
 end
 
+---@param btnSlotIndex number
+---@param eventId string
+---@return ButtonDef whatever was on btnSlotIndex before it got clobbered by the Placeholder
 function Placeholder:put(btnSlotIndex, eventId)
     if not Config.opts.usePlaceHolders then return end
 
@@ -50,12 +53,18 @@ function Placeholder:put(btnSlotIndex, eventId)
     -- yes? we're synchronous, yes?
     -- Ufo.droppedPlaceholderOntoActionBar = nil
 
+    local nowCursor = ButtonDef:getFromCursor()
     -- restore anything that had originally been on the cursor
     if crsDef then
-        zebug.info:label(self):print("triggering updateAll()  eventId",eventId)
-        crsDef:pickupToCursor()
-        --GermCommander:updateAll(eventId.."+putPlaceholder()") -- draw the dropped UFO -- TODO: update ONLY the one specific germ
+        zebug.info:label(eventId):print("restoring original cursor to",crsDef, "which replaces nowCursor",nowCursor)
+        crsDef:pickupToCursor(eventId)
+        nowCursor = crsDef
+        --GermCommander:updateAll(eventId.."+putPlaceholder()") -- draw the dropped UFO -- TODO: update ONLY the one specific germ.
+    else
+        zebug.info:label(eventId):print("nothing was originally on the cursor to",crsDef, "but it's currently nowCursor",nowCursor)
     end
+
+    return nowCursor
 end
 
 function Placeholder:clear(btnSlotIndex, eventId)

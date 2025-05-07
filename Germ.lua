@@ -65,7 +65,7 @@ local LEN_CLICK_ID_MARKER = string.len(CLICK_ID_MARKER)
 -------------------------------------------------------------------------------
 
 function Germ:new(flyoutId, btnSlotIndex, eventId)
-    local parentActionBarBtn, bbInfo = BlizActionBarButton:new(btnSlotIndex)
+    local parentActionBarBtn, bbInfo = BlizActionBarButton:new(btnSlotIndex, "Germ:New() for btnSlotIndex"..btnSlotIndex)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
 
     ---@type GERM_TYPE | Germ
@@ -158,7 +158,7 @@ end
 function Germ:initFlyoutMenu(eventId)
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu:new(self)
-        zebug.info:name(eventId):line("20","initFlyoutMenu",self.flyoutMenu)
+        zebug.info:label(eventId):line("20","initFlyoutMenu",self.flyoutMenu)
         self.flyoutMenu:updateForGerm(self, eventId)
         self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
 
