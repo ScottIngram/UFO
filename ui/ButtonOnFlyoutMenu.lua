@@ -150,7 +150,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
         return
     end
 
-    btnDef:pickupToCursor()
+    btnDef:pickupToCursor("ButtonOnFlyoutMenu:onDragStartDoPickup")
     local flyoutId = flyoutFrame:getId()
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     flyoutDef:removeButton(self:getId())
