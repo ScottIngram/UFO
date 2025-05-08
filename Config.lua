@@ -97,7 +97,7 @@ local function initializeOptionsMenu()
                 type = "toggle",
                 set = function(optionsMenu, val)
                     opts.doCloseOnClick = val
-                    GermCommander:updateAll("user-config-doCloseOnClick") -- TODO: target just the clickers
+                    GermCommander:updateAllGerms("user-config-doCloseOnClick") -- TODO: target just the clickers
                 end,
                 get = function()
                     return opts.doCloseOnClick
@@ -129,7 +129,7 @@ local function initializeOptionsMenu()
                 step = 1,
                 set = function(optionsMenu, val)
                     opts.hideCooldownsWhen = val
-                    GermCommander:throttledUpdateAll("user-config-hideCooldownsWhen")
+                    GermCommander:throttledUpdateAllSlots("user-config-hideCooldownsWhen") -- change to updateAllGerms
                 end,
                 get = function()
                     return opts.hideCooldownsWhen or 1

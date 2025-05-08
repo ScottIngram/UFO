@@ -14,6 +14,26 @@ local zebug = Zebug:new(Zebug.TRACE)
 ---@class Placeholder
 Placeholder = {}
 
+local width = 20
+
+-------------------------------------------------------------------------------
+-- Listeners
+-------------------------------------------------------------------------------
+
+local EventHandlers = { }
+
+function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+
+    local eventId = makeEventId("Placeholder:CURSOR_CHANGED", eventCounter)
+    local cursor = Cursor:getFresh(eventId)
+    zebug.info:name(eventId):out(width, "P","START! ", cursor, "!START!")
+    Placeholder:doNotLetUserDragMe(eventId)
+    zebug.info:name(eventId):out(width, "P","END!")
+end
+
+BlizGlobalEventsListener:register(Placeholder, EventHandlers)
+
 -------------------------------------------------------------------------------
 -- Methods
 -------------------------------------------------------------------------------
@@ -39,6 +59,9 @@ end
 ---@return ButtonDef whatever was on btnSlotIndex before it got clobbered by the Placeholder
 function Placeholder:put(btnSlotIndex, eventId)
     if not Config.opts.usePlaceHolders then return end
+
+    local theBtnAlready = BlizActionBarButton:get(btnSlotIndex, eventId)
+    if self:isOn(theBtnAlready, eventId) then return end
 
     Ufo.droppedPlaceholderOntoActionBar = eventId or true
 
@@ -69,31 +92,31 @@ end
 
 function Placeholder:clear(btnSlotIndex, eventId)
     --if not Config.opts.usePlaceHolders then return end
-    if not Placeholder:exists(btnSlotIndex) then return end
+    if not Placeholder:isOnBtnSlot(btnSlotIndex, eventId) then return end
     Cursor:pickupFromActionBar(btnSlotIndex, eventId)
     Cursor:clear()
 end
 
-function Placeholder:exists(btnSlotIndex)
+function Placeholder:isOnBtnSlot(btnSlotIndex, eventId)
     local type, id = GetActionInfo(btnSlotIndex)
-    zebug.trace:print("type",type, "id",id)
+    zebug.trace:label(eventId):print("btnSlotIndex",btnSlotIndex, "type",type, "id",id)
     if type == ButtonType.MACRO then
         local name = GetMacroInfo(id)
-        zebug.trace:print("name",name)
+        zebug.trace:label(eventId):print("btnSlotIndex",btnSlotIndex, "name",name)
         return name == PLACEHOLDER_MACRO_NAME
     end
     return false
 end
 
 ---@param btn BlizActionBarButton
-function Placeholder:isOn(btn)
+function Placeholder:isOn(btn, eventId)
     if not btn then return end
 
     local type, id = btn:getType(), btn:getId()
-    zebug.trace:print("type",type, "id",id)
+    zebug.trace:label(eventId):print("type",type, "id",id)
     if type == ButtonType.MACRO then
         local name = GetMacroInfo(id)
-        zebug.trace:print("name",name)
+        zebug.trace:label(eventId):print("name",name)
         return name == PLACEHOLDER_MACRO_NAME
     end
     return false
@@ -102,5 +125,15 @@ end
 function Placeholder:nuke()
     while GetMacroInfo(PLACEHOLDER_MACRO_NAME) do
         DeleteMacro(PLACEHOLDER_MACRO_NAME)
+    end
+end
+
+function Placeholder:doNotLetUserDragMe(eventId)
+    if Cursor:isUfoPlaceholder() and not Ufo.myPlaceholderSoDoNotDelete then
+        Cursor:clear(eventId)
+        Ufo.changedCursor = eventId
+    else
+        Ufo.changedCursor = false
+        Ufo.myPlaceholderSoDoNotDelete = false
     end
 end

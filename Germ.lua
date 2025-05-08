@@ -15,7 +15,7 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 local zebug = Zebug:new(Zebug.TRACE)
 
----@alias GERM_INHERITANCE UfoMixIn | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame | ScriptObject
+---@alias GERM_INHERITANCE UfoMixIn | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Button | Frame | ScriptObject
 ---@alias GERM_TYPE Germ | GERM_INHERITANCE
 
 ---@class Germ : GERM_TYPE
@@ -49,7 +49,7 @@ GermClickBehavior = {
 -- Data
 -------------------------------------------------------------------------------
 
-local handlers = {}
+local ScriptHandlers = {}
 local HANDLER_MAKERS_MAP
 
 -------------------------------------------------------------------------------
@@ -78,32 +78,36 @@ function Germ:new(flyoutId, btnSlotIndex, eventId)
 
     _G[myName] = self -- so that keybindings can reference it
 
-    -- one-time only initialization --
-
     -- initialize my fields
+
+    -- one-time only initialization --
     self.myName       = myName
     self.btnSlotIndex = btnSlotIndex
+    self.bbInfo       = bbInfo
+
+    -- any-time set whenever the config changes --
     self.flyoutId     = flyoutId
     self.label        = self:getFlyoutDef().name -- TODO remove?
-    self.bbInfo       = bbInfo
 
     -- install event handlers
     --self:SetScript(Script.ON_UPDATE,       handlers.OnUpdate)
 -- TEMP    self:SetScript(Script.ON_UPDATE,       Throttler:new(handlers.OnUpdate, 1, self.label ):asFunc() )
-    self:SetScript(Script.ON_ENTER,        handlers.OnEnter)
-    self:SetScript(Script.ON_LEAVE,        handlers.OnLeave)
-    self:SetScript(Script.ON_RECEIVE_DRAG, handlers.OnReceiveDrag)
-    self:SetScript(Script.ON_MOUSE_DOWN,   handlers.OnMouseDown)
-    self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
-    self:SetScript(Script.ON_DRAG_START,   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
+    self:SetScript(Script.ON_ENTER,        ScriptHandlers.OnEnter)
+    self:SetScript(Script.ON_LEAVE,        ScriptHandlers.OnLeave)
+    self:SetScript(Script.ON_RECEIVE_DRAG, ScriptHandlers.OnReceiveDrag)
+    self:SetScript(Script.ON_MOUSE_DOWN,   ScriptHandlers.OnMouseDown)
+    self:SetScript(Script.ON_MOUSE_UP,     ScriptHandlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
+    self:SetScript(Script.ON_DRAG_START,   ScriptHandlers.OnPickupAndDrag) -- this is required to get OnDrag to work
     self:HookScript(Script.ON_HIDE, function(self) zebug.warn:line(50,'***GERM*** Script.ON_HIDE for',self:GetName(),self); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc
-    self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
-    self:RegisterForDrag("LeftButton")
 
+    self:registerForBlizUiActions()
+    --self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
+    --self:RegisterForDrag("LeftButton")
+--
     -- manipulate methods
     self:installMyToString()
     self.originalHide = self:override("Hide", self.hide)
-    self.clear = Pacifier:pacify(self, "clear")
+    self.clearAndDisable = Pacifier:pacify(self, "clearAndDisable")
 
     -- UI positioning
     self:ClearAllPoints()
@@ -150,6 +154,10 @@ function Germ:getFlyoutId()
     return self.flyoutId
 end
 
+function Germ:isActive()
+    return self.flyoutId and true or false
+end
+
 ---@return string
 function Germ:getFlyoutName()
     return self:getFlyoutDef():getName()
@@ -191,6 +199,7 @@ function Germ:closeFlyout()
 end
 
 -- will replace Germ:Hide() via Germ:new()
+-- TODO is this serving the same purpose as clearAndDisable ?
 function Germ:hide()
     --zebug.error:dumpy(self:getLabel(), debugstack())
     --VisibleRegion:Hide(self) -- L-O-FUCKING-L this threw  "attempt to index global 'VisibleRegion' (a nil value)" was called from SecureStateDriver.lua:103
@@ -199,13 +208,45 @@ function Germ:hide()
     self:originalHide()
 end
 
-function Germ:clear(eventId)
+function Germ:clearAndDisable(eventId)
     zebug.info:label(eventId):print("germ",self)
     self:closeFlyout()
     self:hide()
     self:clearKeybinding()
-    self:setVisibilityDriver(nil) -- must be restored if Germ comes back
-    -- do I want to also clear defs etc? ... um, no? should only be done by the commander?
+    self:setVisibilityDriver(nil) -- must be restored if Germ comes back -- TODO: move into registerForBlizUiActions() ?
+    self.flyoutId = nil
+    self.label = nil
+    self.isConfigChanged = true
+
+    self:registerForBlizUiActions()
+    self:Disable() -- replaces all (well, most) of the above?
+    self:SetEnabled(false) -- equiv?
+end
+
+function Germ:changeFlyoutIdAndEnable(flyoutId, eventId)
+    if flyoutId == self.flyoutId then
+        zebug.trace:label(eventId):print("Um, that's the same flyoutId as before",flyoutId)
+        return
+    end
+
+    self.isConfigChanged = true
+    self:closeFlyout()
+    self.flyoutId = flyoutId
+    self.flyoutMenu:updateForGerm(self, eventId)
+    self:Show()
+
+    -- change any/everything
+    -- go analyze the update() etc in Germ *AND* GermCommander
+
+    -- the btn1 may need to change
+    -- the clickers
+    -- the flyout
+    -- the flyoutDef
+
+    self.isConfigChanged = false
+
+    self:Enable()
+    --self:SetEnabled(true) -- equiv?
 end
 
 --[[
@@ -248,28 +289,6 @@ function Germ:updateAllBtnHotKeyLabels()
     self.flyoutMenu:updateForGerm(self)
 end
 
-function Germ:changeFlyoutId(flyoutId, eventId)
-    if flyoutId == self.flyoutId then
-        zebug.trace:label(eventId):print("Um, that's the same flyoutId as before",flyoutId)
-        return
-    end
-
-    self.isConfigChanged = true
-    self:closeFlyout()
-    self.flyoutId = flyoutId
-    self.flyoutMenu:updateForGerm(self, eventId)
-
-    -- change any/everything
-    -- go analyze the update() etc in Germ *AND* GermCommander
-
-    -- the btn1 may need to change
-    -- the clickers
-    -- the flyout
-    -- the flyoutDef
-
-    self.isConfigChanged = false
-end
-
 local maxUpdateFrequency = 0.5
 
 -- TODO: rename and refactor - split into init and update - leverage setFlyoutId()
@@ -302,6 +321,10 @@ function Germ:_secretUpdate(eventId,amDelayed)
     ---@type GERM_TYPE
     local self = self
     local flyoutId = self.flyoutId
+    if not flyoutId then
+        -- I've been deactivated / disabled
+        zebug.error:line(70,"proof of bug - removed when fixed")
+    end
 
     local btnSlotIndex = self.btnSlotIndex
     zebug.trace:name("_secretUpdate"):label(eventId):line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName(), "amDelayed",amDelayed)
@@ -311,7 +334,7 @@ function Germ:_secretUpdate(eventId,amDelayed)
         -- because one toon can delete a flyout while other toons still have it on their bars
         local msg = "Flyout".. flyoutId .."no longer exists.  Removing it from your action bars."
         msgUser(msg)
-        GermCommander:deletePlacement(btnSlotIndex, eventId)
+        GermCommander:forgetPlacement(btnSlotIndex, eventId)
         return
     end
 
@@ -447,6 +470,12 @@ function Germ:getDef()
     return self:getBtnDef(1)
 end
 
+-------------------------------------------------------------------------------
+-- Key Bindings & UI actions Registerings
+-------------------------------------------------------------------------------
+
+-- called by GermCommander:updateAllKeybinds()... which is currently unused???
+-- called by GermCommander:updateBtnSlot()
 function Germ:doKeybinding()
     if isInCombatLockdown("Keybind") then return end
 
@@ -508,6 +537,58 @@ function Germ:clearKeybinding()
 
 end
 
+function Germ:registerForBlizUiActions()
+    if self.eventsRegistered then return end
+
+    self:RegisterForDrag(MouseClick.LEFT)
+    self:RegisterForClicks("AnyDown", "AnyUp")
+
+    -- TODO - refactor GermCommander so we do these here in Germ
+    -- leverage BlizGlobalEventsListener
+    --self:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+    --self:RegisterEvent("SPELL_UPDATE_USABLE")
+    --self:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
+    --self:RegisterEvent("ACTIONBAR_PAGE_CHANGED")
+    --self:RegisterEvent("BAG_UPDATE") -- ?
+    --self:RegisterEvent("UNIT_INVENTORY_CHANGED")
+    --self:RegisterEvent("UPDATE_BINDINGS")
+    --self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED") -- usableFlyout may change
+
+    self.eventsRegistered = true
+end
+
+-- and here
+function Germ:unregisterForBlizUiActions()
+    if not self.eventsRegistered then return end
+
+    self:RegisterForDrag(nil)
+    self:RegisterForClicks(nil)
+    --self:UnregisterAllEvents()
+
+    self.eventsRegistered = false
+end
+
+function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId()
+    -- TODO v11.1 - wrap in exeNotInCombat() ? in case "/reload" during combat
+    -- set attributes used inside the secure scriptlettes
+    self:SetAttribute("flyoutDirection", self:getDirection())
+    self:SetAttribute("FLYOUT_MENU_NAME", self.flyoutMenu:GetName())
+    self:SetAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
+
+    local flyoutId = self.flyoutId
+    self:setMouseClickHandler(MouseClick.LEFT,   Config:getClickBehavior(flyoutId, MouseClick.LEFT))
+    self:setMouseClickHandler(MouseClick.MIDDLE, Config:getClickBehavior(flyoutId, MouseClick.MIDDLE))
+    self:setMouseClickHandler(MouseClick.RIGHT,  Config:getClickBehavior(flyoutId, MouseClick.RIGHT))
+    self:setMouseClickHandler(MouseClick.FOUR,   Config:getClickBehavior(flyoutId, MouseClick.FOUR))
+    self:setMouseClickHandler(MouseClick.FIVE,   Config:getClickBehavior(flyoutId, MouseClick.FIVE))
+    self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior)
+end
+
+
+
+
+
+
 -------------------------------------------------------------------------------
 -- Handlers
 --
@@ -528,7 +609,7 @@ function Germ:nextEventId(eventName)
 end
 
 ---@param germ GERM_TYPE
-function handlers.OnMouseDown(germ)
+function ScriptHandlers.OnMouseDown(germ)
     local eventId = germ:nextEventId("/OnMouseDown_")
     zebug.trace:name(eventId):out(hWidth, "^",":START: Click! :START:")
     germ:OnMouseDown()
@@ -538,13 +619,13 @@ function handlers.OnMouseDown(germ)
 end
 
 ---@param germ GERM_TYPE -- IntelliJ-EmmyLua annotation
-function handlers.OnMouseUp(germ)
+function ScriptHandlers.OnMouseUp(germ)
     local eventId = germ:nextEventId("/OnMouseDown_")
     zebug.trace:name(eventId):out(hWidth, "V",":START: Click! :START:")
     germ:OnMouseUp()
     local isDragging = GetCursorInfo()
     if isDragging then
-        handlers.OnReceiveDrag(germ)
+        ScriptHandlers.OnReceiveDrag(germ)
     end
     zebug.trace:name(eventId):out(hWidth, "V",":END:")
 end
@@ -553,7 +634,7 @@ end
 -- The something is either a std Bliz thingy,
 -- or, a UFO (which itself is represented by the "proxy" macro)
 ---@param germ GERM_TYPE
-function handlers.OnReceiveDrag(germ)
+function ScriptHandlers.OnReceiveDrag(germ)
     if isInCombatLockdown("Drag and drop") then return end
 
     local eventId = germ:nextEventId("/OnReceiveDrag_")
@@ -562,13 +643,13 @@ function handlers.OnReceiveDrag(germ)
     local cursor = Cursor:get()
     if cursor then
         Cursor:dropOntoActionBar(germ:getBtnSlotIndex())
-        GermCommander:updateAll(eventId) -- draw the dropped UFO -- TODO: update ONLY the one specific germ
+        GermCommander:updateAllSlots(eventId) -- draw the dropped UFO -- TODO: update ONLY the one specific germ
     end
     zebug.trace:name(eventId):out(hWidth, "0",":END:")
 end
 
----@param germ GERM_TYPE
-function handlers.OnPickupAndDrag(germ)
+---@param germ GERM_TYPE a germ !
+function ScriptHandlers.OnPickupAndDrag(germ)
     if LOCK_ACTIONBAR then return end
     if not IsShiftKeyDown() then return end
     if isInCombatLockdown("Drag and drop") then return end
@@ -576,8 +657,14 @@ function handlers.OnPickupAndDrag(germ)
     local eventId = germ:nextEventId("/OnPickupAndDrag_")
     zebug.trace:name(eventId):label(self):out(hWidth, "+",":START: Yoink! :START:")
 
-    -- erase Ufo From the slot
+    germ:pickupFromSlotAndClear(eventId)
+
+--[[
+    -- grab needed info before it gets cleared
     local btnSlotIndex = germ:getBtnSlotIndex()
+    local pickingUpThisFlyoutId = germ.flyoutId
+
+    -- erase Ufo From the slot
     GermCommander:eraseUfoFrom(btnSlotIndex, self, eventId)
 
     -- the ON_DRAG_START event apparently precedes the cursor change
@@ -589,20 +676,52 @@ function handlers.OnPickupAndDrag(germ)
         if cursorBeforeItDrops:isUfoProxy() then
             -- the user is dragging a UFO
             local droppingThisFlyoutId = UfoProxy:getFlyoutId()
-            GermCommander:dropUfoFromCursorOntoActionBar(btnSlotIndex, droppingThisFlyoutId, eventId)
+            GermCommander:dropDraggedUfoFromCursorOntoActionBar(btnSlotIndex, droppingThisFlyoutId, eventId)
         else
             -- the user is just dragging a normal Bliz spell/item/etc.
             -- Cursor:dropOntoActionBar(btnSlotIndex, eventId) -- this is already happening without me needing to do anything, yes?
         end
     end
 
-    UfoProxy:pickupUfoOntoCursor(germ.flyoutId, eventId)
+    UfoProxy:pickupUfoOntoCursor(pickingUpThisFlyoutId, eventId)
+    --GermCommander:updateAll(eventId)
+    zebug.trace:name(eventId):label(self):out(hWidth, "+",":END:")
+]]
+end
+
+function Germ:pickupFromSlotAndClear(eventId)
+    if isInCombatLockdown("Drag and drop") then return end
+
+    -- grab needed info before it gets cleared
+    local btnSlotIndex = self:getBtnSlotIndex()
+    local pickingUpThisFlyoutId = self.flyoutId
+
+    -- erase Ufo From the slot
+    GermCommander:eraseUfoFrom(btnSlotIndex, self, eventId)
+
+    -- the ON_DRAG_START event apparently precedes the cursor change
+    -- so, handle whatever is currently on the cursor, if anything.
+    local cursorBeforeItDrops = Cursor:get()
+    if cursorBeforeItDrops then
+        zebug.warn:name(eventId):label(self):print("cursorBeforeItDrops", cursorBeforeItDrops)
+        local foo = cursorBeforeItDrops:isUfoProxy()
+        if cursorBeforeItDrops:isUfoProxy() then
+            -- the user is dragging a UFO
+            local droppingThisFlyoutId = UfoProxy:getFlyoutId()
+            GermCommander:dropDraggedUfoFromCursorOntoActionBar(btnSlotIndex, droppingThisFlyoutId, eventId)
+        else
+            -- the user is just dragging a normal Bliz spell/item/etc.
+            -- Cursor:dropOntoActionBar(btnSlotIndex, eventId) -- this is already happening without me needing to do anything, yes?
+        end
+    end
+
+    UfoProxy:pickupUfoOntoCursor(pickingUpThisFlyoutId, eventId)
     --GermCommander:updateAll(eventId)
     zebug.trace:name(eventId):label(self):out(hWidth, "+",":END:")
 end
 
 ---@param germ GERM_TYPE -- IntelliJ-EmmyLua annotation
-function handlers.OnEnter(germ)
+function ScriptHandlers.OnEnter(germ)
     germ:setToolTip()
     local eventId = germ:nextEventId("/OnEnter_")
     zebug.trace:name(eventId):out(hWidth, ">",":START: no means no :START:")
@@ -611,7 +730,7 @@ function handlers.OnEnter(germ)
 end
 
 ---@param germ GERM_TYPE -- IntelliJ-EmmyLua annotation
-function handlers.OnLeave(germ)
+function ScriptHandlers.OnLeave(germ)
     GameTooltip:Hide()
     local eventId = germ:nextEventId("/OnLeave_")
     zebug.trace:name(eventId):out(hWidth, "<",":START: poopy :START:")
@@ -625,7 +744,7 @@ local ON_UPDATE_TIMER_FREQUENCY = 10
 local onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
 
 ---@param germ GERM_TYPE
-function handlers.OnUpdate(germ, elapsed)
+function ScriptHandlers.OnUpdate(germ, elapsed)
     local eventId = germ:nextEventId("/OnUpdate_")
     zebug.trace:name(eventId.." START"):out(hWidth, ".",":START: gogogogo :START:")
     germ:handleGermUpdateEvent(eventId)
@@ -634,7 +753,7 @@ function handlers.OnUpdate(germ, elapsed)
 end
 
 ---@param germ GERM_TYPE
-function handlers.OLD_OnUpdate(germ, elapsed)
+function ScriptHandlers.OLD_OnUpdate(germ, elapsed)
     onUpdateTimer = onUpdateTimer + elapsed
     if onUpdateTimer < ON_UPDATE_TIMER_FREQUENCY then
         return
@@ -650,7 +769,7 @@ function handlers.OLD_OnUpdate(germ, elapsed)
 end
 
 ---@param germ GERM_TYPE
-function handlers.OnPreClick(germ, mouseClick, down)
+function ScriptHandlers.OnPreClick(germ, mouseClick, down)
     -- am I not being called?  maybe the mixin is over riding me
     zebug.error:print("am I not being called?","weeee!")
     germ:SetChecked(germ:GetChecked())
@@ -687,7 +806,7 @@ local oldGerm
 -- in which case there is no OnShow event which is where the below usually happens
 ---@param self GERM_TYPE
 ---@param mouseClick MouseClick
-function handlers.OnPostClick(self, mouseClick, down)
+function ScriptHandlers.OnPostClick(self, mouseClick, down)
     if oldGerm and oldGerm ~= self then
         self:updateAllBtnCooldownsEtc()
     end
@@ -1211,87 +1330,6 @@ end
     return self
 end
 ]]
-
-
-
-
-
-function Germ:registerEventListeners()
-    -- try to replace all of these with self:SetAttribute("_onhide"(e.g.), "flyout:ClearBindings()") secure style handlers
-
-    -- Drag and Drop behavior
-    self:RegisterForDrag(MouseClick.LEFT)
-    --SecureHandlerWrapScript(self, "OnDragStart", self, "return "..QUOTE.."message"..QUOTE , "print(123456789)") -- this does nothing.  TODO: understand why
-
-    -- Click behavior
-    --self:RegisterForClicks("AnyUp") -- this does nothing
-    --self:RegisterForClicks("AnyDown") -- this works but clobbers OnDragStart
-    self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
-
-
-    --[[
-    -- Events found in ActionBarButtonEventsFrameMixin:OnLoad()
-    -- do I need to subscribe to these?
-
-    self:SetScript("OnEvent", self.OnEvent)
-    self:RegisterEvent("PLAYER_ENTERING_WORLD");
-    self:RegisterEvent("ACTIONBAR_SLOT_CHANGED");
-    self:RegisterEvent("UPDATE_BINDINGS");
-    self:RegisterEvent("GAME_PAD_ACTIVE_CHANGED");
-    self:RegisterEvent("UPDATE_SHAPESHIFT_FORM");
-    self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN");
-    self:RegisterEvent("PET_BAR_UPDATE");
-    self:RegisterUnitEvent("UNIT_FLAGS", "pet");
-    self:RegisterUnitEvent("UNIT_AURA", "pet");
-    self:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED");
-    self:RegisterEvent("SPELL_UPDATE_ICON");
-]]
-end
-
-function Germ:unRegisterEventListeners()
-    self:UnregisterEvent()
-
-
-    --[[
-        -- found in SpellFlyoutMixin:OnHide()
-
-        if (self.eventsRegistered == true) then
-            self:UnregisterEvent("SPELL_UPDATE_COOLDOWN");
-            self:UnregisterEvent("CURRENT_SPELL_CAST_CHANGED");
-            self:UnregisterEvent("SPELL_UPDATE_USABLE");
-            self:UnregisterEvent("BAG_UPDATE");
-            self:UnregisterEvent("ACTIONBAR_PAGE_CHANGED");
-            self:UnregisterEvent("PET_STABLE_UPDATE");
-            self:UnregisterEvent("PET_STABLE_SHOW");
-            self:UnregisterEvent("SPELL_FLYOUT_UPDATE");
-            EventRegistry:UnregisterCallback("WorldMapMaximized", self.Close);
-            EventRegistry:UnregisterCallback("WorldMapOnShow", self.CloseIfWorldMapMaximized);
-            self.eventsRegistered = false;
-        end
-    ]]
-
-end
-
-function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId()
-    -- TODO v11.1 - wrap in exeNotInCombat() ? in case "/reload" during combat
-    -- set attributes used inside the secure scriptlettes
-    self:SetAttribute("flyoutDirection", self:getDirection())
-    self:SetAttribute("FLYOUT_MENU_NAME", self.flyoutMenu:GetName())
-    self:SetAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
-
-    local flyoutId = self.flyoutId
-    self:setMouseClickHandler(MouseClick.LEFT,   Config:getClickBehavior(flyoutId, MouseClick.LEFT))
-    self:setMouseClickHandler(MouseClick.MIDDLE, Config:getClickBehavior(flyoutId, MouseClick.MIDDLE))
-    self:setMouseClickHandler(MouseClick.RIGHT,  Config:getClickBehavior(flyoutId, MouseClick.RIGHT))
-    self:setMouseClickHandler(MouseClick.FOUR,   Config:getClickBehavior(flyoutId, MouseClick.FOUR))
-    self:setMouseClickHandler(MouseClick.FIVE,   Config:getClickBehavior(flyoutId, MouseClick.FIVE))
-    self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior)
-end
-
-
-
-
-
 
 
 

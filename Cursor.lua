@@ -20,6 +20,7 @@ local zebug = Zebug:new(Zebug.TRACE)
 ---@field bookType any
 ---@field overriddenSpellId number
 ---@field amount number
+---@field whenWasCached number
 ---@field ufoType string The classname
 Cursor = {
     ufoType = "Cursor"
@@ -57,10 +58,6 @@ BlizGlobalEventsListener:register(Cursor, EventHandlers)
 
 ---@return Cursor
 function Cursor:get()
-    if cachedCursor then
-        return cachedCursor
-    end
-
     self = self:asInstance(true)
     local type, a, b, c, d = GetCursorInfo()
     if type == ButtonType.ITEM then
@@ -96,17 +93,44 @@ function Cursor:get()
     end
 
     cachedCursor = self
+    self.whenWasCached = time()
     return self
 end
 
-function Cursor:asInstance(skipPop)
-    if self == Cursor then
-        self = deepcopy(self, {})
-        self:installMyToString()
-        if not skipPop then
-            self:get()
+local maxAge = 2 -- seconds
+-- bypass the cache - should only need to be used by other subscribers of CURSOR_CHANGED due to race condition
+function Cursor:getFresh(eventId)
+    if cachedCursor then
+        local age = time() - cachedCursor.whenWasCached
+        zebug.trace:label(eventId):print("age", age)
+        if age > maxAge then
+            zebug.trace:print("clearing cache because it's too old!")
+            cachedCursor = nil
+        else
+            zebug.trace:label(eventId):print("not clearing cache. cache is young!")
         end
+    else
+        zebug.trace:label(eventId):print("no cache to clear")
     end
+
+    return self:get()
+end
+
+function Cursor:asInstance(skipPop)
+    if self ~= Cursor then
+        return self
+    end
+
+    if cachedCursor then
+        return cachedCursor
+    end
+
+    self = deepcopy(self, {})
+    self:installMyToString()
+    if not skipPop then
+        self = self:get()
+    end
+
     return self
 end
 
@@ -131,8 +155,10 @@ function Cursor:isNotEmpty()
     return (type or false) and true
 end
 
-function Cursor:clear()
+function Cursor:clear(eventId)
+    zebug.trace:label(eventId):print("clearing cursor and cache")
     ClearCursor()
+    cachedCursor = nil
 end
 
 ---@param btnSlotIndex number the bliz identifier for an action bar button.

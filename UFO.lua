@@ -43,7 +43,7 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi, me, 
     zebug.error:name(eventId):out(width, "=","START! isInitialLogin",isInitialLogin, "isReloadingUi",isReloadingUi, "!START!")
     initalizeAddonStuff()
     --if isInCombatLockdown("Ignoring event PLAYER_ENTERING_WORLD because it") then return end
-    GermCommander:updateAll(eventId)
+    GermCommander:updateAllSlots(eventId)
     zebug.error:name(eventId):out(width, "=","END!")
 end
 
@@ -72,7 +72,7 @@ function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(id, me, eventCounter)
     --if isInCombatLockdownQuiet("Ignoring event PLAYER_SPECIALIZATION_CHANGED because it") then return end
     local eventId = makeEventId(me, eventCounter)
     zebug.trace:name(eventId):out(width, "S","!START --------------- !START!")
-    GermCommander:updateAll(eventId)
+    GermCommander:updateAllSlots(eventId)   -- change to handleChangeSpec() aka updateAllGermsANDallSlots()
     zebug.trace:name(eventId):out(width, "S","!END --------------- END!")
 end
 
@@ -85,13 +85,11 @@ function EventHandlers:UPDATE_MACROS(me, eventCounter)
     zebug.trace:name(eventId):out(width, "M","!END --------------- END!")
 end
 
-function EventHandlers:UNIT_INVENTORY_CHANGED(id, me, eventCounter)
+function EventHandlers:BAG_UPDATE(id, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     --if isInCombatLockdownQuiet("Ignoring event UNIT_INVENTORY_CHANGED because it") then return end
     local eventId = makeEventId(me, eventCounter)
     zebug.trace:name(eventId):out(width, "I","START! Bags be different now? !START!")
-
-    local eventId = "UNIT_INVENTORY_CHANGED" .. eventCounter
     GermCommander:handleEventChangedInventory(eventId)
     zebug.trace:name(eventId):out(width, "I","END!")
 end
@@ -186,7 +184,7 @@ function initalizeAddonStuff()
     Config:initializeOptionsMenu()
 
     MacroShitShow:init()
-    UfoProxy:delayedAsyncDeleteProxy("Ufo:initalizeAddonStuff()")
+    UfoProxy:deleteProxyMacro("Ufo:initalizeAddonStuff()")
     ThirdPartyAddonSupport:detectSupportedAddons()
     registerSlashCmd("ufo", slashFuncs)
     Catalog:definePopupDialogWindow()

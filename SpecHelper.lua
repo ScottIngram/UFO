@@ -46,15 +46,6 @@ function Spec:recordCurrentSpec()
     return hasChanged
 end
 
--- I originally created this method to handle the PLAYER_SPECIALIZATION_CHANGED event
--- but, in consitent bliz inconsistency, it's unreliable whether that event
--- will shoot off before, during, or after the ACTIONBAR_SLOT_CHANGED event which also will trigger updateAllGerms()
--- so, I had to move recordCurrentSpec() directly into getConfigForCurrentSpec() and am leaving this here as a monument.
-function Spec:changePlacementsBecauseSpecChanged()
-    -- recordCurrentSpec() -- nope, nevermind.  moved below
-    GermCommander:updateAll("PLAYER_SPECIALIZATION_CHANGED")
-end
-
 function Spec:getUfoFlyoutIdForSlot(btnSlotIndex)
     return Spec:getPlacementConfigForCurrentSpec()[btnSlotIndex]
 end

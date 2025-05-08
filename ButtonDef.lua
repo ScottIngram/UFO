@@ -364,6 +364,7 @@ function ButtonDef:readToolTipForToyType()
 end
 
 -- TODO: fixx bug - doesn't understand Bliz flyouts such as Dragon Riding
+-- TODO: consolidate / integrate with BlizActionBarButton:get()
 ---@return ButtonDef
 function ButtonDef:getFromCursor()
     ---@type ButtonDef

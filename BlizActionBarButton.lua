@@ -119,6 +119,8 @@ function BlizActionBarButton:new(btnSlotIndex, eventId)
     return actionBarBtnFrame, btnDesc
 end
 
+BlizActionBarButton.get = BlizActionBarButton.new
+
 function BlizActionBarButton:isEmpty()
     ---@type BABB_TYPE
     local self = self
@@ -147,8 +149,9 @@ function BlizActionBarButton:isUfoProxy()
     return UfoProxy:isOnBtn(self)
 end
 
+-- unused?
 function BlizActionBarButton:isUfoPlaceholder()
-    return Placeholder:exists()   :isOnBtn(self)
+    return Placeholder:isOn(self)
 end
 
 function BlizActionBarButton:getFlyoutIdFromUfoProxy()
@@ -168,8 +171,8 @@ function BlizActionBarButton:toString()
             local id = d.aId
             if d.aType == ButtonType.MACRO then
                 if id == UfoProxy:getMacroId() then
-                    id = "UfoProxy: ".. UfoProxy:getFlyoutName()
-                elseif Placeholder:isOn(self) then
+                    id = "UfoProxy: ".. (UfoProxy:getFlyoutName() or "UnKnOwN")
+                elseif Placeholder:isOn(self, "BlizActionBarButton:toString()") then
                     id = "Placeholder"
                 end
             end
