@@ -218,7 +218,7 @@ function Germ:clearAndDisable(eventId)
     self.label = nil
     self.isConfigChanged = true
 
-    self:registerForBlizUiActions()
+    self:unregisterForBlizUiActions()
     self:Disable() -- replaces all (well, most) of the above?
     self:SetEnabled(false) -- equiv?
 end
@@ -233,6 +233,7 @@ function Germ:changeFlyoutIdAndEnable(flyoutId, eventId)
     self:closeFlyout()
     self.flyoutId = flyoutId
     self.flyoutMenu:updateForGerm(self, eventId)
+    self:registerForBlizUiActions()
     self:Show()
 
     -- change any/everything
@@ -313,6 +314,11 @@ end
 
 -- TODO v11.1 - figure out what all actually needs to be updated under which circumstances
 function Germ:_secretUpdate(eventId,amDelayed)
+    if not self:isActive() then
+        zebug.error:name("_secretUpdate"):label(self):line(50, "I am limited.  Because I have  nodes.")
+        return
+    end
+
     if not eventId then
         zebug.error:name("_secretUpdate"):label(self):line(50, "eventId is nil !!! amDelayed",amDelayed)
         zebug.error:name("_secretUpdate"):print("STACK DUMP", debugstack())
@@ -540,6 +546,7 @@ end
 function Germ:registerForBlizUiActions()
     if self.eventsRegistered then return end
 
+    self:EnableMouseMotion(true)
     self:RegisterForDrag(MouseClick.LEFT)
     self:RegisterForClicks("AnyDown", "AnyUp")
 
@@ -561,8 +568,9 @@ end
 function Germ:unregisterForBlizUiActions()
     if not self.eventsRegistered then return end
 
-    self:RegisterForDrag(nil)
-    self:RegisterForClicks(nil)
+    self:EnableMouseMotion(false)
+    self:RegisterForDrag("Button6Down")
+    self:RegisterForClicks("Button6Down")
     --self:UnregisterAllEvents()
 
     self.eventsRegistered = false
