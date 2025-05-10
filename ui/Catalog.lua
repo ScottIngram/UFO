@@ -159,7 +159,10 @@ function Catalog:toggle(clickedBtn, forceOpen)
     end
 end
 
-function Catalog:update()
+local NO_EVENT = Event:new(Catalog, "Misc Update")
+
+function Catalog:update(event)
+    event = event or NO_EVENT
     local scrollPane = UFO_CatalogScrollPane
     local flyoutsCount = FlyoutDefsDb:howMany()
     local theAddButton = flyoutsCount + 1
@@ -173,7 +176,7 @@ function Catalog:update()
     local isDragging = flyoutDefOnTheMouse and btnUnderTheMouse
     local hoverIndex = isDragging and tonumber(btnUnderTheMouse.flyoutIndex) -- this can be nil if hovering over the Add+ button
 
-    zebug.trace:print("flyoutsCount",flyoutsCount, "on the mouse", flyoutDefOnTheMouse, "newMouseOver", btnUnderTheMouse and btnUnderTheMouse.flyoutIndex, "isDragging",isDragging )
+    zebug.trace:event(event):print("flyoutsCount",flyoutsCount, "on the mouse", flyoutDefOnTheMouse, "newMouseOver", btnUnderTheMouse and btnUnderTheMouse.flyoutIndex, "isDragging",isDragging )
 
     ---@type FlyoutMenu
     local flyoutMenu = UFO_FlyoutMenuForCatalog
@@ -183,7 +186,7 @@ function Catalog:update()
         ---@type number
         local row = i+scrollOffset
         local btnFrame = visibleBtnFrames[i]
-        zebug.trace:print("i",i, "row", row)
+        zebug.trace:event(event):print("i",i, "row", row)
         if row > theAddButton then
             btnFrame:Hide()
         else
@@ -221,7 +224,7 @@ function Catalog:update()
                 -- then offset the other flyouts to make room for it
                 local flyoutIndex = row -- default to the actual row
                 if hoverIndex and hoverIndex ~= theAddButton and flyoutIndexOnTheMouse then
-                    zebug.trace:print("row",row, "hoverIndex",hoverIndex, "flyoutIndexOnTheMouse",flyoutIndexOnTheMouse)
+                    zebug.trace:event(event):print("row",row, "hoverIndex",hoverIndex, "flyoutIndexOnTheMouse",flyoutIndexOnTheMouse)
                     if row > hoverIndex and row <= flyoutIndexOnTheMouse then
                         flyoutIndex = row - 1
                     elseif row >= flyoutIndexOnTheMouse and row < hoverIndex then
@@ -233,7 +236,7 @@ function Catalog:update()
                 local flyoutId = flyoutDef.id
                 local icon = flyoutDef:getIcon()
 
-                zebug.trace:print("i",i, "flyoutIndex", row, "flyoutId",flyoutId)
+                zebug.trace:event(event):print("i",i, "flyoutIndex", row, "flyoutId",flyoutId)
 
                 btnFrame.name = flyoutDef.name
                 btnFrame.label = flyoutDef.name or row
@@ -242,7 +245,7 @@ function Catalog:update()
                 btnFrame.text:SetText(btnFrame.label);
                 btnFrame.text:SetTextColor(DEFAULT_COLOR.r, DEFAULT_COLOR.g, DEFAULT_COLOR.b);
 
-                zebug.trace:print("flyoutIndex", row, "btnFrame.flyoutId",btnFrame.flyoutId)
+                zebug.trace:event(event):print("flyoutIndex", row, "btnFrame.flyoutId",btnFrame.flyoutId)
 
                 if icon then
                     if(type(icon) == "number") then
@@ -302,8 +305,8 @@ function Catalog:update()
     end
 end
 
-function Catalog:clearProxyAndCursor(eventId)
-    UfoProxy:deleteProxyMacro(eventId)
+function Catalog:clearProxyAndCursor(event)
+    UfoProxy:deleteProxyMacro(event)
     ClearCursor()
 end
 
@@ -394,7 +397,10 @@ function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
     local flyoutId = btnInCatalog.flyoutId
     flyoutIndexOnTheMouse = btnInCatalog.flyoutIndex
     if exists(flyoutId) then
-        UfoProxy:pickupUfoOntoCursor(flyoutId, "CatalogEntry_OnDragStart")
+        local event = Event:new("Catalog", "OnDragStart")
+        zebug.warn:mSquare():runEvent(event, function()
+            UfoProxy:pickupUfoOntoCursor(flyoutId, "CatalogEntry_OnDragStart")
+        end)
     end
     local scrollPane = btnInCatalog:GetParent():GetParent()
     scrollPane.selectedIdx = nil

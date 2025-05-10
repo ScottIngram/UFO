@@ -88,12 +88,12 @@ end
 ---@param flyoutId number
 function GermCommander:updateGermsFor(flyoutId, eventId)
     if isInCombatLockdown("Reconfiguring") then return end
-    zebug.info:label(eventId):print("updating all Germs with",flyoutId)
+    zebug.info:event(eventId):print("updating all Germs with",flyoutId)
 
     self:forEachPlacement(function(btnSlotIndex, flyoutIdForGermInThisSlot)
         if flyoutIdForGermInThisSlot == flyoutId then
             local germ = self:recallGerm(btnSlotIndex)
-            zebug.info:label(eventId):print("nuking",germ, "in btnSlotIndex", btnSlotIndex)
+            zebug.info:event(eventId):print("nuking",germ, "in btnSlotIndex", btnSlotIndex)
             self:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
         end
     end)
@@ -115,15 +115,15 @@ end
 -- * addon initialization
 -- * spec change
 -- * maybe during zoning / player entering world ?
-function GermCommander:updateAllSlots(eventId)
-    zebug.trace:line(40, "eventId",eventId)
+function GermCommander:updateAllSlots(event)
+    zebug.trace:event(event):line(40, "eventId", event)
     --if isInCombatLockdown("Reconfiguring") then return end
 
     -- closeAllGerms() -- this is only required because we sledge hammer all the germs every time. TODO don't do!
 
     zebug:setNoiseLevel(Zebug.INFO)
     self:forEachPlacement(function(btnSlotIndex, flyoutId)
-        self:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
+        self:updateBtnSlot(btnSlotIndex, flyoutId, event)
     end)
     zebug:setNoiseLevelBackToOriginal()
 
@@ -159,7 +159,7 @@ function GermCommander:updateSomeGerms(fitnessFunc, eventId)
             germ:update()
             self:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
         else
-            zebug.trace:label(eventId):print("skipping",germ, "because it failed fitnessFunc()")
+            zebug.trace:event(eventId):print("skipping",germ, "because it failed fitnessFunc()")
         end
     end)
     zebug:setNoiseLevelBackToOriginal()
@@ -197,7 +197,7 @@ function GermCommander:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
     local flyoutConf = FlyoutDefsDb:get(flyoutId)
     local germ = self:recallGerm(btnSlotIndex)
     local isEnabled = germ and germ:getFlyoutId()
-    zebug.trace:label(eventId):line(5, "btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId, "flyoutConf", flyoutConf, "germ", germ)
+    zebug.trace:event(eventId):line(5, "btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId, "flyoutConf", flyoutConf, "germ", germ)
     if flyoutConf then
         if not germ then
             -- create a new germ
@@ -214,7 +214,7 @@ function GermCommander:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
     else
         -- because one toon can delete a flyout while other toons still have it on their bars
         -- also, this routine is invoked when the user deletes a UFO from the catalog
-        zebug.warn:label(eventId):print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
+        zebug.warn:event(eventId):print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
         self:forgetPlacement(btnSlotIndex)
         if germ then
             germ:clearAndDisable(eventId)
@@ -264,7 +264,7 @@ end
 function GermCommander:updateClickHandlerForAllGerms(mouseClick)
     ---@param germ Germ
     for btnSlotIndex, germ in pairs(germs) do
-        zebug.info:label(germ):print("btnSlotIndex",btnSlotIndex, "germ", germ:getFlyoutDef().name)
+        zebug.info:owner(germ):print("btnSlotIndex",btnSlotIndex, "germ", germ:getFlyoutDef().name)
         germ:setMouseClickHandler(mouseClick, Config:getClickBehavior(self.flyoutId, mouseClick))
     end
 end
@@ -302,13 +302,13 @@ end
 --- * a Ufo proxy for the same flyoutId as before this event - NO ACTION REQUIRED
 --- * a Ufo proxy for a new flyoutId as before this event - update the existing Germ with the new UFO config
 --- * a Ufo Placeholder that we programmatically put there and should be ignored
-function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, eventId)
-    local btnInSlot = BlizActionBarButton:new(btnSlotIndex, eventId) -- remove when debugging btnSlotIndex > 120
+function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
+    local btnInSlot = BlizActionBarButton:new(btnSlotIndex, event) -- remove when debugging btnSlotIndex > 120
 
     local precludingEvent = Ufo.droppedPlaceholderOntoActionBar or Ufo.deletedPlaceholder
     if precludingEvent then
         -- we triggered this event ourselves elsewhere and don't need to do anything more
-        zebug.info:label(eventId):print("SHORT-CIRCUIT - btnSlotIndex",btnSlotIndex, "has",btnInSlot, "was a result of previous event", precludingEvent)
+        zebug.info:event(event):print("SHORT-CIRCUIT - btnSlotIndex",btnSlotIndex, "has",btnInSlot, "was a result of previous event", precludingEvent)
         Ufo.droppedPlaceholderOntoActionBar = false
         return
     end
@@ -331,17 +331,17 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, eventId)
 
     local savedFlyoutIdForSlot = Spec:getUfoFlyoutIdForSlot(btnSlotIndex)
     local germInSlot = self:recallGerm(btnSlotIndex)
-    zebug.info:label(eventId):print("analyzing change to btnSlotIndex",btnSlotIndex, "config for slot", savedFlyoutIdForSlot, "existing germ", germInSlot)
+    zebug.info:event(event):print("analyzing change to btnSlotIndex",btnSlotIndex, "config for slot", savedFlyoutIdForSlot, "existing germ", germInSlot)
 
 
     --local btnInSlot = BlizActionBarButton:new(btnSlotIndex, eventId) -- for debugging btnSlotIndex > 120
-    zebug.info:label(eventId):print("what got dropped",btnInSlot)
+    zebug.info:event(event):print("what got dropped",btnInSlot)
 
     if btnInSlot:isEmpty() then
         -- the btn slot is now empty, so clear the Germ in that slot (if any)
-        zebug.info:label(eventId):print("the btn slot is now empty, so clear the Germ in that slot (if any)")
+        zebug.info:event(event):print("the btn slot is now empty, so clear the Germ in that slot (if any)")
         if germInSlot then
-            self:eraseUfoFrom(btnInSlot, germInSlot, eventId)
+            self:eraseUfoFrom(btnInSlot, germInSlot, event)
         else
             -- no need to do anything.  there was nothing before.  there is nothing now.  nothing from nothing, carry the nothing...
         end
@@ -349,14 +349,14 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, eventId)
         -- user just dragged and dropped a UFO onto the bar.
         -- what was there before?
         local draggedAndDroppedFlyoutId = UfoProxy:getFlyoutId()
-        zebug.info:label(eventId):print("user just dragged and dropped a UFO onto the bar.",btnInSlot)
+        zebug.info:event(event):print("user just dragged and dropped a UFO onto the bar.",btnInSlot)
 
         if savedFlyoutIdForSlot then
             -- there was already a germ there.
             -- was it the same one as was just dropped?
             if draggedAndDroppedFlyoutId == savedFlyoutIdForSlot then
                 -- do absolutely nothing
-                zebug.trace:label(eventId):print("the dropped UFO was the same as the one already on the bar.  Nothing to do but exit.")
+                zebug.trace:event(event):print("the dropped UFO was the same as the one already on the bar.  Nothing to do but exit.")
             else
                 -- user just dragged and dropped a different UFO than the one already/formerly there.
                 -- save the new ID into the DB
@@ -364,8 +364,8 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, eventId)
                 -- was essentially self:updateBtnSlot(btnSlotIndex, eventId)
 
                 assert(germInSlot, "config says there should already be a germ here but it's missing")
-                zebug.trace:label(eventId):print("The UFO was dropped on an existing germ", germInSlot)
-                germInSlot:changeFlyoutIdAndEnable(draggedAndDroppedFlyoutId, eventId)
+                zebug.trace:event(event):print("The UFO was dropped on an existing germ", germInSlot)
+                germInSlot:changeFlyoutIdAndEnable(draggedAndDroppedFlyoutId, event)
             end
         else
             -- it's a UfoProxy but no savedFlyoutIdForSlot.
@@ -373,15 +373,15 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, eventId)
             -- save the new ID into the DB
             -- and create a new germ
             local droppedFlyoutId = btnInSlot:getFlyoutIdFromUfoProxy()
-            self:putUfoOntoActionBar(btnSlotIndex, droppedFlyoutId, eventId)
+            self:putUfoOntoActionBar(btnSlotIndex, droppedFlyoutId, event)
         end
 
         -- now that we are done with the UfoProxy it should be safe to synchronously nuke it
-        UfoProxy:deleteProxyMacro(eventId)
+        UfoProxy:deleteProxyMacro(event)
     else
         -- a std Bliz thingy.
-        zebug.info:label(eventId):print("a std Bliz thingy. ERASE Ufo (if any)")
-        self:eraseUfoFrom(btnInSlot, germInSlot, eventId)
+        zebug.info:event(event):print("a std Bliz thingy. ERASE Ufo (if any)")
+        self:eraseUfoFrom(btnInSlot, germInSlot, event)
     end
 
 
@@ -465,7 +465,7 @@ end
 
 ---@param btn number | BlizActionBarButton
 ---@param germ GERM_TYPE
-function GermCommander:eraseUfoFrom(btn, germ, eventId)
+function GermCommander:eraseUfoFrom(btn, germ, event)
     local btnSlotIndex
     --print("BlizActionBarButton ------>",BlizActionBarButton)
     if UfoMixIn:isA(btn, BlizActionBarButton) then
@@ -477,32 +477,33 @@ function GermCommander:eraseUfoFrom(btn, germ, eventId)
     end
 
     germ = germ or self:recallGerm(btnSlotIndex)
-    self:forgetPlacement(btnSlotIndex, eventId)
+    self:forgetPlacement(btnSlotIndex, event)
     if germ then
-        germ:clearAndDisable(eventId)
+        germ:clearAndDisable(event)
     end
-    Placeholder:clear(btnSlotIndex, eventId)
+    Placeholder:clear(btnSlotIndex, event)
 end
 
-function GermCommander:savePlacement(btnSlotIndex, flyoutId, eventId)
+function GermCommander:savePlacement(btnSlotIndex, flyoutId, event)
     btnSlotIndex = tonumber(btnSlotIndex)
     flyoutId = FlyoutDefsDb:validateFlyoutId(flyoutId)
-    zebug.info:label(eventId):print("btnSlotIndex",btnSlotIndex, "flyoutId",flyLabel(flyoutId), "for event", eventId)
+    zebug.info:event(event):print("btnSlotIndex",btnSlotIndex, "flyoutId",flyLabel(flyoutId))
     Spec:getPlacementConfigForCurrentSpec()[btnSlotIndex] = flyoutId
 end
 
-function GermCommander:forgetPlacement(btnSlotIndex, eventId)
+function GermCommander:forgetPlacement(btnSlotIndex, event)
     btnSlotIndex = tonumber(btnSlotIndex)
     --local flyoutId = Spec:getUfoFlyoutIdForSlot(btnSlotIndex)
     local placements = Spec:getPlacementConfigForCurrentSpec()
     local flyoutId = placements[btnSlotIndex]
     if flyoutId then
-        zebug.info:label(eventId):print("DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyLabel(flyoutId), "for event", eventId)
-        zebug.trace:label(eventId):dumpy("BEFORE placements", placements)
+        zebug.info:event(event):print("DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyLabel(flyoutId))
+        zebug.trace:event(event):dumpy("BEFORE placements", placements)
         placements[btnSlotIndex] = nil
     end
 end
 
+-- unused?  What does Catalog do when the user kills a Ufo?
 function GermCommander:nukeFlyout(flyoutId)
     flyoutId = FlyoutDefsDb:validateFlyoutId(flyoutId)
     for i, allSpecsConfig in ipairs(DB:getAllSpecsPlacementsConfig()) do
@@ -567,50 +568,50 @@ function GermCommander:dropDraggedUfoFromCursorOntoActionBar(btnSlotIndex, flyou
     --UfoProxy:deleteProxyMacro(eventId) -- um, what if the user swapped one UFO for another. Let the async event handler do this
 end
 
-function GermCommander:putUfoOntoActionBar(btnSlotIndex, flyoutId, eventId)
+function GermCommander:putUfoOntoActionBar(btnSlotIndex, flyoutId, event)
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     assert(flyoutDef, "no config exists for the specified flyoutId")
 
-    self:savePlacement(btnSlotIndex, flyoutId, eventId)
+    self:savePlacement(btnSlotIndex, flyoutId, event)
     if Config.opts.usePlaceHolders then
-        local clobberedBtnDef = Placeholder:put(btnSlotIndex, eventId)
+        local clobberedBtnDef = Placeholder:put(btnSlotIndex, event)
         if UfoProxy:isOn(clobberedBtnDef) then
-            zebug.info:label(eventId):print("clearing the re-picked-up UfoProxy from the cursor", clobberedBtnDef)
-            Cursor:clear()
+            zebug.info:event(event):print("clearing the re-picked-up UfoProxy from the cursor", clobberedBtnDef)
+            Cursor:clear(event)
         end
     end
     local germ = self:recallGerm(btnSlotIndex)
     if not germ then
-        germ = Germ:new(flyoutId, btnSlotIndex, eventId) -- this is expected to do everything required for a fully functioning germ
+        germ = Germ:new(flyoutId, btnSlotIndex, event) -- this is expected to do everything required for a fully functioning germ
         self:saveGerm(germ)
     else
-        germ:changeFlyoutIdAndEnable(flyoutId, eventId)
+        germ:changeFlyoutIdAndEnable(flyoutId, event)
     end
 end
 
-function GermCommander:ensureAllGermsHavePlaceholders(eventId)
-    Placeholder:create()
-    Ufo.droppedPlaceholderOntoActionBar = eventId
+function GermCommander:ensureAllGermsHavePlaceholders(event)
+    Placeholder:create(event)
+    Ufo.droppedPlaceholderOntoActionBar = event
     self:forEachPlacement(function(btnSlotIndex, flyoutId)
-        Placeholder:put(btnSlotIndex, eventId)
+        Placeholder:put(btnSlotIndex, event)
     end)
     Ufo.droppedPlaceholderOntoActionBar = nil
 end
 
-function GermCommander:handleEventChangedInventory(eventId)
+function GermCommander:handleEventChangedInventory(event)
     -- TODO: be a little less NUKEy... create an index of which flyouts contain inventory items
     FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.invalidateCache)
-    self:updateAllSlots(eventId) -- change to updateSomeGerms(fitnessFunc) -- ACTUALLY, push the event listener into Germ class and have each instance handle its own shit
+    self:updateAllSlots(event) -- change to updateSomeGerms(fitnessFunc) -- ACTUALLY, push the event listener into Germ class and have each instance handle its own shit
 end
 
-function GermCommander:handleEventPetChanged(eventId)
+function GermCommander:handleEventPetChanged(event)
     -- TODO: be a little less NUKEy... create an index of which flyouts contain pets
     FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.invalidateCache)
-    self:updateAllSlots(eventId) -- change to updateSomeGerms(fitnessFunc)
+    self:updateAllSlots(event) -- change to updateSomeGerms(fitnessFunc)
 end
 
-function GermCommander:handleEventMacrosChanged(eventId)
+function GermCommander:handleEventMacrosChanged(event)
     -- TODO: be a little less NUKEy... create an index of which flyouts contain macros
     FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.invalidateCache)
-    self:updateAllSlots(eventId) -- change to updateSomeGerms(fitnessFunc)
+    self:updateAllSlots(event) -- change to updateSomeGerms(fitnessFunc)
 end

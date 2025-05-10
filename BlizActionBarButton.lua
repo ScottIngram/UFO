@@ -68,12 +68,12 @@ BLIZ_BAR_METADATA = {
 -- gets the UI frame object for the button / empty slot sitting in btnSlotIndex on the Bliz action bars.
 -- such a button could be EMPTY or contain a spell, a macro, a potion, etc.
 ---@return BlizActionBarButton, AbbInfo
-function BlizActionBarButton:new(btnSlotIndex, eventId)
+function BlizActionBarButton:new(btnSlotIndex, event)
     local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
     local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
     if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
     local actionBarDef = BLIZ_BAR_METADATA[barNum]
-    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum.." resulting from event: "..eventId) -- in case Blizzard adds more bars, complain here clearly.
+    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum.." resulting from event: ".. tostring(event)) -- in case Blizzard adds more bars, complain here clearly.
     local barName    = actionBarDef.name
     local btnName    = barName .. "Button" .. btnNum
     local barYafName = actionBarDef.yafName

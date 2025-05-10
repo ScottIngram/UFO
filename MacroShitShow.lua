@@ -57,7 +57,7 @@ function MacroShitShow:init()
     return not WAS_INITIALIZED
 end
 
-function MacroShitShow:analyzeMacroUpdate(eventId)
+function MacroShitShow:analyzeMacroUpdate(event)
     -- The Bliz API helpfully informs me that something, anything, who knows what,
     -- but yes macro related might have just happened.  Figure out WTF it was.
 
@@ -86,8 +86,8 @@ function MacroShitShow:analyzeMacroUpdate(eventId)
         macrosMap = delta.macrosMap
         macrosIndex = delta.macrosIndex
         zebug.info:line(50,"triggering global updates!")
-        Catalog:update()
-        GermCommander:handleEventMacrosChanged(eventId) -- was updateAll()
+        Catalog:update(event)
+        GermCommander:handleEventMacrosChanged(event) -- was updateAll()
     else
         zebug.trace:print("no macro changes")
     end

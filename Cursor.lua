@@ -43,11 +43,11 @@ function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     eventCounter = eventCounter or "NO-EVENT-COUNTER"
     --if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    local eventId = makeEventId("CURSOR_CACHE_CONTROLLER", eventCounter)
+    local event = Event:new(self, me, eventCounter)
     cachedCursor = nil
-    zebug.info:name(eventId):out(20, "Ç","START! ", cursor, "!START!", Ufo.manifestedPlaceholder, Ufo.droppedPlaceholderOntoActionBar)
-    zebug.info:name(eventId):print("manifestedPlaceholder", Ufo.manifestedPlaceholder, "droppedPlaceholderOntoActionBar",Ufo.droppedPlaceholderOntoActionBar, "myPlaceholderSoDoNotDelete", Ufo.myPlaceholderSoDoNotDelete)
-    zebug.info:name(eventId):out(20, "Ç","END!")
+    zebug.info:event(event, START):out(20, "Ç","START! ", cursor, "!START!", Ufo.droppedPlaceholderOntoActionBar)
+    zebug.info:event(event):print("manifestedPlaceholder", "droppedPlaceholderOntoActionBar",Ufo.droppedPlaceholderOntoActionBar, "myPlaceholderSoDoNotDelete", Ufo.myPlaceholderSoDoNotDelete)
+    zebug.info:event(event, END):out(20, "Ç","END!")
 end
 
 BlizGlobalEventsListener:register(Cursor, EventHandlers)
@@ -102,15 +102,15 @@ local maxAge = 2 -- seconds
 function Cursor:getFresh(eventId)
     if cachedCursor then
         local age = time() - cachedCursor.whenWasCached
-        zebug.trace:label(eventId):print("age", age)
+        zebug.trace:event(eventId):print("age", age)
         if age > maxAge then
             zebug.trace:print("clearing cache because it's too old!")
             cachedCursor = nil
         else
-            zebug.trace:label(eventId):print("not clearing cache. cache is young!")
+            zebug.trace:event(eventId):print("not clearing cache. cache is young!")
         end
     else
-        zebug.trace:label(eventId):print("no cache to clear")
+        zebug.trace:event(eventId):print("no cache to clear")
     end
 
     return self:get()
@@ -155,35 +155,35 @@ function Cursor:isNotEmpty()
     return (type or false) and true
 end
 
-function Cursor:clear(eventId)
-    zebug.trace:label(eventId):print("clearing cursor and cache")
+function Cursor:clear(event)
+    zebug.trace:event(event):print("clearing cursor and cache")
     ClearCursor()
     cachedCursor = nil
 end
 
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
----@param eventId string UFO custom unique ID for the event that triggered this action - good for debugging
-function Cursor:dropOntoActionBar(btnSlotIndex, eventId)
-    zebug.warn:label(eventId):print("btnSlotIndex",btnSlotIndex)
+---@param event string UFO custom unique ID for the event that triggered this action - good for debugging
+function Cursor:dropOntoActionBar(btnSlotIndex, event)
+    zebug.warn:event(event):print("btnSlotIndex",btnSlotIndex)
     PlaceAction(btnSlotIndex)
     self:populateIfInstance()
 end
 
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
----@param eventId string UFO custom unique ID for the event that triggered this action - good for debugging
+---@param event Event UFO custom unique ID for the event that triggered this action - good for debugging
 ---@return Cursor if invoked via an instance it will get populated with the button data
-function Cursor:pickupFromActionBar(btnSlotIndex, eventId)
-    zebug.warn:label(eventId):print("btnSlotIndex",btnSlotIndex)
-    Ufo.changedCursor = "Cursor:pickupFromActionBar("..btnSlotIndex..") for eventId " .. (eventId or "UnKnOwN") -- not used yet
+function Cursor:pickupFromActionBar(btnSlotIndex, event)
+    zebug.warn:event(event):print("btnSlotIndex",btnSlotIndex)
+    Ufo.changedCursor = event or "UnKnOwN" -- not used yet
     PickupAction(btnSlotIndex)
     return self:populateIfInstance()
 end
 
 ---@param macroNameOrId any the bliz identifier for an action bar button.
----@param eventId string UFO custom unique ID for the event that triggered this action - good for debugging
-function Cursor:pickupMacro(macroNameOrId, eventId)
-    zebug.warn:label(eventId):print("macroNameOrId",macroNameOrId)
-    Ufo.changedCursor = "Cursor:pickupMacro(".. macroNameOrId ..") for eventId " .. (eventId or "UnKnOwN") -- not used yet
+---@param event string UFO custom unique ID for the event that triggered this action - good for debugging
+function Cursor:pickupMacro(macroNameOrId, event)
+    zebug.warn:event(event):print("macroNameOrId",macroNameOrId)
+    Ufo.changedCursor = event or "UnKnOwN"
     PickupMacro(macroNameOrId)
     self:populateIfInstance()
 end
@@ -221,20 +221,15 @@ function Cursor:toString()
         if self:isEmpty() then
             return "<Cursor: EMPTY>"
         else
-            return string.format("<Cursor: type=%s, id=%s, name=%s>", s(self.type), s(self.id), s(self.name))
+            local name = self.name
+            if self.id == ButtonType.MACRO then
+                if name == UfoProxy:getMacroId() then
+                    name = "UfoProxy: ".. (UfoProxy:getFlyoutName() or "UnKnOwN")
+                elseif Placeholder:isOn(self, "BlizActionBarButton:toString()") then
+                    name = "Placeholder"
+                end
+            end
+            return string.format("<Cursor: type=%s, id=%s, name=%s>", s(self.type), s(self.id), s(name))
         end
     end
 end
-
--- TODO move into utilities
---[[
-function mixInToString(self)
-    local mt = getmetatable(self)
-    if not mt then
-        mt = {}
-        setmetatable(self, mt)
-    end
-    mt.__tostring = self.toString
-end
-]]
-

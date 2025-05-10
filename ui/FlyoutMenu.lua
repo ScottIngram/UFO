@@ -242,13 +242,13 @@ end
 -- perhaps defer subsequent updates to the toggle() and only update just before it becomes visible
 
 ---@param germ Germ
-function FlyoutMenu:updateForGerm(germ, eventId)
+function FlyoutMenu:updateForGerm(germ, event)
     self:SetParent(germ)
     self.direction = germ:getDirection()
     local flyoutId = germ:getFlyoutId()
     self:setId(flyoutId)
     local flyoutDef = self:getDef(flyoutId)
-    zebug.trace:dumpy("flyoutDef",flyoutDef)
+    zebug.trace:event(event):owner(self):dumpy("flyoutDef",flyoutDef)
     local usableFlyout = flyoutDef:filterOutUnusable()
     local btnNumber = 0
 
@@ -256,11 +256,11 @@ function FlyoutMenu:updateForGerm(germ, eventId)
     self:forEachButton(function(btnFrame, i)
         local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef)
-        zebug.trace:print("i",i, "btnDef", btnDef)
+        zebug.trace:event(event):owner(self):print("i",i, "btnDef", btnDef)
 
         if btnDef then
-            zebug.trace:print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
-            btnFrame:setIcon( btnDef:getIcon(), eventId )
+            zebug.trace:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
+            btnFrame:setIcon( btnDef:getIcon(), event)
             --btnFrame:setGeometry(self.direction) -- this call breaks the btns on the flyout - they all collapse into the same spot
             --TODO: figure out why
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SECURE TEMPLATE
@@ -269,14 +269,14 @@ function FlyoutMenu:updateForGerm(germ, eventId)
             btnNumber = btnNumber + 1 -- TODO: make first keybind same as the UFO's
             updateHotKeyLabel(btnFrame, btnNumber)
         else
-            btnFrame:setIcon(DEFAULT_ICON)
+            btnFrame:setIcon(DEFAULT_ICON, event)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SECURE TEMPLATE
             return
         end
     end)
 
     if not self.hasOnHide then
-        zebug.info:print("setting OnHide for",self:GetName())
+        zebug.info:event(event):owner(self):print("setting OnHide for",self:GetName())
         local btn1 = self:getBtn1()
         btn1:SetFrameRef("flyout",self)
         btn1:SetAttribute("_onhide", "flyout:ClearBindings()") -- v11.1 replaces btn1:SetScript() and SecureHandlerExecute(germ, "keybindKeeper:ClearBindings()")
