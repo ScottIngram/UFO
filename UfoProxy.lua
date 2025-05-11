@@ -8,7 +8,7 @@
 ---@type Ufo -- IntelliJ-EmmyLua annotation
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-local zebug = Zebug:new(Zebug.INFO)
+local zebug = Zebug:new(Zebug.TRACE)
 
 ---@class UfoProxy : UfoMixIn
 ---@field macroId number
@@ -37,20 +37,21 @@ function EventHandlers:UPDATE_MACROS(me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
     local event = Event:new(self, me, eventCounter)
-    zebug.trace:event(event, START):out(width, "m", "!START --------------- !START!")
-    UfoProxy:syncMyId()
-    zebug.trace:event(event, END):out(width, "m", "!END --------------- END!")
+    zebug.trace:name(me):runEvent(event, function()
+        zebug.info:event(event):name(me):print("syncMyId")
+        UfoProxy:syncMyId()
+    end)
 end
 
 function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
     local event = Event:new(self, me, eventCounter)
-    local cursor = Cursor:getFresh(event)
-    zebug.info:event(event, START):out(width, "c","START! ", cursor, "!START!", Ufo.droppedPlaceholderOntoActionBar)
-    zebug.info:event(event):print("droppedPlaceholderOntoActionBar",Ufo.droppedPlaceholderOntoActionBar, "myPlaceholderSoDoNotDelete", Ufo.myPlaceholderSoDoNotDelete)
-    UfoProxy:deleteProxyOnCursorChange(event)
-    zebug.info:event(event, END):out(width, "c","END!")
+    zebug.trace:name(me):runEvent(event, function()
+        local cursor = Cursor:getFresh(event)
+        zebug.info:event(event):owner(cursor):print("erasing cachedCursor")
+        UfoProxy:delayedAsyncDeleteProxyIfNotOnCursor(event)
+    end)
 end
 
 BlizGlobalEventsListener:register(UfoProxy, EventHandlers)
@@ -138,17 +139,18 @@ function UfoProxy:getFlyoutId()
     return self.flyoutId
 end
 
-function UfoProxy:pickupUfoOntoCursor(flyoutId, eventId)
+function UfoProxy:pickupUfoOntoCursor(flyoutId, event)
     if isInCombatLockdown("Drag and drop") then return end
     self.flyoutId = flyoutId
 
     local flyoutConf = FlyoutDefsDb:get(flyoutId)
     local icon = flyoutConf:getIcon()
-    self:deleteProxyMacro(eventId)
+    self:deleteProxyMacro(event)
     local macroText = flyoutId
-    Ufo.thatWasMeThatDidThatMacro = eventId or "pickupUfoCursor()"
-    local proxy =  CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText)
-    Cursor:pickupMacro(proxy, eventId)
+    Ufo.thatWasMeThatDidThatMacro = event or "pickupUfoCursor()"
+    local proxyMacroId = CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText)
+    Ufo.createdProxy = event
+    Cursor:pickupMacro(proxyMacroId, event)
 end
 
 function UfoProxy:deleteProxyMacro(event)
@@ -168,19 +170,19 @@ end
 -- So, delay execution to give GermCommander a chance to analyze the action bar changes before
 -- we delete the proxy which would remove it from the bar.
 
-function UfoProxy:deleteProxyOnCursorChange(eventId, timeToGo)
-    zebug.info:event(eventId):print("Is UfoProxy on the cursor", Cursor:get())
+function UfoProxy:delayedAsyncDeleteProxyIfNotOnCursor(event, timeToGo)
     if not timeToGo then
         C_Timer.After(1, function()
-            self:deleteProxyOnCursorChange(eventId, true)
+            self:delayedAsyncDeleteProxyIfNotOnCursor(event, true)
         end)
     else
+        local cursor = Cursor:get()
         if self:exists() then
             if self:isOnCursor() then
-                zebug.info:event(eventId):print("It's on the cursor.  Exit and defer to the next CURSOR_CHANGED.")
+                zebug.info:event(event):owner(cursor):print("It's on the cursor.  Exit and defer to the next CURSOR_CHANGED.")
             else
-                zebug.info:event(eventId):print("Not on cursor!  Safe to kill!  DIE PROXY !!!")
-                self:deleteProxyMacro(eventId)
+                zebug.info:event(event):owner(cursor):print("Not on cursor!  Safe to kill!  DIE PROXY !!!")
+                self:deleteProxyMacro(event)
             end
         end
     end

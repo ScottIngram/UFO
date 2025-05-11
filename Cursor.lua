@@ -44,10 +44,10 @@ function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     --if not Ufo.hasShitCalmedTheFuckDown then return end
 
     local event = Event:new(self, me, eventCounter)
-    cachedCursor = nil
-    zebug.info:event(event, START):out(20, "Ç","START! ", cursor, "!START!", Ufo.droppedPlaceholderOntoActionBar)
-    zebug.info:event(event):print("manifestedPlaceholder", "droppedPlaceholderOntoActionBar",Ufo.droppedPlaceholderOntoActionBar, "myPlaceholderSoDoNotDelete", Ufo.myPlaceholderSoDoNotDelete)
-    zebug.info:event(event, END):out(20, "Ç","END!")
+    zebug.trace:name(me):runEvent(event, function()
+        zebug.info:event(event):name(me):print("erasing cachedCursor")
+        cachedCursor = nil
+    end)
 end
 
 BlizGlobalEventsListener:register(Cursor, EventHandlers)
@@ -99,18 +99,18 @@ end
 
 local maxAge = 2 -- seconds
 -- bypass the cache - should only need to be used by other subscribers of CURSOR_CHANGED due to race condition
-function Cursor:getFresh(eventId)
+function Cursor:getFresh(event)
     if cachedCursor then
         local age = time() - cachedCursor.whenWasCached
-        zebug.trace:event(eventId):print("age", age)
+        zebug.trace:event(event):print("age", age)
         if age > maxAge then
             zebug.trace:print("clearing cache because it's too old!")
             cachedCursor = nil
         else
-            zebug.trace:event(eventId):print("not clearing cache. cache is young!")
+            zebug.trace:event(event):print("not clearing cache. cache is young!")
         end
     else
-        zebug.trace:event(eventId):print("no cache to clear")
+        zebug.trace:event(event):print("no cache to clear")
     end
 
     return self:get()
@@ -164,7 +164,8 @@ end
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
 ---@param event string UFO custom unique ID for the event that triggered this action - good for debugging
 function Cursor:dropOntoActionBar(btnSlotIndex, event)
-    zebug.warn:event(event):print("btnSlotIndex",btnSlotIndex)
+    self = self:asInstance()
+    zebug.warn:event(event):owner(self):print("dropping onto btnSlotIndex",btnSlotIndex)
     PlaceAction(btnSlotIndex)
     self:populateIfInstance()
 end
@@ -173,8 +174,8 @@ end
 ---@param event Event UFO custom unique ID for the event that triggered this action - good for debugging
 ---@return Cursor if invoked via an instance it will get populated with the button data
 function Cursor:pickupFromActionBar(btnSlotIndex, event)
-    zebug.warn:event(event):print("btnSlotIndex",btnSlotIndex)
-    Ufo.changedCursor = event or "UnKnOwN" -- not used yet
+    self = self:asInstance()
+    zebug.warn:event(event):owner(self):print("pickup from btnSlotIndex",btnSlotIndex)
     PickupAction(btnSlotIndex)
     return self:populateIfInstance()
 end
@@ -183,7 +184,6 @@ end
 ---@param event string UFO custom unique ID for the event that triggered this action - good for debugging
 function Cursor:pickupMacro(macroNameOrId, event)
     zebug.warn:event(event):print("macroNameOrId",macroNameOrId)
-    Ufo.changedCursor = event or "UnKnOwN"
     PickupMacro(macroNameOrId)
     self:populateIfInstance()
 end
@@ -216,7 +216,7 @@ local s = function(v) return v or "nil"  end
 
 function Cursor:toString()
     if self == Cursor then
-        return "nil"
+        return "CuRsOr"
     else
         if self:isEmpty() then
             return "<Cursor: EMPTY>"

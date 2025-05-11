@@ -583,6 +583,7 @@ function GermCommander:putUfoOntoActionBar(btnSlotIndex, flyoutId, event)
     local germ = self:recallGerm(btnSlotIndex)
     if not germ then
         germ = Germ:new(flyoutId, btnSlotIndex, event) -- this is expected to do everything required for a fully functioning germ
+        germ:update(flyoutId, event) -- seemingly, Germ:new() didn't do enough
         self:saveGerm(germ)
     else
         germ:changeFlyoutIdAndEnable(flyoutId, event)

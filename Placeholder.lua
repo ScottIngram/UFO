@@ -115,10 +115,10 @@ function Placeholder:isOn(btn, event)
     if not btn then return end
 
     local type, id = btn:getType(), btn:getId()
-    zebug.trace:event(event):print("type",type, "id",id)
+    zebug.trace:event(event):--[[owner(btn):]]print("type",type, "id",id)
     if type == ButtonType.MACRO then
         local name = GetMacroInfo(id)
-        zebug.trace:event(event):print("name",name)
+        zebug.trace:event(event):--[[owner(btn):]]print("name",name)
         return name == PLACEHOLDER_MACRO_NAME
     end
     return false
@@ -131,11 +131,17 @@ function Placeholder:nuke()
 end
 
 function Placeholder:doNotLetUserDragMe(event)
-    if Cursor:isUfoPlaceholder() and not Ufo.myPlaceholderSoDoNotDelete then
-        Cursor:clear(event)
-        Ufo.changedCursor = event
+    local cursor = Cursor:get()
+    if cursor:isUfoPlaceholder() then
+        if Ufo.myPlaceholderSoDoNotDelete then
+            zebug.info:event(event):owner(cursor):print("keeping (this one time) at request of Ufo.myPlaceholderSoDoNotDelete",Ufo.myPlaceholderSoDoNotDelete)
+            Ufo.myPlaceholderSoDoNotDelete = false
+        else
+            zebug.info:event(event):owner(cursor):print("clearing in absence of Ufo.myPlaceholderSoDoNotDelete")
+            cursor:clear(event)
+        end
     else
-        Ufo.changedCursor = false
+        zebug.info:event(event):owner(cursor):print("ignoring because I only care about Placeholders")
         Ufo.myPlaceholderSoDoNotDelete = false
     end
 end

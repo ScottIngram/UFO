@@ -118,28 +118,28 @@ local HandlersForOtherAddons = {}
 
 function HandlersForOtherAddons:Blizzard_PlayerSpells()
     --v11 Bliz moved the spell book into its own internal, load-on-demand addon
-    zebug.trace:print("Heard addon load: Blizzard_PlayerSpells", PlayerSpellsFrame)
+    zebug.trace:name("listener"):print("Heard addon load: Blizzard_PlayerSpells")
     Catalog:createToggleButton(PlayerSpellsFrame)
 end
 
 function HandlersForOtherAddons:Blizzard_Collections()
-    zebug.trace:print("Heard addon load: Blizzard_Collections")
+    zebug.trace:name("listener"):print("Heard addon load: Blizzard_Collections")
     Catalog:createToggleButton(CollectionsJournal)
 end
 
 function HandlersForOtherAddons:Blizzard_MacroUI()
-    zebug.trace:print("Heard addon load: Blizzard_MacroUI")
+    zebug.trace:name("listener"):print("Heard addon load: Blizzard_MacroUI")
     Catalog:createToggleButton(MacroFrame)
     MacroShitShow:init()
 end
 
 function HandlersForOtherAddons:Blizzard_ProfessionsBook()
-    zebug.trace:print("Heard addon load: Blizzard_ProfessionsBook")
+    zebug.trace:name("listener"):print("Heard addon load: Blizzard_ProfessionsBook")
     Catalog:createToggleButton(ProfessionsBookFrame)
 end
 
 function HandlersForOtherAddons:LargerMacroIconSelection()
-    zebug.trace:print("Heard addon load: LargerMacroIconSelection")
+    zebug.trace:name("listener"):print("Heard addon load: LargerMacroIconSelection")
     supportLargerMacroIconSelection()
 end
 
