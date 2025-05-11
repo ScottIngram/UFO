@@ -674,7 +674,7 @@ function Germ:handleReceiveDrag(event)
         local cursor = Cursor:get()
         zebug.info:event(event):owner(self):print("just got hit by cursor",cursor)
         Cursor:dropOntoActionBar(self:getBtnSlotIndex(), event) -- are we planning on letting ACTIONBAR_SLOT_CHANGED do the heavy lifting?
-        if cursor.isUfoProxy() then
+        if cursor:isUfoProxy() then
             zebug.info:event(event):owner(self):print("it was a proxy",cursor)
         end
         self:update(self.flyoutId, event)

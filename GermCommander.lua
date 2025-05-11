@@ -121,11 +121,11 @@ function GermCommander:updateAllSlots(event)
 
     -- closeAllGerms() -- this is only required because we sledge hammer all the germs every time. TODO don't do!
 
-    zebug:setNoiseLevel(Zebug.INFO)
+    zebug:setLowestAllowedSpeakingVolume(Zebug.INFO)
     self:forEachPlacement(function(btnSlotIndex, flyoutId)
         self:updateBtnSlot(btnSlotIndex, flyoutId, event)
     end)
-    zebug:setNoiseLevelBackToOriginal()
+    zebug:setLowestAllowedSpeakingVolumeBackToOriginal()
 
 
 
@@ -152,7 +152,7 @@ end
 function GermCommander:updateSomeGerms(fitnessFunc, eventId)
     assert(fitnessFunc, 'must provide a "fitnessFunc(germ)" ')
 
-    zebug:setNoiseLevel(Zebug.INFO)
+    zebug:setLowestAllowedSpeakingVolume(Zebug.INFO)
     ---@param germ GERM_TYPE
     self:forEachGerm(function(germ)
         if fitnessFunc(germ) then
@@ -162,7 +162,7 @@ function GermCommander:updateSomeGerms(fitnessFunc, eventId)
             zebug.trace:event(eventId):print("skipping",germ, "because it failed fitnessFunc()")
         end
     end)
-    zebug:setNoiseLevelBackToOriginal()
+    zebug:setLowestAllowedSpeakingVolumeBackToOriginal()
 end
 
 local originalZebug
