@@ -232,3 +232,10 @@ function UfoProxy:OLD_delayedAsyncDeleteProxy(eventId)
         ) -- END callback
     end
 end
+
+function UfoProxy:toString()
+    local name = self:getFlyoutName() or "NoPe"
+    return string.format("<UfoProxy: name=%s>", name)
+end
+
+UfoMixIn.installMyToString(UfoProxy)

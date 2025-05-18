@@ -89,7 +89,7 @@ function Button_Mixin:setIcon(icon, event)
             zebug.error:event(event):owner(self):line(20, "BLOCKED BLIZ SetTexture for germ")
         end
     end
-    zebug.info:event(event):owner(self):print("setting icon",icon, "eventId", event)
+    zebug.info:event(event):owner(self):print("setting icon",icon)
     self.originalIconSetTextureFunc(iconFrame, icon) -- the iconFrame is the self for the original SetTexture
 end
 

@@ -150,8 +150,8 @@ function BlizActionBarButton:isUfoProxy()
 end
 
 -- unused?
-function BlizActionBarButton:isUfoPlaceholder()
-    return Placeholder:isOn(self)
+function BlizActionBarButton:isUfoPlaceholder(event)
+    return Placeholder:isOn(self, event)
 end
 
 function BlizActionBarButton:getFlyoutIdFromUfoProxy()

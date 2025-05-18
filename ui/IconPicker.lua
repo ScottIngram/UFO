@@ -78,10 +78,11 @@ end
 
 function IconPicker:CancelButton_OnClick()
     self:Hide()
-    Catalog:update()
+    Catalog:update("IconPicker:CancelButton_OnClick")
 end
 
 function IconPicker:OkayButton_OnClick()
+    local event     = Event:new(self, "OkayButton_OnClick")
     local name      = self.BorderBox.IconSelectorEditBox:GetText()
     local iconIndex = self.IconSelector:GetSelectedIndex()
     local icon      = iconIndex and self:GetIconByIndex(iconIndex)
@@ -95,13 +96,13 @@ function IconPicker:OkayButton_OnClick()
         flyoutDef.name = name
         flyoutDef.icon = icon
         flyoutDef:invalidateCache()
-        GermCommander:updateGermsFor(flyoutId, "IconPicker:OkayButton_OnClick")
+        GermCommander:updateGermsFor(flyoutId, event)
     else
-        Catalog:addNewFlyout(name, icon)
+        Catalog:addNewFlyout(name, icon, event)
     end
 
-    zebug.info:print("txt", name, "iconIndex",iconIndex, "icon",icon, "flyoutId",flyoutId)
+    zebug.info:event(event):print("txt", name, "iconIndex",iconIndex, "icon",icon, "flyoutId",flyoutId)
 
     self:Hide()
-    Catalog:update()
+    Catalog:update(event)
 end

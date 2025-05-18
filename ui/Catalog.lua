@@ -261,7 +261,7 @@ function Catalog:update(event)
                 if selectedIdx and (row == selectedIdx) then
                     btnFrame.SelectedBar:Show()
                     flyoutMenu.parent = btnFrame
-                    flyoutMenu:updateForCatalog(flyoutId)
+                    flyoutMenu:updateForCatalog(flyoutId, event)
                     if IconPicker:IsShown() then
                         flyoutMenu:Hide()
                         btnFrame.Arrow:Hide()
@@ -334,10 +334,10 @@ function Catalog:open()
     Catalog:toggle(toggleBtn, true)
 end
 
-function Catalog:selectRow(row)
-    zebug.info:print("row", row)
+function Catalog:selectRow(row, event)
+    zebug.info:event(event):print("row", row)
     UFO_CatalogScrollPane.selectedIdx = row
-    Catalog:update()
+    Catalog:update(event)
 end
 
 function Catalog:setToolTip(btnInCatalog)
@@ -356,15 +356,15 @@ function Catalog:setToolTip(btnInCatalog)
     GameTooltip:SetText(label)
 end
 
-function Catalog:addNewFlyout(name, icon)
-    zebug.info:print("name", name, "icon",icon)
+function Catalog:addNewFlyout(name, icon, event)
+    zebug.info:event(event):print("name", name, "icon",icon)
 
     local flyoutDef = FlyoutDefsDb:appendNewOne()
 
     flyoutDef.name = name
     flyoutDef.icon = icon
 
-    Catalog:update()
+    Catalog:update(event)
     -- GermCommander:updateAll("Catalog:addNewFlyout...but.why")
 end
 
@@ -373,31 +373,33 @@ end
 -------------------------------------------------------------------------------
 
 function GLOBAL_UFO_CatalogEntry_OnLeave(btnInCatalog)
+    local event = Event:new(self, "CatalogEntry_OnLeave")
     zebug.info:print("leaving button", btnInCatalog.flyoutIndex)
     GameTooltip_Hide()
     btnUnderTheMouse = nil
-    Catalog:update()
+    Catalog:update(event)
 end
 
 -- TODO - handle the hover glow here and not in the update() routine
 function GLOBAL_UFO_CatalogEntry_OnEnter(btnInCatalog)
+    local event = Event:new(self, "CatalogEntry_OnEnter")
     local flyoutDef = UfoProxy:isOnCursor()
 
     if flyoutDef then
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-        zebug.info:print("entering button with drag", btnInCatalog.flyoutIndex, "flyoutId", flyoutDef)
+        zebug.info:event(event):print("entering button with drag", btnInCatalog.flyoutIndex, "flyoutId", flyoutDef)
     end
 
     Catalog:setToolTip(btnInCatalog)
     btnUnderTheMouse = btnInCatalog
-    Catalog:update()
+    Catalog:update(event)
 end
 
 function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
+    local event = Event:new(self, "CatalogEntry_OnDragStart")
     local flyoutId = btnInCatalog.flyoutId
     flyoutIndexOnTheMouse = btnInCatalog.flyoutIndex
     if exists(flyoutId) then
-        local event = Event:new("Catalog", "OnDragStart")
         zebug.warn:mSquare():runEvent(event, function()
             UfoProxy:pickupUfoOntoCursor(flyoutId, "CatalogEntry_OnDragStart")
         end)
@@ -408,18 +410,20 @@ function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
     btnOnTheMouse = btnInCatalog
     btnInCatalog.EditButton:Hide()
     btnInCatalog.DeleteButton:Hide()
-    Catalog:update()
+    Catalog:update(event)
 end
 
 function GLOBAL_UFO_CatalogScrollPane_OnLoad(scrollPane)
     HybridScrollFrame_OnLoad(scrollPane)
-    scrollPane.update = Catalog.update
+    scrollPane.update = function()
+        Catalog.update("Bliz_CatalogScrollPane_OnUpdate")
+    end
     HybridScrollFrame_CreateButtons(scrollPane, "UFO_CatalogEntry")
 end
 
 function GLOBAL_UFO_CatalogScrollPane_OnShow(scrollPane)
     HybridScrollFrame_CreateButtons(scrollPane, "UFO_CatalogEntry")
-    Catalog:update()
+    Catalog:update("CatalogScrollPane_OnShow")
 end
 
 function GLOBAL_UFO_CatalogScrollPane_OnHide(scrollPane)
@@ -474,22 +478,23 @@ function GLOBAL_UFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
 end
 
 function GLOBAL_UFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
-    zebug.info:name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
+    local event = Event:new(self,"CatalogEntryButton_OnClick")
+    zebug.info:event(event):name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
     local scrollPane = UFO_CatalogScrollPane
 
     if ADD_BUTTON_NAME == btnInCatalog.name then
-        Catalog:selectRow(nil)
+        Catalog:selectRow(nil, event)
         IconPicker:open()
     elseif LANDING_BUTTON_NAME == btnInCatalog.name then
         local flyoutDefOnTheCursor = UfoProxy:isOnCursor()
         local isDragging = flyoutDefOnTheCursor and btnUnderTheMouse
-        zebug.info:name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("on cursor", flyoutDefOnTheCursor, "isDragging",isDragging)
+        zebug.info:event(event):name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("on cursor", flyoutDefOnTheCursor, "isDragging",isDragging)
         FlyoutDefsDb:move(flyoutDefOnTheCursor.id, btnInCatalog.flyoutIndex)
         btnUnderTheMouse = nil
         flyoutIndexOnTheMouse = nil
         btnOnTheMouse = nil
         Catalog:clearProxyAndCursor("CatalogEntryButton_OnClick()")
-        Catalog:update()
+        Catalog:update(event)
         PlaySound(1202) -- PutDownCloth_Leather01
     else
         local isSameRow = scrollPane.selectedIdx == btnInCatalog.flyoutIndex
@@ -500,7 +505,7 @@ function GLOBAL_UFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
             scrollPane.selectedIdx = btnInCatalog.flyoutIndex
         end
         IconPicker:Hide()
-        Catalog:update()
+        Catalog:update(event)
     end
 end
 
@@ -525,11 +530,12 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)
 end
 
 function GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow(btn)
-    zebug.info:name("GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow"):print("btn",btn:GetName())
+    local event = Event:new(self,"CatalogEntryButtonsMouseOver_OnShow")
+    zebug.info:event(event):name("CatalogEntryButtonsMouseOver_OnShow"):print("btn",btn:GetName())
     if UfoProxy:isOnCursor() then
         btn:Hide()
     else
-        Catalog:update()
+        Catalog:update(event)
     end
 end
 

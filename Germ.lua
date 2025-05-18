@@ -98,7 +98,7 @@ function Germ:new(flyoutId, btnSlotIndex, eventId)
     self:SetScript(Script.ON_MOUSE_DOWN,   ScriptHandlers.OnMouseDown)
     self:SetScript(Script.ON_MOUSE_UP,     ScriptHandlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
     self:SetScript(Script.ON_DRAG_START,   ScriptHandlers.OnPickupAndDrag) -- this is required to get OnDrag to work
-    self:HookScript(Script.ON_HIDE, function(self) zebug.warn:line(50,'***GERM*** Script.ON_HIDE for',self:GetName(),self); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc
+    self:HookScript(Script.ON_HIDE, function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable()
 
     self:registerForBlizUiActions()
     --self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
@@ -397,7 +397,7 @@ function Germ:_secretUpdate(event, amDelayed)
     local qId = "GERM:_secretUpdate() : ".. self:getName()
     exeOnceNotInCombat(qId, function()
 
-        zebug.trace:name(qId):event(event):line("20", "eventId", event)
+        zebug.trace:name(qId):event(event):line("20", "inner circle!")
         self.flyoutMenu:updateForGerm(self, event)
 
         -- removed this because I think it's good enough to do it only in new()
@@ -409,11 +409,11 @@ function Germ:_secretUpdate(event, amDelayed)
         local lastClickerUpdate = self.clickersLastUpdate or 0
 
         if self:getFlyoutDef():isModNewerThan(lastClickerUpdate) then
-            zebug.trace:name(qId):event(event):print("NO CHANGES! lastClickerUpdate",lastClickerUpdate, "eventId", event)
+            zebug.trace:name(qId):event(event):print("NO CHANGES! lastClickerUpdate",lastClickerUpdate)
             --return
         end
 
-        zebug.trace:name(qId):event(event):print("changed! lastClickerUpdate",lastClickerUpdate, "eventId", event)
+        zebug.trace:name(qId):event(event):print("changed! lastClickerUpdate",lastClickerUpdate)
         self.clickersLastUpdate = time()
 
         -- some clickers need to be re-initialized whenever the flyout's buttons change
@@ -425,7 +425,7 @@ function Germ:_secretUpdate(event, amDelayed)
         ---@param behavior GermClickBehavior
         for mouseClick, behavior in pairs(self.clickers) do
             if behavior == GermClickBehavior.FIRST_BTN then
-                local installTheBehavior = getHandlerMaker(behavior)
+                local installTheBehavior = getHandlerMaker(behavior, event)
                 installTheBehavior(self, mouseClick)
             end
         end
@@ -656,14 +656,14 @@ end
 ---@param self GERM_TYPE
 function ScriptHandlers.OnMouseUp(self)
     if isInCombatLockdown("Drag and drop") then return end
-    local event = Event:new(self, "OnMouseUp")
-    zebug.info:mCross():name("ScriptHandlers.OnMouseUp"):runEvent(event, function()
+    local event = Event:new(self, "ScriptHandlers.OnMouseUp")
+    zebug.info:mCross():event(event):runEvent(event, function()
         self:OnMouseUp()
         local isDragging = GetCursorInfo()
         if isDragging then
             self:handleReceiveDrag(event)
         else
-            zebug.info:name("ScriptHandlers.OnMouseUp"):print("not dragging, so, exiting.")
+            zebug.info:event(event):name("ScriptHandlers.OnMouseUp"):print("not dragging, so, exiting.")
         end
     end)
 end
@@ -718,7 +718,7 @@ end
 
 ---@param self GERM_TYPE
 function ScriptHandlers.OnLeave(self)
-    local event = Event:new(self, "OnMouseUp")
+    local event = Event:new(self, "OnLeave")
     zebug.info:mCross():runEvent(event, function()
         GameTooltip:Hide()
         --self:handleGermUpdateEvent(event)

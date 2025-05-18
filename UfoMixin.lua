@@ -53,7 +53,7 @@ function UfoMixIn:isA(other, test)
 end
 
 function UfoMixIn:installMyToString()
-    assert(self ~= UfoMixIn, "yeah, no.  fixToString() only works on instances, not the UfoMixIn class itself.")
+    --assert(self ~= UfoMixIn, "yeah, no.  fixToString() only works on instances, not the UfoMixIn class itself.")
     assert(self.toString, "can't find self:toString() method.")
 
     local mt = getmetatable(self)
@@ -71,4 +71,8 @@ end
 ---@return function the original method so it can be invoked by the new one
 function UfoMixIn:override(funcName, newFunc)
     return override(self, funcName, newFunc)
+end
+
+function UfoMixIn:newEvent(...)
+    return Event:new(self, ...)
 end

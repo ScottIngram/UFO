@@ -171,7 +171,7 @@ end
 
 -- TODO: merge updateForCatalog() and updateForGerm()
 ---@param flyoutId string
-function FlyoutMenu:updateForCatalog(flyoutId)
+function FlyoutMenu:updateForCatalog(flyoutId, event)
     self.enableTwinkle = true
     self:setId(flyoutId)
     local dir = "RIGHT"
@@ -180,7 +180,7 @@ function FlyoutMenu:updateForCatalog(flyoutId)
     local prevButton = nil;
     local numButtons = 0;
     local flyoutDef = self:getDef()
-    zebug.trace:dumpy("flyoutDef",flyoutDef)
+    zebug.trace:event(event):dumpy("flyoutDef",flyoutDef)
     local n = flyoutDef:howManyButtons()
     local rows = n+1 -- one extra for an empty space
 
@@ -200,11 +200,11 @@ function FlyoutMenu:updateForCatalog(flyoutId)
 
         if btnDef then
             btnFrame:setDef(btnDef)
-            btnFrame:setIcon( btnDef:getIcon() )
+            btnFrame:setIcon( btnDef:getIcon(), event )
         else
             -- the empty slot on the end
             btnFrame:setDef(nil)
-            btnFrame:setIcon(nil)
+            btnFrame:setIcon(nil, event)
             btnFrame:setExcluderVisibility(nil)
         end
 
