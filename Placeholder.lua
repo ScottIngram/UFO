@@ -47,11 +47,11 @@ BlizGlobalEventsListener:register(Placeholder, EventHandlers)
 -------------------------------------------------------------------------------
 
 function Placeholder:create(event)
-    Ufo.thatWasMeThatDidThatMacro = event
     local exists = GetMacroInfo(PLACEHOLDER_MACRO_NAME)
     if not exists then
         local icon = Ufo.iconTexture
         zebug.info:event(event):print("name",PLACEHOLDER_MACRO_NAME, "icon",icon, "PLACEHOLDER_MACRO_TEXT", PLACEHOLDER_MACRO_TEXT)
+        Ufo.thatWasMeThatDidThatMacro = event
         CreateMacro(PLACEHOLDER_MACRO_NAME, icon, PLACEHOLDER_MACRO_TEXT)
     end
 end

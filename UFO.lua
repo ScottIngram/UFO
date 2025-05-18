@@ -11,6 +11,7 @@
 ---@field thatWasMeThatDidThatMacro boolean flag used to stop event handler responses to UFO actions related to macros
 ---@field droppedPlaceholderOntoActionBar boolean flag used to stop event handler responses to UFO actions related to drag and drop
 ---@field pickedUpBtn table table of data for a UFO on the mouse cursor
+---@field germLock Event flag to lock out any simultaneous germ events
 ---@field hasShitCalmedTheFuckDown boolean all the loading sequences and initialization chaos is done and the Bliz APIs will provide reliable info (HA!)
 
 ---@type Ufo
@@ -49,11 +50,20 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, arg2, arg3, arg4)
     end)
 end
 
-function EventHandlers:ACTIONBAR_SLOT_CHANGED(actionBarSlotId, me, eventCounter)
+function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
+
     local event = Event:new("Ufo", me, eventCounter)
+    if Ufo.germLock then
+        local btnInSlot = BlizActionBarButton:new(btnSlotIndex, event)
+        zebug.info:event(Ufo.germLock):name(me):print("LOCKED - ignoring", event, "caused by",btnInSlot)
+        return
+    end
+
     zebug.info:mSkull():name(me):runEvent(event, function()
-        GermCommander:handleActionBarSlotChangedEvent(actionBarSlotId, event)
+        Ufo.germLock = event
+        GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
+        Ufo.germLock = nil
     end)
 end
 
@@ -69,7 +79,15 @@ end
 function EventHandlers:UPDATE_MACROS(me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     --if isInCombatLockdownQuiet("Ignoring event UPDATE_MACROS because it") then return end
+
     local event = Event:new("Ufo", me, eventCounter)
+    if Ufo.thatWasMeThatDidThatMacro then
+        -- the event was caused by an action of this addon and as such we shall ignore it
+        zebug.trace:event(event):print("ignoring internally triggered event", Ufo.thatWasMeThatDidThatMacro)
+        Ufo.thatWasMeThatDidThatMacro = nil
+        return
+    end
+
     zebug.info:mCircle():name(me):runEvent(event, function()
         MacroShitShow:analyzeMacroUpdate(event)
     end)

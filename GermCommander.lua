@@ -305,13 +305,15 @@ end
 function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
     local btnInSlot = BlizActionBarButton:new(btnSlotIndex, event) -- remove when debugging btnSlotIndex > 120
 
+--[[
     local precludingEvent = Ufo.droppedPlaceholderOntoActionBar or Ufo.deletedPlaceholder
     if precludingEvent then
         -- we triggered this event ourselves elsewhere and don't need to do anything more
-        zebug.info:event(event):print("SHORT-CIRCUIT - btnSlotIndex",btnSlotIndex, "has",btnInSlot, "was a result of previous event", precludingEvent)
+        zebug.info:event(event):owner(btnInSlot):print("SHORT-CIRCUIT - btnSlotIndex",btnSlotIndex, "has",btnInSlot, "was a result of previous event", precludingEvent)
         Ufo.droppedPlaceholderOntoActionBar = false
         return
     end
+]]
 
     -- TODO: refactor GermCommander / Germ so that Germ directly handles the event. GermCommander only instantiates new germs and pokes it to handle the event
     -- self<germ>:RegisterEvent("ACTIONBAR_SLOT_CHANGED");
@@ -337,14 +339,10 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
     --local btnInSlot = BlizActionBarButton:new(btnSlotIndex, eventId) -- for debugging btnSlotIndex > 120
     zebug.info:event(event):owner(btnInSlot):print("what got dropped",btnInSlot)
 
-    if btnInSlot:isEmpty() then
+    if btnInSlot:isEmpty() or btnInSlot:isUfoPlaceholder(event) then
+        -- an empty slot is meaningless to us.
         -- the btn slot is now empty, so clear the Germ in that slot (if any)
-        zebug.info:event(event):print("the btn slot is now empty, so clear the Germ in that slot (if any)")
-        if germInSlot then
-            self:eraseUfoFrom(btnInSlot, germInSlot, event)
-        else
-            -- no need to do anything.  there was nothing before.  there is nothing now.  nothing from nothing, carry the nothing...
-        end
+        zebug.info:event(event):owner(btnInSlot):print("the btn slot is now empty/UfoPlaceholder and nobody cares")
     elseif btnInSlot:isUfoProxy() then
         -- user just dragged and dropped a UFO onto the bar.
         -- what was there before?
@@ -380,7 +378,9 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
         UfoProxy:deleteProxyMacro(event)
     else
         -- a std Bliz thingy.
-        zebug.info:event(event):print("a std Bliz thingy. ERASE Ufo (if any)")
+        -- altho, if that's true it would have been an event on the Germ itself.
+        -- so this code may never be reached
+        zebug.info:event(event):owner(btnInSlot):print("a std Bliz thingy. ERASE Ufo (if any)")
         self:eraseUfoFrom(btnInSlot, germInSlot, event)
     end
 

@@ -167,7 +167,7 @@ function Cursor:dropOntoActionBar(btnSlotIndex, event)
     self = self:asInstance()
     zebug.warn:event(event):owner(self):print("dropping onto btnSlotIndex",btnSlotIndex)
     PlaceAction(btnSlotIndex)
-    self:populateIfInstance()
+    self:populateIfInstance() -- I am now something different so find out what I am
 end
 
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
@@ -222,10 +222,11 @@ function Cursor:toString()
             return "<Cursor: EMPTY>"
         else
             local name = self.name
-            if self.id == ButtonType.MACRO then
-                if name == UfoProxy:getMacroId() then
-                    name = "UfoProxy: ".. (UfoProxy:getFlyoutName() or "UnKnOwN")
-                elseif Placeholder:isOn(self, "BlizActionBarButton:toString()") then
+            if self.type == ButtonType.MACRO then
+                if name == PROXY_MACRO_NAME then
+                    return UfoProxy:toString()
+                    -- name = "UfoProxy: ".. (UfoProxy:getFlyoutName() or "UnKnOwN")
+                elseif name == PLACEHOLDER_MACRO_NAME then
                     name = "Placeholder"
                 end
             end

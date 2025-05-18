@@ -147,14 +147,14 @@ function UfoProxy:pickupUfoOntoCursor(flyoutId, event)
     local icon = flyoutConf:getIcon()
     self:deleteProxyMacro(event)
     local macroText = flyoutId
-    Ufo.thatWasMeThatDidThatMacro = event or "pickupUfoCursor()"
+    Ufo.thatWasMeThatDidThatMacro = Event:new(self, "pickupUfoCursor()") -- event or "pickupUfoCursor()"
     local proxyMacroId = CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText)
     Ufo.createdProxy = event
     Cursor:pickupMacro(proxyMacroId, event)
 end
 
 function UfoProxy:deleteProxyMacro(event)
-    Ufo.thatWasMeThatDidThatMacro = event or "deleteProxyMacro()"
+    Ufo.thatWasMeThatDidThatMacro = Event:new(self, "deleteProxyMacro()") -- event or "deleteProxyMacro()"
     DeleteMacro(PROXY_MACRO_NAME)
     -- workaround Bliz bug - make sure the macro frame accurately reflects that the macro has been deleted
     if MacroFrame:IsShown() then

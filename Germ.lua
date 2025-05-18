@@ -229,6 +229,7 @@ function Germ:changeFlyoutIdAndEnable(flyoutId, event)
         return
     end
 
+    self.flyoutId = flyoutId
     zebug.info:event(event):owner(self):print("EnAbLe GeRm :-)")
 
     self.isConfigChanged = true
@@ -237,6 +238,7 @@ function Germ:changeFlyoutIdAndEnable(flyoutId, event)
     self.flyoutMenu:updateForGerm(self, event)
     self:registerForBlizUiActions()
     self:Show()
+    self:update(flyoutId, event) -- handles icon change and um...
 
     -- change any/everything
     -- go analyze the update() etc in Germ *AND* GermCommander
@@ -671,14 +673,31 @@ end
 function Germ:handleReceiveDrag(event)
     local cursor = Cursor:get()
     if cursor then
-        local cursor = Cursor:get()
-        zebug.info:event(event):owner(self):print("just got hit by cursor",cursor)
-        Cursor:dropOntoActionBar(self:getBtnSlotIndex(), event) -- are we planning on letting ACTIONBAR_SLOT_CHANGED do the heavy lifting?
+        Ufo.germLock = event
+
+        local flyoutIdOld = self.flyoutId
+
         if cursor:isUfoProxy() then
-            zebug.info:event(event):owner(self):print("it was a proxy",cursor)
+            -- soup to nuts. do everything without relying on the ACTIONBAR_SLOT_CHANGED handler
+            zebug.info:event(event):owner(self):print("cursor is a proxy",cursor)
+            local flyoutIdNew = UfoProxy:getFlyoutId()
+            self:changeFlyoutIdAndEnable(flyoutIdNew, event)
+            Placeholder:put(self.btnSlotIndex, event)
+            GermCommander:savePlacement(self.btnSlotIndex, flyoutIdNew, event)
+        else
+            zebug.info:event(event):owner(self):print("just got hit by rando",cursor)
+            self:clearAndDisable(event)
+            GermCommander:forgetPlacement(self.btnSlotIndex, event)
+            cursor:dropOntoActionBar(self.btnSlotIndex, event)
         end
-        self:update(self.flyoutId, event)
-        GermCommander:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
+
+        if flyoutIdOld then
+            UfoProxy:pickupUfoOntoCursor(flyoutIdOld, event)
+        else
+            cursor:clear(event)
+        end
+
+        Ufo.germLock = nil
     end
 end
 
