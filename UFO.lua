@@ -71,33 +71,20 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, arg2, arg3, arg4)
 end
 
 
-local qq = 0
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter, z1, z2)
     print("btnSlotIndex:",btnSlotIndex, "ufoType", isTable(btnSlotIndex) and btnSlotIndex.ufoType, "me:",me, "eventCounter:",eventCounter, "z1:", z1, "z2:",z2)
---zebug.error:dumpy("self???",self)
-    qq=1
-    print(qq,"...");qq=qq+1
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    print(qq,"...");qq=qq+1
 
     local event = Event:new("Ufo", me, eventCounter)
-    print(qq,"...");qq=qq+1
     if Ufo.germLock then
-        print(qq,"... A");qq=qq+1
         local btnInSlot = BlizActionBarButton:new(btnSlotIndex, event)
-        print(qq,"... A");qq=qq+1
         zebug.info:event(Ufo.germLock):name(me):print("LOCKED - ignoring", event, "caused by",btnInSlot)
-        print(qq,"... A");qq=qq+1
         return
     end
-    print(qq,"... B");qq=qq+1
 
-    zebug.info:mSkull():name(me):runEvent(event, function()
-        print(qq,"... C");qq=qq+1
+    zebug.info:mSquare():name(me):runEvent(event, function()
         Ufo.germLock = event
-        print(qq,"... C");qq=qq+1
         GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
-        print(qq,"... C");qq=qq+1
         Ufo.germLock = nil
     end, "btnSlotIndex", btnSlotIndex)
 end
