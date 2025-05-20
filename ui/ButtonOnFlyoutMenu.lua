@@ -155,7 +155,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     flyoutDef:removeButton(self:getId())
     self:setDef(nil)
-    flyoutFrame:updateForCatalog(flyoutId)
+    flyoutFrame:updateForCatalog(flyoutId, "ButtonOnFlyoutMenu:onDragStartDoPickup()")
     --GermCommander:updateAll("ButtonOnFlyoutMenu:onDragStartDoPickup") -- TODO: only update the Germs with this specific flyout
     GermCommander:updateGermsFor(flyoutId, "ButtonOnFlyoutMenu:onDragStartDoPickup") -- was updateAll()
 end
@@ -205,7 +205,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     ClearCursor()
     GermCommander:updateGermsFor(flyoutId, "onReceiveDragAddIt")
     flyoutMenu.displaceBtnsHere = nil
-    flyoutMenu:updateForCatalog(flyoutId)
+    flyoutMenu:updateForCatalog(flyoutId, "ButtonOnFlyoutMenu:onReceiveDragAddIt()")
     Ufo.pickedUpBtn = nil
 end
 

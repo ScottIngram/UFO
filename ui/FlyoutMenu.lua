@@ -363,7 +363,7 @@ function FlyoutMenu:displaceButtonsOnHover(index)
 
     if GetCursorInfo() then
         self.displaceBtnsHere = index
-        self:updateForCatalog(self.flyoutId)
+        self:updateForCatalog(self.flyoutId, "FlyoutMenu:displaceButtonsOnHover()")
     end
 end
 
@@ -378,7 +378,7 @@ function FlyoutMenu:restoreButtonsAfterHover()
     end
 
     self.displaceBtnsHere = nil
-    self:updateForCatalog( self.flyoutId )
+    self:updateForCatalog(self.flyoutId, "FlyoutMenu:restoreButtonsAfterHover()" )
 end
 
 -- currently unused -- TODO use it
@@ -387,7 +387,7 @@ end
 function FlyoutMenu:addBtnAt(btnDef, btnIndex)
     local flyoutDef = self:getDef()
     flyoutDef:replaceButton(btnIndex, btnDef) -- TODO - repects displace
-    self:updateForCatalog(self.flyoutId)
+    self:updateForCatalog(self.flyoutId, "FlyoutMenu:addBtnAt()")
     GermCommander:updateGermsFor(self.flyoutId, "FlyoutMenu:addBtnAt")
 end
 
