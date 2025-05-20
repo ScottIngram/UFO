@@ -335,7 +335,7 @@ function Germ:update(flyoutId, event)
     -- but don't make each germ compete with the others.  give each a unique ID
     if not self.throttledUpdate then
         local func = function(event)
-            zebug.info:name("throttled _secretUpdate"):event(event):line("20","updateForGerm from Germ:updateAllBtnHotKeyLabels")
+            zebug.info:name("throttled _secretUpdate"):event(event):owner(self):line("20","updateForGerm from Germ:updateAllBtnHotKeyLabels")
             return self:_secretUpdate(event)
         end
         -- every instance of Germ gets its own copy of throttledUpdate.
@@ -362,7 +362,7 @@ function Germ:_secretUpdate(event, amDelayed)
     end
 
     local btnSlotIndex = self.btnSlotIndex
-    zebug.trace:name("_secretUpdate"):event(event):line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName(), "amDelayed",amDelayed)
+    zebug.trace:name("_secretUpdate"):event(event):owner(self):line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName(), "amDelayed",amDelayed)
 
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     if not flyoutDef then
@@ -399,7 +399,7 @@ function Germ:_secretUpdate(event, amDelayed)
     local qId = "GERM:_secretUpdate() : ".. self:getName()
     exeOnceNotInCombat(qId, function()
 
-        zebug.trace:name(qId):event(event):line("20", "inner circle!")
+        zebug.trace:name(qId):event(event):owner(self):line("20", "inner circle!")
         self.flyoutMenu:updateForGerm(self, event)
 
         -- removed this because I think it's good enough to do it only in new()
@@ -411,11 +411,11 @@ function Germ:_secretUpdate(event, amDelayed)
         local lastClickerUpdate = self.clickersLastUpdate or 0
 
         if self:getFlyoutDef():isModNewerThan(lastClickerUpdate) then
-            zebug.trace:name(qId):event(event):print("NO CHANGES! lastClickerUpdate",lastClickerUpdate)
+            zebug.trace:name(qId):event(event):owner(self):print("NO CHANGES! lastClickerUpdate",lastClickerUpdate)
             --return
         end
 
-        zebug.trace:name(qId):event(event):print("changed! lastClickerUpdate",lastClickerUpdate)
+        zebug.trace:name(qId):event(event):owner(self):print("changed! lastClickerUpdate",lastClickerUpdate)
         self.clickersLastUpdate = time()
 
         -- some clickers need to be re-initialized whenever the flyout's buttons change
@@ -527,10 +527,10 @@ function Germ:doKeybinding()
     if keybinds then
         for i, keyName in ipairs(keybinds) do
             if not tableContainsVal(self.keybinds, keyName) then
-                zebug.trace:print("germ",germName, "binding keyName",keyName)
+                zebug.trace:owner(self):print("germ",germName, "binding keyName",keyName)
                 SetOverrideBindingClick(self, true, keyName, germName, MouseClick.SIX)
             else
-                zebug.trace:print("germ",germName, "NOT binding keyName",keyName, "because it's already bound.")
+                zebug.trace:owner(self):print("germ",germName, "NOT binding keyName",keyName, "because it's already bound.")
             end
         end
         local keybind1 = keybinds[1]
@@ -548,10 +548,10 @@ function Germ:doKeybinding()
     if (self.keybinds) then
         for i, keyName in ipairs(self.keybinds) do
             if not tableContainsVal(keybinds, keyName) then
-                zebug.trace:print("germ",germName, "UN-binding keyName",keyName)
+                zebug.trace:owner(self):print("germ",germName, "UN-binding keyName",keyName)
                 SetOverrideBinding(self, true, keyName, nil)
             else
-                zebug.trace:print("germ",germName, "NOT UN-binding keyName",keyName, "because it's still bound.")
+                zebug.trace:owner(self):print("germ",germName, "NOT UN-binding keyName",keyName, "because it's still bound.")
             end
         end
     end
@@ -650,7 +650,7 @@ function ScriptHandlers.OnMouseDown(self)
     end
 
     local event = Event:new(self, "OnMouseDown")
-    zebug.info:mDiamond():runEvent(event, function()
+    zebug.info:mDiamond():owner(self):runEvent(event, function()
         self:OnMouseDown()
     end)
 end
@@ -659,13 +659,13 @@ end
 function ScriptHandlers.OnMouseUp(self)
     if isInCombatLockdown("Drag and drop") then return end
     local event = Event:new(self, "ScriptHandlers.OnMouseUp")
-    zebug.info:mCross():event(event):runEvent(event, function()
+    zebug.info:mCross():owner(self):event(event):runEvent(event, function()
         self:OnMouseUp()
         local isDragging = GetCursorInfo()
         if isDragging then
             self:handleReceiveDrag(event)
         else
-            zebug.info:event(event):name("ScriptHandlers.OnMouseUp"):print("not dragging, so, exiting.")
+            zebug.info:owner(self):event(event):name("ScriptHandlers.OnMouseUp"):print("not dragging, so, exiting.")
         end
     end)
 end
@@ -709,7 +709,7 @@ function ScriptHandlers.OnReceiveDrag(self)
     if isInCombatLockdown("Drag and drop") then return end
 
     local event = Event:new(self, "OnReceiveDrag")
-    zebug.info:mCircle():runEvent(event, function()
+    zebug.info:mCircle():owner(self):runEvent(event, function()
         self:handleReceiveDrag(event)
     end)
 end
@@ -721,7 +721,7 @@ function ScriptHandlers.OnPickupAndDrag(germ)
     if isInCombatLockdown("Drag and drop") then return end
 
     local event = Event:new(self, "OnPickupAndDrag")
-    zebug.info:mCircle():runEvent(event, function()
+    zebug.info:mCircle():owner(self):runEvent(event, function()
         germ:pickupFromSlotAndClear(event)
     end)
 end
@@ -729,7 +729,7 @@ end
 ---@param self GERM_TYPE
 function ScriptHandlers.OnEnter(self)
     local event = Event:new(self, "OnEnter")
-    zebug.info:mDiamond():runEvent(event, function()
+    zebug.info:mDiamond():owner(self):runEvent(event, function()
         self:setToolTip()
         --self:handleGermUpdateEvent(event)
     end)
@@ -738,7 +738,7 @@ end
 ---@param self GERM_TYPE
 function ScriptHandlers.OnLeave(self)
     local event = Event:new(self, "OnLeave")
-    zebug.info:mCross():runEvent(event, function()
+    zebug.info:mCross():owner(self):runEvent(event, function()
         GameTooltip:Hide()
         --self:handleGermUpdateEvent(event)
     end)
@@ -754,7 +754,7 @@ function ScriptHandlers.OnUpdate(self, elapsed)
     -- do NOT run this without first wrapping it in Throttler !!!
 
     local event = Event:new(self, "OnUpdate")
-    zebug.info:mSkull():runEvent(event, function()
+    zebug.info:mSkull():owner(self):runEvent(event, function()
         self:handleGermUpdateEvent(event)
         self:updateAllBtnCooldownsEtc() -- nah, let the flyout do this. -- or the buttons themselves.  and have them sub/unsub based on vis
     end)
@@ -769,11 +769,11 @@ function ScriptHandlers.OLD_OnUpdate(self, elapsed)
     onUpdateTimer = 0
 
     local eventId = self:nextEventCount("/OnUpdate_")
-    zebug.trace:name(eventId):out(hWidth, ".",":START: poopy :START:")
+    zebug.trace:owner(self):name(eventId):out(hWidth, ".",":START: poopy :START:")
 
     self:handleGermUpdateEvent(eventId)
     self:updateAllBtnCooldownsEtc() -- nah, let the flyout do this. -- or the buttons themselves.  and have them sub/unsub based on vis
-    zebug.trace:name(eventId):out(hWidth, ".",":END:")
+    zebug.trace:owner(self):name(eventId):out(hWidth, ".",":END:")
 end
 
 ---@param self GERM_TYPE
@@ -839,7 +839,7 @@ local HandlerMaker = { }
 function Germ:setMouseClickHandler(mouseClick, behavior)
     self:removeOldHandler(mouseClick)
     local installTheBehavior = getHandlerMaker(behavior)
-    zebug.info:print("mouseClick",mouseClick, "opt", behavior, "handler", installTheBehavior)
+    zebug.info:owner(self):print("mouseClick",mouseClick, "opt", behavior, "handler", installTheBehavior)
     installTheBehavior(self, mouseClick)
     self.clickers[mouseClick] = behavior
     SecureHandlerExecute(self, searchForFlyoutMenuScriptlet()) -- initialize the scriptlet's "global" vars
@@ -867,9 +867,9 @@ end
 ---@param mouseClick MouseClick
 function HandlerMaker:OpenFlyout(mouseClick)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
-    zebug.info:name("HandlerMakers:OpenFlyout"):print("self",self, "mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
+    zebug.info:owner(self):name("HandlerMakers:OpenFlyout"):print("self",self, "mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
     local scriptName = "OPENER_SCRIPT_FOR_" .. secureMouseClickId
-    zebug.info:name("HandlerMakers:OpenFlyout"):print("germ",self.label, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
+    zebug.info:owner(self):name("HandlerMakers:OpenFlyout"):print("germ",self.label, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
     -- TODO v11.1 - wrap in exeNotInCombat() ?
     self:SetAttribute(secureMouseClickId,scriptName)
     self:SetAttribute("_"..scriptName, getOpenerClickerScriptlet()) -- OPENER
@@ -878,7 +878,7 @@ end
 ---@param mouseClick MouseClick
 function HandlerMaker:ActivateBtn1(mouseClick)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
-    zebug.info:print("secureMouseClickId",secureMouseClickId)
+    zebug.info:owner(self):print("secureMouseClickId",secureMouseClickId)
     self:updateSecureClicker(mouseClick)
     local btn1 = self:getBtnDef(1)
     if not btn1 then return end
@@ -886,7 +886,7 @@ function HandlerMaker:ActivateBtn1(mouseClick)
     local btn1Name = btn1.name
     local type, key, val = btn1:asSecureClickHandlerAttributes()
     local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
-    zebug.info:name("HandlerMakers:ActivateBtn1"):print("germ",self.label, "btn1Name",btn1Name, "btn1Type",btn1Type, "secureMouseClickId", secureMouseClickId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseClick, "val", val)
+    zebug.info:owner(self):name("HandlerMakers:ActivateBtn1"):print("germ",self.label, "btn1Name",btn1Name, "btn1Type",btn1Type, "secureMouseClickId", secureMouseClickId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseClick, "val", val)
     -- TODO v11.1 - wrap in exeNotInCombat() ?
     self:SetAttribute(secureMouseClickId, type)
     self:SetAttribute(keyAdjustedToMatchMouseClick, val)
@@ -995,7 +995,7 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
         self:SetAttribute(adjKey, val)
     ]=]
 
-    zebug.info:print("germ",self.label, "secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
+    zebug.info:owner(self):print("germ",self.label, "secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
     self.clickScriptUpdaters[secureMouseClickId] = scriptToSetNextRandomBtn
 
     -- install the script which will install the buttons which will perform the action
@@ -1011,7 +1011,7 @@ end
 
 function Germ:removeOldHandler(mouseClick)
     local old = self.clickers[mouseClick]
-    zebug.trace:print("old",old)
+    zebug.trace:owner(self):print("old",old)
     if not old then return end
 
     local needsRemoval = (old == (GermClickBehavior.RANDOM_BTN) or (old == GermClickBehavior.CYCLE_ALL_BTNS))
@@ -1043,7 +1043,7 @@ function Germ:removeOldHandler(mouseClick)
         local stop  = LEN_CLICK_ID_MARKER + string.len(mouseClick)
         local scriptsClick = string.sub(postBody or "", start, stop)
         isForThisClick = (scriptsClick == mouseClick)
-        zebug.info:print("germ", self.label, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
+        zebug.info:owner(self):print("germ", self.label, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
         if not isForThisClick then
             rescue( header, preBody, postBody, scriptsClick )
         end
@@ -1054,7 +1054,7 @@ function Germ:removeOldHandler(mouseClick)
         local success = pcall(function()
             SecureHandlerWrapScript(params[1], "OnClick", params[1], params[2], params[3])
         end )
-        zebug.info:print("germ", self.label, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
+        zebug.info:owner(self):print("germ", self.label, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
     end
 end
 
