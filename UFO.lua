@@ -70,8 +70,9 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, arg2, arg3, arg4)
     end)
 end
 
+
 local qq = 0
-function ACTIONBAR_SLOT_CHANGED(self, btnSlotIndex, me, eventCounter, z1, z2)
+function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter, z1, z2)
     print("btnSlotIndex:",btnSlotIndex, "ufoType", isTable(btnSlotIndex) and btnSlotIndex.ufoType, "me:",me, "eventCounter:",eventCounter, "z1:", z1, "z2:",z2)
 --zebug.error:dumpy("self???",self)
     qq=1
@@ -100,6 +101,8 @@ function ACTIONBAR_SLOT_CHANGED(self, btnSlotIndex, me, eventCounter, z1, z2)
         Ufo.germLock = nil
     end, "btnSlotIndex", btnSlotIndex)
 end
+
+EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttle(0.1, "Ufo:ACTIONBAR_SLOT_CHANGED", EventHandlers.ACTIONBAR_SLOT_CHANGED)
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(id, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
@@ -263,7 +266,6 @@ end
 -- OK, Go for it!
 -------------------------------------------------------------------------------
 
-EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttle(0.1, "Ufo:ACTIONBAR_SLOT_CHANGED", ACTIONBAR_SLOT_CHANGED)
 --EventHandlers.BAG_UPDATE = Throttler:throttle(0.1, "Ufo:BAG_UPDATE", BAG_UPDATE)
 --EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttle(0.1, "Ufo:ACTIONBAR_SLOT_CHANGED", function() print("=-=-=-=-=- ACTIONBAR_SLOT_CHANGED ??? =-=-=-=-=-")  end)
 
