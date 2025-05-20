@@ -71,7 +71,7 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, arg2, arg3, arg4)
 end
 
 local qq = 0
-function ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter, z1, z2)
+function ACTIONBAR_SLOT_CHANGED(self, btnSlotIndex, me, eventCounter, z1, z2)
     print("btnSlotIndex:",btnSlotIndex, "ufoType", isTable(btnSlotIndex) and btnSlotIndex.ufoType, "me:",me, "eventCounter:",eventCounter, "z1:", z1, "z2:",z2)
 --zebug.error:dumpy("self???",self)
     qq=1
