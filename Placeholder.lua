@@ -26,16 +26,8 @@ local EventHandlers = { }
 
 function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
---print("..................... zebug:getNoiseLevel()",zebug:getLowestAllowedSpeakingVolume(), "zebug.NONE",zebug.NONE)
-    zebug.trace:print("11111111 *****************************************************************")
     local event = Event:new(self, me, eventCounter, zebug.TRACE) -- zebug:getNoiseLevel()
     zebug.trace:mMoon():name(me):runEvent(event, function()
-        zebug.trace:print("2 *****************************************************************")
-        zebug.trace:event(event):print("3 *****************************************************************")
-        zebug.info:print("4 *****************************************************************")
-        zebug.info:event(event):print("5 *****************************************************************")
-        zebug.warn:print("6 *****************************************************************")
-        zebug.warn:event(event):print("7 *****************************************************************")
         Placeholder:doNotLetUserDragMe(event)
     end)
 end
