@@ -340,7 +340,7 @@ function Germ:update(flyoutId, event)
         end
         -- every instance of Germ gets its own copy of throttledUpdate.
         -- thus, EACH instance can execute its own update without competing with the other instances
-        self.throttledUpdate = Throttler:new(func, maxUpdateFrequency, self:getLabel().." secretUpdate()" )
+        self.throttledUpdate = Throttler:new(func, maxUpdateFrequency, self:getLabel().." secretUpdate()", true )
     end
 
     self.throttledUpdate:exe(event)

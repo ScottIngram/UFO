@@ -89,7 +89,7 @@ function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter, z1
     end, "btnSlotIndex", btnSlotIndex)
 end
 
-EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttle(0.1, "Ufo:ACTIONBAR_SLOT_CHANGED", EventHandlers.ACTIONBAR_SLOT_CHANGED)
+EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttleAndNoQueue(0.125, "Ufo:ACTIONBAR_SLOT_CHANGED", EventHandlers.ACTIONBAR_SLOT_CHANGED)
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(id, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
