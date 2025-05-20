@@ -17,8 +17,11 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+ufoType = "UFO_BASE"
 zebug = Zebug:new()
 local zebug = Zebug:new(Zebug.TRACE)
+
+time = GetTimePreciseSec -- fuck whole second bullshit
 
 -- Purely to satisfy my IDE
 DB = Ufo.DB
@@ -31,7 +34,24 @@ Event = Ufo.Event
 -------------------------------------------------------------------------------
 
 local isUfoInitialized = false
-local width = 30
+local eventChaosPreviousCheckMoment = time()
+local eventChaosDurationTolerance = 0.5
+
+-------------------------------------------------------------------------------
+-- Util funcs
+-------------------------------------------------------------------------------
+
+function isEventChaosChilledOut()
+    print (string.format("%.4f <- time :-)", time()))
+    local elapsed = time() - eventChaosPreviousCheckMoment
+    eventChaosPreviousCheckMoment = time()
+    return elapsed > eventChaosDurationTolerance
+end
+
+function calmTheFuckDown()
+    Ufo.hasShitCalmedTheFuckDown = false
+    C_Timer.After(1, function() Ufo.hasShitCalmedTheFuckDown = true end)
+end
 
 -------------------------------------------------------------------------------
 -- Event Handlers
@@ -50,21 +70,35 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, arg2, arg3, arg4)
     end)
 end
 
-function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter)
+local qq = 0
+function ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter, z1, z2)
+    print("btnSlotIndex:",btnSlotIndex, "ufoType", isTable(btnSlotIndex) and btnSlotIndex.ufoType, "me:",me, "eventCounter:",eventCounter, "z1:", z1, "z2:",z2)
+--zebug.error:dumpy("self???",self)
+    qq=1
+    print(qq,"...");qq=qq+1
     if not Ufo.hasShitCalmedTheFuckDown then return end
+    print(qq,"...");qq=qq+1
 
     local event = Event:new("Ufo", me, eventCounter)
+    print(qq,"...");qq=qq+1
     if Ufo.germLock then
+        print(qq,"... A");qq=qq+1
         local btnInSlot = BlizActionBarButton:new(btnSlotIndex, event)
+        print(qq,"... A");qq=qq+1
         zebug.info:event(Ufo.germLock):name(me):print("LOCKED - ignoring", event, "caused by",btnInSlot)
+        print(qq,"... A");qq=qq+1
         return
     end
+    print(qq,"... B");qq=qq+1
 
     zebug.info:mSkull():name(me):runEvent(event, function()
+        print(qq,"... C");qq=qq+1
         Ufo.germLock = event
+        print(qq,"... C");qq=qq+1
         GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
+        print(qq,"... C");qq=qq+1
         Ufo.germLock = nil
-    end)
+    end, "btnSlotIndex", btnSlotIndex)
 end
 
 function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(id, me, eventCounter)
@@ -93,8 +127,10 @@ function EventHandlers:UPDATE_MACROS(me, eventCounter)
     end)
 end
 
-function EventHandlers:BAG_UPDATE(id, me, eventCounter)
+function BAG_UPDATE(id, me, eventCounter)
+    print("...BAG_UPDATE...")
     if not Ufo.hasShitCalmedTheFuckDown then return end
+    --if not isEventChaosChilledOut() then return end
     --if isInCombatLockdownQuiet("Ignoring event UNIT_INVENTORY_CHANGED because it") then return end
     local event = Event:new("Ufo", me, eventCounter)
     zebug.info:mDiamond():name(me):runEvent(event, function()
@@ -102,6 +138,7 @@ function EventHandlers:BAG_UPDATE(id, me, eventCounter)
     end)
 end
 
+--[[
 function EventHandlers:UPDATE_VEHICLE_ACTIONBAR(me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     --if isInCombatLockdownQuiet("Ignoring event UPDATE_VEHICLE_ACTIONBAR because it") then return end
@@ -110,6 +147,7 @@ function EventHandlers:UPDATE_VEHICLE_ACTIONBAR(me, eventCounter)
         GermCommander:handleEventPetChanged(event)
     end)
 end
+]]
 
 function EventHandlers:UPDATE_BINDINGS(me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
@@ -134,31 +172,35 @@ end
 
 local HandlersForOtherAddons = {}
 
-function HandlersForOtherAddons:Blizzard_PlayerSpells()
+function HandlersForOtherAddons:Blizzard_PlayerSpells(name)
     --v11 Bliz moved the spell book into its own internal, load-on-demand addon
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_PlayerSpells")
     Catalog:createToggleButton(PlayerSpellsFrame)
 end
 
-function HandlersForOtherAddons:Blizzard_Collections()
+function HandlersForOtherAddons:Blizzard_Collections(name)
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_Collections")
     Catalog:createToggleButton(CollectionsJournal)
 end
 
-function HandlersForOtherAddons:Blizzard_MacroUI()
+function HandlersForOtherAddons:Blizzard_MacroUI(name)
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_MacroUI")
     Catalog:createToggleButton(MacroFrame)
     MacroShitShow:init()
 end
 
-function HandlersForOtherAddons:Blizzard_ProfessionsBook()
+function HandlersForOtherAddons:Blizzard_ProfessionsBook(name)
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_ProfessionsBook")
     Catalog:createToggleButton(ProfessionsBookFrame)
 end
 
-function HandlersForOtherAddons:LargerMacroIconSelection()
+function HandlersForOtherAddons:LargerMacroIconSelection(name)
     zebug.trace:name("listener"):print("Heard addon load: LargerMacroIconSelection")
     supportLargerMacroIconSelection()
+end
+
+function HandlersForOtherAddons:UFO(name)
+    zebug.trace:name("listener"):print("Heard addon load", name)
 end
 
 -------------------------------------------------------------------------------
@@ -214,11 +256,15 @@ function initalizeAddonStuff(event)
 
     -- flags to wait out the chaos happening when the UI first loads / reloads.
     isUfoInitialized = true
-    C_Timer.After(1, function() Ufo.hasShitCalmedTheFuckDown = true end)
+    calmTheFuckDown()
 end
 
 -------------------------------------------------------------------------------
 -- OK, Go for it!
 -------------------------------------------------------------------------------
+
+EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttle(0.1, "Ufo:ACTIONBAR_SLOT_CHANGED", ACTIONBAR_SLOT_CHANGED)
+--EventHandlers.BAG_UPDATE = Throttler:throttle(0.1, "Ufo:BAG_UPDATE", BAG_UPDATE)
+--EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttle(0.1, "Ufo:ACTIONBAR_SLOT_CHANGED", function() print("=-=-=-=-=- ACTIONBAR_SLOT_CHANGED ??? =-=-=-=-=-")  end)
 
 BlizGlobalEventsListener:register(Ufo, EventHandlers, HandlersForOtherAddons)

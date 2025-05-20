@@ -304,32 +304,10 @@ end
 --- * a Ufo Placeholder that we programmatically put there and should be ignored
 function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
     local btnInSlot = BlizActionBarButton:new(btnSlotIndex, event) -- remove when debugging btnSlotIndex > 120
-
---[[
-    local precludingEvent = Ufo.droppedPlaceholderOntoActionBar or Ufo.deletedPlaceholder
-    if precludingEvent then
-        -- we triggered this event ourselves elsewhere and don't need to do anything more
-        zebug.info:event(event):owner(btnInSlot):print("SHORT-CIRCUIT - btnSlotIndex",btnSlotIndex, "has",btnInSlot, "was a result of previous event", precludingEvent)
-        Ufo.droppedPlaceholderOntoActionBar = false
+    if not btnInSlot then
+        zebug.info:event(event):print("bullshit Bliz API reported a change to btnSlotIndex",btnSlotIndex)
         return
     end
-]]
-
-    -- TODO: refactor GermCommander / Germ so that Germ directly handles the event. GermCommander only instantiates new germs and pokes it to handle the event
-    -- self<germ>:RegisterEvent("ACTIONBAR_SLOT_CHANGED");
-
-    -- this ENTIRE method simplifies into:
---[[
-    if btnInSlot:isUfoProxy() then
-        local germInSlot = self:recallGerm(btnSlotIndex)
-        if not germInSlot then
-            local flyoutId = UfoProxy:getFlyoutId()
-            germInSlot = Germ:new(flyoutId, btnSlotIndex, eventId)
-            germInSlot:ACTIONBAR_SLOT_CHANGED() / OnReceiveDrag()
-            self:saveGerm(germInSlot)
-        end
-    end
-]]
 
     local savedFlyoutIdForSlot = Spec:getUfoFlyoutIdForSlot(btnSlotIndex)
     local germInSlot = self:recallGerm(btnSlotIndex)
@@ -340,8 +318,7 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
     zebug.info:event(event):owner(btnInSlot):print("what got dropped",btnInSlot)
 
     if btnInSlot:isEmpty() or btnInSlot:isUfoPlaceholder(event) then
-        -- an empty slot is meaningless to us.
-        -- the btn slot is now empty, so clear the Germ in that slot (if any)
+        -- an empty slot or one with a Placeholder is meaningless to us.
         zebug.info:event(event):owner(btnInSlot):print("the btn slot is now empty/UfoPlaceholder and nobody cares")
     elseif btnInSlot:isUfoProxy() then
         -- user just dragged and dropped a UFO onto the bar.
@@ -356,6 +333,9 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
                 -- do absolutely nothing
                 zebug.trace:event(event):owner(btnInSlot):print("the dropped UFO was the same as the one already on the bar.  Nothing to do but exit.")
             else
+                -- I don't think we can ever reach here.
+                -- If there is a savedFlyoutIdForSlot there would also be an enabled germ in the slot.
+                -- And if there is an enabled germ, it should have received the event and prevented the UfoProxy from reaching the action bar.
                 -- user just dragged and dropped a different UFO than the one already/formerly there.
                 -- save the new ID into the DB
                 -- and reconfigure the existing germ
@@ -383,85 +363,7 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
         zebug.info:event(event):owner(btnInSlot):print("a std Bliz thingy. ERASE Ufo (if any)")
         self:eraseUfoFrom(btnInSlot, germInSlot, event)
     end
-
-
-
-
-
-
-
-
---[[
-    if true then return end
-
-    local typeOnBar, macroIdOnBar = GetActionInfo(btnSlotIndex)
-    local droppedFlyoutId = UfoProxy:getFlyoutIdFromGermProxy(typeOnBar, macroIdOnBar)
-
-    zebug.info:label(eventId):print("btn", btnInSlot, "btnSlotIndex",btnSlotIndex, "savedFlyoutIdForSlot", savedFlyoutIdForSlot, "typeOnBar", typeOnBar, "macroIdOnBar", macroIdOnBar)
-
-
-    if droppedFlyoutId then
-        self:dropUfoFromCursorOntoActionBar(btnSlotIndex, droppedFlyoutId, eventId)
-        isConfigChanged = true
-    end
-
-    -- after dropping the flyout on the cursor, pickup the one we just replaced
-    if savedFlyoutIdForSlot then
-        UfoProxy:pickupUfoCursor(savedFlyoutIdForSlot, eventId)
-        if not isConfigChanged then
-            GermCommander:deletePlacement(btnSlotIndex)
-            --configChanged = true
-        end
-    end
-
-    if isConfigChanged then
-        self:updateBtnSlot(btnSlotIndex, eventId)
-    end
-]]
 end
-
---[[
-function GermCommander:BROKEN_handleActionBarSlotChanged(btnSlotIndex)
-    if Ufo.droppedPlaceholderOntoActionBar then
-        -- we triggered this event ourselves elsewhere and don't need to do anything more
-        Ufo.droppedPlaceholderOntoActionBar = false
-        return
-    end
-
-    local configChanged
-    local existingFlyoutId = getFlyoutIdForSlot(btnSlotIndex)
-    local existingName = flyLabelNilOk(existingFlyoutId)
-    local cursorId = self:getFlyoutIdFromCursor()
-    local cursorName = flyLabelNilOk(cursorId)
-    local type, macroId = GetCursorInfo()
-
-    zebug.info:print("btnSlotIndex",btnSlotIndex, "existingFlyoutId",existingFlyoutId, "existingName",existingName,  "type",type, "macroId",macroId,  "cursorId",cursorId, "cursorName",cursorName)
-
-    -- abort if empty cursor
-    if not cursorId then
-        zebug.info:dumpy("btnSlotIndex is empty - config For Spec ", Spec:getPlacementConfigForCurrentSpec())
-        return
-    end
-
-    if isInCombatLockdownQuiet("GermCommander:handleActionBarSlotChanged - Ignoring event ACTIONBAR_SLOT_CHANGED because it") then return end
-
-    self:dropUfoFromCursorOntoActionBar(btnSlotIndex, cursorId, eventId)
-    configChanged = true
-
-    -- after dropping the flyout from the cursor onto an action bar, pickup the one we just replaced
-    if existingFlyoutId then
-        self:copyFlyoutToCursor(existingFlyoutId, "BROKEN")
-        if not configChanged then
-            self:deletePlacement(btnSlotIndex)
-            --configChanged = true
-        end
-    end
-
-    if configChanged then
-        self:updateBtnSlot(btnSlotIndex, "BROKEN")
-    end
-end
-]]
 
 ---@param btn number | BlizActionBarButton
 ---@param germ GERM_TYPE
