@@ -173,15 +173,25 @@ function BlizActionBarButton:toString()
         if self:isEmpty() then
             return string.format("<A-BTN: slot=%d EMPTY>", s(d.btnSlotIndex))
         else
-            local id = d.aId
+            local name
             if d.aType == ButtonType.MACRO then
-                if id == UfoProxy:getMacroId() then
-                    id = "UfoProxy: ".. (UfoProxy:getFlyoutName() or "UnKnOwN")
+                if d.aId == UfoProxy:getMacroId() then
+                    name = "UfoProxy: ".. (UfoProxy:getFlyoutName() or "UnKnOwN")
                 elseif Placeholder:isOn(self, "BlizActionBarButton:toString()") then
-                    id = "Placeholder"
+                    name = "Placeholder"
                 end
             end
-            return string.format("<A-BTN: slot=%d, type=%s, id=%s>", s(d.btnSlotIndex), s(d.aType), s(id))
+
+            if not name then
+                name = self:getNameForBlizThingy(d.aId, d.aType)
+                --print("BlizActionBarButton:toString... d.aId",d.aId, "d.aType",d.aType, "name",name)
+            end
+
+            if name then
+                return string.format("<A-BTN: slot=%d, type=%s, name=%s>", s(d.btnSlotIndex), s(d.aType), name)
+            end
+
+            return string.format("<A-BTN: slot=%d, type=%s, id=%s>", s(d.btnSlotIndex), s(d.aType), s(d.aId))
         end
     end
 end

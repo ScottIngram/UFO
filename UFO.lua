@@ -84,7 +84,7 @@ function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter, z1
 
     zebug.info:mSquare():name(me):runEvent(event, function()
         Ufo.germLock = event
-        GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
+        GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlotIndex, event)
         Ufo.germLock = nil
     end, "btnSlotIndex", btnSlotIndex)
 end
@@ -107,7 +107,7 @@ function EventHandlers:UPDATE_MACROS(me, eventCounter)
     local event = Event:new("Ufo", me, eventCounter)
     if Ufo.thatWasMeThatDidThatMacro then
         -- the event was caused by an action of this addon and as such we shall ignore it
-        zebug.trace:event(event):print("ignoring internally triggered event", Ufo.thatWasMeThatDidThatMacro)
+        zebug.trace:event(event):name(me):print("ignoring internally triggered event that was caused by", Ufo.thatWasMeThatDidThatMacro)
         Ufo.thatWasMeThatDidThatMacro = nil
         return
     end

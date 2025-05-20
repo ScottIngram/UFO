@@ -76,3 +76,29 @@ end
 function UfoMixIn:newEvent(...)
     return Event:new(self, ...)
 end
+
+---@param id number
+---@param type string
+---@return string the name of the spell/mount/toy/etc
+function UfoMixIn:getNameForBlizThingy(id, type)
+    local name
+    if type == ButtonType.SPELL or type == ButtonType.MOUNT or type == ButtonType.PSPELL then
+        local foo = C_Spell.GetSpellInfo(id)
+        name = foo and foo.name
+    elseif type == ButtonType.ITEM or type == ButtonType.TOY then
+        name =  C_Item.GetItemInfo(id)
+    elseif type == ButtonType.TOY then
+        name =  C_Item.GetItemInfo(id)
+    elseif type == ButtonType.MACRO then
+        name =  GetMacroInfo(id)
+        name = name or "BlizBullshit"
+    elseif type == ButtonType.PET then
+        name =  getPetNameAndIcon(id) -- from UFO's BtnDef.lua
+    elseif type == ButtonType.BROKENP or type == ButtonType.PSPELL then
+        name = "Some Pet Command" -- BrokenPetCommand[self.brokenPetCommandId].name -- from UFO's PetShitShow.lua
+    else
+        zebug.warn:print("Unknown type:", type)
+    end
+
+    return name
+end

@@ -294,15 +294,14 @@ function GermCommander:rememberGerm(obj)
     return germ
 end
 
--- TODO: refactor GermCommander / Germ so that Germ directly handles the event. GermCommander only instantiates new germs and pokes it to handle the event
 -- Responds to event: ACTIONBAR_SLOT_CHANGED
 -- The altered slot could now be:
 --- * empty - so we must clear any existing UFO that was there before
 --- * a std Bliz thingy - ditto
 --- * a Ufo proxy for the same flyoutId as before this event - NO ACTION REQUIRED
---- * a Ufo proxy for a new flyoutId as before this event - update the existing Germ with the new UFO config
+--- * a Ufo proxy for a new flyoutId than was there before this event - update the existing Germ with the new UFO config
 --- * a Ufo Placeholder that we programmatically put there and should be ignored
-function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
+function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlotIndex, event)
     local btnInSlot = BlizActionBarButton:new(btnSlotIndex, event) -- remove when debugging btnSlotIndex > 120
     if not btnInSlot then
         zebug.info:event(event):print("bullshit Bliz API reported a change to btnSlotIndex",btnSlotIndex)
@@ -313,8 +312,6 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
     local germInSlot = self:recallGerm(btnSlotIndex)
     zebug.info:event(event):owner(btnInSlot):print("analyzing change to btnSlotIndex",btnSlotIndex, "config for slot", savedFlyoutIdForSlot, "existing germ", germInSlot)
 
-
-    --local btnInSlot = BlizActionBarButton:new(btnSlotIndex, eventId) -- for debugging btnSlotIndex > 120
     zebug.info:event(event):owner(btnInSlot):print("what got dropped",btnInSlot)
 
     if btnInSlot:isEmpty() or btnInSlot:isUfoPlaceholder(event) then
@@ -324,14 +321,14 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
         -- user just dragged and dropped a UFO onto the bar.
         -- what was there before?
         local draggedAndDroppedFlyoutId = UfoProxy:getFlyoutId()
-        zebug.info:event(event):owner(btnInSlot):print("user just dragged and dropped a UFO onto the bar.",btnInSlot)
+        zebug.info:event(event):owner(btnInSlot):print("user just dragged and dropped a UFO onto the bar. UfoProxy",UfoProxy)
 
         if savedFlyoutIdForSlot then
             -- there was already a germ there.
             -- was it the same one as was just dropped?
             if draggedAndDroppedFlyoutId == savedFlyoutIdForSlot then
                 -- do absolutely nothing
-                zebug.trace:event(event):owner(btnInSlot):print("the dropped UFO was the same as the one already on the bar.  Nothing to do but exit.")
+                zebug.trace:event(event):owner(btnInSlot):print("The Ufo",UfoProxy, "was the same as the one already on the bar",germInSlot, "Nothing to do but exit.")
             else
                 -- I don't think we can ever reach here.
                 -- If there is a savedFlyoutIdForSlot there would also be an enabled germ in the slot.
@@ -342,7 +339,7 @@ function GermCommander:handleActionBarSlotChangedEvent(btnSlotIndex, event)
                 -- was essentially self:updateBtnSlot(btnSlotIndex, eventId)
 
                 assert(germInSlot, "config says there should already be a germ here but it's missing")
-                zebug.trace:event(event):owner(btnInSlot):print("The UFO was dropped on an existing germ", germInSlot)
+                zebug.trace:event(event):owner(btnInSlot):print("The Ufo",UfoProxy, "was dropped on an existing germ", germInSlot)
                 germInSlot:changeFlyoutIdAndEnable(draggedAndDroppedFlyoutId, event)
             end
         else
