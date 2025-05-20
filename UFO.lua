@@ -70,7 +70,11 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, arg2, arg3, arg4)
     end)
 end
 
-
+-- respond to the user dragging and dropping:
+-- UFOs onto action bars;
+-- spells/items/etc onto UFOs already on the action bars;
+-- UFOs onto other UFOs already on the action bars.
+-- We don't care any other action bar events.
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter, z1, z2)
     print("btnSlotIndex:",btnSlotIndex, "ufoType", isTable(btnSlotIndex) and btnSlotIndex.ufoType, "me:",me, "eventCounter:",eventCounter, "z1:", z1, "z2:",z2)
     if not Ufo.hasShitCalmedTheFuckDown then return end
