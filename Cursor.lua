@@ -216,7 +216,7 @@ local s = function(v) return v or "nil"  end
 
 function Cursor:toString()
     if self == Cursor then
-        return "CuRsOr"
+        return self:asInstance():toString()-- "CuRsOr"
     else
         if self:isEmpty() then
             return "<Cursor: EMPTY>"
