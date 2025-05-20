@@ -117,8 +117,7 @@ function EventHandlers:UPDATE_MACROS(me, eventCounter)
     end)
 end
 
-function BAG_UPDATE(id, me, eventCounter)
-    print("...BAG_UPDATE...")
+function EventHandlers:BAG_UPDATE(id, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     --if not isEventChaosChilledOut() then return end
     --if isInCombatLockdownQuiet("Ignoring event UNIT_INVENTORY_CHANGED because it") then return end
@@ -127,6 +126,8 @@ function BAG_UPDATE(id, me, eventCounter)
         GermCommander:handleEventChangedInventory(event)
     end)
 end
+
+EventHandlers.BAG_UPDATE = Throttler:throttleAndNoQueue(1.0, "Ufo:BAG_UPDATE", EventHandlers.BAG_UPDATE)
 
 --[[
 function EventHandlers:UPDATE_VEHICLE_ACTIONBAR(me, eventCounter)
