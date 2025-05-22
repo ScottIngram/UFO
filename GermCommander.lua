@@ -490,7 +490,7 @@ function GermCommander:putUfoOntoActionBar(btnSlotIndex, flyoutId, event)
 end
 
 function GermCommander:ensureAllGermsHavePlaceholders(event)
-    Placeholder:create(event)
+    Placeholder:createIfNotExists(event)
     Ufo.droppedPlaceholderOntoActionBar = event
     self:forEachPlacement(function(btnSlotIndex, flyoutId)
         Placeholder:put(btnSlotIndex, event)

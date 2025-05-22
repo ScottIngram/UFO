@@ -8,7 +8,7 @@
 ---@type Ufo -- IntelliJ-EmmyLua annotation
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-local zebug = Zebug:new(Zebug.WARN)
+local zebug = Zebug:new(Zebug.INFO)
 
 ---@class UfoProxy : UfoMixIn
 ---@field macroId number
@@ -37,8 +37,8 @@ function EventHandlers:UPDATE_MACROS(me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
     local event = Event:new(self, me, eventCounter)
-    zebug.trace:name(me):runEvent(event, function()
-        zebug.info:event(event):name(me):print("syncMyId")
+    zebug.trace:name("handler"):runEvent(event, function()
+        zebug.trace:event(event):name("handler"):print("syncMyId")
         UfoProxy:syncMyId()
     end)
 end
@@ -47,9 +47,9 @@ function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
     local event = Event:new(self, me, eventCounter)
-    zebug.trace:name(me):runEvent(event, function()
+    zebug.trace:name("handler"):runEvent(event, function()
         local cursor = Cursor:getFresh(event)
-        zebug.info:event(event):owner(cursor):print("erasing cachedCursor")
+        zebug.trace:event(event):owner(cursor):print("maybe erasing UfoProxy macro")
         UfoProxy:delayedAsyncDeleteProxyIfNotOnCursor(event)
     end)
 end
@@ -60,8 +60,14 @@ BlizGlobalEventsListener:register(UfoProxy, EventHandlers)
 -- Methods
 -------------------------------------------------------------------------------
 
+function getMacroIndexByNameOrNil()
+    local proxyMacroId = GetMacroIndexByName(PROXY_MACRO_NAME) -- omfg, BLiz.  Returns 0 not nil if the macro does not exist. JFC
+    local proxyExists = proxyMacroId and proxyMacroId > 0
+    return proxyExists and proxyMacroId or nil
+end
+
 function UfoProxy:syncMyId()
-    self.macroId = GetMacroIndexByName(self.name)
+    self.macroId = getMacroIndexByNameOrNil(self.name)
     return self.macroId
 end
 
@@ -72,33 +78,52 @@ function UfoProxy:getMacroId()
     return self.macroId
 end
 
----@param obj UfoMixIn
-function UfoProxy:isOn(obj)
-    if not UfoMixIn:isA(obj) then
-        return false -- I only know how to detect my proxy on one of my objects
+---@param thing UfoMixIn
+---@return boolean true if there is a UfoProxy on the thing
+function UfoProxy:isOn(thing)
+    if thing:isA(BlizActionBarButton) then
+        return self:isOnBtn(thing)
+    elseif thing:isA(ButtonDef) then
+        return self:isOnBtnDef(thing)
+    elseif thing:isA(Cursor) then
+        return self:isOnCursor(thing)
+    else
+        -- maybe it's a Blizzard ActionBarActionButtonMixin
+        return self:isOnBtn(thing)
     end
 
-    if obj:isA(BlizActionBarButton) then
-        return self:isOnBtn(obj)
-    elseif obj:isA(ButtonDef) then
-        return self:isOnBtnDef(obj)
-    elseif obj:isA(Cursor) then
-        return self:isOnCursor(obj)
-    end
+    return false -- give up
 end
 
-function UfoProxy:isOnBtnSlot(btnSlotIndex, eventId)
-    local aBtn = BlizActionBarButton:get(btnSlotIndex, eventId)
-    if aBtn:isUfoProxy() then
-
-    end
+function UfoProxy:isOnBtnSlot(btnSlotIndex)
+    local btn = BlizActionBarButton:getLiteralBlizBtn(btnSlotIndex)
+    return self:isOnBtn(btn)
 end
 
----@param btn BlizActionBarButton
+---@param btn BlizActionBarButton | ActionBarActionButtonMixin
+---@return boolean true if there is a UfoProxy on the thing
 function UfoProxy:isOnBtn(btn)
     assert(btn, "btn is nil.  So, no, it's not a UfoProxy")
-    assert(UfoMixIn:isA(btn), "btn isn't from a UfoMixIn so I can't check if it contains a UfoProxy.")
-    return (btn:getType() == ButtonType.MACRO) and (btn:getId() == UfoProxy:getMacroId())
+
+    local type, id
+    if UfoMixIn:isA(btn, BlizActionBarButton) then
+        type = btn:getType()
+        id = btn:getId()
+    else
+        assert(btn.action, "btn is neither a BlizActionBarButton nor a ActionBarActionButtonMixin")
+        type, id = GetActionInfo(btn.action)
+    end
+
+    return self:is(type, id)
+end
+
+---@param type ButtonType
+---@param id number
+---@return boolean true if the type and ID match those of the UfoProxy
+function UfoProxy:is(type, id)
+    assert(type, "invalid nil type")
+    assert(id, "invalid nil id")
+    return (type == ButtonType.MACRO) and (id == self:getMacroId())
 end
 
 ---@param btnDef ButtonDef
@@ -128,7 +153,7 @@ function UfoProxy:getFlyoutDef()
 end
 
 function UfoProxy:exists()
-    return GetMacroInfo(PROXY_MACRO_NAME)
+    return getMacroIndexByNameOrNil(PROXY_MACRO_NAME)
 end
 
 function UfoProxy:getFlyoutId()
@@ -139,18 +164,37 @@ function UfoProxy:getFlyoutId()
     return self.flyoutId
 end
 
+function UfoProxy:put(btnSlotIndex, event)
+    if self:isOnBtnSlot(btnSlotIndex) then return end
+
+end
+
+---@param flyoutId number
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+---@return Cursor
 function UfoProxy:pickupUfoOntoCursor(flyoutId, event)
     if isInCombatLockdown("Drag and drop") then return end
     self.flyoutId = flyoutId
 
     local flyoutConf = FlyoutDefsDb:get(flyoutId)
-    local icon = flyoutConf:getIcon()
-    self:deleteProxyMacro(event)
+    local icon = flyoutConf:getIcon() or DEFAULT_ICON
     local macroText = flyoutId
-    Ufo.thatWasMeThatDidThatMacro = Event:new(self, "pickupUfoCursor()") -- event or "pickupUfoCursor()"
-    local proxyMacroId = CreateMacro(PROXY_MACRO_NAME, icon or DEFAULT_ICON, macroText)
-    Ufo.createdProxy = event
-    Cursor:pickupMacro(proxyMacroId, event)
+
+    -- set a semaphore so other code can decide to respond to the resulting UPDATE_MACROS event
+    Ufo.thatWasMeThatDidThatMacro = Event:new(self, "UfoProxy:pickupUfoOntoCursor()")
+
+    local proxyMacroId = getMacroIndexByNameOrNil(PROXY_MACRO_NAME)
+
+    if proxyMacroId then
+        zebug.info:event(event):owner(self):print("Editing existing proxy macro. proxyMacroId",proxyMacroId, "icon",icon, "macroText",macroText)
+        EditMacro(proxyMacroId, PROXY_MACRO_NAME, icon, macroText)
+    else
+        zebug.info:event(event):owner(self):print("Creating the proxy macro.", "icon",icon, "macroText",macroText)
+        proxyMacroId = CreateMacro(PROXY_MACRO_NAME, icon , macroText)
+        zebug.info:event(event):owner(self):print("CreatED the proxy macro. macroText",macroText,  "icon",icon, "proxyMacroId",proxyMacroId)
+    end
+
+    return Cursor:pickupMacro(proxyMacroId, event)
 end
 
 function UfoProxy:deleteProxyMacro(event)
@@ -185,51 +229,6 @@ function UfoProxy:delayedAsyncDeleteProxyIfNotOnCursor(event, timeToGo)
                 self:deleteProxyMacro(event)
             end
         end
-    end
-end
-
--- handle the unique situation of
--- the user chucked (right-clicked) the cursor without dropping it onto an action bar.
--- but because we can't know for sure if it was or wasn't, wait a moment to get GermCommander a chance to analyze the action bar changes
-function UfoProxy:NEW_delayedAsyncDeleteProxy(eventId)
-    local name = "delayedAsyncDeleteProxy"
-    zebug.info:name(name):event(eventId):print("Is UfoProxy on the cursor", Cursor:get())
-    if self:exists() then
-        if self:isOnCursor() then
-            C_Timer.After(1, function()
-                self:NEW_delayedAsyncDeleteProxy(eventId)
-            end)
-        else
-            -- delay just a moment so that other code listening to this same event can read the UfoProxy before it vanishes...
-            -- actually, maybe that code should nuke the UfoProxy?
-            -- ok, but, Ufo.lua still needs to nuke it on startup just in case it's leftover from a previous session
-            -- SO, do I need to wrap this in a C_timer ???? or throw it away entirely?
-            zebug.info:name(name):event(eventId):print("Not on cursor!  Safe to kill!  DIE PROXY !!!")
-            self:deleteProxyMacro(eventId)
-        end
-    end
-end
-
-function UfoProxy:OLD_delayedAsyncDeleteProxy(eventId)
-    local name = "delayedAsyncDeleteProxy"
-    local proxyExists = GetMacroInfo(PROXY_MACRO_NAME)
-    --zebug.trace:print("checking proxy...")
-    if proxyExists then
-        --zebug.trace:name(name):label(eventId):print("deleting proxy in 1 second...")
-        C_Timer.After(1,
-        -- START callback
-                function()
-                    local c = Cursor:get()
-                    zebug.info:name(name):event(eventId):print("double checking proxy... cursor", c)
-                    local isDraggingProxy = self:isOnCursor()
-                    if isDraggingProxy then
-                        UfoProxy:OLD_delayedAsyncDeleteProxy(eventId)
-                    else
-                        zebug.info:name(name):event(eventId):print("DIE PROXY !!!")
-                        UfoProxy:deleteProxyMacro(eventId)
-                    end
-                end
-        ) -- END callback
     end
 end
 

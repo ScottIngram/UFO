@@ -9,12 +9,13 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new(Zebug.ERROR)
+local zebug = Zebug:new(Zebug.INFO)
 
 ---@class Placeholder
 Placeholder = {
     ufoType = "Placeholder",
 }
+UfoMixIn:mixInto(Placeholder)
 
 local width = 20
 
@@ -27,7 +28,7 @@ local EventHandlers = { }
 function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     local event = Event:new(self, me, eventCounter, zebug.TRACE) -- zebug:getNoiseLevel()
-    zebug.trace:mMoon():name(me):runEvent(event, function()
+    zebug.trace:mMoon():name("handler"):runEvent(event, function()
         Placeholder:doNotLetUserDragMe(event)
     end)
 end
@@ -38,7 +39,7 @@ BlizGlobalEventsListener:register(Placeholder, EventHandlers)
 -- Methods
 -------------------------------------------------------------------------------
 
-function Placeholder:create(event)
+function Placeholder:createIfNotExists(event)
     local exists = GetMacroInfo(PLACEHOLDER_MACRO_NAME)
     if not exists then
         local icon = Ufo.iconTexture
@@ -49,13 +50,14 @@ function Placeholder:create(event)
 end
 
 function Placeholder:pickup(event)
-    self:create(event)
+    self:createIfNotExists(event)
     Ufo.myPlaceholderSoDoNotDelete = event
+    zebug.info:event(event):owner(self):print("grabbers")
     Cursor:pickupMacro(PLACEHOLDER_MACRO_NAME, event)
 end
 
 ---@param btnSlotIndex number
----@param event Event
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 ---@return ButtonDef whatever was on btnSlotIndex before it got clobbered by the Placeholder
 function Placeholder:put(btnSlotIndex, event)
     if not Config.opts.usePlaceHolders then return end
@@ -130,6 +132,7 @@ end
 
 function Placeholder:doNotLetUserDragMe(event)
     local cursor = Cursor:get()
+    local cursor2 = Cursor:getFresh(event)
     if cursor:isUfoPlaceholder() then
         if Ufo.myPlaceholderSoDoNotDelete then
             zebug.info:event(event):owner(cursor):print("keeping (this one time) at request of Ufo.myPlaceholderSoDoNotDelete",Ufo.myPlaceholderSoDoNotDelete)
@@ -139,7 +142,16 @@ function Placeholder:doNotLetUserDragMe(event)
             cursor:clear(event)
         end
     else
-        zebug.info:event(event):owner(cursor):print("ignoring because I only care about Placeholders")
+        local type, id = GetCursorInfo()
+        zebug.info:event(event):owner(cursor):print("ignoring because I only care about Placeholders. cursor2",cursor2, "annnnd finally GetCursorInfo ->",GetCursorInfo,   "type",type, "id",id)
         Ufo.myPlaceholderSoDoNotDelete = false
     end
+end
+
+function Placeholder:getId()
+    return getMacroIndexByNameOrNil(PLACEHOLDER_MACRO_NAME)
+end
+
+function Placeholder:toString()
+    return string.format("<Placeholder: macroId=%d>", self:getId())
 end

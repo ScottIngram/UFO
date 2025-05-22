@@ -10,7 +10,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new(Zebug.ERROR)
+local zebug = Zebug:new(Zebug.TRACE)
 
 ---@class Cursor : UfoMixIn
 ---@field type string
@@ -44,8 +44,9 @@ function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     --if not Ufo.hasShitCalmedTheFuckDown then return end
 
     local event = Event:new(self, me, eventCounter)
-    zebug.trace:name(me):runEvent(event, function()
-        zebug.info:event(event):name(me):print("erasing cachedCursor")
+    zebug.trace:name("handler"):runEvent(event, function()
+        local type, id = GetCursorInfo()
+        zebug.info:event(event):name("handler"):print("erasing cachedCursor... verify plz cursor is now GetCursorInfo ->",GetCursorInfo, "type",type, "id",id)
         cachedCursor = nil
     end)
 end
@@ -97,14 +98,14 @@ function Cursor:get()
     return self
 end
 
-local maxAge = 2 -- seconds
+local maxAge = 0 -- seconds
 -- bypass the cache - should only need to be used by other subscribers of CURSOR_CHANGED due to race condition
 function Cursor:getFresh(event)
     if cachedCursor then
         local age = time() - cachedCursor.whenWasCached
         zebug.trace:event(event):print("age", age)
-        if age > maxAge then
-            zebug.trace:print("clearing cache because it's too old!")
+        if age >= maxAge then
+            zebug.trace:event(event):print("clearing cache because it's too old!")
             cachedCursor = nil
         else
             zebug.trace:event(event):print("not clearing cache. cache is young!")
@@ -162,7 +163,7 @@ function Cursor:clear(event)
 end
 
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
----@param event string UFO custom unique ID for the event that triggered this action - good for debugging
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function Cursor:dropOntoActionBar(btnSlotIndex, event)
     self = self:asInstance()
     zebug.warn:event(event):owner(self):print("dropping onto btnSlotIndex",btnSlotIndex)
@@ -171,21 +172,53 @@ function Cursor:dropOntoActionBar(btnSlotIndex, event)
 end
 
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
----@param event Event UFO custom unique ID for the event that triggered this action - good for debugging
----@return Cursor if invoked via an instance it will get populated with the button data
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+---@return Cursor, Cursor - (1) what's on the cursor now, (2) what was on the cursor before, if anything
 function Cursor:pickupFromActionBar(btnSlotIndex, event)
     self = self:asInstance()
+    local wasCursorEmpty = self:isEmpty()
+
     zebug.warn:event(event):owner(self):print("pickup from btnSlotIndex",btnSlotIndex)
     PickupAction(btnSlotIndex)
     return self:populateIfInstance()
 end
 
----@param macroNameOrId any the bliz identifier for an action bar button.
----@param event string UFO custom unique ID for the event that triggered this action - good for debugging
+---@param macroNameOrId string|number duh
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function Cursor:pickupMacro(macroNameOrId, event)
-    zebug.warn:event(event):print("macroNameOrId",macroNameOrId)
+    -- -d-o-n-'-t- DO (see below) pickup the same macro if it's already on the cursor
+    -- because Bliz will spam extraneous and/or misleading CURSOR_CHANGED events which fuck up any subscribers who need accurate info.
+    -- For example, doing so will trigger a CURSOR_CHANGED event at which time the Bliz cursor API will report that it is empty.
+    -- Ok, fine, but then there is no subsequent event to indicate that the macro ever made it onto the cursor.
+    -- So, the Bliz API fucking lies to you and says "yep, the cursor is empty and stayed that way."  Fuck you Bliz.
+    local isAlreadyOnCursor
+    local type, id = GetCursorInfo()
+    if type == ButtonType.MACRO then
+        if isNumber(macroNameOrId) then
+            isAlreadyOnCursor = macroNameOrId == id
+        else
+            local id2 = getMacroIndexByNameOrNil(macroNameOrId)
+            isAlreadyOnCursor = id2 == id
+        end
+    end
+
+    if isAlreadyOnCursor then
+        -- if I EditMacro(.., newIcon) a macro that is currently being dragged around by the cursor it won't display the changed icon.
+        -- The cursor will display the old version of the macro UNLESS I explicitly pick it up again.
+        -- WORSE YET, if I DON'T first ClearCursor() before PickupMacro() again, then,
+        -- the fucking BLIZ event dispatcher issues a single CURSOR_CHANGED event during which PickupMacro() thinks the cursor is EMPTY.
+        -- There is never CURSOR_CHANGED event to indicate it carries the new version of the macro.  Shit kicking mutherfucking Bliz API.
+        zebug.warn:mCross():mMoon():event(event):owner(self):print("macro",id, "is already on the cursor.  NOP... errr, I mean, I must clear it first to avoid Bliz Bullshit")
+        ClearCursor()
+        --return -- nope, keep going and do the PickupMacro()
+    end
+
+    zebug.warn:mCross():event(event):owner(self):print("BEFORE PickupMacro()... macroNameOrId",macroNameOrId,  "GetCursorInfo->",GetCursorInfo,GetCursorInfo())
     PickupMacro(macroNameOrId)
-    self:populateIfInstance()
+    zebug.warn:mCross():event(event):owner(self):print("AFTER PickupMacro()... macroNameOrId",macroNameOrId,  "GetCursorInfo->",GetCursorInfo,GetCursorInfo())
+
+    return self:populateIfInstance()
+    -- TODO ---@return Cursor, Cursor : (1) what's on the cursor now; (2) what was on the cursor before, if anything
 end
 
 function Cursor:isUfoPlaceholder()
@@ -218,16 +251,17 @@ function Cursor:toString()
     if self == Cursor then
         return self:asInstance():toString()-- "CuRsOr"
     else
+        local type, id = GetCursorInfo()
         if self:isEmpty() then
-            return "<Cursor: EMPTY>"
+            return "<Cursor: EMPTY t="..(type or 'NiL').." id="..(id or 'NiL')..">"
         else
             local name = self.name
             if self.type == ButtonType.MACRO then
                 if name == PROXY_MACRO_NAME then
-                    return UfoProxy:toString()
+                    name = UfoProxy:toString()
                     -- name = "UfoProxy: ".. (UfoProxy:getFlyoutName() or "UnKnOwN")
                 elseif name == PLACEHOLDER_MACRO_NAME then
-                    name = "Placeholder"
+                    name = Placeholder:toString()
                 end
             end
             return string.format("<Cursor: type=%s, id=%s, name=%s>", s(self.type), s(self.id), s(name))

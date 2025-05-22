@@ -64,7 +64,7 @@ local LEN_CLICK_ID_MARKER = string.len(CLICK_ID_MARKER)
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
-function Germ:new(flyoutId, btnSlotIndex, eventId)
+function Germ:new(flyoutId, btnSlotIndex, event)
     local parentActionBarBtn, bbInfo = BlizActionBarButton:new(btnSlotIndex, "Germ:New() for btnSlotIndex"..btnSlotIndex)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
 
@@ -99,8 +99,9 @@ function Germ:new(flyoutId, btnSlotIndex, eventId)
     self:SetScript(Script.ON_MOUSE_UP,     ScriptHandlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
     self:SetScript(Script.ON_DRAG_START,   ScriptHandlers.OnPickupAndDrag) -- this is required to get OnDrag to work
     self:HookScript(Script.ON_HIDE, function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable()
+    self:SetScript(Script.ON_EVENT,        ScriptHandlers.OnCursorChangeThenRegisterForClicks) -- also do a RegisterEvent
 
-    self:registerForBlizUiActions()
+    self:registerForBlizUiActions(event)
     --self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
     --self:RegisterForDrag("LeftButton")
 --
@@ -116,7 +117,7 @@ function Germ:new(flyoutId, btnSlotIndex, eventId)
     self:setVisibilityDriver(parentActionBarBtn.btnDesc.visibleIf)
 
     -- FlyoutMenu
-    self:initFlyoutMenu(eventId)
+    self:initFlyoutMenu(event)
     self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId() -- depends on initFlyoutMenu() above
 
     return self
@@ -128,7 +129,7 @@ function Germ:toString()
     if not self.flyoutId then
         return "<Germ: EMPTY>"
     else
-        return string.format("<Germ: name=%s, label=%s>", s(self:getName()), self:getLabel())
+        return string.format("<Germ: name=%s>", self.label or "UnKnOwN")
     end
 end
 
@@ -208,6 +209,7 @@ function Germ:hide()
     self:originalHide()
 end
 
+-- TODO: decide if I need to put all of this into an OnHide handler
 function Germ:clearAndDisable(event)
     zebug.info:event(event):owner(self):print("DISABLE GERM :-(")
     self:closeFlyout()
@@ -236,7 +238,7 @@ function Germ:changeFlyoutIdAndEnable(flyoutId, event)
     self:closeFlyout()
     self.flyoutId = flyoutId
     self.flyoutMenu:updateForGerm(self, event)
-    self:registerForBlizUiActions()
+    self:registerForBlizUiActions(event)
     self:Show()
     self:update(flyoutId, event) -- handles icon change and um...
 
@@ -572,12 +574,17 @@ function Germ:clearKeybinding()
 
 end
 
-function Germ:registerForBlizUiActions()
-    if self.eventsRegistered then return end
+function Germ:registerForBlizUiActions(event)
+    self:maybeRegisterForClicksDependingOnCursorIsEmpty(event) -- this must be done regardless of isEventStuffRegistered
+
+    if self.isEventStuffRegistered then return end
 
     self:EnableMouseMotion(true)
     self:RegisterForDrag(MouseClick.LEFT)
-    self:RegisterForClicks("AnyDown", "AnyUp")
+    self:RegisterEvent("CURSOR_CHANGED")
+
+    --self:RegisterForClicks("AnyDown", "AnyUp") -- enable SetAttribute() style action button clicker clicks     adsasdasd
+    --self:maybeRegisterForClicksDependingOnCursorIsEmpty(event) -- removed because of the isEventStuffRegistered short-circuit above
 
     -- TODO - refactor GermCommander so we do these here in Germ
     -- leverage BlizGlobalEventsListener
@@ -590,19 +597,36 @@ function Germ:registerForBlizUiActions()
     --self:RegisterEvent("UPDATE_BINDINGS")
     --self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED") -- usableFlyout may change
 
-    self.eventsRegistered = true
+    self.isEventStuffRegistered = true
+end
+
+function Germ:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
+print("===== fuck you Bliz. GetCursorInfo() -->", GetCursorInfo())
+print("===== fuck you so hard ====", Cursor:get(), Cursor:getFresh(event))
+
+    local type, id = GetCursorInfo()
+    local enable = not type
+    local wut = enable and "cursor is empty so clicks are Enabled" or "cursor is occupied so clicks are IGNORED"
+    zebug.trace:mStar():mMoon():mCross():event(event):owner(self):print("enable",enable, "GetCursorInfo->",GetCursorInfo, "GetCursorInfo->type",type, "GetCursorInfo->id",id,  "Cursor:getFresh()",Cursor:getFresh(event), wut)
+    if enable then
+        self:RegisterForClicks("AnyDown", "AnyUp")
+    else
+        self:RegisterForClicks("Button6Down")
+    end
 end
 
 -- and here
 function Germ:unregisterForBlizUiActions()
-    if not self.eventsRegistered then return end
+    if not self.isEventStuffRegistered then return end
 
     self:EnableMouseMotion(false)
     self:RegisterForDrag("Button6Down")
     self:RegisterForClicks("Button6Down")
+    self:UnregisterEvent("CURSOR_CHANGED")
+
     --self:UnregisterAllEvents()
 
-    self.eventsRegistered = false
+    self.isEventStuffRegistered = false
 end
 
 function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId()
@@ -640,19 +664,49 @@ function Germ:nextEventCount(eventName)
     return (self:getLabel() or "UnKnOwN gErM") .. eventName .. counter[eventName]
 end
 
+-- if there is something (let's call it "foo") on the mouse pointer, then we need to disable clicks.
+-- otherwise, when the "user drags foo, releases mouse button in mid-air. foo remains on mouse pointer. user moves over a UFO.  user clicks."
+-- will fail to drop foo onto bars (foo just vanishes with only a cursor_change event) nor will it pick up the UFO
 ---@param self GERM_TYPE
-function ScriptHandlers.OnMouseDown(self)
+---@param me string event name, literal string "CURSOR_CHANGED"
+---@param isCursorEmpty boolean true if nothing is on the mouse pointer
+function ScriptHandlers.OnCursorChangeThenRegisterForClicks(self, me, isCursorEmpty --[[, newCursorType, oldCursorType, oldCursorVirtualID]])
+    local event = Event:new(self, me)
+
+    zebug.trace:mStar():runEvent(event, function()
+        self:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
+--[[
+        --zebug.trace:ifMe1st(self):event(event):name("handler"):owner(self):print("isDefault",isDefault, "newCursorType",newCursorType, "oldCursorType",oldCursorType, "oldCursorVirtualID",oldCursorVirtualID)
+        local enable = isCursorEmpty
+        local wut = enable and "cursor is empty so clicks are Enabled" or "cursor is occupied so clicks are IGNORED"
+        zebug.trace:ifMe1st(self):event(event):name("handler"):print(wut)
+        if enable then
+            self:RegisterForClicks("AnyDown", "AnyUp")
+        else
+            self:RegisterForClicks("Button6Down")
+        end
+]]
+    end)
+end
+
+---@param self GERM_TYPE
+function ScriptHandlers.OnMouseDown(self, mouseClick)
     local cursor = Cursor:get()
-    if cursor then
-        -- just abort because this is actually a DRAG event.  do NOT treat it like a click.
-        -- Hmmm... the btn1 attribute clicker fires anyway.
-        return
+    if not cursor:isEmpty() then
+        -- Hmmm... the btn1 attribute clicker fires anyway.  stop it somehow
     end
 
     local event = Event:new(self, "OnMouseDown")
     zebug.info:mDiamond():owner(self):runEvent(event, function()
-        self:OnMouseDown()
-    end)
+        self:OnMouseDown() -- Call Bliz super()
+
+        if cursor then
+            -- self:handleReceiveDrag(event)
+        else
+            zebug.info:owner(self):event(event):name("ScriptHandlers.OnMouseUp"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
+        end
+
+    end, cursor)
 end
 
 ---@param self GERM_TYPE
@@ -660,12 +714,14 @@ function ScriptHandlers.OnMouseUp(self)
     if isInCombatLockdown("Drag and drop") then return end
     local event = Event:new(self, "ScriptHandlers.OnMouseUp")
     zebug.info:mCross():owner(self):event(event):runEvent(event, function()
-        self:OnMouseUp()
+        self:OnMouseUp() -- Call Bliz super()
+
         local isDragging = GetCursorInfo()
+        local mySlotBtn = BlizActionBarButton:get(self.btnSlotIndex, event)
         if isDragging then
             self:handleReceiveDrag(event)
         else
-            zebug.info:owner(self):event(event):name("ScriptHandlers.OnMouseUp"):print("not dragging, so, exiting.")
+            zebug.info:owner(self):event(event):name("ScriptHandlers.OnMouseUp"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
         end
     end)
 end
@@ -693,7 +749,9 @@ function Germ:handleReceiveDrag(event)
         end
 
         if flyoutIdOld then
+            zebug.error:mMoon():event(event):owner(self):print("--------- PRE  UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
             UfoProxy:pickupUfoOntoCursor(flyoutIdOld, event)
+            zebug.error:mMoon():event(event):owner(self):print("--------- POST UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
         else
             cursor:clear(event) -- will discard the UfoProxy if it's still there
         end
