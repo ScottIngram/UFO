@@ -69,18 +69,12 @@ BLIZ_BAR_METADATA = {
 -- such a button could be EMPTY or contain a spell, a macro, a potion, etc.
 ---@return BlizActionBarButton, AbbInfo
 function BlizActionBarButton:new(btnSlotIndex, event)
-    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
-    if barNum == 0 then
-        -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
-        return
-    end
+    assert(btnSlotIndex, "invalid nil value for btnSlotIndex")
+    local barNum, barName, btnNum, btnName, actionBarDef, btn = getBarNumAndBtnNum(btnSlotIndex)
 
-    local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
-    if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
-    local actionBarDef = BLIZ_BAR_METADATA[barNum]
-    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum.." resulting from event: ".. tostring(event)) -- in case Blizzard adds more bars, complain here clearly.
-    local barName    = actionBarDef.name
-    local btnName    = barName .. "Button" .. btnNum
+    -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
+    if barNum == 0 then return end
+
     local barYafName = actionBarDef.yafName
     local btnYafName = barYafName and (barYafName .. "Button" .. btnNum) or nil
     local actionType, actionId = GetActionInfo(btnSlotIndex)
@@ -101,47 +95,110 @@ function BlizActionBarButton:new(btnSlotIndex, event)
     }
 
     ---@type BlizActionBarButton
-    local actionBarBtnFrame  = _G[btnDesc.btnName] -- default to the standard Bliz object
+    local protoSelf = btn -- default to the standard Bliz object
 
     if ThirdPartyAddonSupport.isAnyActionBarAddonActive then
-        actionBarBtnFrame = ThirdPartyAddonSupport:getParent(btnDesc)
+        protoSelf = ThirdPartyAddonSupport:getParent(btnDesc)
     end
 
     -- TAINT RISK - be careful to not affect any fields or methods used by Bliz
 
-    actionBarBtnFrame.btnDesc = btnDesc
+    protoSelf.btnDesc = btnDesc
 
-    local mt = getmetatable(actionBarBtnFrame)
+    local mt = getmetatable(protoSelf)
     if not mt then
         mt = {}
-        setmetatable(actionBarBtnFrame, mt)
+        setmetatable(protoSelf, mt)
     end
     mt.__tostring = function()
-        return BlizActionBarButton.toString(actionBarBtnFrame)
+        return BlizActionBarButton.toString(protoSelf)
     end
-    deepcopy(BlizActionBarButton, actionBarBtnFrame)
 
-    return actionBarBtnFrame, btnDesc
+    ---@type BlizActionBarButton
+    local self = deepcopy(BlizActionBarButton, protoSelf)
+
+    return self, btnDesc
 end
 
 BlizActionBarButton.get = BlizActionBarButton.new
 
-function BlizActionBarButton:isEmpty()
-    ---@type BABB_TYPE
-    local self = self
-    return not self:HasAction() -- (self:HasAction() or self:HasPopup())
+---@return number barNum
+---@return string barName
+---@return number btnNum
+---@return string btnName
+---@return table meta data about the action bar
+---@return BABB_INHERITANCE the actual UI Frame object
+function getBarNumAndBtnNum(btnSlotIndex)
+    -- TODO: memoize
+    assert(btnSlotIndex, "btnSlotIndex is nil.  Try again, plz!")
+    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
+
+    -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
+    if barNum == 0 then return end
+
+    local actionBarDef = BLIZ_BAR_METADATA[barNum]
+    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum.." resulting from event: ".. tostring(event)) -- in case Blizzard adds more bars, complain here clearly.
+
+    local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
+    if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
+    local barName = actionBarDef.name
+    local btnName = barName .. "Button" .. btnNum
+    local btn = _G[btnName]
+
+    return barNum, barName, btnNum, btnName, actionBarDef, btn
 end
 
-function BlizActionBarButton:getType()
+---@return BABB_INHERITANCE
+function BlizActionBarButton:getLiteralBlizBtn(btnSlotIndex)
+    local _, _, _, _, _, btn = getBarNumAndBtnNum(btnSlotIndex)
+    return btn
+end
+
+---@return boolean true if Not An Instance
+function BlizActionBarButton:amTheClass()
+    return self == BlizActionBarButton
+end
+
+---@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
+---@return boolean true if the btn has nothing on it
+function BlizActionBarButton:isEmpty(btnSlotIndex)
     ---@type BABB_TYPE
     local self = self
-    return self.btnDesc.aType
+
+    if self:amTheClass() then
+        zebug.error:out(50,"*", "amTheClass amTheClass amTheClass amTheClass")
+        self = self:getLiteralBlizBtn(btnSlotIndex)
+    end
+
+    return not (self and self.HasAction and self:HasAction())
+end
+
+---@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
+---@return ButtonType
+function BlizActionBarButton:getType(btnSlotIndex)
+    if self:amTheClass() then
+        local actionType, actionId = GetActionInfo(btnSlotIndex)
+        return actionType
+    else
+        return self.btnDesc.aType
+    end
 end
 
 function BlizActionBarButton:getId()
     ---@type BABB_TYPE
     local self = self
     return self.btnDesc.aId
+end
+
+---@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
+---@return number the id of the spell/macro/etc
+function BlizActionBarButton:getId(btnSlotIndex)
+    if self:amTheClass() then
+        local actionType, actionId = GetActionInfo(btnSlotIndex)
+        return actionId
+    else
+        return self.btnDesc.aId
+    end
 end
 
 function BlizActionBarButton:getBtnSlotIndex()
@@ -153,6 +210,19 @@ end
 function BlizActionBarButton:isUfoProxy()
     return UfoProxy:isOnBtn(self)
 end
+
+---@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
+---@return boolean true if the btn contains a UfoProxy
+function BlizActionBarButton:isUfoProxy(btnSlotIndex)
+    if self:amTheClass() then
+        return UfoProxy:isOnBtnSlot(btnSlotIndex)
+    end
+
+    return UfoProxy:isOnBtn(self)
+end
+
+
+
 
 -- unused?
 function BlizActionBarButton:isUfoPlaceholder(event)
