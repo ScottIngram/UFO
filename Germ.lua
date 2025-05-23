@@ -715,7 +715,6 @@ end
 
 ---@param self GERM_TYPE
 function ScriptHandlers.OnMouseUp(self)
-    if isInCombatLockdown("Drag and drop") then return end
     local event = Event:new(self, "ScriptHandlers.OnMouseUp")
     zebug.info:mCross():owner(self):event(event):runEvent(event, function()
         self:OnMouseUp() -- Call Bliz super()
@@ -731,6 +730,7 @@ function ScriptHandlers.OnMouseUp(self)
 end
 
 function Germ:handleReceiveDrag(event)
+    if isInCombatLockdown("Drag and drop") then return end
     local cursor = Cursor:get()
     if cursor then
         Ufo.germLock = event
