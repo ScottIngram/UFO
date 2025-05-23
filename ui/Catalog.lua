@@ -373,7 +373,7 @@ end
 -------------------------------------------------------------------------------
 
 function GLOBAL_UFO_CatalogEntry_OnLeave(btnInCatalog)
-    local event = Event:new(self, "CatalogEntry_OnLeave")
+    local event = Event:new(btnInCatalog, "CatalogEntry_OnLeave")
     zebug.info:print("leaving button", btnInCatalog.flyoutIndex)
     GameTooltip_Hide()
     btnUnderTheMouse = nil
@@ -382,7 +382,7 @@ end
 
 -- TODO - handle the hover glow here and not in the update() routine
 function GLOBAL_UFO_CatalogEntry_OnEnter(btnInCatalog)
-    local event = Event:new(self, "CatalogEntry_OnEnter")
+    local event = Event:new(btnInCatalog, "CatalogEntry_OnEnter")
     local flyoutDef = UfoProxy:isOnCursor()
 
     if flyoutDef then
@@ -396,7 +396,7 @@ function GLOBAL_UFO_CatalogEntry_OnEnter(btnInCatalog)
 end
 
 function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
-    local event = Event:new(self, "CatalogEntry_OnDragStart")
+    local event = Event:new(btnInCatalog, "CatalogEntry_OnDragStart")
     local flyoutId = btnInCatalog.flyoutId
     flyoutIndexOnTheMouse = btnInCatalog.flyoutIndex
     if exists(flyoutId) then
@@ -478,7 +478,7 @@ function GLOBAL_UFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
 end
 
 function GLOBAL_UFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
-    local event = Event:new(self,"CatalogEntryButton_OnClick")
+    local event = Event:new(btnInCatalog,"CatalogEntryButton_OnClick")
     zebug.info:event(event):name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
     local scrollPane = UFO_CatalogScrollPane
 
@@ -530,7 +530,7 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)
 end
 
 function GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow(btn)
-    local event = Event:new(self,"CatalogEntryButtonsMouseOver_OnShow")
+    local event = Event:new(btn,"CatalogEntryButtonsMouseOver_OnShow")
     zebug.info:event(event):name("CatalogEntryButtonsMouseOver_OnShow"):print("btn",btn:GetName())
     if UfoProxy:isOnCursor() then
         btn:Hide()

@@ -779,8 +779,8 @@ function ScriptHandlers.OnPickupAndDrag(germ)
     if not IsShiftKeyDown() then return end
     if isInCombatLockdown("Drag and drop") then return end
 
-    local event = Event:new(self, "OnPickupAndDrag")
-    zebug.info:mCircle():owner(self):runEvent(event, function()
+    local event = Event:new(germ, "OnPickupAndDrag")
+    zebug.info:mCircle():owner(germ):runEvent(event, function()
         germ:pickupFromSlotAndClear(event)
     end)
 end
