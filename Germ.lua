@@ -611,7 +611,7 @@ print("===== fuck you so hard ====", Cursor:get(), Cursor:getFresh(event))
     if enable then
         self:RegisterForClicks("AnyDown", "AnyUp")
     else
-        self:RegisterForClicks("Button6Down")
+        self:RegisterForClicks()
     end
 end
 
