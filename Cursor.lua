@@ -10,7 +10,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new(Zebug.TRACE)
+local zebug = Zebug:new(Zebug.INFO)
 
 ---@class Cursor : UfoMixIn
 ---@field type string
@@ -32,6 +32,7 @@ UfoMixIn:mixInto(Cursor)
 -------------------------------------------------------------------------------
 
 local cachedCursor
+local secretCachedCursor
 
 -------------------------------------------------------------------------------
 -- Listeners
@@ -39,14 +40,15 @@ local cachedCursor
 
 local EventHandlers = { }
 
-function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
+function EventHandlers:CURSOR_CHANGED(isCursorEmpty, me, eventCounter)
     eventCounter = eventCounter or "NO-EVENT-COUNTER"
     --if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    local event = Event:new(self, me, eventCounter)
-    zebug.trace:name("handler"):runEvent(event, function()
+    local event = Event:new(self, Cursor:nameMakerForCursorChanged(isCursorEmpty), eventCounter)
+    zebug.info:name("handler"):owner(secretCachedCursor):runEvent(event, function()
         local type, id = GetCursorInfo()
-        zebug.info:event(event):name("handler"):print("erasing cachedCursor... verify plz cursor is now GetCursorInfo ->",GetCursorInfo, "type",type, "id",id)
+        zebug.info:event(event):name("handler"):print("erasing cachedCursor")
+        secretCachedCursor = cachedCursor
         cachedCursor = nil
     end)
 end
@@ -98,7 +100,8 @@ function Cursor:get()
     return self
 end
 
-local maxAge = 0 -- seconds
+local maxAge = 0 -- seconds.  disabled this entirely because the user can click really fast
+
 -- bypass the cache - should only need to be used by other subscribers of CURSOR_CHANGED due to race condition
 function Cursor:getFresh(event)
     if cachedCursor then
@@ -166,7 +169,7 @@ end
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function Cursor:dropOntoActionBar(btnSlotIndex, event)
     self = self:asInstance()
-    zebug.warn:event(event):owner(self):print("dropping onto btnSlotIndex",btnSlotIndex)
+    zebug.info:event(event):owner(self):print("dropping onto btnSlotIndex",btnSlotIndex)
     PlaceAction(btnSlotIndex)
     self:populateIfInstance() -- I am now something different so find out what I am
 end
@@ -178,7 +181,7 @@ function Cursor:pickupFromActionBar(btnSlotIndex, event)
     self = self:asInstance()
     local wasCursorEmpty = self:isEmpty()
 
-    zebug.warn:event(event):owner(self):print("pickup from btnSlotIndex",btnSlotIndex)
+    zebug.info:event(event):owner(self):print("pickup from btnSlotIndex",btnSlotIndex)
     PickupAction(btnSlotIndex)
     return self:populateIfInstance()
 end
@@ -213,9 +216,9 @@ function Cursor:pickupMacro(macroNameOrId, event)
         --return -- nope, keep going and do the PickupMacro()
     end
 
-    zebug.warn:mCross():event(event):owner(self):print("BEFORE PickupMacro()... macroNameOrId",macroNameOrId,  "GetCursorInfo->",GetCursorInfo,GetCursorInfo())
+    --zebug.info:event(event):owner(self):print("BEFORE PickupMacro()... macroNameOrId",macroNameOrId,  "GetCursorInfo->",GetCursorInfo())
     PickupMacro(macroNameOrId)
-    zebug.warn:mCross():event(event):owner(self):print("AFTER PickupMacro()... macroNameOrId",macroNameOrId,  "GetCursorInfo->",GetCursorInfo,GetCursorInfo())
+    --zebug.info:event(event):owner(self):print("AFTER PickupMacro()... macroNameOrId",macroNameOrId,  "GetCursorInfo->",GetCursorInfo())
 
     return self:populateIfInstance()
     -- TODO ---@return Cursor, Cursor : (1) what's on the cursor now; (2) what was on the cursor before, if anything
@@ -247,13 +250,16 @@ end
 
 local s = function(v) return v or "nil"  end
 
+function Cursor:nameMakerForCursorChanged(isCursorEmpty)
+    return sprintf("CURSOR_CHANGED_{%s}", isCursorEmpty and " " or "#")
+end
+
 function Cursor:toString()
     if self == Cursor then
         return self:asInstance():toString()-- "CuRsOr"
     else
-        local type, id = GetCursorInfo()
         if self:isEmpty() then
-            return "<Cursor: EMPTY t="..(type or 'NiL').." id="..(id or 'NiL')..">"
+            return "<Cursor: EMPTY>"
         else
             local name = self.name
             if self.type == ButtonType.MACRO then
@@ -264,7 +270,7 @@ function Cursor:toString()
                     name = Placeholder:toString()
                 end
             end
-            return string.format("<Cursor: type=%s, id=%s, name=%s>", s(self.type), s(self.id), s(name))
+            return string.format("<Cursor: %s:%s %s>", s(self.type), s(self.id), s(name))
         end
     end
 end
