@@ -97,7 +97,7 @@ local function initializeOptionsMenu()
                 type = "toggle",
                 set = function(optionsMenu, val)
                     opts.doCloseOnClick = val
-                    GermCommander:updateAllGerms("user-config-doCloseOnClick") -- TODO: target just the clickers
+                    GermCommander:forEachGerm(Germ.copyDoCloseOnClickConfigValToAttribute, "user-config-changed-doCloseOnClick") -- TODO: target just the clickers
                 end,
                 get = function()
                     return opts.doCloseOnClick

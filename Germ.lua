@@ -408,8 +408,7 @@ function Germ:_secretUpdate(event, amDelayed)
         --self:setVisibilityDriver() -- TODO: remove after we stop sledge hammering all the germs every time
 
         self:SetAttribute("UFO_NAME",  self.label)
-        self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
-
+        self:copyDoCloseOnClickConfigValToAttribute()
         local lastClickerUpdate = self.clickersLastUpdate or 0
 
         if self:getFlyoutDef():isModNewerThan(lastClickerUpdate) then
@@ -436,6 +435,14 @@ function Germ:_secretUpdate(event, amDelayed)
 
     end)
 end
+
+function Germ:copyDoCloseOnClickConfigValToAttribute()
+    -- haven't figured out why it doesn't work on the germ but does on the flyout
+    --zebug.trace:mCross():owner(self):print("self.flyoutMenu",self.flyoutMenu, "setting new value from Config.opts.doCloseOnClick", Config.opts.doCloseOnClick)
+    self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
+    return self.flyoutMenu and self.flyoutMenu:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
+end
+
 
 function Germ:reInitializeMySecureClickers()
     for secureMouseClickId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
@@ -1163,13 +1170,10 @@ function getOpenerClickerScriptlet()
 	local mouseClick = button
 	local isClicked = down
 	local direction = germ:GetAttribute("flyoutDirection")
-    local doCloseFlyout = flyoutMenu:GetAttribute("doCloseFlyout")
     local isOpen = flyoutMenu:IsShown()
 
-	if doCloseFlyout and isOpen then
---print("OPENER_CLICKER_SCRIPTLET ... closing and exiting")
+	if isOpen then
 		flyoutMenu:Hide()
-		flyoutMenu:SetAttribute("doCloseFlyout", false)
 		keybindKeeper:ClearBindings()
 		return
     end
@@ -1274,8 +1278,6 @@ function getOpenerClickerScriptlet()
 
 --print("OPENER_CLICKER_SCRIPTLET ... SHOWING flyout")
     flyoutMenu:Show()
---print("OPENER_CLICKER_SCRIPTLET ... SetAttribute() doCloseFlyout = true")
-    flyoutMenu:SetAttribute("doCloseFlyout", true)
 
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
     --flyoutMenu:AddToAutoHide(germ)

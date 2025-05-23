@@ -97,7 +97,7 @@ end
 -- use non-local "global" variables to save values between executions
 -- because GetParent() returns nil during combat lockdown
 local CLOSE_ON_CLICK_SCRIPTLET = [=[
-    -- only trigger on mouse UP.  the down variable is passed in by the Bliz API
+    -- follow convention and trigger on mouse UP / key UP, not down (and certainly not both up and down).  the "down" variable is passed in by the Bliz API
     if down then return end
 
     if not flyoutMenu then
@@ -109,7 +109,9 @@ local CLOSE_ON_CLICK_SCRIPTLET = [=[
     end
 
     local doClose = germ:GetAttribute("doCloseOnClick")
-    if doClose then
+    local doClose2 = flyoutMenu:GetAttribute("doCloseOnClick")
+--print("doClose:", doClose, "doClose2",doClose2)
+    if doClose or doClose2 then
         --print("CLOSING: ", germ:GetName() )
         flyoutMenu:Hide()
         flyoutMenu:SetAttribute("doCloseFlyout", false)
