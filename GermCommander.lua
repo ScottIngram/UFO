@@ -68,25 +68,50 @@ function flyLabelNilOk(flyoutId)
     return FlyoutDefsDb:getName(flyoutId)
 end
 
----@param func function(germ, eventId) will be invoked for every existing "active" germ and get the germ for each one
-function GermCommander:forEachGerm(func, eventId)
+function isAlwaysTrue()
+    return true
+end
+
+---@param func function(Germ, Event) will be invoked for every germ and passed args: germ,event
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+function GermCommander:forEachGerm(func, event)
+    self:forEachGermIf(func, isAlwaysTrue, event)
+end
+
+---@param func function(Germ, Event) will be invoked for every active germ and passed args: germ,event
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+function GermCommander:forEachActiveGerm(func, event)
+    self:forEachGermIf(func, Germ.isActive, event)
+end
+
+---@param func function(Germ, Event) will be invoked for every germ that passes the fitnessFunc and passed args: germ,event
+---@param fitnessFunc function(Germ) a func that will return true if the germ in question should be included in the operation
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+function GermCommander:forEachGermIf(func, fitnessFunc, event)
+    assert(isFunction(func), 'must provide a "func(Germ)" ')
+    assert(isFunction(fitnessFunc), 'must provide a "fitnessFunc(Germ)" ')
     for _, germ in pairs(germs) do
-        if germ:isActive() then
-            func(germ, eventId)
+        if fitnessFunc(germ, event) then
+            func(germ, event)
+        else
+            zebug.trace:event(event):print("skipping",germ, "because it failed the fitnessFunc()")
         end
     end
 end
 
 ---@param func function(btnSlotIndex, flyoutId, eventId) will be invoked for every placement and get the btnSlotIndex & flyoutId for each one
-function GermCommander:forEachPlacement(func, eventId)
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+function GermCommander:forEachPlacement(func, event)
+    -- this is probably equivalent to forEachActiveGerm()
     local placements = Spec:getPlacementConfigForCurrentSpec()
     for btnSlotIndex, flyoutId in pairs(placements) do
-        func(btnSlotIndex, flyoutId, eventId)
+        func(btnSlotIndex, flyoutId, event)
     end
 end
 
 ---@param flyoutId number
-function GermCommander:updateGermsFor(flyoutId, eventId)
+function GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, eventId)
+    -- TODO: refactor using forEachGermIf()
     if isInCombatLockdown("Reconfiguring") then return end
     zebug.info:event(eventId):print("updating all Germs with",flyoutId)
 
@@ -97,17 +122,6 @@ function GermCommander:updateGermsFor(flyoutId, eventId)
             self:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
         end
     end)
-
---[[
-    local placements = Spec:getPlacementConfigForCurrentSpec()
-    for btnSlotIndex, flyoutIdFoo in pairs(placements) do
-        if flyoutIdFoo == flyoutId then
-            local germ = self:recallGerm(btnSlotIndex)
-            zebug.info:label(eventId):print("nuking",germ, "in btnSlotIndex", btnSlotIndex)
-            self:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
-        end
-    end
-]]
 end
 
 -- go through all placements saved in the DB.
@@ -137,32 +151,6 @@ function GermCommander:updateAllSlots(event)
     end
     zebug:setNoiseLevelBackToOriginal()
 ]]
-end
-
-local function isAlwaysTrue()
-    return true
-end
-
-function GermCommander:updateAllGerms(eventId)
-    return self:updateSomeGerms(isAlwaysTrue, eventId)
-end
-
--- go through all existing germs
----@param fitnessFunc function(Germ) a func that will return true if the germ in question should be included in the operation
-function GermCommander:updateSomeGerms(fitnessFunc, eventId)
-    assert(fitnessFunc, 'must provide a "fitnessFunc(germ)" ')
-
-    zebug:setLowestAllowedSpeakingVolume(Zebug.INFO)
-    ---@param germ GERM_TYPE
-    self:forEachGerm(function(germ)
-        if fitnessFunc(germ) then
-            germ:update()
-            self:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
-        else
-            zebug.trace:event(eventId):print("skipping",germ, "because it failed fitnessFunc()")
-        end
-    end)
-    zebug:setLowestAllowedSpeakingVolumeBackToOriginal()
 end
 
 local originalZebug
