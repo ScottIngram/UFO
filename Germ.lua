@@ -132,7 +132,7 @@ function Germ:toString()
     if not self.flyoutId then
         return "<Germ: EMPTY>"
     else
-        return string.format("<Germ: name=%s>", self.label or "UnKnOwN")
+        return string.format("<Germ: %s>", self.label or "UnKnOwN")
     end
 end
 
@@ -158,7 +158,8 @@ function Germ:getFlyoutId()
     return self.flyoutId
 end
 
-function Germ:isActive()
+function Germ:isActive(event)
+    zebug.trace:event(event or "UnKnOwN"):owner(self):print("am I active?", self.flyoutId and true or false)
     return self.flyoutId and true or false
 end
 
@@ -355,7 +356,7 @@ end
 
 -- TODO v11.1 - figure out what all actually needs to be updated under which circumstances
 function Germ:_secretUpdate(event, amDelayed)
-    if not self:isActive() then
+    if not self:isActive(event) then
         zebug.error:name("_secretUpdate"):owner(self):line(50, "I am limited.  Because I have  nodes.")
         return
     end
@@ -455,22 +456,6 @@ function Germ:reInitializeMySecureClickers()
         SecureHandlerExecute(self, updaterScriptlet)
     end
 end
-
--- created for Germ == ActionButton
---[[
-function Germ:fixMyActionAttribute()
-    if not self.actionValueSetterSecureScriptlette then
-        -- note: this will "hardcode" the btnSlotIndex which will become a problem if I ever decide to recylce Germs and move them
-        self.actionValueSetterSecureScriptlette = "self:SetAttribute('action'," ..tostring(self.btnSlotIndex).. ")"
-    end
-
-    -- I can execute SecureHandlerExecute even when in combat, yes?
-    -- No? "Insecure code can’t use SecureHandler Execute during combat"
-    exeOnceNotInCombat("fix self.action ".. self:getName(), function()
-        SecureHandlerExecute(self, self.actionValueSetterSecureScriptlette)
-    end)
-end
-]]
 
 -- why isn't this just part of self:update()
 -- called by the Germ's OnUpdate handler
@@ -613,9 +598,6 @@ function Germ:registerForBlizUiActions(event)
 end
 
 function Germ:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
-print("===== fuck you Bliz. GetCursorInfo() -->", GetCursorInfo())
-print("===== fuck you so hard ====", Cursor:get(), Cursor:getFresh(event))
-
     local type, id = GetCursorInfo()
     local enable = not type
     local wut = enable and "cursor is empty so clicks are Enabled" or "cursor is occupied so clicks are IGNORED"
@@ -676,10 +658,6 @@ function Germ:nextEventCount(eventName)
     return (self:getLabel() or "UnKnOwN gErM") .. eventName .. counter[eventName]
 end
 
-function nameMakerForCursorChanged(isCursorEmpty)
-    return sprintf("CURSOR_CHANGED_{%s}", isCursorEmpty and " " or "#")
-end
-
 -- if there is something (let's call it "foo") on the mouse pointer, then we need to disable clicks.
 -- otherwise, when the "user drags foo, releases mouse button in mid-air. foo remains on mouse pointer. user moves over a UFO.  user clicks."
 -- will fail to drop foo onto bars (foo just vanishes with only a cursor_change event) nor will it pick up the UFO
@@ -687,7 +665,7 @@ end
 ---@param me string event name, literal string "CURSOR_CHANGED"
 ---@param isCursorEmpty boolean true if nothing is on the mouse pointer
 function ScriptHandlers.OnCursorChangeThenRegisterForClicks(self, me, isCursorEmpty --[[, newCursorType, oldCursorType, oldCursorVirtualID]])
-    local event = Event:new(self, nameMakerForCursorChanged(isCursorEmpty))
+    local event = Event:new(self, Cursor:nameMakerForCursorChanged(isCursorEmpty))
 
     zebug.trace:mStar():runEvent(event, function()
         self:maybeRegisterForClicksDependingOnCursorIsEmpty(event)

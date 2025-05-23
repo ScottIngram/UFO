@@ -241,7 +241,7 @@ function BlizActionBarButton:toString()
     else
         local d = self.btnDesc
         if self:isEmpty() then
-            return string.format("<A-BTN: slot=%d EMPTY>", s(d.btnSlotIndex))
+            return string.format("<A-BTN: s%d EMPTY>", s(d.btnSlotIndex))
         else
             local name
             if d.aType == ButtonType.MACRO then
@@ -258,10 +258,10 @@ function BlizActionBarButton:toString()
             end
 
             if name then
-                return string.format("<A-BTN: slot=%d, type=%s, name=%s>", s(d.btnSlotIndex), s(d.aType), name)
+                return string.format("<A-BTN: s%d %s: %s>", s(d.btnSlotIndex), s(d.aType), name)
             end
 
-            return string.format("<A-BTN: slot=%d, type=%s, id=%s>", s(d.btnSlotIndex), s(d.aType), s(d.aId))
+            return string.format("<A-BTN: s%d, %s:%s>", s(d.btnSlotIndex), s(d.aType), s(d.aId))
         end
     end
 end

@@ -300,8 +300,6 @@ function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlo
     local germInSlot = self:recallGerm(btnSlotIndex)
     zebug.info:event(event):owner(btnInSlot):print("analyzing change to btnSlotIndex",btnSlotIndex, "config for slot", savedFlyoutIdForSlot, "existing germ", germInSlot)
 
-    zebug.info:event(event):owner(btnInSlot):print("what got dropped",btnInSlot)
-
     if btnInSlot:isEmpty() or btnInSlot:isUfoPlaceholder(event) then
         -- an empty slot or one with a Placeholder is meaningless to us.
         zebug.info:event(event):owner(btnInSlot):print("the btn slot is now empty/UfoPlaceholder and nobody cares")

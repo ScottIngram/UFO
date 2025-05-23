@@ -78,22 +78,12 @@ end
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter, z1, z2)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    local isEmpty = BlizActionBarButton:isEmpty(btnSlotIndex)
-    local btn = BlizActionBarButton:get(btnSlotIndex)
-    local btn2 = BlizActionBarButton:getLiteralBlizBtn(btnSlotIndex)
-    local bsi = btn2.action
-    print("........... btn",btn, "bsi",bsi, "isEmpty",isEmpty)
-    print("........... btn",btn, "bsi",bsi, "isEmpty",isEmpty)
-    print("........... btn",btn, "bsi",bsi, "isEmpty",isEmpty)
-    print("........... btn",btn, "bsi",bsi, "isEmpty",isEmpty)
-
     local event = Event:new("Ufo", me, eventCounter)
     if Ufo.germLock then
         local btnInSlot = BlizActionBarButton:new(btnSlotIndex, event)
         zebug.info:event(Ufo.germLock):name("handler"):print("LOCKED - ignoring", event, "caused by",btnInSlot)
         return
     end
-
 
     zebug.info:mSquare():name("handler"):runEvent(event, function()
         Ufo.germLock = event

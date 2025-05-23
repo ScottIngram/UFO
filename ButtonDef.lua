@@ -136,7 +136,7 @@ function ButtonDef:toString()
     if not self.type then
         return "<ButtonDef: EMPTY>"
     else
-        return string.format("<ButtonDef: type=%s, name=%s>", s(self.type), s(self.name))
+        return string.format("<ButtonDef: %s:%s>", s(self.type), s(self.name))
     end
 end
 
@@ -413,6 +413,7 @@ function ButtonDef:getFromCursor()
             btnDef.petSpellId = c1
         end
     else
+        zebug.error:print("Sorry, I don't recognize this type of button:", type)
         Ufo.unknownType = type or "UnKnOwN"
         type = nil
         btnDef = nil

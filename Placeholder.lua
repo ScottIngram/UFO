@@ -132,7 +132,6 @@ end
 
 function Placeholder:doNotLetUserDragMe(event)
     local cursor = Cursor:get()
-    local cursor2 = Cursor:getFresh(event)
     if cursor:isUfoPlaceholder() then
         if Ufo.myPlaceholderSoDoNotDelete then
             zebug.info:event(event):owner(cursor):print("keeping (this one time) at request of Ufo.myPlaceholderSoDoNotDelete",Ufo.myPlaceholderSoDoNotDelete)
@@ -142,8 +141,8 @@ function Placeholder:doNotLetUserDragMe(event)
             cursor:clear(event)
         end
     else
-        local type, id = GetCursorInfo()
-        zebug.info:event(event):owner(cursor):print("ignoring because I only care about Placeholders. cursor2",cursor2, "annnnd finally GetCursorInfo ->",GetCursorInfo,   "type",type, "id",id)
+        --local type, id = GetCursorInfo()
+        --zebug.info:event(event):owner(cursor):print("ignoring because I only care about Placeholders. type",type, "id",id)
         Ufo.myPlaceholderSoDoNotDelete = false
     end
 end

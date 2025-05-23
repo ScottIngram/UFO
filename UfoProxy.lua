@@ -233,8 +233,8 @@ function UfoProxy:delayedAsyncDeleteProxyIfNotOnCursor(event, timeToGo)
 end
 
 function UfoProxy:toString()
-    local name = self:getFlyoutName() or "NoPe"
-    return string.format("<UfoProxy: name=%s>", name)
+    local name = self:getFlyoutName() or "nope"
+    return string.format("<UfoProxy: %s>", name)
 end
 
 UfoMixIn.installMyToString(UfoProxy)
