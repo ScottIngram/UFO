@@ -104,7 +104,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:registerForBlizUiActions(event)
     --self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
     --self:RegisterForDrag("LeftButton")
---
+
     -- manipulate methods
     self:installMyToString()
     self.originalHide = self:override("Hide", self.hide)
@@ -119,6 +119,9 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     -- FlyoutMenu
     self:initFlyoutMenu(event)
     self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId() -- depends on initFlyoutMenu() above
+
+    -- bind me to my action bar slot's keybindings (if any)
+    self:doKeybinding()
 
     return self
 end
@@ -239,8 +242,10 @@ function Germ:changeFlyoutIdAndEnable(flyoutId, event)
     self.flyoutId = flyoutId
     self.flyoutMenu:updateForGerm(self, event)
     self:registerForBlizUiActions(event)
+    -- bind me to my action bar slot's keybindings (if any)
+    self:doKeybinding()
     self:Show()
-    self:update(flyoutId, event) -- handles icon change and um...
+    self:update(flyoutId, event) -- handles icon change and um... the kitchen sink?  Working on reducing the sink.  and consolidating this with GermCommander:update()
 
     -- change any/everything
     -- go analyze the update() etc in Germ *AND* GermCommander
@@ -412,11 +417,11 @@ function Germ:_secretUpdate(event, amDelayed)
         local lastClickerUpdate = self.clickersLastUpdate or 0
 
         if self:getFlyoutDef():isModNewerThan(lastClickerUpdate) then
-            zebug.trace:name(qId):event(event):owner(self):print("NO CHANGES! lastClickerUpdate",lastClickerUpdate)
+            --zebug.trace:name(qId):event(event):owner(self):print("NO CHANGES! lastClickerUpdate",lastClickerUpdate)
             --return
         end
 
-        zebug.trace:name(qId):event(event):owner(self):print("changed! lastClickerUpdate",lastClickerUpdate)
+        --zebug.trace:name(qId):event(event):owner(self):print("changed! lastClickerUpdate",lastClickerUpdate)
         self.clickersLastUpdate = time()
 
         -- some clickers need to be re-initialized whenever the flyout's buttons change
@@ -1006,7 +1011,7 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
         local iAmFor = "]=].. mouseClick ..[=["
 
     	if onlyInitialize then
-    	    -- good to go... this is being called by Germ:update() in order to initialize the click SetAttribute()s
+    	    -- good to go... this is being called by Germ:update() Or germ:new()? or germ:movedToNewSlot()? in order to initialize the click SetAttribute()s
         elseif not isClicked then
             -- abort... only execute once per mouseclick, not on both UP and DOWN
             return
