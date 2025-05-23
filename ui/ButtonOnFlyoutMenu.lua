@@ -107,7 +107,7 @@ function ButtonOnFlyoutMenu:handleExcluderClick(mouseClick, isDown)
 
         local flyoutDef = self:getParent():getDef()
         flyoutDef:setModStamp()
-        GermCommander:updateGermsFor(flyoutDef.id, "excluder-click")
+        GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutDef.id, "excluder-click")
     end
 end
 
@@ -157,7 +157,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     self:setDef(nil)
     flyoutFrame:updateForCatalog(flyoutId, "ButtonOnFlyoutMenu:onDragStartDoPickup()")
     --GermCommander:updateAll("ButtonOnFlyoutMenu:onDragStartDoPickup") -- TODO: only update the Germs with this specific flyout
-    GermCommander:updateGermsFor(flyoutId, "ButtonOnFlyoutMenu:onDragStartDoPickup") -- was updateAll()
+    GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, "ButtonOnFlyoutMenu:onDragStartDoPickup") -- was updateAll()
 end
 
 ---@param btnDef ButtonDef
@@ -203,7 +203,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     end
 
     ClearCursor()
-    GermCommander:updateGermsFor(flyoutId, "onReceiveDragAddIt")
+    GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, "onReceiveDragAddIt")
     flyoutMenu.displaceBtnsHere = nil
     flyoutMenu:updateForCatalog(flyoutId, "ButtonOnFlyoutMenu:onReceiveDragAddIt()")
     Ufo.pickedUpBtn = nil

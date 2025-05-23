@@ -44,7 +44,7 @@ function Catalog:definePopupDialogWindow()
         -- OnAccept = function (dialog) IconPicker:Hide(); FlyoutDefsDb:delete(dialog.flyoutId); Catalog:update("Catalog:acceptIcon"); GermCommander:updateAll(); end,
         OnAccept = function (dialog)
             IconPicker:Hide()
-            GermCommander:updateGermsFor(dialog.flyoutId, "Catalog: DELETE UFO")
+            GermCommander:updateGermsThatHaveFlyoutIdOf(dialog.flyoutId, "Catalog: DELETE UFO")
             FlyoutDefsDb:delete(dialog.flyoutId)
             Catalog:update("Catalog:acceptIcon")
         end,

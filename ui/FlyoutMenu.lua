@@ -390,7 +390,7 @@ function FlyoutMenu:addBtnAt(btnDef, btnIndex)
     local flyoutDef = self:getDef()
     flyoutDef:replaceButton(btnIndex, btnDef) -- TODO - repects displace
     self:updateForCatalog(self.flyoutId, "FlyoutMenu:addBtnAt()")
-    GermCommander:updateGermsFor(self.flyoutId, "FlyoutMenu:addBtnAt")
+    GermCommander:updateGermsThatHaveFlyoutIdOf(self.flyoutId, "FlyoutMenu:addBtnAt")
 end
 
 function FlyoutMenu:isMouseOverMeOrKids()
