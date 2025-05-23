@@ -664,6 +664,10 @@ function Germ:nextEventCount(eventName)
     return (self:getLabel() or "UnKnOwN gErM") .. eventName .. counter[eventName]
 end
 
+function nameMakerForCursorChanged(isCursorEmpty)
+    return sprintf("CURSOR_CHANGED_{%s}", isCursorEmpty and " " or "#")
+end
+
 -- if there is something (let's call it "foo") on the mouse pointer, then we need to disable clicks.
 -- otherwise, when the "user drags foo, releases mouse button in mid-air. foo remains on mouse pointer. user moves over a UFO.  user clicks."
 -- will fail to drop foo onto bars (foo just vanishes with only a cursor_change event) nor will it pick up the UFO
@@ -671,7 +675,7 @@ end
 ---@param me string event name, literal string "CURSOR_CHANGED"
 ---@param isCursorEmpty boolean true if nothing is on the mouse pointer
 function ScriptHandlers.OnCursorChangeThenRegisterForClicks(self, me, isCursorEmpty --[[, newCursorType, oldCursorType, oldCursorVirtualID]])
-    local event = Event:new(self, me)
+    local event = Event:new(self, nameMakerForCursorChanged(isCursorEmpty))
 
     zebug.trace:mStar():runEvent(event, function()
         self:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
