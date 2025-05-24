@@ -72,19 +72,28 @@ function isAlwaysTrue()
     return true
 end
 
----@param func function(Germ, Event) will be invoked for every germ and passed args: germ,event
+---@param func fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:forEachGerm(func, event)
     self:forEachGermIf(func, isAlwaysTrue, event)
 end
 
----@param func function(Germ, Event) will be invoked for every active germ and passed args: germ,event
+---@param func fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:forEachActiveGerm(func, event)
     self:forEachGermIf(func, Germ.isActive, event)
 end
 
----@param func function(Germ, Event) will be invoked for every germ that passes the fitnessFunc and passed args: germ,event
+---@param func fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+function GermCommander:forEachGermWithFlyoutId(flyoutId, func, event)
+    local fun = function(germ)
+        return germ:getFlyoutId() == flyoutId
+    end
+    self:forEachGermIf(func, fun, event)
+end
+
+---@param func fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
 ---@param fitnessFunc function(Germ) a func that will return true if the germ in question should be included in the operation
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:forEachGermIf(func, fitnessFunc, event)
@@ -212,16 +221,7 @@ function GermCommander:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
     end
 end
 
-function GermCommander:updateAllKeybinds()
-    if isInCombatLockdown("Keybind") then return end
-    ---@param germ Germ
-    for btnSlotIndex, germ in pairs(germs) do
-        germ:clearKeybinding()
-        germ:doKeybinding()
-    end
-end
-
-function GermCommander:updateAllKeybindBehavior()
+function GermCommander:updateAllKeybindBehavior(event)
     if isInCombatLockdown("Keybind") then return end
     ---@param germ GERM_TYPE
     self:forEachActiveGerm(function(germ)
@@ -229,35 +229,24 @@ function GermCommander:updateAllKeybindBehavior()
     end, event)
 end
 
-function GermCommander:updateAllGermsWithButtonsWillBind()
+function GermCommander:updateAllActiveGermsWithConfigToBindTheButtons(event)
     local doKeybindTheButtonsOnTheFlyout = Config:get("doKeybindTheButtonsOnTheFlyout")
 
     ---@param germ Germ
-    for btnSlotIndex, germ in pairs(germs) do
+    self:forEachActiveGerm(function(germ)
         germ:SetAttribute("doKeybindTheButtonsOnTheFlyout", doKeybindTheButtonsOnTheFlyout)
-        germ:updateAllBtnHotKeyLabels()
-    end
-end
+        germ:updateAllBtnHotKeyLabels(event)
+    end, event)
 
---[[
--- not used
-function GermCommander:updateAllGermsAllClickHandlers()
-    ---@param germ Germ
-    for btnSlotIndex, germ in pairs(germs) do
-        zebug.info:label(germ):print("btnSlotIndex",btnSlotIndex, "germ", germ:getFlyoutDef().name)
-        germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId()
-    end
 end
-]]
 
 ---@param mouseClick MouseClick
 function GermCommander:updateClickHandlerForAllActiveGerms(mouseClick, event)
     -- can't modify the inactive germs because they have no flyoutId
     ---@param germ Germ
-    for btnSlotIndex, germ in pairs(germs) do
-        zebug.info:owner(germ):print("btnSlotIndex",btnSlotIndex, "germ", germ:getFlyoutDef().name)
-        germ:setMouseClickHandler(mouseClick, Config:getClickBehavior(self.flyoutId, mouseClick))
-    end
+    self:forEachActiveGerm(function(germ)
+        germ:setMouseClickHandler(mouseClick, Config:getClickBehavior(self.flyoutId, mouseClick), event)
+    end, event)
 end
 
 ---@return GERM_TYPE
@@ -392,7 +381,7 @@ function GermCommander:forgetPlacement(btnSlotIndex, event)
 end
 
 -- unused?  What does Catalog do when the user kills a Ufo?
-function GermCommander:nukeFlyout(flyoutId)
+function GermCommander:nukeFlyoutIdFromDb(flyoutId)
     flyoutId = FlyoutDefsDb:validateFlyoutId(flyoutId)
     for i, allSpecsConfig in ipairs(DB:getAllSpecsPlacementsConfig()) do
         for i, specConfig in ipairs(allSpecsConfig) do

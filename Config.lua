@@ -173,7 +173,7 @@ local function initializeOptionsMenu()
                 },
                 set = function(_, doKeybindTheButtonsOnTheFlyout)
                     opts.doKeybindTheButtonsOnTheFlyout = doKeybindTheButtonsOnTheFlyout
-                    GermCommander:updateAllGermsWithButtonsWillBind()
+                    GermCommander:updateAllActiveGermsWithConfigToBindTheButtons("Config-doKeybindTheButtonsOnTheFlyout")
                 end,
                 get = function()
                     return Config:get("doKeybindTheButtonsOnTheFlyout")
