@@ -90,11 +90,13 @@ end
 function GermCommander:forEachGermIf(func, fitnessFunc, event)
     assert(isFunction(func), 'must provide a "func(Germ)" ')
     assert(isFunction(fitnessFunc), 'must provide a "fitnessFunc(Germ)" ')
+    event = event or Event:new("oops!","last arg needs to be an event")
     for _, germ in pairs(germs) do
         if fitnessFunc(germ, event) then
+            zebug.trace:event(event):owner(germ):print("processing",germ)
             func(germ, event)
         else
-            zebug.trace:event(event):print("skipping",germ, "because it failed the fitnessFunc()")
+            zebug.trace:event(event):owner(germ):print("skipping",germ, "because it failed the fitnessFunc()")
         end
     end
 end
@@ -221,10 +223,10 @@ end
 
 function GermCommander:updateAllKeybindBehavior()
     if isInCombatLockdown("Keybind") then return end
-    ---@param germ Germ
-    for btnSlotIndex, germ in pairs(germs) do
-        germ:setMouseClickHandler(MouseClick.SIX, Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior)
-    end
+    ---@param germ GERM_TYPE
+    self:forEachActiveGerm(function(germ)
+        germ:setMouseClickHandler(MouseClick.SIX, Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
+    end, event)
 end
 
 function GermCommander:updateAllGermsWithButtonsWillBind()
@@ -249,7 +251,8 @@ end
 ]]
 
 ---@param mouseClick MouseClick
-function GermCommander:updateClickHandlerForAllGerms(mouseClick)
+function GermCommander:updateClickHandlerForAllActiveGerms(mouseClick, event)
+    -- can't modify the inactive germs because they have no flyoutId
     ---@param germ Germ
     for btnSlotIndex, germ in pairs(germs) do
         zebug.info:owner(germ):print("btnSlotIndex",btnSlotIndex, "germ", germ:getFlyoutDef().name)

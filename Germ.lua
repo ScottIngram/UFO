@@ -118,7 +118,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     -- FlyoutMenu
     self:initFlyoutMenu(event)
-    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId() -- depends on initFlyoutMenu() above
+    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event) -- depends on initFlyoutMenu() above
 
     -- bind me to my action bar slot's keybindings (if any)
     self:doKeybinding()
@@ -127,13 +127,20 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 end
 
 local s = function(v) return v or "nil"  end
-
+local shorties = {}
+local function shortName(s)
+    if not s then return end
+    if not shorties[s] then
+        shorties[s] = string.sub(s,1,10)
+    end
+    return shorties[s]
+end
 function Germ:toString()
     if not self.flyoutId then
         return "<Germ: EMPTY>"
     else
         local icon = self:getIcon()
-        return string.format("<Germ: |T%d:0|t %s>", icon, self.label or "UnKnOwN")
+        return string.format("<Germ: |T%d:0|t %s>", icon, shortName(self.label) or "UnKnOwN")
     end
 end
 
@@ -335,9 +342,8 @@ function Germ:updateAllBtnCooldownsEtc()
     self.flyoutMenu:updateAllBtnCooldownsEtc()
 end
 
-function Germ:updateAllBtnHotKeyLabels()
-    zebug.info:line("20","updateForGerm from Germ:updateAllBtnHotKeyLabels")
-    self.flyoutMenu:updateForGerm(self)
+function Germ:updateAllBtnHotKeyLabels(event)
+    self.flyoutMenu:updateForGerm(self, event)
 end
 
 local maxUpdateFrequency = 0.5
@@ -442,8 +448,8 @@ function Germ:_secretUpdate(event, amDelayed)
         ---@param behavior GermClickBehavior
         for mouseClick, behavior in pairs(self.clickers) do
             if behavior == GermClickBehavior.FIRST_BTN then
-                local installTheBehavior = getHandlerMaker(behavior, event)
-                installTheBehavior(self, mouseClick)
+                local installTheBehavior = getHandlerMaker(behavior)
+                installTheBehavior(self, mouseClick, event)
             end
         end
 
@@ -516,7 +522,6 @@ end
 -- Key Bindings & UI actions Registerings
 -------------------------------------------------------------------------------
 
--- called by GermCommander:updateAllKeybinds()... which is currently unused???
 -- called by GermCommander:updateBtnSlot()
 function Germ:doKeybinding()
     if isInCombatLockdown("Keybind") then return end
@@ -631,7 +636,7 @@ function Germ:unregisterForBlizUiActions()
     self.isEventStuffRegistered = false
 end
 
-function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId()
+function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
     -- TODO v11.1 - wrap in exeNotInCombat() ? in case "/reload" during combat
     -- set attributes used inside the secure scriptlettes
     self:SetAttribute("flyoutDirection", self:getDirection())
@@ -639,12 +644,12 @@ function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId()
     self:SetAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
 
     local flyoutId = self.flyoutId
-    self:setMouseClickHandler(MouseClick.LEFT,   Config:getClickBehavior(flyoutId, MouseClick.LEFT))
-    self:setMouseClickHandler(MouseClick.MIDDLE, Config:getClickBehavior(flyoutId, MouseClick.MIDDLE))
-    self:setMouseClickHandler(MouseClick.RIGHT,  Config:getClickBehavior(flyoutId, MouseClick.RIGHT))
-    self:setMouseClickHandler(MouseClick.FOUR,   Config:getClickBehavior(flyoutId, MouseClick.FOUR))
-    self:setMouseClickHandler(MouseClick.FIVE,   Config:getClickBehavior(flyoutId, MouseClick.FIVE))
-    self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior)
+    self:setMouseClickHandler(MouseClick.LEFT,   Config:getClickBehavior(flyoutId, MouseClick.LEFT), event)
+    self:setMouseClickHandler(MouseClick.MIDDLE, Config:getClickBehavior(flyoutId, MouseClick.MIDDLE), event)
+    self:setMouseClickHandler(MouseClick.RIGHT,  Config:getClickBehavior(flyoutId, MouseClick.RIGHT), event)
+    self:setMouseClickHandler(MouseClick.FOUR,   Config:getClickBehavior(flyoutId, MouseClick.FOUR), event)
+    self:setMouseClickHandler(MouseClick.FIVE,   Config:getClickBehavior(flyoutId, MouseClick.FIVE), event)
+    self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
 end
 
 -------------------------------------------------------------------------------
@@ -897,17 +902,17 @@ end
 local HandlerMaker = { }
 
 ---@param mouseClick MouseClick
-function Germ:setMouseClickHandler(mouseClick, behavior)
-    self:removeOldHandler(mouseClick)
+function Germ:setMouseClickHandler(mouseClick, behavior, event)
+    self:removeOldHandler(mouseClick, event)
     local installTheBehavior = getHandlerMaker(behavior)
-    zebug.info:owner(self):print("mouseClick",mouseClick, "opt", behavior, "handler", installTheBehavior)
-    installTheBehavior(self, mouseClick)
+    zebug.info:owner(self):event(event):print("mouseClick",mouseClick, "opt", behavior, "handler", installTheBehavior)
+    installTheBehavior(self, mouseClick, event)
     self.clickers[mouseClick] = behavior
     SecureHandlerExecute(self, searchForFlyoutMenuScriptlet()) -- initialize the scriptlet's "global" vars
 end
 
 ---@param behavior GermClickBehavior
----@return fun(zelf: Germ, mouseClick: MouseClick): nil
+---@return fun(zelf: Germ, mouseClick: MouseClick, event: Event): nil
 function getHandlerMaker(behavior)
     assert(behavior, "usage: getHandlerMaker(behavior)")
     if not HANDLER_MAKERS_MAP then
@@ -926,20 +931,20 @@ end
 
 -- open / show
 ---@param mouseClick MouseClick
-function HandlerMaker:OpenFlyout(mouseClick)
+function HandlerMaker:OpenFlyout(mouseClick, event)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
-    zebug.info:owner(self):name("HandlerMakers:OpenFlyout"):print("self",self, "mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
+    zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("self",self, "mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
     local scriptName = "OPENER_SCRIPT_FOR_" .. secureMouseClickId
-    zebug.info:owner(self):name("HandlerMakers:OpenFlyout"):print("germ",self.label, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
+    zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("germ",self.label, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
     -- TODO v11.1 - wrap in exeNotInCombat() ?
     self:SetAttribute(secureMouseClickId,scriptName)
     self:SetAttribute("_"..scriptName, getOpenerClickerScriptlet()) -- OPENER
 end
 
 ---@param mouseClick MouseClick
-function HandlerMaker:ActivateBtn1(mouseClick)
+function HandlerMaker:ActivateBtn1(mouseClick, event)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
-    zebug.info:owner(self):print("secureMouseClickId",secureMouseClickId)
+    zebug.info:event(event):owner(self):print("secureMouseClickId",secureMouseClickId)
     self:updateSecureClicker(mouseClick)
     local btn1 = self:getBtnDef(1)
     if not btn1 then return end
@@ -947,7 +952,7 @@ function HandlerMaker:ActivateBtn1(mouseClick)
     local btn1Name = btn1.name
     local type, key, val = btn1:asSecureClickHandlerAttributes()
     local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
-    zebug.info:owner(self):name("HandlerMakers:ActivateBtn1"):print("germ",self.label, "btn1Name",btn1Name, "btn1Type",btn1Type, "secureMouseClickId", secureMouseClickId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseClick, "val", val)
+    zebug.info:event(event):owner(self):name("HandlerMakers:ActivateBtn1"):print("germ",self.label, "btn1Name",btn1Name, "btn1Type",btn1Type, "secureMouseClickId", secureMouseClickId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseClick, "val", val)
     -- TODO v11.1 - wrap in exeNotInCombat() ?
     self:SetAttribute(secureMouseClickId, type)
     self:SetAttribute(keyAdjustedToMatchMouseClick, val)
@@ -1070,12 +1075,13 @@ end
 -- So now, I cry, and loop through ALL of the SecureHandlerUnwrapScript(self, "OnClick") until I find the one,
 -- then restore the others that were needlessly stripped while groping the Frame in a blind, hamfisted search.
 
-function Germ:removeOldHandler(mouseClick)
+function Germ:removeOldHandler(mouseClick, event)
     local old = self.clickers[mouseClick]
-    zebug.trace:owner(self):print("old",old)
+    zebug.trace:event(event):owner(self):print("old",old)
     if not old then return end
 
     local needsRemoval = (old == (GermClickBehavior.RANDOM_BTN) or (old == GermClickBehavior.CYCLE_ALL_BTNS))
+    zebug.trace:event(event):owner(self):print("old",old, "needsRemoval",needsRemoval)
     if not needsRemoval then return end
 
     local i = 0
@@ -1104,7 +1110,7 @@ function Germ:removeOldHandler(mouseClick)
         local stop  = LEN_CLICK_ID_MARKER + string.len(mouseClick)
         local scriptsClick = string.sub(postBody or "", start, stop)
         isForThisClick = (scriptsClick == mouseClick)
-        zebug.info:owner(self):print("germ", self.label, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
+        zebug.info:event(event):owner(self):print("germ", self.label, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
         if not isForThisClick then
             rescue( header, preBody, postBody, scriptsClick )
         end
@@ -1115,7 +1121,7 @@ function Germ:removeOldHandler(mouseClick)
         local success = pcall(function()
             SecureHandlerWrapScript(params[1], "OnClick", params[1], params[2], params[3])
         end )
-        zebug.info:owner(self):print("germ", self.label, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
+        zebug.info:event(event):owner(self):print("germ", self.label, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
     end
 end
 

@@ -153,7 +153,7 @@ local function initializeOptionsMenu()
                     local isDiff = opts.keybindBehavior ~= behavior
                     opts.keybindBehavior = behavior
                     if isDiff then
-                        GermCommander:updateAllKeybindBehavior()
+                        GermCommander:updateAllKeybindBehavior("Config-ObeyBtnSlotKeybind")
                     end
                 end,
                 get = function()
@@ -323,7 +323,7 @@ function includeMouseButtonOpts(mouseClick)
         set = function(zelf, behavior)
             Config:setClickBehavior(nil, mouseClick, behavior)
             zebug.info:name("opt:MouseButtonOpts()"):print("mouseClick",mouseClick, "new val", behavior)
-            GermCommander:updateClickHandlerForAllGerms(mouseClick)
+            GermCommander:updateClickHandlerForAllActiveGerms(mouseClick, Event:new("Config", "bind-a-mouse-button"))
         end,
         ---@return GermClickBehavior
         get = function()
@@ -357,7 +357,7 @@ function includeGermClickBehaviorSorting()
     return sorting
 end
 
----@param flyoutId string
+---@param flyoutId number aspirational param for when I allow users to give each UFO its own configs
 ---@param mouseClick MouseClick
 ---@return GermClickBehavior
 function Config:getClickBehavior(flyoutId, mouseClick)
