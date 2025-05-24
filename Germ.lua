@@ -132,7 +132,8 @@ function Germ:toString()
     if not self.flyoutId then
         return "<Germ: EMPTY>"
     else
-        return string.format("<Germ: %s>", self.label or "UnKnOwN")
+        local icon = self:getIcon()
+        return string.format("<Germ: |T%d:0|t %s>", icon, self.label or "UnKnOwN")
     end
 end
 
@@ -166,6 +167,13 @@ end
 ---@return string
 function Germ:getFlyoutName()
     return self:getFlyoutDef():getName()
+end
+
+function Germ:getIcon()
+    if not self.flyoutId then return DEFAULT_ICON end
+    local flyoutDef = FlyoutDefsDb:get(self.flyoutId)
+    local usableFlyout = flyoutDef:filterOutUnusable()
+    return usableFlyout:getIcon() or flyoutDef.fallbackIcon or DEFAULT_ICON
 end
 
 function Germ:initFlyoutMenu(eventId)
@@ -385,7 +393,7 @@ function Germ:_secretUpdate(event, amDelayed)
     local usableFlyout = flyoutDef:filterOutUnusable()
 
     -- set the Germ's icon so that it reflects only USABLE buttons
-    local icon = usableFlyout:getIcon() or flyoutDef.fallbackIcon or DEFAULT_ICON
+    local icon = self:getIcon()
     self:setIcon(icon, event)
 
     -- inside ActionBarActionButtonMixin:Update() it sets self:Name based on a call to [Global]GetActionText(actionBarSlot)
