@@ -102,7 +102,7 @@ function GermCommander:forEachGermIf(func, fitnessFunc, event)
     event = event or Event:new("oops!","last arg needs to be an event")
     for _, germ in pairs(germs) do
         if fitnessFunc(germ, event) then
-            zebug.trace:event(event):owner(germ):print("processing",germ)
+            zebug.trace:event(event):owner(germ):print("MATCH",germ)
             func(germ, event)
         else
             zebug.trace:event(event):owner(germ):print("skipping",germ, "because it failed the fitnessFunc()")
@@ -374,10 +374,17 @@ function GermCommander:forgetPlacement(btnSlotIndex, event)
     local placements = Spec:getPlacementConfigForCurrentSpec()
     local flyoutId = placements[btnSlotIndex]
     if flyoutId then
-        zebug.info:event(event):print("DELETING PLACEMENT", "btnSlotIndex",btnSlotIndex, "flyoutId", flyLabel(flyoutId))
-        zebug.trace:event(event):dumpy("BEFORE placements", placements)
+        zebug.info:event(event):print("DELETING PLACEMENT btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId, "for", flyLabel(flyoutId))
+        --zebug.trace:event(event):dumpy("BEFORE placements", placements)
         placements[btnSlotIndex] = nil
     end
+end
+
+function GermCommander:nukeGermsThatHaveFlyoutIdOf(flyoutId, event)
+    self:forEachGermWithFlyoutId(flyoutId, function(germ)
+        self:eraseUfoFrom(germ:getBtnSlotIndex(), germ, event)
+    end, event)
+    self:nukeFlyoutIdFromDb(flyoutId)
 end
 
 -- unused?  What does Catalog do when the user kills a Ufo?
