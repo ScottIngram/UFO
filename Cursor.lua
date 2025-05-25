@@ -159,8 +159,12 @@ function Cursor:isNotEmpty()
     return (type or false) and true
 end
 
+function amEmpty()
+    return Cursor:isEmpty() and "already empty... supposedly" or ""
+end
+
 function Cursor:clear(event)
-    zebug.trace:event(event):print("clearing cursor and cache")
+    zebug.info:owner(amEmpty):event(event):print("clearing cursor and cache")
     ClearCursor()
     cachedCursor = nil
 end

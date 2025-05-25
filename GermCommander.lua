@@ -104,7 +104,7 @@ function GermCommander:forEachGermIf(opFunction, fitnessFunc, event)
     event = event or Event:new("oops!","last arg needs to be an event")
     for _, germ in pairs(germs) do
         if fitnessFunc(germ, event) then
-            zebug.trace:event(event):owner(germ):print("MATCH!")
+            zebug.trace:event(event):owner(germ):line(8,"MATCH!")
             opFunction(germ, event)
         else
             zebug.trace:event(event):owner(germ):print("skipping because it failed the fitnessFunc()")
@@ -126,7 +126,7 @@ end
 function GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
     -- TODO: refactor using forEachGermIf()
     --if isInCombatLockdown("Reconfiguring") then return end
-    zebug.info:event(event):print("updating all Germs with",flyoutId)
+    zebug.info:event(event):print("updating all Germs with",FlyoutDefsDb:get(flyoutId))
 
     self:forEachPlacement(function(btnSlotIndex, flyoutIdForGermInThisSlot)
         if flyoutIdForGermInThisSlot == flyoutId then

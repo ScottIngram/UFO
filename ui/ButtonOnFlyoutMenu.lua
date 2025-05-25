@@ -9,7 +9,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new()
+local zebug = Zebug:new(Zebug.INFO)
 
 ---@class ButtonOnFlyoutMenu : UfoMixIn
 ---@field ufoType string The classname
@@ -32,7 +32,7 @@ GLOBAL_ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 
 function ButtonOnFlyoutMenu:getName()
     local btnDef = self:getDef()
-    return (btnDef and btnDef:getName()) or "UnKnOwN"
+    return (btnDef and btnDef:getName()) or "empty"
 end
 
 function ButtonOnFlyoutMenu:getId()
@@ -127,42 +127,6 @@ function ButtonOnFlyoutMenu:setExcluderVisibility()
     end
 end
 
--- pickup an existing button from an existing flyout
----@param self ButtonOnFlyoutMenu
-function ButtonOnFlyoutMenu:onDragStartDoPickup()
-    if isInCombatLockdown("Drag and drop") then return end
-    if self:isEmpty() then return end
-
-    local event = Event:new(self, "dragged away")
-
-    ---@type FlyoutMenu
-    local flyoutFrame = self:GetParent()
-    if not flyoutFrame.isForCatalog then
-        return
-    end
-
-    local isDragging = GetCursorInfo()
-    if isDragging then
-        self:onReceiveDragAddIt(event)
-        return
-    end
-
-    local btnDef = self:getDef()
-    if self:abortIfUnusable(btnDef) then
-        -- TODO - work some sort of proxy magic to let a toon drag around a spell they don't know
-        return
-    end
-
-    btnDef:pickupToCursor(event)
-    local flyoutId = flyoutFrame:getId()
-    local flyoutDef = FlyoutDefsDb:get(flyoutId)
-    flyoutDef:removeButton(self:getId())
-    self:setDef(nil, event)
-    flyoutFrame:updateForCatalog(flyoutId, event)
-    --GermCommander:updateAll("ButtonOnFlyoutMenu:onDragStartDoPickup") -- TODO: only update the Germs with this specific flyout
-    GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, "ButtonOnFlyoutMenu:onDragStartDoPickup") -- was updateAll()
-end
-
 ---@param btnDef ButtonDef
 function ButtonOnFlyoutMenu:abortIfUnusable(btnDef)
     if (not btnDef) or btnDef:isUsable() then
@@ -205,7 +169,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
         flyoutDef:insertButton(btnIndex+1, twin)
     end
 
-    ClearCursor()
+    Cursor:clear(event)
     GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
     flyoutMenu.displaceBtnsHere = nil
     flyoutMenu:updateForCatalog(flyoutId, event)
@@ -309,12 +273,12 @@ function ButtonOnFlyoutMenu:onLoad()
     SecureHandler_OnLoad(self) -- TODO: v11.1 evaluate if this is actually safe or is it causing taint
 
     -- initialize my fields
-    self.maxDisplayCount = 99 -- limits how big of a number to show on stacks
+    self.maxDisplayCount = 99 -- used inside Bliz code - limits how big of a number to show on stacks
 
     -- Register for events
     self:RegisterForDrag("LeftButton")
     self:RegisterForClicks("AnyDown", "AnyUp")
-    -- TODO - register for spell and cooldown events
+    -- TODO - register for spell and cooldown events (?)
 end
 
 ---@param self ButtonOnFlyoutMenu
@@ -341,15 +305,56 @@ function ButtonOnFlyoutMenu:onMouseUp()
     -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
     local isDragging = GetCursorInfo()
     if isDragging then
-        self:onReceiveDragAddItTryCatch(Event:new(self, "mouse-up"))
+        zebug.error:mTriangle():owner(self):runEvent(Event:new(self, "mouse-up"), function(event)
+            self:onReceiveDragAddItTryCatch(event)
+        end)
+--        self:onReceiveDragAddItTryCatch(Event:new(self, "mouse-up"))
     end
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onReceiveDrag()
-    self:onReceiveDragAddItTryCatch(Event:new(self, "drag-hit-me") )
+    zebug.error:mTriangle():owner(self):runEvent(Event:new(self, "drag-hit-me"), function(event)
+        self:onReceiveDragAddItTryCatch(event)
+    end)
 end
 
+-- pickup an existing button from an existing flyout
+---@param self ButtonOnFlyoutMenu
+function ButtonOnFlyoutMenu:onDragStartDoPickup()
+    if isInCombatLockdown("Drag and drop") then return end
+    if self:isEmpty() then return end
+
+    ---@type FlyoutMenu
+    local flyoutFrame = self:GetParent()
+    if not flyoutFrame.isForCatalog then
+        return
+    end
+
+    local isDragging = GetCursorInfo()
+    if isDragging then
+        zebug.error:mTriangle():owner(self):runEvent(Event:new(self, "drag-hit-me"), function(event)
+            self:onReceiveDragAddItTryCatch(event)
+        end)
+        return
+    end
+
+    local btnDef = self:getDef()
+    if self:abortIfUnusable(btnDef) then
+        -- TODO - work some sort of proxy magic to let a toon drag around a spell they don't know
+        return
+    end
+
+    zebug.error:mTriangle():owner(self):runEvent(Event:new(self, "dragged-away"), function(event)
+        btnDef:pickupToCursor(event)
+        local flyoutId = flyoutFrame:getId()
+        local flyoutDef = FlyoutDefsDb:get(flyoutId)
+        flyoutDef:removeButton(self:getId())
+        self:setDef(nil, event)
+        flyoutFrame:updateForCatalog(flyoutId, event)
+        GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
+    end)
+end
 
 --[[
         <CheckButton name="SpellFlyoutPopupButtonTemplate" inherits="SmallActionButtonTemplate,FlyoutPopupButtonTemplate, SecureFrameTemplate" ...

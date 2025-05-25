@@ -306,8 +306,8 @@ function Catalog:update(event)
 end
 
 function Catalog:clearProxyAndCursor(event)
+    Cursor:clear(event)
     UfoProxy:deleteProxyMacro(event)
-    ClearCursor()
 end
 
 function Catalog:open()
