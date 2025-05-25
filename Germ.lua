@@ -170,6 +170,10 @@ function Germ:isActive(event)
     return self.flyoutId and true or false
 end
 
+function Germ:hasItemsAndIsActive()
+    return self:isActive() and self:getFlyoutDef():hasItem()
+end
+
 ---@return string
 function Germ:getFlyoutName()
     return self:getFlyoutDef():getName()
@@ -795,11 +799,6 @@ function ScriptHandlers.OnLeave(self)
         --self:handleGermUpdateEvent(event)
     end)
 end
-
--- throttle OnUpdate because it fires as often as FPS and is very resource intensive
--- TODO: abstract this into its own class/function - throttle
-local ON_UPDATE_TIMER_FREQUENCY = 10
-local onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
 
 ---@param self GERM_TYPE
 function ScriptHandlers.OnUpdate(self, elapsed)

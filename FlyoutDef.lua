@@ -44,8 +44,9 @@ function FlyoutDef:oneOfUs(self)
     local privateCache = {
         alreadyCoercedMyButtons = false,
     }
-    function privateCache:_cacheUsableFlyoutDef(usableFlyoutDef) privateCache.cachedUsableFlyoutDef = usableFlyoutDef end
     function privateCache:setAlreadyCoercedMyButtons() privateCache.alreadyCoercedMyButtons = true end
+    function privateCache:_cacheUsableFlyoutDef(usableFlyoutDef) privateCache.cachedUsableFlyoutDef = usableFlyoutDef end
+    function privateCache:cacheHasItem(hasItem) privateCache._hasItem = hasItem end
 
     -- tie the privateData table to the FlyoutDef class definition
     setmetatable(privateCache, { __index = FlyoutDef })
@@ -103,8 +104,11 @@ function FlyoutDef:isModNewerThan(time)
 end
 
 function FlyoutDef:invalidateCache()
+    zebug.trace:owner(self):print("clearing cache... b4", self._hasItem)
     self:setModStamp()
     self:_cacheUsableFlyoutDef(nil) -- always clear the filtered copy when the base changes
+    self:cacheHasItem(nil)
+    zebug.trace:owner(self):print("clearing cache... after",self._hasItem)
 end
 
 function FlyoutDef:newId()
@@ -210,6 +214,7 @@ function FlyoutDef:removeButton(removeAtIndex)
             self:replaceButton(i, nextBtnDef)
         end
     end)
+    self:invalidateCache()
 end
 
 function FlyoutDef:getIcon()
@@ -255,6 +260,17 @@ function FlyoutDef:filterOutUnusable()
     return usableFlyoutDef
 end
 
-function table.inserty(t, val)
-    table.insert(t, val or EMPTY_ELEMENT)
+function FlyoutDef:hasItem()
+    if self._hasItem == nil then
+        ---@param btnDef ButtonDef
+        self:forEachBtn(function(btnDef)
+            if btnDef.type == ButtonType.ITEM then
+                zebug.warn:owner(self):print("found an item!", btnDef.name)
+                self._hasItem = true
+            end
+        end)
+    else
+        zebug.warn:owner(self):print("using cached val of", self._hasItem)
+    end
+    return self._hasItem
 end

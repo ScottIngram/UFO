@@ -485,10 +485,13 @@ function GermCommander:ensureAllGermsHavePlaceholders(event)
     Ufo.droppedPlaceholderOntoActionBar = nil
 end
 
-function GermCommander:handleEventChangedInventory(event)
-    -- TODO: be a little less NUKEy... create an index of which flyouts contain inventory items
-    FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.invalidateCache)
-    self:updateAllSlots(event) -- change to updateSomeGerms(fitnessFunc) -- ACTUALLY, push the event listener into Germ class and have each instance handle its own shit
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+function GermCommander:notifyAllGermsWithItems(event)
+    ---@param germ GERM_TYPE
+    local opFunc = function(germ)
+        germ:getFlyoutDef():invalidateCache()
+    end
+    self:forEachGermIf(opFunc, Germ.hasItemsAndIsActive, event)
 end
 
 function GermCommander:handleEventPetChanged(event)

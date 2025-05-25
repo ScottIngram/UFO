@@ -122,14 +122,13 @@ end
 
 function EventHandlers:BAG_UPDATE(id, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    --if not isEventChaosChilledOut() then return end
-    --if isInCombatLockdownQuiet("Ignoring event UNIT_INVENTORY_CHANGED because it") then return end
     local event = Event:new("Ufo", me, eventCounter)
     zebug.info:mDiamond():name(me):runEvent(event, function()
-        GermCommander:handleEventChangedInventory(event)
+        GermCommander:notifyAllGermsWithItems(event)
     end)
 end
 
+-- an absolute shitstorm of BAG_UPDATE vomit during the loading screen, so throttle this motherfucker
 EventHandlers.BAG_UPDATE = Throttler:throttleAndNoQueue(1.0, "Ufo:BAG_UPDATE", EventHandlers.BAG_UPDATE)
 
 --[[
