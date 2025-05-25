@@ -92,11 +92,13 @@ function IconPicker:OkayButton_OnClick()
 
     local flyoutId = self.flyoutId
     if flyoutId then
-        local flyoutDef = FlyoutDefsDb:get(flyoutId)
-        flyoutDef.name = name
-        flyoutDef.icon = icon
-        flyoutDef:invalidateCache()
-        GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
+        zebug.warn:mTriangle():runEvent(Event:new(self, "clicked-OK"), function(event)
+            local flyoutDef = FlyoutDefsDb:get(flyoutId)
+            flyoutDef.name = name
+            flyoutDef.icon = icon
+            flyoutDef:invalidateCache()
+            GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
+        end)
     else
         Catalog:addNewFlyout(name, icon, event)
     end
