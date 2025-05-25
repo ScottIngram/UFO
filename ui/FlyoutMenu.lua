@@ -201,11 +201,11 @@ function FlyoutMenu:updateForCatalog(flyoutId, event)
         end
 
         if btnDef then
-            btnFrame:setDef(btnDef)
+            btnFrame:setDef(btnDef, event)
             btnFrame:setIcon( btnDef:getIcon(), event )
         else
             -- the empty slot on the end
-            btnFrame:setDef(nil)
+            btnFrame:setDef(nil, event)
             btnFrame:setIcon(nil, event)
             btnFrame:setExcluderVisibility(nil)
         end
@@ -257,7 +257,7 @@ function FlyoutMenu:updateForGerm(germ, event)
     ---@param btnFrame BOFM_TYPE
     self:forEachButton(function(btnFrame, i)
         local btnDef = usableFlyout:getButtonDef(i)
-        btnFrame:setDef(btnDef)
+        btnFrame:setDef(btnDef, event)
         zebug.trace:event(event):owner(self):print("i",i, "btnDef", btnDef)
 
         if btnDef then
@@ -432,7 +432,6 @@ function FlyoutMenu:onLoadForCatalog()
 end
 
 function FlyoutMenu:updateAllBtnCooldownsEtc()
-    zebug.trace:print("self:getId()",self:getId())
     self:forEachButton(ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc)
 end
 

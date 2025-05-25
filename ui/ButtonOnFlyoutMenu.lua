@@ -11,12 +11,12 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 
 local zebug = Zebug:new()
 
----@class ButtonOnFlyoutMenu
+---@class ButtonOnFlyoutMenu : UfoMixIn
 ---@field ufoType string The classname
 ---@field id number unique identifier
 ---@field nopeIcon Frame w/ a little X indicator
 
----@type ButtonOnFlyoutMenu : UfoMixIn
+---@type ButtonOnFlyoutMenu
 ButtonOnFlyoutMenu = {
     ufoType = "ButtonOnFlyoutMenu",
 }
@@ -66,14 +66,14 @@ function ButtonOnFlyoutMenu:getDef()
 end
 
 ---@param btnDef ButtonDef
-function ButtonOnFlyoutMenu:setDef(btnDef)
+function ButtonOnFlyoutMenu:setDef(btnDef, event)
     self.btnDef = btnDef
     self:copyDefToBlizFields()
 
     -- install click behavior but only if it's on a Germ (i.e. not in the Catalog)
     local flyoutMenu = self:GetParent()
     if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
-        self:updateSecureClicker(MouseClick.ANY)
+        self:updateSecureClicker(MouseClick.ANY, event)
         -- TODO: v11.1 build this into my Button_Mixin
         safelySetAttribute(self, "UFO_NO_RND", btnDef and btnDef.noRnd or nil) -- SECURE TEMPLATE
     else
@@ -100,19 +100,20 @@ function ButtonOnFlyoutMenu:handleExcluderClick(mouseClick, isDown)
     if not btnDef then return end
 
     if mouseClick == MouseClick.RIGHT and isDown then
-        zebug.info:print("name",btnDef.name, "changing exclude from",btnDef.noRnd, "to", not btnDef.exclude)
-        --zebug.error:dumpKeys(self)
+        local event = Event:new(self, "excluder-click")
+        zebug.info:event(event):owner(self):print("name",btnDef.name, "changing exclude from",btnDef.noRnd, "to", not btnDef.exclude)
         btnDef.noRnd = not btnDef.noRnd
         self:setExcluderVisibility()
 
         local flyoutDef = self:getParent():getDef()
         flyoutDef:setModStamp()
-        GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutDef.id, "excluder-click")
+        GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutDef.id, event)
     end
 end
 
 function ButtonOnFlyoutMenu:setExcluderVisibility()
     if not self.nopeIcon then return end
+    if isInCombatLockdownQuiet("toggling the exclusion setting") then return end
 
     local btnDef = self:getDef()
     local noRnd = btnDef and btnDef.noRnd or nil
@@ -132,6 +133,8 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     if isInCombatLockdown("Drag and drop") then return end
     if self:isEmpty() then return end
 
+    local event = Event:new(self, "dragged away")
+
     ---@type FlyoutMenu
     local flyoutFrame = self:GetParent()
     if not flyoutFrame.isForCatalog then
@@ -140,7 +143,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
 
     local isDragging = GetCursorInfo()
     if isDragging then
-        self:onReceiveDragAddIt()
+        self:onReceiveDragAddIt(event)
         return
     end
 
@@ -150,12 +153,12 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
         return
     end
 
-    btnDef:pickupToCursor("ButtonOnFlyoutMenu:onDragStartDoPickup")
+    btnDef:pickupToCursor(event)
     local flyoutId = flyoutFrame:getId()
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     flyoutDef:removeButton(self:getId())
-    self:setDef(nil)
-    flyoutFrame:updateForCatalog(flyoutId, "ButtonOnFlyoutMenu:onDragStartDoPickup()")
+    self:setDef(nil, event)
+    flyoutFrame:updateForCatalog(flyoutId, event)
     --GermCommander:updateAll("ButtonOnFlyoutMenu:onDragStartDoPickup") -- TODO: only update the Germs with this specific flyout
     GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, "ButtonOnFlyoutMenu:onDragStartDoPickup") -- was updateAll()
 end
@@ -174,13 +177,13 @@ function ButtonOnFlyoutMenu:abortIfUnusable(btnDef)
 end
 
 
-function ButtonOnFlyoutMenu:onReceiveDragAddIt()
+function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     local flyoutMenu = self:getParent()
     if not flyoutMenu.isForCatalog then return end -- only the flyouts in the catalog are valid drop targets.  TODO: let flyouts on the germs receive too?
 
-    local crsDef = ButtonDef:getFromCursor()
+    local crsDef = ButtonDef:getFromCursor(event)
     if not crsDef then
-        zebug.warn:print("Sorry, unsupported type:", Ufo.unknownType)
+        zebug.error:event(event):owner(self):print("Sorry, unsupported type:", Ufo.unknownType)
         return
     end
 
@@ -195,7 +198,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
 
     flyoutDef:insertButton(btnIndex, crsDef)
     if crsDef.brokenPetCommandId2 then
-        local twin = ButtonDef:getFromCursor()
+        local twin = ButtonDef:getFromCursor(event)
         twin.brokenPetCommandId = twin.brokenPetCommandId2
         twin.brokenPetCommandId2 = nil
         twin.name = nil
@@ -203,9 +206,9 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt()
     end
 
     ClearCursor()
-    GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, "onReceiveDragAddIt")
+    GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
     flyoutMenu.displaceBtnsHere = nil
-    flyoutMenu:updateForCatalog(flyoutId, "ButtonOnFlyoutMenu:onReceiveDragAddIt()")
+    flyoutMenu:updateForCatalog(flyoutId, event)
     Ufo.pickedUpBtn = nil
 end
 
@@ -256,11 +259,11 @@ function ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc(self)
     self:updateCooldownsAndCountsAndStatesEtc()
 end
 
-function fuckYouHardBlizzard(self)
+function ButtonOnFlyoutMenu:onReceiveDragAddItTryCatch(event)
     -- YAY!  Bliz's code is eating exceptions now so I've got to catch and report them my damn self!
-    local isOk, err = pcall( function()  self:onReceiveDragAddIt() end  )
+    local isOk, err = pcall( function()  self:onReceiveDragAddIt(event) end  )
     if not isOk then
-        zebug.error:print("Drag and drop failed! ERROR",err)
+        zebug.error:event(event):owner(self):print("Drag and drop failed! ERROR",err)
     end
 end
 
@@ -338,13 +341,13 @@ function ButtonOnFlyoutMenu:onMouseUp()
     -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
     local isDragging = GetCursorInfo()
     if isDragging then
-        fuckYouHardBlizzard(self)
+        self:onReceiveDragAddItTryCatch(Event:new(self, "mouse-up"))
     end
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onReceiveDrag()
-    fuckYouHardBlizzard(self)
+    self:onReceiveDragAddItTryCatch(Event:new(self, "drag-hit-me") )
 end
 
 

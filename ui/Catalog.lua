@@ -554,7 +554,7 @@ end
 function GLOBAL_UFO_CatalogEntryEditButton_OnClick(editBtn)
     local btnInCatalog = editBtn:GetParent()
     IconPicker:open(btnInCatalog)
-    Catalog:selectRow(btnInCatalog.flyoutIndex)
+    Catalog:selectRow(btnInCatalog.flyoutIndex, "CatalogEntryEditButton_OnClick")
 
     -- example code for getting the displayed icon as set by the 1st button on the flyout
     --local itemTexture = btnInCatalog.icon:GetTexture()

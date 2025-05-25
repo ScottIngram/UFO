@@ -166,7 +166,6 @@ function BlizActionBarButton:isEmpty(btnSlotIndex)
     local self = self
 
     if self:amTheClass() then
-        zebug.error:out(50,"*", "amTheClass amTheClass amTheClass amTheClass")
         self = self:getLiteralBlizBtn(btnSlotIndex)
     end
 

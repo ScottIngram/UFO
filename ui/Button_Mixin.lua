@@ -86,7 +86,7 @@ function Button_Mixin:setIcon(icon, event)
     if not self.originalIconSetTextureFunc then
         self.originalIconSetTextureFunc = iconFrame.SetTexture
         iconFrame.SetTexture = function()
-            zebug.error:event(event):owner(self):line(20, "BLOCKED BLIZ SetTexture for germ")
+            zebug.warn:event(event):owner(self):line(20, "BLOCKED BLIZ SetTexture for germ")
         end
     end
     zebug.info:event(event):owner(self):print("setting icon",icon)
@@ -282,7 +282,7 @@ function Button_Mixin:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, ke
 end
 
 ---@param mouseClick MouseClick
-function Button_Mixin:updateSecureClicker(mouseClick)
+function Button_Mixin:updateSecureClicker(mouseClick, event)
     local btnDef = self:getDef()
 
     -- don't waste time repeating work
@@ -297,9 +297,9 @@ function Button_Mixin:updateSecureClicker(mouseClick)
 
     if btnDef then
         local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
-        local type, key, val = btnDef:asSecureClickHandlerAttributes()
+        local type, key, val = btnDef:asSecureClickHandlerAttributes(event)
         local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
-        zebug.trace:owner(self):print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseClick, "val", val)
+        zebug.trace:event(event):owner(self):print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseClick, "val", val)
 
         -- TODO: v11.1 this concat is expensive. optimize.
         local id = "BUTTON-MIXIN:updateSecureClicker for " .. self:getName().. " with btnDef : ".. btnDef:getName();

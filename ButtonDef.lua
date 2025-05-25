@@ -186,7 +186,7 @@ end
 function ButtonDef:isUsable()
     local t = self.type
     local id = self:getIdForBlizApi()
-    zebug.trace:print("name", self.name, "type",t, "spellId", self.spellId, "id",id)
+    zebug.trace:owner(self):print("spellId", self.spellId, "id",id)
     if t == ButtonType.MOUNT or t == ButtonType.PET then
         -- TODO: figure out how to find a mount
         return true -- GetMountInfoByID(mountId)
@@ -203,7 +203,7 @@ function ButtonDef:isUsable()
         local n = C_Item.GetItemCount(id)
         return n > 0
     elseif t == ButtonType.MACRO then
-        zebug.info:print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
+        zebug.trace:owner(self):print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
         return isMacroGlobal(self.macroId) or getIdForCurrentToon() == self.macroOwner
     elseif t == ButtonType.BROKENP then
         return PetShitShow:canHazPet()
@@ -299,7 +299,7 @@ function ButtonDef:getToolTipSetter()
             local i_name, _, i_body = GetMacroInfo(macroId)
             local n_name, _, n_body = GetMacroInfo(self.name)
             if not macroId then macroId = "NiL" end
-            zebug.info:print("MACRO! macroId",macroId, "cached1",Cache1macroId,"cahced2",upToDateId, "btnDef name",self.name, "i_name",i_name, "n_name",n_name, "i_body", trim1(i_body), "n_body",trim1(n_body))
+            zebug.info:owner(self):print("MACRO! macroId",macroId, "cached1",Cache1macroId,"cahced2",upToDateId, "btnDef name",self.name, "i_name",i_name, "n_name",n_name, "i_body", trim1(i_body), "n_body",trim1(n_body))
             zebug.trace:dumpy("self",self)
             local text
             if self:isUsable() then
@@ -366,11 +366,11 @@ end
 -- TODO: fixx bug - doesn't understand Bliz flyouts such as Dragon Riding
 -- TODO: consolidate / integrate with BlizActionBarButton:get()
 ---@return ButtonDef
-function ButtonDef:getFromCursor()
+function ButtonDef:getFromCursor(event)
     ---@type ButtonDef
     local btnDef = ButtonDef:new()
     local type, c1, c2, c3 = GetCursorInfo() -- c1 is usually the ID; c2 is sometimes a tooltip;
-    zebug.trace:print("type",type, "c1",c1, "c2",c2, "c3",c3)
+    zebug.trace:event(event):owner(self):print("type",type, "c1",c1, "c2",c2, "c3",c3)
 
     btnDef.type = type
     if type == ButtonType.SPELL then
@@ -382,7 +382,7 @@ function ButtonDef:getFromCursor()
         if Ufo.pickedUpBtn then
             btnDef = Ufo.pickedUpBtn
         else
-            zebug.warn:print("Sorry, the Blizzard API provided bad data for this mount.")
+            zebug.error:event(event):owner(self):print("Sorry, the Blizzard API provided bad data for this mount.")
         end
     elseif type == ButtonType.MOUNT then
         local name, spellId = C_MountJournal.GetMountInfoByID(c1)
@@ -413,7 +413,7 @@ function ButtonDef:getFromCursor()
             btnDef.petSpellId = c1
         end
     else
-        zebug.error:print("Sorry, I don't recognize this type of button:", type)
+        zebug.error:event(event):owner(self):print("Sorry, I don't recognize this type of button:", type)
         Ufo.unknownType = type or "UnKnOwN"
         type = nil
         btnDef = nil
@@ -436,26 +436,26 @@ function ButtonDef:getFromCursor()
     return btnDef
 end
 
-function ButtonDef:pickupToCursor()
+function ButtonDef:pickupToCursor(event)
     local type = self.type
     local id = self:getIdForBlizApi()
     local pickup = BlizApiFieldDef[type].pickerUpper
     Ufo.pickedUpBtn = self
 
-    zebug.trace:print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId, "pickup", pickup, "PickupSpell",PickupSpell)
+    zebug.trace:event(event):owner(self):print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId, "pickup", pickup, "PickupSpell",PickupSpell)
 
     local isOk, err = pcall( function()  pickup(id) end  )
     if not isOk then
-        zebug.error:print("pickupToCursor failed! ERROR is",err)
+        zebug.error:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
     end
     --pickup(id)
-    zebug.trace:print("grabbed id", id)
+    zebug.trace:event(event):owner(self):print("grabbed id", id)
 end
 
 ---@return ButtonType buttonType what kind of action is performed by the btn
 ---@return string key for the SecureActionButtonTemplate:SetAttribute(key, val)
 ---@return string val for the SecureActionButtonTemplate:SetAttribute(key, val)
-function ButtonDef:asSecureClickHandlerAttributes()
+function ButtonDef:asSecureClickHandlerAttributes(event)
     -- Check special (as in "short bus" special) cases for special needs
     if ButtonType.PET == self.type then
         -- COMPANION PET
@@ -471,10 +471,10 @@ function ButtonDef:asSecureClickHandlerAttributes()
         -- PROFESSIONS
         --local altId = BrokenProfessions[self.name]
         local professionSnafuId = ProfessionShitShow:get(self.name)
-        --zebug.error:print("name",self.name, "id",self.spellId, "altId",altId, "professionSnafuId", professionSnafuId)
+        --zebug.error:event(event):owner(self):print("name",self.name, "id",self.spellId, "altId",altId, "professionSnafuId", professionSnafuId)
         if professionSnafuId then
             local profMacro = sprintf("/run C_TradeSkillUI.OpenTradeSkill(%d)", professionSnafuId)
-            zebug.trace:print("name",self.name, "professionSnafuId", professionSnafuId, "profMacro",profMacro)
+            zebug.trace:event(event):owner(self):print("name",self.name, "professionSnafuId", professionSnafuId, "profMacro",profMacro)
             return ButtonType.MACRO, "macrotext", profMacro
         end
         -- if the prof name was NOT found in the ProfessionShitShow mapping, then,
@@ -484,7 +484,7 @@ function ButtonDef:asSecureClickHandlerAttributes()
         local brokenPetCommand = BrokenPetCommand[self.brokenPetCommandId]
         if brokenPetCommand.macro then
             local bpc = BrokenPetCommand[self.brokenPetCommandId]
-            --zebug.warn:print("self.brokenPetCommandId",self.brokenPetCommandId, "bpc.macro",bpc.macro)
+            zebug.trace:event(event):owner(self):print("self.brokenPetCommandId",self.brokenPetCommandId, "bpc.macro",bpc.macro)
             --zebug.warn:dumpy("BrokenPetCommand bpc",bpc)
             return ButtonType.MACRO, "macrotext", bpc.macro
         elseif brokenPetCommand.scripty then
@@ -500,6 +500,6 @@ function ButtonDef:asSecureClickHandlerAttributes()
     end
 
     local blizType = self:getTypeForBlizApi()
-    zebug.info:print("catch-all block... blizType",blizType, "self.name",self.name)
+    zebug.info:event(event):owner(self):print("done. blizType",blizType)
     return blizType, blizType, self.name
 end

@@ -116,6 +116,7 @@ local function initializeOptionsMenu()
                     return opts.muteLogin
                 end,
             },
+--[[
             hideCooldownsWhen = {
                 hidden = true, -- this is too nitty gritty
                 order = 20,
@@ -135,6 +136,7 @@ local function initializeOptionsMenu()
                     return opts.hideCooldownsWhen or 1
                 end,
             },
+]]
 
             -------------------------------------------------------------------------------
             -- Keybinds

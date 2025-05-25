@@ -91,7 +91,7 @@ function Cursor:get()
 
     if type then
         -- this is kind of expensive... maybe reconsider
-        local b = ButtonDef:getFromCursor()
+        local b = ButtonDef:getFromCursor("rando")
         self.name = b and b:getName()
     end
 

@@ -68,7 +68,7 @@ function Placeholder:put(btnSlotIndex, event)
     Ufo.droppedPlaceholderOntoActionBar = event or true
 
     -- preserve the current contents of the cursor
-    local crsDef = ButtonDef:getFromCursor()
+    local crsDef = ButtonDef:getFromCursor(event)
 
     -- clobber anything on the cursor and replace it with the placeholder
     self:pickup(event)
@@ -78,7 +78,7 @@ function Placeholder:put(btnSlotIndex, event)
     -- yes? we're synchronous, yes?
     -- Ufo.droppedPlaceholderOntoActionBar = nil
 
-    local nowCursor = ButtonDef:getFromCursor()
+    local nowCursor = ButtonDef:getFromCursor(event)
     -- restore anything that had originally been on the cursor
     if crsDef then
         zebug.info:event(event):print("restoring original cursor to",crsDef, "which replaces nowCursor",nowCursor)

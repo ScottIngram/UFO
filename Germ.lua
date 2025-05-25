@@ -89,9 +89,13 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self.flyoutId     = flyoutId
     self.label        = self:getFlyoutDef().name -- TODO remove?
 
+    -- manipulate methods
+    self:installMyToString() -- do this as soon as possible for the sake of debugging output
+    self.originalHide = self:override("Hide", self.hide)
+    self.clearAndDisable = Pacifier:pacify(self, "clearAndDisable")
+
     -- install event handlers
-    --self:SetScript(Script.ON_UPDATE,       handlers.OnUpdate)
--- TEMP    self:SetScript(Script.ON_UPDATE,       Throttler:new(handlers.OnUpdate, 1, self.label ):asFunc() )
+    --self:SetScript(Script.ON_UPDATE,       Throttler:new(ScriptHandlers.OnUpdate, 10, self ):asFunc() )
     self:SetScript(Script.ON_ENTER,        ScriptHandlers.OnEnter)
     self:SetScript(Script.ON_LEAVE,        ScriptHandlers.OnLeave)
     self:SetScript(Script.ON_RECEIVE_DRAG, ScriptHandlers.OnReceiveDrag)
@@ -104,11 +108,6 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:registerForBlizUiActions(event)
     --self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
     --self:RegisterForDrag("LeftButton")
-
-    -- manipulate methods
-    self:installMyToString()
-    self.originalHide = self:override("Hide", self.hide)
-    self.clearAndDisable = Pacifier:pacify(self, "clearAndDisable")
 
     -- UI positioning
     self:ClearAllPoints()
@@ -183,11 +182,11 @@ function Germ:getIcon()
     return usableFlyout:getIcon() or flyoutDef.fallbackIcon or DEFAULT_ICON
 end
 
-function Germ:initFlyoutMenu(eventId)
+function Germ:initFlyoutMenu(event)
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu:new(self)
-        zebug.info:event(eventId):line("20","initFlyoutMenu",self.flyoutMenu)
-        self.flyoutMenu:updateForGerm(self, eventId)
+        zebug.info:event(event):line("20","initFlyoutMenu",self.flyoutMenu)
+        self.flyoutMenu:updateForGerm(self, event)
         self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
 
         -- now in the XML
@@ -204,7 +203,7 @@ end
 -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
 function Germ:setVisibilityDriver(visibleIf)
     self.visibleIf = visibleIf
-    zebug.error:print("visibleIf",visibleIf)
+    zebug.warn:print("visibleIf",visibleIf)
     if visibleIf then
         local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. visibleIf
         RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
@@ -223,7 +222,7 @@ end
 function Germ:hide()
     --zebug.error:dumpy(self:getLabel(), debugstack())
     --VisibleRegion:Hide(self) -- L-O-FUCKING-L this threw  "attempt to index global 'VisibleRegion' (a nil value)" was called from SecureStateDriver.lua:103
-    zebug.error:owner(self):print("hiding.  self",self, "parent", self:GetParent())
+    zebug.warn:owner(self):print("hiding.  self",self, "parent", self:GetParent())
     UnregisterStateDriver(self, "visibility")
     self:originalHide()
 end
@@ -337,11 +336,6 @@ function Germ:getDirection()
     return parent.bar:GetSpellFlyoutDirection()
 end
 
-function Germ:updateAllBtnCooldownsEtc()
-    --zebug.trace:print(self:getFlyoutId())
-    self.flyoutMenu:updateAllBtnCooldownsEtc()
-end
-
 function Germ:updateAllBtnHotKeyLabels(event)
     self.flyoutMenu:updateForGerm(self, event)
 end
@@ -371,7 +365,7 @@ end
 -- TODO v11.1 - figure out what all actually needs to be updated under which circumstances
 function Germ:_secretUpdate(event, amDelayed)
     if not self:isActive(event) then
-        zebug.error:name("_secretUpdate"):owner(self):line(50, "I am limited.  Because I have  nodes.")
+        zebug.warn:event(event):name("_secretUpdate"):owner(self):line(50, "I am limited.  Because I have  nodes.")
         return
     end
 
@@ -380,7 +374,7 @@ function Germ:_secretUpdate(event, amDelayed)
     local flyoutId = self.flyoutId
     if not flyoutId then
         -- I've been deactivated / disabled
-        zebug.error:line(70,"proof of bug - removed when fixed")
+        zebug.warn:event(event):line(70,"proof of bug - removed when fixed")
     end
 
     local btnSlotIndex = self.btnSlotIndex
@@ -469,14 +463,6 @@ function Germ:reInitializeMySecureClickers()
         --zebug.trace:print("germ",self.label, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
         SecureHandlerExecute(self, updaterScriptlet)
     end
-end
-
--- why isn't this just part of self:update()
--- called by the Germ's OnUpdate handler
-function Germ:handleGermUpdateEvent(eventId)
-    ---@type GERM_TYPE
-    local self = self
-    self:update(self.flyoutId, eventId)
 end
 
 function Germ:setToolTip()
@@ -756,9 +742,9 @@ function Germ:handleReceiveDrag(event)
         end
 
         if flyoutIdOld then
-            zebug.error:mMoon():event(event):owner(self):print("--------- PRE  UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
+            zebug.warn:mMoon():event(event):owner(self):print("--------- PRE  UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
             UfoProxy:pickupUfoOntoCursor(flyoutIdOld, event)
-            zebug.error:mMoon():event(event):owner(self):print("--------- POST UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
+            zebug.warn:mMoon():event(event):owner(self):print("--------- POST UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
         else
             cursor:clear(event) -- will discard the UfoProxy if it's still there
         end
@@ -945,12 +931,12 @@ end
 function HandlerMaker:ActivateBtn1(mouseClick, event)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
     zebug.info:event(event):owner(self):print("secureMouseClickId",secureMouseClickId)
-    self:updateSecureClicker(mouseClick)
+    self:updateSecureClicker(mouseClick, event)
     local btn1 = self:getBtnDef(1)
     if not btn1 then return end
     local btn1Type = btn1:getTypeForBlizApi()
     local btn1Name = btn1.name
-    local type, key, val = btn1:asSecureClickHandlerAttributes()
+    local type, key, val = btn1:asSecureClickHandlerAttributes(event)
     local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
     zebug.info:event(event):owner(self):name("HandlerMakers:ActivateBtn1"):print("germ",self.label, "btn1Name",btn1Name, "btn1Type",btn1Type, "secureMouseClickId", secureMouseClickId, "type", type, "key",key, "ADJ key", keyAdjustedToMatchMouseClick, "val", val)
     -- TODO v11.1 - wrap in exeNotInCombat() ?

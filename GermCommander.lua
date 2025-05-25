@@ -121,16 +121,16 @@ function GermCommander:forEachPlacement(func, event)
 end
 
 ---@param flyoutId number
-function GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, eventId)
+function GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
     -- TODO: refactor using forEachGermIf()
-    if isInCombatLockdown("Reconfiguring") then return end
-    zebug.info:event(eventId):print("updating all Germs with",flyoutId)
+    --if isInCombatLockdown("Reconfiguring") then return end
+    zebug.info:event(event):print("updating all Germs with",flyoutId)
 
     self:forEachPlacement(function(btnSlotIndex, flyoutIdForGermInThisSlot)
         if flyoutIdForGermInThisSlot == flyoutId then
             local germ = self:recallGerm(btnSlotIndex)
-            zebug.info:event(eventId):print("nuking",germ, "in btnSlotIndex", btnSlotIndex)
-            self:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
+            zebug.info:event(event):print("updating",germ, "in btnSlotIndex", btnSlotIndex)
+            self:updateBtnSlot(btnSlotIndex, flyoutId, event)
         end
     end)
 end
