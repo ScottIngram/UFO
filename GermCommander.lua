@@ -45,6 +45,7 @@ end
 -- Methods
 -------------------------------------------------------------------------------
 
+--[[
 local isAlreadyUpdatingAll
 local throttleSecs = 2
 
@@ -58,6 +59,7 @@ function GermCommander:throttledUpdateAllSlots(eventId)
         -- END FUNC
     end)
 end
+]]
 
 ---@param flyoutId number
 function flyLabel(flyoutId)
@@ -93,19 +95,19 @@ function GermCommander:forEachGermWithFlyoutId(flyoutId, func, event)
     self:forEachGermIf(func, fun, event)
 end
 
----@param func fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
----@param fitnessFunc function(Germ) a func that will return true if the germ in question should be included in the operation
+---@param opFunction fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
+---@param fitnessFunc fun(germ:Germ) a function that will return true if the germ in question should be included in the operation
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
-function GermCommander:forEachGermIf(func, fitnessFunc, event)
-    assert(isFunction(func), 'must provide a "func(Germ)" ')
+function GermCommander:forEachGermIf(opFunction, fitnessFunc, event)
+    assert(isFunction(opFunction), 'must provide a "opFunction(Germ)" ')
     assert(isFunction(fitnessFunc), 'must provide a "fitnessFunc(Germ)" ')
     event = event or Event:new("oops!","last arg needs to be an event")
     for _, germ in pairs(germs) do
         if fitnessFunc(germ, event) then
-            zebug.trace:event(event):owner(germ):print("MATCH",germ)
-            func(germ, event)
+            zebug.trace:event(event):owner(germ):print("MATCH!")
+            opFunction(germ, event)
         else
-            zebug.trace:event(event):owner(germ):print("skipping",germ, "because it failed the fitnessFunc()")
+            zebug.trace:event(event):owner(germ):print("skipping because it failed the fitnessFunc()")
         end
     end
 end
