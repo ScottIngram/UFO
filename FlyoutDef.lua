@@ -80,7 +80,7 @@ function FlyoutDef:toString()
     if self == Cursor then
         return "nil"
     else
-        return string.format("<FoDef: %s %s size=%d>", s(self.id), s(self.name), s(self.btns and #(self.btns) or 0))
+        return string.format("<FlyDef: %s %s size=%d>", s(self.id), s(self.name), s(self.btns and #(self.btns) or 0))
     end
 end
 

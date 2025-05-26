@@ -50,32 +50,39 @@ function Spec:getUfoFlyoutIdForSlot(btnSlotIndex)
     return Spec:getPlacementConfigForCurrentSpec()[btnSlotIndex]
 end
 
+---@return Placements
+function Spec:getPlacementConfigForPreviousSpec()
+    return self:getConfigForSpec(previousSpec)
+end
+
+---@return Placements
 function Spec:getPlacementConfigForCurrentSpec()
     self:recordCurrentSpec()
     local specId = self:getSpecId()
     return self:getConfigForSpec(specId)
 end
 
+---@return Placements
 function Spec:getConfigForSpec(specId)
     -- the placement of flyouts on the action bars changes from spec to spec
     local placementsForAllSpecs = DB:getAllSpecsPlacementsConfig()
     assert(placementsForAllSpecs, ADDON_NAME..": Oops!  placements config is nil")
 
-    local result = placementsForAllSpecs[specId]
+    local placementsForTheSpec = placementsForAllSpecs[specId]
     -- is this a never-before-encountered spec? - if so, initialze its config
-    zebug.trace:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1",result)
-    if not result then -- TODO: identify empty OR nil
+    zebug.trace:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1", placementsForTheSpec)
+    if not placementsForTheSpec then -- TODO: identify empty OR nil
         if not previousSpec or specId == previousSpec then
             zebug:print("blanking specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
-            result = {}
+            placementsForTheSpec = {}
         else
             -- initialize the new config based on the old one
-            result = deepcopy(self:getConfigForSpec(previousSpec))
-            zebug:line(7, "COPYING specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "initialConfig", "result 1b",result)
+            placementsForTheSpec = deepcopy(self:getConfigForSpec(previousSpec))
+            zebug:line(7, "COPYING specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "initialConfig", "result 1b", placementsForTheSpec)
         end
-        placementsForAllSpecs[specId] = result
+        placementsForAllSpecs[specId] = placementsForTheSpec
     end
-    zebug.trace:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 2",result)
+    zebug.trace:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 2", placementsForTheSpec)
     --debug:dump(result)
-    return result
+    return placementsForTheSpec
 end

@@ -16,6 +16,8 @@ local zebug = Zebug:new(Zebug.TRACE)
 ---@field updatingAll boolean true when updateAllGerms() is making a LOT of noise
 GermCommander = { }
 
+---@alias BtnSlotId number
+
 -------------------------------------------------------------------------------
 -- Data
 -------------------------------------------------------------------------------
@@ -483,6 +485,25 @@ function GermCommander:ensureAllGermsHavePlaceholders(event)
         Placeholder:put(btnSlotIndex, event)
     end)
     Ufo.droppedPlaceholderOntoActionBar = nil
+end
+
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+function GermCommander:changeSpec_WORK_IN_PORGRESS(event)
+    ---@type Placements
+    local oldPlacements = Spec:getPlacementConfigForPreviousSpec()
+
+    -- clear any germs that aren't being used in the new spec
+    self:forEachActiveGerm(
+        function(germ)
+            if not oldPlacements[germ.btnSlotIndex] then
+                germ:clearAndDisable(event)
+            end
+        end,
+        event
+    )
+
+    -- TODO go through the new config and activate germs for each placement
+
 end
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
