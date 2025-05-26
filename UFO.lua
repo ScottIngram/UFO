@@ -66,7 +66,7 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, arg2, arg3, arg4)
     zebug.info:mSkull():name("handler"):runEvent(event, function()
         initalizeAddonStuff(event)
         --if isInCombatLockdown("Ignoring event PLAYER_ENTERING_WORLD because it") then return end
-        GermCommander:updateAllSlots(event)
+        GermCommander:initializeAllSlots(event)
     end)
 end
 

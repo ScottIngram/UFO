@@ -144,6 +144,25 @@ end
 -- * addon initialization
 -- * spec change
 -- * maybe during zoning / player entering world ?
+function GermCommander:initializeAllSlots(event)
+    self:forEachPlacement(function(btnSlotIndex, flyoutId)
+        local flyoutDef = FlyoutDefsDb:get(flyoutId)
+        if not flyoutDef then
+            -- because one toon can delete a flyout while other toons still have it on their bars
+            zebug.warn:event(event):print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot #",btnSlotIndex)
+            self:forgetPlacement(btnSlotIndex)
+        else
+            self:putUfoOntoActionBar(btnSlotIndex, flyoutId, event)
+        end
+    end)
+end
+
+
+-- go through all placements saved in the DB.
+-- I expect this will happen during
+-- * addon initialization
+-- * spec change
+-- * maybe during zoning / player entering world ?
 function GermCommander:updateAllSlots(event)
     zebug.trace:event(event):line(40, "hold on tight!")
     --if isInCombatLockdown("Reconfiguring") then return end
