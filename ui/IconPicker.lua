@@ -82,7 +82,6 @@ function IconPicker:CancelButton_OnClick()
 end
 
 function IconPicker:OkayButton_OnClick()
-    local event     = Event:new(self, "OkayButton_OnClick")
     local name      = self.BorderBox.IconSelectorEditBox:GetText()
     local iconIndex = self.IconSelector:GetSelectedIndex()
     local icon      = iconIndex and self:GetIconByIndex(iconIndex)
@@ -90,21 +89,21 @@ function IconPicker:OkayButton_OnClick()
         icon = nil
     end
 
-    local flyoutId = self.flyoutId
-    if flyoutId then
-        zebug.warn:mTriangle():runEvent(Event:new(self, "clicked-OK"), function(event)
+    zebug.info:mTriangle():runEvent(Event:new(self, "clicked-OK"), function(event)
+        local flyoutId = self.flyoutId
+        zebug.info:event(event):print("txt", name, "iconIndex",iconIndex, "icon",icon, "flyoutId",flyoutId)
+
+        if flyoutId then
             local flyoutDef = FlyoutDefsDb:get(flyoutId)
             flyoutDef.name = name
             flyoutDef.icon = icon
             flyoutDef:invalidateCache()
             GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
-        end)
-    else
-        Catalog:addNewFlyout(name, icon, event)
-    end
+        else
+            Catalog:addNewFlyout(name, icon, event)
+        end
 
-    zebug.info:event(event):print("txt", name, "iconIndex",iconIndex, "icon",icon, "flyoutId",flyoutId)
-
-    self:Hide()
-    Catalog:update(event)
+        self:Hide()
+        Catalog:update(event)
+    end)
 end

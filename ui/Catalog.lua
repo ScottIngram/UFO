@@ -356,16 +356,10 @@ function Catalog:setToolTip(btnInCatalog)
     GameTooltip:SetText(label)
 end
 
-function Catalog:addNewFlyout(name, icon, event)
-    zebug.info:event(event):print("name", name, "icon",icon)
-
+function Catalog:addNewFlyout(name, icon)
     local flyoutDef = FlyoutDefsDb:appendNewOne()
-
     flyoutDef.name = name
     flyoutDef.icon = icon
-
-    Catalog:update(event)
-    -- GermCommander:updateAll("Catalog:addNewFlyout...but.why")
 end
 
 -------------------------------------------------------------------------------
