@@ -17,7 +17,7 @@ Ufo.DB = DB
 
 ---@alias SpecId number
 ---@alias FlyoutId string
----@alias Placements table<BtnSlotId,FlyoutId>
+---@alias Placements table<BtnSlotIndex,FlyoutId>
 ---@alias PlacementsForAllSpecs table<SpecId,Placements>
 
 -------------------------------------------------------------------------------

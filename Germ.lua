@@ -102,7 +102,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:SetScript(Script.ON_MOUSE_DOWN,   ScriptHandlers.OnMouseDown)
     self:SetScript(Script.ON_MOUSE_UP,     ScriptHandlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
     self:SetScript(Script.ON_DRAG_START,   ScriptHandlers.OnPickupAndDrag) -- this is required to get OnDrag to work
-    self:HookScript(Script.ON_HIDE, function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable()
+    self:HookScript(Script.ON_HIDE, function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable() or on a spec change which throws away placeholders
     self:SetScript(Script.ON_EVENT,        ScriptHandlers.OnCursorChangeThenRegisterForClicks) -- also do a RegisterEvent
 
     self:registerForBlizUiActions(event)
@@ -355,7 +355,7 @@ function Germ:update(flyoutId, event)
     -- but don't make each germ compete with the others.  give each a unique ID
     if not self.throttledUpdate then
         local func = function(event)
-            zebug.info:name("throttled _secretUpdate"):event(event):owner(self):line("20","updateForGerm from Germ:updateAllBtnHotKeyLabels")
+            zebug.info:name("throttled _secretUpdate"):event(event):owner(self):print("updateForGerm from Germ:updateAllBtnHotKeyLabels")
             return self:_secretUpdate(event)
         end
         -- every instance of Germ gets its own copy of throttledUpdate.
@@ -369,7 +369,7 @@ end
 -- TODO v11.1 - figure out what all actually needs to be updated under which circumstances
 function Germ:_secretUpdate(event, amDelayed)
     if not self:isActive(event) then
-        zebug.warn:event(event):name("_secretUpdate"):owner(self):line(50, "I am limited.  Because I have  nodes.")
+        zebug.warn:event(event):name("_secretUpdate"):owner(self):print("I am limited.  Because I have  nodes.")
         return
     end
 
@@ -382,7 +382,7 @@ function Germ:_secretUpdate(event, amDelayed)
     end
 
     local btnSlotIndex = self.btnSlotIndex
-    zebug.trace:name("_secretUpdate"):event(event):owner(self):line(30, "flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName(), "amDelayed",amDelayed)
+    zebug.trace:name("_secretUpdate"):event(event):owner(self):print("flyoutId",flyoutId, "btnSlotIndex",btnSlotIndex, "self.name", self:GetName(), "parent", self:GetParent():GetName(), "amDelayed",amDelayed)
 
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     if not flyoutDef then
@@ -419,7 +419,7 @@ function Germ:_secretUpdate(event, amDelayed)
     local qId = "GERM:_secretUpdate() : ".. self:getName()
     exeOnceNotInCombat(qId, function()
 
-        zebug.trace:name(qId):event(event):owner(self):line("20", "inner circle!")
+        zebug.trace:name(qId):event(event):owner(self):print("inner circle!")
         self.flyoutMenu:updateForGerm(self, event)
 
         -- removed this because I think it's good enough to do it only in new()

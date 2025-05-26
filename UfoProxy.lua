@@ -81,7 +81,9 @@ end
 ---@param thing UfoMixIn
 ---@return boolean true if there is a UfoProxy on the thing
 function UfoProxy:isOn(thing)
-    if thing:isA(BlizActionBarButton) then
+    if not thing then
+        return false
+    elseif thing:isA(BlizActionBarButton) then
         return self:isOnBtn(thing)
     elseif thing:isA(ButtonDef) then
         return self:isOnBtnDef(thing)

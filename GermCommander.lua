@@ -16,7 +16,7 @@ local zebug = Zebug:new(Zebug.TRACE)
 ---@field updatingAll boolean true when updateAllGerms() is making a LOT of noise
 GermCommander = { }
 
----@alias BtnSlotId number
+---@alias BtnSlotIndex number
 
 -------------------------------------------------------------------------------
 -- Data
@@ -97,13 +97,15 @@ function GermCommander:forEachGermWithFlyoutId(flyoutId, func, event)
     self:forEachGermIf(func, fun, event)
 end
 
+local oopsEvent = Event:new("oops!","last arg needs to be an event")
+
 ---@param opFunction fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
 ---@param fitnessFunc fun(germ:Germ) a function that will return true if the germ in question should be included in the operation
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:forEachGermIf(opFunction, fitnessFunc, event)
     assert(isFunction(opFunction), 'must provide a "opFunction(Germ)" ')
     assert(isFunction(fitnessFunc), 'must provide a "fitnessFunc(Germ)" ')
-    event = event or Event:new("oops!","last arg needs to be an event")
+    event = event or oopsEvent
     for _, germ in pairs(germs) do
         if fitnessFunc(germ, event) then
             zebug.trace:event(event):owner(germ):line(8,"MATCH!")
@@ -118,7 +120,7 @@ end
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:forEachPlacement(func, event)
     -- this is probably equivalent to forEachActiveGerm()
-    local placements = Spec:getPlacementConfigForCurrentSpec()
+    local placements = Spec:getCurrentSpecPlacementConfig()
     for btnSlotIndex, flyoutId in pairs(placements) do
         func(btnSlotIndex, flyoutId, event)
     end
@@ -130,13 +132,7 @@ function GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
     --if isInCombatLockdown("Reconfiguring") then return end
     zebug.info:event(event):print("updating all Germs with",FlyoutDefsDb:get(flyoutId))
 
-    self:forEachPlacement(function(btnSlotIndex, flyoutIdForGermInThisSlot)
-        if flyoutIdForGermInThisSlot == flyoutId then
-            local germ = self:recallGerm(btnSlotIndex)
-            zebug.info:event(event):print("updating",germ, "in btnSlotIndex", btnSlotIndex)
-            self:updateBtnSlot(btnSlotIndex, flyoutId, event)
-        end
-    end)
+    self:forEachGermWithFlyoutId(flyoutId, Germ.updateDuh, event)
 end
 
 -- go through all placements saved in the DB.
@@ -212,7 +208,7 @@ function GermCommander:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
     --if isInCombatLockdown("Reconfiguring") then return end
 
     if not flyoutId then
-        local placements = Spec:getPlacementConfigForCurrentSpec()
+        local placements = Spec:getCurrentSpecPlacementConfig()
         flyoutId = placements[btnSlotIndex]
     end
 
@@ -363,7 +359,7 @@ function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlo
     end
 end
 
----@param btn number | BlizActionBarButton
+---@param btn BtnSlotIndex | BlizActionBarButton
 ---@param germ GERM_TYPE
 function GermCommander:eraseUfoFrom(btn, germ, event)
     local btnSlotIndex
@@ -388,13 +384,13 @@ function GermCommander:savePlacement(btnSlotIndex, flyoutId, event)
     btnSlotIndex = tonumber(btnSlotIndex)
     flyoutId = FlyoutDefsDb:validateFlyoutId(flyoutId)
     zebug.info:event(event):print("btnSlotIndex",btnSlotIndex, "flyoutId",flyLabel(flyoutId))
-    Spec:getPlacementConfigForCurrentSpec()[btnSlotIndex] = flyoutId
+    Spec:getCurrentSpecPlacementConfig()[btnSlotIndex] = flyoutId
 end
 
 function GermCommander:forgetPlacement(btnSlotIndex, event)
     btnSlotIndex = tonumber(btnSlotIndex)
     --local flyoutId = Spec:getUfoFlyoutIdForSlot(btnSlotIndex)
-    local placements = Spec:getPlacementConfigForCurrentSpec()
+    local placements = Spec:getCurrentSpecPlacementConfig()
     local flyoutId = placements[btnSlotIndex]
     if flyoutId then
         zebug.info:event(event):print("DELETING PLACEMENT btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId, "for", flyLabel(flyoutId))
@@ -507,22 +503,19 @@ function GermCommander:ensureAllGermsHavePlaceholders(event)
 end
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
-function GermCommander:changeSpec_WORK_IN_PORGRESS(event)
+function GermCommander:changeSpec(event)
+    -- clobber any UFOs that exist in the old spec but not the new one
     ---@type Placements
-    local oldPlacements = Spec:getPlacementConfigForPreviousSpec()
+    local oldPlacements = Spec:getPreviousSpecPlacementConfig()
+    local newPlacements = Spec:getCurrentSpecPlacementConfig()
+    for btnSlotIndex, flyoutId in pairs(oldPlacements) do
+        local inNewConfig =  newPlacements[btnSlotIndex]
+        if not inNewConfig then
+            self:eraseUfoFrom(btnSlotIndex, nil, event)
+        end
+    end
 
-    -- clear any germs that aren't being used in the new spec
-    self:forEachActiveGerm(
-        function(germ)
-            if not oldPlacements[germ.btnSlotIndex] then
-                germ:clearAndDisable(event)
-            end
-        end,
-        event
-    )
-
-    -- TODO go through the new config and activate germs for each placement
-
+    self:initializeAllSlots(event)
 end
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
@@ -534,11 +527,14 @@ function GermCommander:notifyAllGermsWithItems(event)
     self:forEachGermIf(opFunc, Germ.hasItemsAndIsActive, event)
 end
 
+--[[
+-- unused atm
 function GermCommander:handleEventPetChanged(event)
     -- TODO: be a little less NUKEy... create an index of which flyouts contain pets
     FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.invalidateCache)
     self:updateAllSlots(event) -- change to updateSomeGerms(fitnessFunc)
 end
+]]
 
 function GermCommander:handleEventMacrosChanged(event)
     -- TODO: be a little less NUKEy... create an index of which flyouts contain macros

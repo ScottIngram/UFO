@@ -30,40 +30,36 @@ end
 
 -- keep track of spec changes so getConfigForSpec() can initialize a brand new config based on the old one
 function Spec:recordCurrentSpec()
-    local hasChanged
     local newSpec = self:getSpecId()
-    zebug.trace:print("recordCurrentSpec()", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
-    if currentSpec ~= newSpec then
-        local debugLabel = currentSpec and "REASSIGNED" or "Initialized"
+    local hasChanged = newSpec ~= currentSpec
+    zebug.trace:print("hasChanged",hasChanged, "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
+    if hasChanged then
         previousSpec = currentSpec
         currentSpec = newSpec
-        zebug.trace:print(debugLabel, "->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
-        hasChanged = true
-    else
-        zebug.trace:print("unchanged ->", "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
-        hasChanged = false
     end
+
     return hasChanged
 end
 
 function Spec:getUfoFlyoutIdForSlot(btnSlotIndex)
-    return Spec:getPlacementConfigForCurrentSpec()[btnSlotIndex]
+    return Spec:getCurrentSpecPlacementConfig()[btnSlotIndex]
 end
 
 ---@return Placements
-function Spec:getPlacementConfigForPreviousSpec()
-    return self:getConfigForSpec(previousSpec)
+function Spec:getPreviousSpecPlacementConfig()
+    self:recordCurrentSpec()
+    return self:getPlacementConfig(previousSpec)
 end
 
 ---@return Placements
-function Spec:getPlacementConfigForCurrentSpec()
+function Spec:getCurrentSpecPlacementConfig()
     self:recordCurrentSpec()
     local specId = self:getSpecId()
-    return self:getConfigForSpec(specId)
+    return self:getPlacementConfig(specId)
 end
 
 ---@return Placements
-function Spec:getConfigForSpec(specId)
+function Spec:getPlacementConfig(specId)
     -- the placement of flyouts on the action bars changes from spec to spec
     local placementsForAllSpecs = DB:getAllSpecsPlacementsConfig()
     assert(placementsForAllSpecs, ADDON_NAME..": Oops!  placements config is nil")
@@ -77,7 +73,7 @@ function Spec:getConfigForSpec(specId)
             placementsForTheSpec = {}
         else
             -- initialize the new config based on the old one
-            placementsForTheSpec = deepcopy(self:getConfigForSpec(previousSpec))
+            placementsForTheSpec = deepcopy(self:getPlacementConfig(previousSpec))
             zebug:line(7, "COPYING specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "initialConfig", "result 1b", placementsForTheSpec)
         end
         placementsForAllSpecs[specId] = placementsForTheSpec

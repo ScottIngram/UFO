@@ -99,7 +99,7 @@ function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(id, me, eventCounter)
     --if isInCombatLockdownQuiet("Ignoring event PLAYER_SPECIALIZATION_CHANGED because it") then return end
     local event = Event:new("Ufo", me, eventCounter)
     zebug.info:mCircle():name("handler"):runEvent(event, function()
-        GermCommander:updateAllSlots(event)   -- change to handleChangeSpec() aka updateAllGermsANDallSlots()
+        GermCommander:changeSpec(event)
     end)
 end
 
