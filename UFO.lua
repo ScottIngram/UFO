@@ -105,6 +105,24 @@ function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(id, me, eventCounter)
     end)
 end
 
+--[[
+function EventHandlers:EDIT_MODE_LAYOUTS_UPDATED(layoutInfo, me, eventCounter)
+    local event = Event:new("Ufo", me, eventCounter)
+    zebug.info:mCircle():name("handler"):runEvent(event, function()
+        --GermCommander:changeSpec(event)
+        zebug:dumpy("layoutInfo",layoutInfo)
+    end)
+end
+]]
+
+-- TODO when action bars change direction update their UFOs to match.
+EventRegistry:RegisterCallback("EditMode.Exit", function()
+    local event = Event:new("Ufo", "EditMode.Exit")
+    zebug.info:mark(Mark.INFO):name("handler"):runEvent(event, function()
+    end)
+end, "UFO")
+
+
 function EventHandlers:UPDATE_MACROS(me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     --if isInCombatLockdownQuiet("Ignoring event UPDATE_MACROS because it") then return end
