@@ -46,6 +46,8 @@ function Placeholder:createIfNotExists(event)
         zebug.info:event(event):print("name",PLACEHOLDER_MACRO_NAME, "icon",icon, "PLACEHOLDER_MACRO_TEXT", PLACEHOLDER_MACRO_TEXT)
         Ufo.thatWasMeThatDidThatMacro = event
         CreateMacro(PLACEHOLDER_MACRO_NAME, icon, PLACEHOLDER_MACRO_TEXT)
+    else
+        zebug.info:event(event):print("placeholder exists",PLACEHOLDER_MACRO_NAME)
     end
 end
 
@@ -68,7 +70,7 @@ function Placeholder:put(btnSlotIndex, event)
     Ufo.droppedPlaceholderOntoActionBar = event or true
 
     -- preserve the current contents of the cursor
-    local crsDef = ButtonDef:getFromCursor(event)
+    local thingWasOnCursor = ButtonDef:getFromCursor(event)
 
     -- clobber anything on the cursor and replace it with the placeholder
     self:pickup(event)
@@ -80,13 +82,12 @@ function Placeholder:put(btnSlotIndex, event)
 
     local nowCursor = ButtonDef:getFromCursor(event)
     -- restore anything that had originally been on the cursor
-    if crsDef then
-        zebug.info:event(event):print("restoring original cursor to",crsDef, "which replaces nowCursor",nowCursor)
-        crsDef:pickupToCursor(event)
-        nowCursor = crsDef
-        --GermCommander:updateAll(eventId.."+putPlaceholder()") -- draw the dropped UFO -- TODO: update ONLY the one specific germ.
+    if thingWasOnCursor then
+        zebug.info:event(event):print("restoring original cursor to", thingWasOnCursor, "which replaces nowCursor",nowCursor)
+        thingWasOnCursor:pickupToCursor(event)
+        nowCursor = thingWasOnCursor
     else
-        zebug.info:event(event):print("nothing was originally on the cursor to",crsDef, "but it's currently nowCursor",nowCursor)
+        zebug.info:event(event):mark(Mark.FIRE):print("NOTHING was originally on the cursor to", thingWasOnCursor, "and it's currently nowCursor",nowCursor)
     end
 
     return nowCursor

@@ -224,11 +224,7 @@ function GermCommander:updateBtnSlot(btnSlotIndex, flyoutId, eventId)
         end
         germ:update(flyoutId, eventId)
         germ:doKeybinding()
-        if Config.opts.usePlaceHolders then
-            if not Placeholder:isOnBtnSlot(btnSlotIndex, eventId) then
-                Placeholder:put(btnSlotIndex, eventId)
-            end
-        end
+        germ:putPlaceHolder(event)
     else
         -- because one toon can delete a flyout while other toons still have it on their bars
         -- also, this routine is invoked when the user deletes a UFO from the catalog
@@ -476,12 +472,11 @@ function GermCommander:putUfoOntoActionBar(btnSlotIndex, flyoutId, event)
     assert(flyoutDef, "no config exists for the specified flyoutId")
 
     self:savePlacement(btnSlotIndex, flyoutId, event)
-    if Config.opts.usePlaceHolders then
-        local clobberedBtnDef = Placeholder:put(btnSlotIndex, event)
-        if UfoProxy:isOn(clobberedBtnDef) then
-            zebug.info:event(event):print("clearing the re-picked-up UfoProxy from the cursor", clobberedBtnDef)
-            Cursor:clear(event)
-        end
+
+    local clobberedBtnDef = Placeholder:put(btnSlotIndex, event)
+    if UfoProxy:isOn(clobberedBtnDef) then
+        zebug.info:event(event):print("clearing the re-picked-up UfoProxy from the cursor", clobberedBtnDef)
+        Cursor:clear(event)
     end
     local germ = self:recallGerm(btnSlotIndex)
     if not germ then

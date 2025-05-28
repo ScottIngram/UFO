@@ -60,8 +60,8 @@ BlizGlobalEventsListener:register(UfoProxy, EventHandlers)
 -- Methods
 -------------------------------------------------------------------------------
 
-function getMacroIndexByNameOrNil()
-    local proxyMacroId = GetMacroIndexByName(PROXY_MACRO_NAME) -- omfg, BLiz.  Returns 0 not nil if the macro does not exist. JFC
+function getMacroIndexByNameOrNil(name)
+    local proxyMacroId = GetMacroIndexByName(name) -- omfg, BLiz.  Returns 0 not nil if the macro does not exist. JFC
     local proxyExists = proxyMacroId and proxyMacroId > 0
     return proxyExists and proxyMacroId or nil
 end
