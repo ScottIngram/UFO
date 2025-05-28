@@ -47,6 +47,7 @@ function FlyoutDef:oneOfUs(self)
     function privateCache:setAlreadyCoercedMyButtons() privateCache.alreadyCoercedMyButtons = true end
     function privateCache:_cacheUsableFlyoutDef(usableFlyoutDef) privateCache.cachedUsableFlyoutDef = usableFlyoutDef end
     function privateCache:cacheHasItem(hasItem) privateCache._hasItem = hasItem end
+    function privateCache:cacheHasMacro(hasMacro) privateCache._hasMacro = hasMacro end
 
     -- tie the privateData table to the FlyoutDef class definition
     setmetatable(privateCache, { __index = FlyoutDef })
@@ -108,6 +109,7 @@ function FlyoutDef:invalidateCache()
     self:setModStamp()
     self:_cacheUsableFlyoutDef(nil) -- always clear the filtered copy when the base changes
     self:cacheHasItem(nil)
+    self:cacheHasMacro(nil)
     zebug.trace:owner(self):print("clearing cache... after",self._hasItem)
 end
 
@@ -270,7 +272,22 @@ function FlyoutDef:hasItem()
             end
         end)
     else
-        zebug.warn:owner(self):print("using cached val of", self._hasItem)
+        zebug.warn:owner(self):print("using cached _hasItem val of", self._hasItem)
     end
     return self._hasItem
+end
+
+function FlyoutDef:hasIMacro()
+    if self._hasMacro == nil then
+        ---@param btnDef ButtonDef
+        self:forEachBtn(function(btnDef)
+            if btnDef.type == ButtonType.MACRO then
+                zebug.warn:owner(self):print("found a macro!", btnDef.name)
+                self._hasMacro = true
+            end
+        end)
+    else
+        zebug.warn:owner(self):print("using cached _hasMacro val of", self._hasMacro)
+    end
+    return self._hasMacro
 end

@@ -46,6 +46,10 @@ function FlyoutDefsDb:forEachFlyoutDef(callback)
     end
 end
 
+function FlyoutDefsDb:clearCaches()
+    self:forEachFlyoutDef(FlyoutDef.invalidateCache)
+end
+
 function FlyoutDefsDb:getAll()
     zebug.trace:out(30,"=")
     local allFlyouts = DB:getFlyoutDefs()

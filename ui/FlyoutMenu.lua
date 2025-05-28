@@ -9,7 +9,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:getSharedByName("GERMS_FLYOUTS_BUTTONS")
+local zebug = Zebug:new(Zebug.INFO)
 
 ---@class FlyoutMenu : UfoMixIn
 ---@field ufoType string The classname
@@ -72,6 +72,11 @@ function FlyoutMenu:getButtonFrame(i)
     return _G[ self:GetName().."_Button"..i ]
 end
 
+function FlyoutMenu:close()
+    -- TAINT / not secure ?
+    self:Hide() -- does this trigger ON_HIDE ?
+end
+
 function FlyoutMenu:getBtnKids()
     -- eliminate the non-button UI element "Background" defined in ui.xml
     -- sometimes (during combat) it's already excluded from GetChildren() so... we have to jump through extra hoops
@@ -86,10 +91,10 @@ function FlyoutMenu:getBtnKids()
     return btnKids
 end
 
-function FlyoutMenu:forEachButton(handler)
+function FlyoutMenu:forEachButton(handler, event)
     for i, button in ipairs(self:getBtnKids()) do
         if button.ufoType == ButtonOnFlyoutMenu.ufoType then
-            handler(button,i)
+            handler(button,event)
         end
     end
 end
@@ -144,39 +149,21 @@ function FlyoutMenu:setId(flyoutId)
     self.flyoutId = flyoutId
 end
 
-function FlyoutMenu:idOrDie(flyoutId)
-    if self == FlyoutMenu then
-        assert(flyoutId, ADDON_NAME..": You must provide the flyoutId when invoking this as a CLASS method.")
-    else
-        flyoutId = self:getId()
-        assert(flyoutId, ADDON_NAME..": This FlyoutMenu has not been assigned an id / flyoutId.")
-    end
-    return flyoutId
-end
-
--- TODO - delete this - it's moved to GermCommander:copyFlyoutToCursor()
--- when the user picks up a flyout from the catalog (or a germ from the actionbars?)
--- we need a draggable UI element, so create a dummy macro with the same icon as the flyout
---[[
-function FlyoutMenu:pickup(flyoutId)
-    if isInCombatLockdown("Drag and drop") then return; end
-
-    flyoutId = self:idOrDie(flyoutId)
-
-    local flyoutConf = FlyoutDefsDb:get(flyoutId)
-    local icon = flyoutConf:getIcon()
-    local proxy = UfoProxy:new(flyoutId, icon)
-    PickupMacro(proxy)
-end
-]]
-
 ---@return FlyoutDef
-function FlyoutMenu:getDef(flyoutId)
-    flyoutId = self:idOrDie(flyoutId)
-    return FlyoutDefsDb:get(flyoutId)
+function FlyoutMenu:getDef()
+    return FlyoutDefsDb:get(self.flyoutId)
 end
 
--- TODO: merge updateForCatalog() and updateForGerm()
+
+
+
+
+
+
+
+
+
+-- TODO: merge updateForCatalog() and updateForGerm() -- fix updates
 ---@param flyoutId string
 function FlyoutMenu:updateForCatalog(flyoutId, event)
     self.enableTwinkle = true
@@ -242,11 +229,12 @@ function FlyoutMenu:updateForCatalog(flyoutId, event)
     self:SetHeight(prevButton:GetHeight())
     self:SetWidth((prevButton:GetWidth()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
 
-    self:setBorderGeometry()
+    self:setBorderFrameGeometry()
 end
 
--- TODO: split into an initialize VS update
--- perhaps defer subsequent updates to the toggle() and only update just before it becomes visible
+-- TODO: split into
+-- * initialize (changes to flyoutId or flyoutDef)
+-- * doUpdate (changes to the game state -- cooldowns, item counts, etc.)
 
 ---@param germ Germ
 function FlyoutMenu:updateForGerm(germ, event)
@@ -254,13 +242,14 @@ function FlyoutMenu:updateForGerm(germ, event)
     self.direction = germ:getDirection()
     local flyoutId = germ:getFlyoutId()
     self:setId(flyoutId)
-    local flyoutDef = self:getDef(flyoutId)
+    local flyoutDef = self:getDef()
     zebug.trace:event(event):owner(self):dumpy("flyoutDef",flyoutDef)
     local usableFlyout = flyoutDef:filterOutUnusable()
     local btnNumber = 0
 
     ---@param btnFrame BOFM_TYPE
-    self:forEachButton(function(btnFrame, i)
+    self:forEachButton(function(btnFrame)
+        local i = btnFrame:GetID()
         local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef, event)
         zebug.trace:event(event):owner(self):print("i",i, "btnDef", btnDef)
@@ -291,7 +280,7 @@ function FlyoutMenu:updateForGerm(germ, event)
     end
 
     germ:SetAttribute("UFO_FLYOUT_MOD_TIME", flyoutDef:getModStamp())
-    self:setBorderGeometry()
+    self:setBorderFrameGeometry()
 end
 
 function updateHotKeyLabel(btnFrame, btnNumber)
@@ -304,7 +293,7 @@ function updateHotKeyLabel(btnFrame, btnNumber)
     btnFrame.HotKey:SetText(hotKeyLabel)
 end
 
-function FlyoutMenu:setBorderGeometry()
+function FlyoutMenu:setBorderFrameGeometry()
     local bg = self.Background
     local distance = 3
     local dir = self.direction
@@ -393,9 +382,9 @@ end
 ---@param btnIndex number
 function FlyoutMenu:addBtnAt(btnDef, btnIndex)
     local flyoutDef = self:getDef()
-    flyoutDef:replaceButton(btnIndex, btnDef) -- TODO - repects displace
+    flyoutDef:replaceButton(btnIndex, btnDef) -- TODO - respects displace
     self:updateForCatalog(self.flyoutId, "FlyoutMenu:addBtnAt()")
-    GermCommander:updateGermsThatHaveFlyoutIdOf(self.flyoutId, "FlyoutMenu:addBtnAt")
+    GermCommander:notifyOfChangeToFlyoutDef(self.flyoutId, "FlyoutMenu:addBtnAt")
 end
 
 function FlyoutMenu:isMouseOverMeOrKids()
@@ -449,11 +438,12 @@ function FlyoutMenu:onLoadForCatalog()
     -- initialize fields
     Catalog.flyoutMenu = self
     self.isForCatalog = true
-    self:forEachButton(ButtonOnFlyoutMenu.installExcluder)
+    self:forEachButton(ButtonOnFlyoutMenu.installExcluder, Event:new(self, "on-load-for-catalog"))
 end
 
-function FlyoutMenu:updateAllBtnCooldownsEtc()
-    self:forEachButton(ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc)
+function FlyoutMenu:updateAllBtnCooldownsEtc(event)
+    if not self:IsShown() then return end
+    self:forEachButton(ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc, event)
 end
 
 function FlyoutMenu:FOR_DEMO_PURPOSES_ONLY()

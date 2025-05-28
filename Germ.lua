@@ -13,7 +13,7 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-local zebug = Zebug:new(Zebug.TRACE)
+local zebug = Zebug:new(Zebug.INFO)
 
 ---@alias GERM_INHERITANCE UfoMixIn | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Button | Frame | ScriptObject
 ---@alias GERM_TYPE Germ | GERM_INHERITANCE
@@ -30,7 +30,7 @@ local zebug = Zebug:new(Zebug.TRACE)
 ---@type GERM_TYPE | Germ
 Germ = {
     ufoType = "Germ",
-    clickScriptUpdaters = {},
+    --clickScriptUpdaters = {},
     clickers = {},
 }
 UfoMixIn:mixInto(Germ)
@@ -60,6 +60,7 @@ local HANDLER_MAKERS_MAP
 local GERM_UI_NAME_PREFIX = "UfoGerm"
 local CLICK_ID_MARKER = "-- CLICK_ID_MARKER:"
 local LEN_CLICK_ID_MARKER = string.len(CLICK_ID_MARKER)
+local MAX_FREQ_UPDATE = 0.2
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -88,7 +89,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     -- any-time set whenever the config changes --
     self.flyoutId     = flyoutId
-    self.label        = self:getFlyoutDef().name -- TODO remove?
+    --self.label        = self:getFlyoutDef().name -- TODO remove?
 
     -- manipulate methods
     self:installMyToString() -- do this as soon as possible for the sake of debugging output
@@ -96,19 +97,17 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self.clearAndDisable = Pacifier:pacify(self, "clearAndDisable")
 
     -- install event handlers
-    --self:SetScript(Script.ON_UPDATE,       Throttler:throttleAndNoQueue(MAX_FREQ_UPDATE, self, ScriptHandlers.ON_UPDATE))
+    self:HookScript(Script.ON_HIDE,        function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable() or on a spec change which throws away placeholders
+    self:SetScript(Script.ON_UPDATE,       Throttler:throttleAndNoQueue(MAX_FREQ_UPDATE, self, ScriptHandlers.ON_UPDATE))
     self:SetScript(Script.ON_ENTER,        ScriptHandlers.ON_ENTER)
     self:SetScript(Script.ON_LEAVE,        ScriptHandlers.ON_LEAVE)
     self:SetScript(Script.ON_RECEIVE_DRAG, ScriptHandlers.ON_RECEIVE_DRAG)
     self:SetScript(Script.ON_MOUSE_DOWN,   ScriptHandlers.ON_MOUSE_DOWN)
     self:SetScript(Script.ON_MOUSE_UP,     ScriptHandlers.ON_MOUSE_UP) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
     self:SetScript(Script.ON_DRAG_START,   ScriptHandlers.ON_DRAG_START) -- this is required to get OnDrag to work
-    self:HookScript(Script.ON_HIDE,        function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable() or on a spec change which throws away placeholders
     self:SetScript(Script.ON_EVENT,        ScriptHandlers.ON_EVENT) -- also do a RegisterEvent
 
     self:registerForBlizUiActions(event)
-    --self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
-    --self:RegisterForDrag("LeftButton")
 
     -- UI positioning
     self:ClearAllPoints()
@@ -123,25 +122,61 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     -- bind me to my action bar slot's keybindings (if any)
     self:doKeybinding()
 
+    -- stolen from :update()
+    self:SetAttribute("UFO_NAME",  self.label)
+    self:copyDoCloseOnClickConfigValToAttribute()
+
+    self:initGoGoGoGoGo(event)
+
     return self
 end
 
-local s = function(v) return v or "nil"  end
-local shorties = {}
-local function shortName(s)
-    if not s then return end
-    if not shorties[s] then
-        shorties[s] = string.sub(s,1,10)
-    end
-    return shorties[s]
+function Germ:initGoGoGoGoGo(event)
+    ---@type GERM_TYPE
+    local self = self
+
+    self:UpdateArrowTexture()
+    self:UpdateArrowRotation() -- VOLATILE if action bar changes direction... and maybe changes when open/closed
+    self:UpdateArrowPosition() -- VOLATILE if action bar changes direction
+    self:UpdateBorderShadow()
+
+    -- set the Germ's icon so that it reflects only USABLE buttons
+    -- VOLATILE
+    local icon = self:getIcon()
+    self:setIcon(icon, event)
+    self.Name:SetText(self.label)
+
 end
-function Germ:toString()
-    if not self.flyoutId then
-        return "<Germ: EMPTY>"
-    else
-        local icon = self:getIcon()
-        return string.format("<Germ: |T%d:0|t %s>", icon, shortName(self.label) or "UnKnOwN")
-    end
+
+function Germ:doUpdate(event)
+    if self:isInactive(event) then return end
+
+    self:UpdateArrowRotation() -- VOLATILE if action bar changes direction... and changes when open/closed
+
+    self:updateCooldownsAndCountsAndStatesEtc(event) -- TODO: v11.1 verify this is working properly.  do I need to do more? -- What happens if I remove this?
+    self.flyoutMenu:updateAllBtnCooldownsEtc(event)
+end
+
+function Germ:notifyOfChangeToFlyoutDef(event)
+    self:closeFlyout() -- in case the number of buttons changed?
+    self:applyFlyoutDef(event)
+end
+
+function Germ:applyFlyoutDef(event)
+    --self:update(self.flyoutId, event)
+
+    -- icon may change based on 1st usable button
+    -- Btn1Clicker may change based on 1st usable button or an override icon
+    -- name might change
+
+    local icon = self:getIcon()
+    self:setIcon(icon, event)
+    self.Name:SetText(self:getLabel())
+    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event) -- depends on initFlyoutMenu() above
+
+    self.flyoutMenu:updateForGerm(self, event)
+
+
 end
 
 function Germ:getName()
@@ -167,12 +202,24 @@ function Germ:getFlyoutId()
 end
 
 function Germ:isActive(event)
-    zebug.trace:event(event or "UnKnOwN"):owner(self):print("am I active?", self.flyoutId and true or false)
+    --zebug.trace:event(event or "UnKnOwN"):owner(self):print("am I active?", self.flyoutId and true or false)
     return self.flyoutId and true or false
+end
+
+function Germ:isInactive(event)
+    return not (self.flyoutId and true or false)
 end
 
 function Germ:hasItemsAndIsActive()
     return self:isActive() and self:getFlyoutDef():hasItem()
+end
+
+function Germ:hasMacrosAndIsActive()
+    return self:isActive() and self:getFlyoutDef():hasIMacro()
+end
+
+function Germ:hasFlyoutId(flyoutId)
+    return self:getFlyoutId() == flyoutId
 end
 
 ---@return string
@@ -187,18 +234,17 @@ function Germ:getIcon()
     return usableFlyout:getIcon() or flyoutDef.fallbackIcon or DEFAULT_ICON
 end
 
+function Germ:doIcon(event)
+    local icon = self:getIcon()
+    self:setIcon(icon, event)
+end
+
 function Germ:initFlyoutMenu(event)
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu:new(self)
         zebug.info:event(event):line("20","initFlyoutMenu",self.flyoutMenu)
         self.flyoutMenu:updateForGerm(self, event)
         self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
-
-        -- now in the XML
-        --self.flyoutMenu:SetFrameStrata(STRATA_DEFAULT)
-        --self.flyoutMenu:SetFrameLevel(STRATA_LEVEL_DEFAULT)
-        --self.flyoutMenu:SetToplevel(true)
-
     else
         self.flyoutMenu = UFO_FlyoutMenuForGerm
     end
@@ -218,67 +264,49 @@ function Germ:setVisibilityDriver(visibleIf)
 end
 
 function Germ:closeFlyout()
-    -- TAINT / not secure ?
-    self.flyoutMenu:Hide()
+    self.flyoutMenu:close()
 end
 
 -- will replace Germ:Hide() via Germ:new()
 -- TODO is this serving the same purpose as clearAndDisable ?
-function Germ:hide()
-    --zebug.error:dumpy(self:getLabel(), debugstack())
+function Germ:hide(event)
     --VisibleRegion:Hide(self) -- L-O-FUCKING-L this threw  "attempt to index global 'VisibleRegion' (a nil value)" was called from SecureStateDriver.lua:103
-    zebug.warn:owner(self):print("hiding.  self",self, "parent", self:GetParent())
+    zebug.warn:event(event or "Blizz-Call"):owner(self):print("hiding.")
     UnregisterStateDriver(self, "visibility")
     self:originalHide()
 end
 
--- TODO: decide if I need to put all of this into an OnHide handler
 function Germ:clearAndDisable(event)
+    if self:isInactive(event) then return end
+
     zebug.info:event(event):owner(self):print("DISABLE GERM :-(")
     self:closeFlyout()
-    self:hide()
+    self:hide(event)
     self:clearKeybinding()
     self:setVisibilityDriver(nil) -- must be restored if Germ comes back -- TODO: move into registerForBlizUiActions() ?
-    self.flyoutId = nil
-    self.label = nil
-    self.isConfigChanged = true
-
     self:unregisterForBlizUiActions()
     self:Disable() -- replaces all (well, most) of the above?
-    self:SetEnabled(false) -- equiv?
+    self.flyoutId = nil
+    self.label = nil
 end
 
 function Germ:changeFlyoutIdAndEnable(flyoutId, event)
     if flyoutId == self.flyoutId then
-        zebug.trace:event(event):print("Um, that's the same flyoutId as before",flyoutId)
+        zebug.trace:event(event):owner(self):print("Um, that's the same flyoutId as before",flyoutId)
         return
     end
 
     self.flyoutId = flyoutId
     zebug.info:event(event):owner(self):print("EnAbLe GeRm :-)")
 
-    self.isConfigChanged = true
     self:closeFlyout()
-    self.flyoutId = flyoutId
+    self:doIcon(event)
     self.flyoutMenu:updateForGerm(self, event)
     self:registerForBlizUiActions(event)
-    -- bind me to my action bar slot's keybindings (if any)
     self:doKeybinding()
     self:Show()
-    self:update(flyoutId, event) -- handles icon change and um... the kitchen sink?  Working on reducing the sink.  and consolidating this with GermCommander:update()
-
-    -- change any/everything
-    -- go analyze the update() etc in Germ *AND* GermCommander
-
-    -- the btn1 may need to change
-    -- the clickers
-    -- the flyout
-    -- the flyoutDef
-
-    self.isConfigChanged = false
-
+    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event) -- depends on initFlyoutMenu() above
     self:Enable()
-    --self:SetEnabled(true) -- equiv?
 end
 
 function Germ:pickupFromSlotAndClear(event)
@@ -308,7 +336,6 @@ function Germ:pickupFromSlotAndClear(event)
     end
 
     UfoProxy:pickupUfoOntoCursor(pickingUpThisFlyoutId, event)
-    --GermCommander:updateAll(eventId)
 end
 
 --[[
@@ -331,9 +358,6 @@ end
 ]]
 
 function Germ:getDirection()
-    -- Germ == ActionButton
-    --return self.bar:GetSpellFlyoutDirection()
-
     -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
     -- ask the bar instance what direction to fly
     -- removed for Germ == ActionButton
@@ -345,9 +369,24 @@ function Germ:updateAllBtnHotKeyLabels(event)
     self.flyoutMenu:updateForGerm(self, event)
 end
 
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+---@return ButtonDef whatever was on btnSlotIndex before it got clobbered by the Placeholder
+--[[
+function Germ:putPlaceHolder(event)
+    --if self:isInactive(event) then return end
+    if Config.opts.usePlaceHolders then
+        if not Placeholder:isOnBtnSlot(self.btnSlotIndex, event) then
+            return Placeholder:put(self.btnSlotIndex, event)
+        end
+    end
+end
+]]
+
+--[[
 local maxUpdateFrequency = 0.5
 
 -- TODO: rename and refactor - split into init and update - leverage setFlyoutId() - update new() so it does everything required
+-- split into "config" and "draw"
 function Germ:update(flyoutId, event)
     self.flyoutId = flyoutId
     self:getLabel() -- update the stashed self.myLabel - TODO: eliminate cheese!
@@ -366,10 +405,13 @@ function Germ:update(flyoutId, event)
 
     self.throttledUpdate:exe(event)
 end
+]]
 
--- TODO v11.1 - figure out what all actually needs to be updated under which circumstances
+-- TODO v11.1 - figure out what all actually needs to be updated under which circumstances !!!
+-- split into "config" and "draw"
+--[[
 function Germ:_secretUpdate(event, amDelayed)
-    if not self:isActive(event) then
+    if self:isInactive(event) then
         zebug.warn:event(event):name("_secretUpdate"):owner(self):print("I am limited.  Because I have  nodes.")
         return
     end
@@ -398,6 +440,7 @@ function Germ:_secretUpdate(event, amDelayed)
     local usableFlyout = flyoutDef:filterOutUnusable()
 
     -- set the Germ's icon so that it reflects only USABLE buttons
+    -- VOLATILE
     local icon = self:getIcon()
     self:setIcon(icon, event)
 
@@ -426,8 +469,8 @@ function Germ:_secretUpdate(event, amDelayed)
         -- removed this because I think it's good enough to do it only in new()
         --self:setVisibilityDriver() -- TODO: remove after we stop sledge hammering all the germs every time
 
-        self:SetAttribute("UFO_NAME",  self.label)
-        self:copyDoCloseOnClickConfigValToAttribute()
+        self:SetAttribute("UFO_NAME",  self.label) -- moved this to new() - TODO: remove
+        self:copyDoCloseOnClickConfigValToAttribute() -- moved this to new() - TODO: remove
         local lastClickerUpdate = self.clickersLastUpdate or 0
 
         if self:getFlyoutDef():isModNewerThan(lastClickerUpdate) then
@@ -439,21 +482,11 @@ function Germ:_secretUpdate(event, amDelayed)
         self.clickersLastUpdate = time()
 
         -- some clickers need to be re-initialized whenever the flyout's buttons change
-        self:reInitializeMySecureClickers()
-
-        -- TODO - MOVE INTO ger:changeFLyoutId() !!!
-        -- all FIRST_BTN handlers must be re-initialized after flyoutDef changes because the first button of the flyout might be different than before
-        ---@param mouseClick MouseClick
-        ---@param behavior GermClickBehavior
-        for mouseClick, behavior in pairs(self.clickers) do
-            if behavior == GermClickBehavior.FIRST_BTN then
-                local installTheBehavior = getHandlerMaker(behavior)
-                installTheBehavior(self, mouseClick, event)
-            end
-        end
+        --self:reInitializeMySecureClickers() -- no longer needed / used
 
     end)
 end
+]]
 
 function Germ:copyDoCloseOnClickConfigValToAttribute()
     -- haven't figured out why it doesn't work on the germ but does on the flyout
@@ -463,12 +496,14 @@ function Germ:copyDoCloseOnClickConfigValToAttribute()
 end
 
 
+--[[
 function Germ:reInitializeMySecureClickers()
     for secureMouseClickId, updaterScriptlet in pairs(self.clickScriptUpdaters) do
         --zebug.trace:print("germ",self.label, "i",secureMouseClickId, "updaterScriptlet",updaterScriptlet)
         SecureHandlerExecute(self, updaterScriptlet)
     end
 end
+]]
 
 function Germ:setToolTip()
     local btn1 = self.flyoutMenu:getBtn1()
@@ -507,6 +542,10 @@ end
 function Germ:getDef()
     -- treat the first button in the flyout as the "definition" for the Germ
     return self:getBtnDef(1)
+end
+
+function Germ:invalidateFlyoutCache()
+    self:getFlyoutDef():invalidateCache()
 end
 
 -------------------------------------------------------------------------------
@@ -687,44 +726,26 @@ end
 
 -------------------------------------------------------------------------------
 -- Handlers
---
--- Note: ACTIONBAR_SLOT_CHANGED will happen as a result of
--- some of the actions below which will in turn trigger other handlers elsewhere
 -------------------------------------------------------------------------------
 
-local hWidth = 50
-local counter = { } -- eventId
-function Germ:nextEventCount(eventName)
-    if not counter[eventName] then
-        counter[eventName] = 1
-    else
-        counter[eventName] = counter[eventName] + 1
-    end
-
-    return (self:getLabel() or "UnKnOwN gErM") .. eventName .. counter[eventName]
+function ScriptHandlers:ON_UPDATE(elapsed)
+    if self:isInactive() then return end
+    -- do NOT run ON_UPDATE without first wrapping it in Throttler !!!
+    zebug.trace:owner(self):runEventTerse(Event:new(self, "ON_UPDATE"), function(event)
+        local e2 = Event:new(self, "ON_UPDATE", nil, Zebug.MUTE)
+        self:doUpdate(event)
+    end)
 end
 
 -- if there is something (let's call it "foo") on the mouse pointer, then we need to disable clicks.
 -- otherwise, when the "user drags foo, releases mouse button in mid-air. foo remains on mouse pointer. user moves over a UFO.  user clicks."
 -- will fail to drop foo onto bars (foo just vanishes with only a cursor_change event) nor will it pick up the UFO
----@param self GERM_TYPE
 ---@param me string event name, literal string "CURSOR_CHANGED"
 ---@param isCursorEmpty boolean true if nothing is on the mouse pointer
 function ScriptHandlers:ON_EVENT(eventName, isCursorEmpty --[[, newCursorType, oldCursorType, oldCursorVirtualID]])
     local event = Event:new(self, Cursor:nameMakerForCursorChanged(isCursorEmpty), nil, ZEBUG_LEVEL_FOR_CURSOR_CHANGED)
     zebug.trace:mStar():runEvent(event, function()
         self:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
---[[
-        --zebug.trace:ifMe1st(self):event(event):name("handler"):owner(self):print("isDefault",isDefault, "newCursorType",newCursorType, "oldCursorType",oldCursorType, "oldCursorVirtualID",oldCursorVirtualID)
-        local enable = isCursorEmpty
-        local wut = enable and "cursor is empty so clicks are Enabled" or "cursor is occupied so clicks are IGNORED"
-        zebug.trace:ifMe1st(self):event(event):name("handler"):print(wut)
-        if enable then
-            self:RegisterForClicks("AnyDown", "AnyUp")
-        else
-            self:RegisterForClicks("Button6Down")
-        end
-]]
     end)
 end
 
@@ -738,7 +759,7 @@ function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
         else
             zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_DOWN"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
         end
-
+        self:doUpdateIfSlow(event)
     end, cursor)
 end
 
@@ -753,6 +774,7 @@ function ScriptHandlers:ON_MOUSE_UP()
         else
             zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_UP"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
         end
+        self:doUpdateIfSlow(event)
     end)
 end
 
@@ -964,7 +986,7 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
     ]=]
 
     zebug.info:owner(self):print("germ",self.label, "secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
-    self.clickScriptUpdaters[secureMouseClickId] = scriptToSetNextRandomBtn
+--    self.clickScriptUpdaters[secureMouseClickId] = scriptToSetNextRandomBtn -- this doesn't seem to actually be required
 
     -- install the script which will install the buttons which will perform the action
     SecureHandlerWrapScript(self, "OnClick", self, scriptToSetNextRandomBtn)
@@ -1227,84 +1249,27 @@ function Germ:UpdateButtonArt()
 end
 
 
+-------------------------------------------------------------------------------
+-- Awesome toString() magic
+-------------------------------------------------------------------------------
 
+local shorties = {}
 
-
-
-
-
-
-
-
-
---[[function Germ:BROKEN_new(flyoutId, btnSlotIndex, eventId)
-    local parentActionBarBtn, bbInfo = BlizActionBarButton:getButton(btnSlotIndex)
-
-    local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
-
-    ---@type GERM_TYPE | Germ
-    local self = CreateFrame(
-            FrameType.CHECK_BUTTON,
-            myName,
-            parentActionBarBtn, -- can I make the action bar instead to satisfy SecureButtonTemplate code?
-    -- including FlyoutButtonTemplate last will position the arrows but also nukes my left/right/middle click handlers
-    --"SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate, FlyoutButtonTemplate"
-    --"SecureActionButtonTemplate, ActionButtonTemplate, ActionBarButtonCodeTemplate"
-            "GermTemplate"
-    )
-
-    _G[myName] = self -- so that keybindings can reference it
-
-    -- one-time only initialization --
-
-    -- initialize my fields
-    self.myName       = myName
-    self.btnSlotIndex = btnSlotIndex
-    self.flyoutId     = flyoutId
-    self.label        = self:getFlyoutDef().name
-    self.bbInfo       = bbInfo
-
-    -- install event handlers
-    --self:SetScript(Script.ON_UPDATE,       handlers.OnUpdate)
-    --self:SetScript(Script.ON_UPDATE,       Throttler:new(handlers.OnUpdate, 1, self.label ):asFunc() )
-    self:SetScript(Script.ON_ENTER,        handlers.OnEnter)
-    self:SetScript(Script.ON_LEAVE,        handlers.OnLeave)
-    self:SetScript(Script.ON_RECEIVE_DRAG, handlers.OnReceiveDrag)
-    self:SetScript(Script.ON_MOUSE_DOWN,   handlers.OnMouseDown)
-    self:SetScript(Script.ON_MOUSE_UP,     handlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
-    self:SetScript(Script.ON_DRAG_START,   handlers.OnPickupAndDrag) -- this is required to get OnDrag to work
-    self:HookScript(Script.ON_HIDE, function(self) print('***GERM*** Script.ON_HIDE for',self:GetName(),self); end)
-
-    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId()
-
-    -- manipulate methods
-    self:installMyToString()
-    self.originalHide = self:override("Hide", self.hide)
-    self.clear = Pacifier:pacify(self, "clear")
-
-    -- UI positioning - anchor me to the action bar button
-    self:ClearAllPoints()
-    self:SetAllPoints(parentActionBarBtn)
-    --self:SetFrameStrata(STRATA_DEFAULT)
-    --self:SetFrameLevel(STRATA_LEVEL_DEFAULT)
-    --self:SetToplevel(true)
-
-    -- Behavior
-    self:setVisibilityDriver(parentActionBarBtn.btnDesc.visibleIf) -- VOLATIle
-    self:registerEventListeners()
-
-    -- FlyoutMenu
-    self:initFlyoutMenu(eventId)
-    self.flyoutMenu:installHandlerForCloseOnClick()
-    -- TODO v11.1 - wrap in exeNotInCombat() ? in case "/reload" during combat
-    self:SetAttribute("flyoutDirection", self:getDirection())
-    self:SetAttribute("FLYOUT_MENU_NAME", self.flyoutMenu:GetName())
-    self:SetAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
-
-    return self
+local function shortName(s)
+    if not s then return end
+    if not shorties[s] then
+        shorties[s] = string.sub(s,1,10)
+    end
+    return shorties[s]
 end
-]]
 
-
+function Germ:toString()
+    if not self.flyoutId then
+        return "<Germ: EMPTY>"
+    else
+        local icon = self:getIcon()
+        return string.format("<Germ: |T%d:0|t %s>", icon, shortName(self.label) or "UnKnOwN")
+    end
+end
 
 
