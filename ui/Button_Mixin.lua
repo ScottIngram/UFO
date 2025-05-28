@@ -94,7 +94,7 @@ function Button_Mixin:setIcon(icon, event)
 end
 
 -- TODO - go look at ActionBarActionButtonMixin:Update() and copy anything I'm missing
-function Button_Mixin:updateCooldownsAndCountsAndStatesEtc()
+function Button_Mixin:updateCooldownsAndCountsAndStatesEtc(event)
     -- should I call self:Update() aka ActionBarActionButtonMixin:Update() ... um, maybe I'm not an ActionBarActionButtonMixin
     local btnDef = self:getDef()
     local spellId = btnDef and btnDef.spellId
@@ -107,12 +107,12 @@ function Button_Mixin:updateCooldownsAndCountsAndStatesEtc()
         self:SetChecked(isThisTheSpell);
     end
 
-    self:updateUsable()
-    self:updateCooldown()
-    self:updateCount()
+    self:updateUsable(event)
+    self:updateCooldown(event)
+    self:updateCount(event)
 end
 
-function Button_Mixin:updateUsable()
+function Button_Mixin:updateUsable(event)
     local isUsable = true
     local notEnoughMana = false
     local btnDef = self:getDef()
@@ -137,7 +137,7 @@ function Button_Mixin:updateUsable()
             end
         end
 
-        zebug.trace:owner(self):print("isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
+        zebug.trace:event(event):owner(self):print("isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
     end
 
     local iconFrame = self:getIconFrame();
@@ -150,16 +150,16 @@ function Button_Mixin:updateUsable()
     end
 end
 
-function Button_Mixin:updateCooldown()
+function Button_Mixin:updateCooldown(event)
     local btnDef = self:getDef()
     local type = btnDef and btnDef.type
     local itemId = btnDef and btnDef.itemId
     local spellId = btnDef and btnDef.spellId
-    zebug.trace:owner(self):print("type",type, "itemId",itemId, "spellId",spellId)
+    zebug.trace:event(event):owner(self):print("type",type, "itemId",itemId, "spellId",spellId)
 
     if exists(spellId) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
-        zebug.trace:owner(self):print("spellId",spellId)
+        zebug.trace:event(event):owner(self):print("spellId",spellId)
         self.spellID = spellId --v11 -- internal Bliz code expects this field
 
         ActionButton_UpdateCooldown(self);
@@ -199,7 +199,7 @@ function Button_Mixin:updateCooldown()
         end
     end
 
-    zebug.trace:owner(self):print("type",type, "start",start, "duration",duration, "enable",enable )
+    zebug.trace:event(event):owner(self):print("type",type, "start",start, "duration",duration, "enable",enable )
 
 end
 
@@ -218,7 +218,7 @@ function OLD_CATA_SpellFlyoutButton_UpdateCount (self)
     end
 end
 
-function Button_Mixin:updateCount()
+function Button_Mixin:updateCount(event)
     local btnDef = self:getDef()
     local itemId = btnDef and btnDef.itemId
     if not itemId then return end
@@ -227,7 +227,7 @@ function Button_Mixin:updateCount()
     if not hasItem then
         local spellId = btnDef and btnDef.spellId
         if exists(spellId) then
-            zebug.trace:owner(self):print("spellID",self.spellID)
+            zebug.trace:event(event):owner(self):print("spellID",self.spellID)
             -- use Bliz's built-in handler for the stuff it understands, ie, not items
             OLD_CATA_SpellFlyoutButton_UpdateCount(self)
             -- whatabout ActionBarActionButtonMixin:UpdateCount
@@ -243,7 +243,7 @@ function Button_Mixin:updateCount()
     local includeCharges = true
     local count = C_Item.GetItemCount(itemId, includeBank, includeCharges)
     local tooMany = ( count > (self.maxDisplayCount or 9999 ) )
-    zebug.trace:owner(self):print("itemId",itemId, "hasItem",hasItem, "name",name, "itemType",itemType, "max",self.maxDisplayCount, "count",count, "tooMany",tooMany)
+    zebug.trace:event(event):owner(self):print("itemId",itemId, "hasItem",hasItem, "name",name, "itemType",itemType, "max",self.maxDisplayCount, "count",count, "tooMany",tooMany)
 
     local max = self.maxDisplayCount or 9999
     if count > max then
