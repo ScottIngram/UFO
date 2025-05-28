@@ -46,7 +46,7 @@ end
 function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    local event = Event:new(self, me, eventCounter)
+    local event = Event:new(self, me, eventCounter, ZEBUG_LEVEL_FOR_CURSOR_CHANGED)
     zebug.trace:name("handler"):runEvent(event, function()
         local cursor = Cursor:getFresh(event)
         zebug.trace:event(event):owner(cursor):print("maybe erasing UfoProxy macro")

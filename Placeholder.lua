@@ -9,7 +9,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new(Zebug.INFO)
+local zebug = Zebug:new(Zebug.TRACE)
 
 ---@class Placeholder
 Placeholder = {
@@ -27,9 +27,9 @@ local EventHandlers = { }
 
 function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    local event = Event:new(self, me, eventCounter, zebug.TRACE) -- zebug:getNoiseLevel()
+    local event = Event:new(self, me, eventCounter, ZEBUG_LEVEL_FOR_CURSOR_CHANGED) -- zebug:getNoiseLevel()
     zebug.trace:mMoon():name("handler"):runEvent(event, function()
-        Placeholder:doNotLetUserDragMe(event)
+        --Placeholder:doNotLetUserDragMe(event) -- this is more trouble than it's worth.
     end)
 end
 

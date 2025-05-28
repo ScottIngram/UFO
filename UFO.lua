@@ -23,6 +23,8 @@ local zebug = Zebug:new(Zebug.TRACE)
 
 time = GetTimePreciseSec -- fuck whole second bullshit
 
+ZEBUG_LEVEL_FOR_CURSOR_CHANGED = Zebug.MUTE -- any listeners for this event should pass this to their Event objects
+
 -- Purely to satisfy my IDE
 DB = Ufo.DB
 L10N = Ufo.L10N
