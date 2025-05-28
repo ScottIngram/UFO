@@ -32,6 +32,9 @@ GLOBAL_FlyoutMenu = FlyoutMenu
 ---@alias FM_INHERITANCE  UfoMixIn | FlyoutPopupTemplate | SecureFrameTemplate | Frame
 ---@alias FM_TYPE FlyoutMenu | FM_INHERITANCE
 
+---@type FM_TYPE for the benefit of my IDE's autocomplete
+local ScriptHandlers = {}
+
 -------------------------------------------------------------------------------
 -- Functions / Methods
 -------------------------------------------------------------------------------
@@ -44,6 +47,8 @@ function FlyoutMenu:new(germ)
     self:setId(germ:getFlyoutId())
     self:installMyToString()
     self:installHandlerForCloseOnClick()
+    self:HookScript(Script.ON_SHOW, ScriptHandlers.ON_SHOW)
+    self:HookScript(Script.ON_HIDE, ScriptHandlers.ON_HIDE)
     return self
 end
 
@@ -405,6 +410,22 @@ function FlyoutMenu:clearMouseOverKid(kid)
     if self.mouseOverKid == kid:GetName() then
         self.mouseOverKid = nil
     end
+end
+
+-------------------------------------------------------------------------------
+-- Handlers
+-------------------------------------------------------------------------------
+
+function ScriptHandlers:ON_SHOW()
+    zebug.info:mark(Mark.LOOT):owner(self):runEvent(Event:new(self, "ON_SHOW"), function(event)
+        self:updateAllBtnCooldownsEtc(event)
+    end)
+end
+
+function ScriptHandlers:ON_HIDE()
+    zebug.info:mark(Mark.NOLOOT):owner(self):runEvent(Event:new(self, "ON_HIDE"), function(event)
+
+    end)
 end
 
 -------------------------------------------------------------------------------

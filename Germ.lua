@@ -49,6 +49,7 @@ GermClickBehavior = {
 -- Data
 -------------------------------------------------------------------------------
 
+---@type GERM_TYPE for the benefit of my IDE's autocomplete
 local ScriptHandlers = {}
 local HANDLER_MAKERS_MAP
 
@@ -95,15 +96,15 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self.clearAndDisable = Pacifier:pacify(self, "clearAndDisable")
 
     -- install event handlers
-    --self:SetScript(Script.ON_UPDATE,       Throttler:new(ScriptHandlers.OnUpdate, 10, self ):asFunc() )
-    self:SetScript(Script.ON_ENTER,        ScriptHandlers.OnEnter)
-    self:SetScript(Script.ON_LEAVE,        ScriptHandlers.OnLeave)
-    self:SetScript(Script.ON_RECEIVE_DRAG, ScriptHandlers.OnReceiveDrag)
-    self:SetScript(Script.ON_MOUSE_DOWN,   ScriptHandlers.OnMouseDown)
-    self:SetScript(Script.ON_MOUSE_UP,     ScriptHandlers.OnMouseUp) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
-    self:SetScript(Script.ON_DRAG_START,   ScriptHandlers.OnPickupAndDrag) -- this is required to get OnDrag to work
-    self:HookScript(Script.ON_HIDE, function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable() or on a spec change which throws away placeholders
-    self:SetScript(Script.ON_EVENT,        ScriptHandlers.OnCursorChangeThenRegisterForClicks) -- also do a RegisterEvent
+    --self:SetScript(Script.ON_UPDATE,       Throttler:throttleAndNoQueue(MAX_FREQ_UPDATE, self, ScriptHandlers.ON_UPDATE))
+    self:SetScript(Script.ON_ENTER,        ScriptHandlers.ON_ENTER)
+    self:SetScript(Script.ON_LEAVE,        ScriptHandlers.ON_LEAVE)
+    self:SetScript(Script.ON_RECEIVE_DRAG, ScriptHandlers.ON_RECEIVE_DRAG)
+    self:SetScript(Script.ON_MOUSE_DOWN,   ScriptHandlers.ON_MOUSE_DOWN)
+    self:SetScript(Script.ON_MOUSE_UP,     ScriptHandlers.ON_MOUSE_UP) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
+    self:SetScript(Script.ON_DRAG_START,   ScriptHandlers.ON_DRAG_START) -- this is required to get OnDrag to work
+    self:HookScript(Script.ON_HIDE,        function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable() or on a spec change which throws away placeholders
+    self:SetScript(Script.ON_EVENT,        ScriptHandlers.ON_EVENT) -- also do a RegisterEvent
 
     self:registerForBlizUiActions(event)
     --self:RegisterForClicks("AnyDown", "AnyUp") -- this also works and also clobbers OnDragStart
@@ -642,86 +643,6 @@ function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
     self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
 end
 
--------------------------------------------------------------------------------
--- Handlers
---
--- Note: ACTIONBAR_SLOT_CHANGED will happen as a result of
--- some of the actions below which will in turn trigger other handlers elsewhere
--------------------------------------------------------------------------------
-
-local hWidth = 50
-local counter = { } -- eventId
-function Germ:nextEventCount(eventName)
-    if not counter[eventName] then
-        counter[eventName] = 1
-    else
-        counter[eventName] = counter[eventName] + 1
-    end
-
-    return (self:getLabel() or "UnKnOwN gErM") .. eventName .. counter[eventName]
-end
-
--- if there is something (let's call it "foo") on the mouse pointer, then we need to disable clicks.
--- otherwise, when the "user drags foo, releases mouse button in mid-air. foo remains on mouse pointer. user moves over a UFO.  user clicks."
--- will fail to drop foo onto bars (foo just vanishes with only a cursor_change event) nor will it pick up the UFO
----@param self GERM_TYPE
----@param me string event name, literal string "CURSOR_CHANGED"
----@param isCursorEmpty boolean true if nothing is on the mouse pointer
-function ScriptHandlers.OnCursorChangeThenRegisterForClicks(self, me, isCursorEmpty --[[, newCursorType, oldCursorType, oldCursorVirtualID]])
-    local event = Event:new(self, Cursor:nameMakerForCursorChanged(isCursorEmpty))
-
-    zebug.trace:mStar():runEvent(event, function()
-        self:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
---[[
-        --zebug.trace:ifMe1st(self):event(event):name("handler"):owner(self):print("isDefault",isDefault, "newCursorType",newCursorType, "oldCursorType",oldCursorType, "oldCursorVirtualID",oldCursorVirtualID)
-        local enable = isCursorEmpty
-        local wut = enable and "cursor is empty so clicks are Enabled" or "cursor is occupied so clicks are IGNORED"
-        zebug.trace:ifMe1st(self):event(event):name("handler"):print(wut)
-        if enable then
-            self:RegisterForClicks("AnyDown", "AnyUp")
-        else
-            self:RegisterForClicks("Button6Down")
-        end
-]]
-    end)
-end
-
----@param self GERM_TYPE
-function ScriptHandlers.OnMouseDown(self, mouseClick)
-    local cursor = Cursor:get()
-    if not cursor:isEmpty() then
-        -- Hmmm... the btn1 attribute clicker fires anyway.  stop it somehow
-    end
-
-    local event = Event:new(self, "OnMouseDown")
-    zebug.info:mDiamond():owner(self):runEvent(event, function()
-        self:OnMouseDown() -- Call Bliz super()
-
-        if cursor then
-            -- self:handleReceiveDrag(event)
-        else
-            zebug.info:owner(self):event(event):name("ScriptHandlers.OnMouseUp"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
-        end
-
-    end, cursor)
-end
-
----@param self GERM_TYPE
-function ScriptHandlers.OnMouseUp(self)
-    local event = Event:new(self, "ScriptHandlers.OnMouseUp")
-    zebug.info:mCross():owner(self):event(event):runEvent(event, function()
-        self:OnMouseUp() -- Call Bliz super()
-
-        local isDragging = GetCursorInfo()
-        local mySlotBtn = BlizActionBarButton:get(self.btnSlotIndex, event)
-        if isDragging then
-            self:handleReceiveDrag(event)
-        else
-            zebug.info:owner(self):event(event):name("ScriptHandlers.OnMouseUp"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
-        end
-    end)
-end
-
 function Germ:handleReceiveDrag(event)
     if isInCombatLockdown("Drag and drop") then return end
     local cursor = Cursor:get()
@@ -757,121 +678,117 @@ function Germ:handleReceiveDrag(event)
     end
 end
 
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+function Germ:doUpdateIfSlow(event)
+    if MAX_FREQ_UPDATE > 0.1 then
+        self:doUpdate(event)
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Handlers
+--
+-- Note: ACTIONBAR_SLOT_CHANGED will happen as a result of
+-- some of the actions below which will in turn trigger other handlers elsewhere
+-------------------------------------------------------------------------------
+
+local hWidth = 50
+local counter = { } -- eventId
+function Germ:nextEventCount(eventName)
+    if not counter[eventName] then
+        counter[eventName] = 1
+    else
+        counter[eventName] = counter[eventName] + 1
+    end
+
+    return (self:getLabel() or "UnKnOwN gErM") .. eventName .. counter[eventName]
+end
+
+-- if there is something (let's call it "foo") on the mouse pointer, then we need to disable clicks.
+-- otherwise, when the "user drags foo, releases mouse button in mid-air. foo remains on mouse pointer. user moves over a UFO.  user clicks."
+-- will fail to drop foo onto bars (foo just vanishes with only a cursor_change event) nor will it pick up the UFO
+---@param self GERM_TYPE
+---@param me string event name, literal string "CURSOR_CHANGED"
+---@param isCursorEmpty boolean true if nothing is on the mouse pointer
+function ScriptHandlers:ON_EVENT(eventName, isCursorEmpty --[[, newCursorType, oldCursorType, oldCursorVirtualID]])
+    local event = Event:new(self, Cursor:nameMakerForCursorChanged(isCursorEmpty), nil, ZEBUG_LEVEL_FOR_CURSOR_CHANGED)
+    zebug.trace:mStar():runEvent(event, function()
+        self:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
+--[[
+        --zebug.trace:ifMe1st(self):event(event):name("handler"):owner(self):print("isDefault",isDefault, "newCursorType",newCursorType, "oldCursorType",oldCursorType, "oldCursorVirtualID",oldCursorVirtualID)
+        local enable = isCursorEmpty
+        local wut = enable and "cursor is empty so clicks are Enabled" or "cursor is occupied so clicks are IGNORED"
+        zebug.trace:ifMe1st(self):event(event):name("handler"):print(wut)
+        if enable then
+            self:RegisterForClicks("AnyDown", "AnyUp")
+        else
+            self:RegisterForClicks("Button6Down")
+        end
+]]
+    end)
+end
+
+function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
+    local cursor = Cursor:get()
+    zebug.info:mDiamond():owner(self):runEvent(Event:new(self, "OnMouseDown"), function(event)
+        self:OnMouseDown() -- Call Bliz super()
+
+        if cursor then
+            -- self:handleReceiveDrag(event)
+        else
+            zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_DOWN"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
+        end
+
+    end, cursor)
+end
+
+function ScriptHandlers:ON_MOUSE_UP()
+    zebug.info:mCross():owner(self):runEvent(Event:new(self, "ScriptHandlers.OnMouseUp"), function(event)
+        self:OnMouseUp() -- Call Bliz super()
+
+        local isDragging = GetCursorInfo()
+        local mySlotBtn = BlizActionBarButton:get(self.btnSlotIndex, event)
+        if isDragging then
+            self:handleReceiveDrag(event)
+        else
+            zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_UP"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
+        end
+    end)
+end
+
 -- A germ on the action bar was just hit by something dropping off the user's cursor
 -- The something is either a std Bliz thingy,
 -- or, a UFO (which itself is represented by the "proxy" macro)
 ---@param self GERM_TYPE
-function ScriptHandlers.OnReceiveDrag(self)
+function ScriptHandlers:ON_RECEIVE_DRAG()
     if isInCombatLockdown("Drag and drop") then return end
-
-    local event = Event:new(self, "OnReceiveDrag")
-    zebug.info:mCircle():owner(self):runEvent(event, function()
+    zebug.info:mCircle():owner(self):runEvent(Event:new(self, "ON_RECEIVE_DRAG"), function(event)
         self:handleReceiveDrag(event)
     end)
 end
 
----@param germ GERM_TYPE
-function ScriptHandlers.OnPickupAndDrag(germ)
+function ScriptHandlers:ON_DRAG_START()
     if LOCK_ACTIONBAR then return end
     if not IsShiftKeyDown() then return end
     if isInCombatLockdown("Drag and drop") then return end
 
-    local event = Event:new(germ, "OnPickupAndDrag")
-    zebug.info:mCircle():owner(germ):runEvent(event, function()
-        germ:pickupFromSlotAndClear(event)
+    zebug.info:mCircle():owner(self):runEvent(Event:new(self, "ON_DRAG_START"), function(event)
+        self:pickupFromSlotAndClear(event)
     end)
 end
 
----@param self GERM_TYPE
-function ScriptHandlers.OnEnter(self)
+function ScriptHandlers:ON_ENTER()
+    if self:isInactive() then return end
     local event = Event:new(self, "OnEnter")
-    zebug.info:mDiamond():owner(self):runEvent(event, function()
+    zebug.info:mDiamond():owner(self):runEvent(Event:new(self, "OnEnter"), function(event)
         self:setToolTip()
-        --self:handleGermUpdateEvent(event)
+        self:doUpdateIfSlow(event)
     end)
 end
 
----@param self GERM_TYPE
-function ScriptHandlers.OnLeave(self)
-    local event = Event:new(self, "OnLeave")
-    zebug.info:mCross():owner(self):runEvent(event, function()
-        GameTooltip:Hide()
-        --self:handleGermUpdateEvent(event)
-    end)
-end
-
----@param self GERM_TYPE
-function ScriptHandlers.OnUpdate(self, elapsed)
-    -- do NOT run this without first wrapping it in Throttler !!!
-
-    local event = Event:new(self, "OnUpdate")
-    zebug.info:mSkull():owner(self):runEvent(event, function()
-        self:handleGermUpdateEvent(event)
-        self:updateAllBtnCooldownsEtc() -- nah, let the flyout do this. -- or the buttons themselves.  and have them sub/unsub based on vis
-    end)
-end
-
----@param self GERM_TYPE
-function ScriptHandlers.OLD_OnUpdate(self, elapsed)
-    onUpdateTimer = onUpdateTimer + elapsed
-    if onUpdateTimer < ON_UPDATE_TIMER_FREQUENCY then
-        return
-    end
-    onUpdateTimer = 0
-
-    local eventId = self:nextEventCount("/OnUpdate_")
-    zebug.trace:owner(self):name(eventId):out(hWidth, ".",":START: poopy :START:")
-
-    self:handleGermUpdateEvent(eventId)
-    self:updateAllBtnCooldownsEtc() -- nah, let the flyout do this. -- or the buttons themselves.  and have them sub/unsub based on vis
-    zebug.trace:owner(self):name(eventId):out(hWidth, ".",":END:")
-end
-
----@param self GERM_TYPE
---[[
-function ScriptHandlers.OnPreClick(self, mouseClick, down)
-    -- am I not being called?  maybe the mixin is over riding me
-    zebug.error:print("am I not being called?","weeee!")
-    self:SetChecked(self:GetChecked())
-    onUpdateTimer = ON_UPDATE_TIMER_FREQUENCY
-
-    local flyoutMenu = self.flyoutMenu
-    if not flyoutMenu.isSharedByAllGerms then return end
-
-    --if isInCombatLockdown("Open/Close") then return end
-
-    local isShown = flyoutMenu:IsShown()
-    local doCloseFlyout
-
-    local otherGerm = flyoutMenu:GetParent()
-    local isFromSameGerm = otherGerm == self
-    zebug.trace:print("germ", self:GetName(), "otherGerm", otherGerm:GetName(), "isFromSameGerm", isFromSameGerm, "isShown",isShown)
-
-    if isFromSameGerm then
-        doCloseFlyout = isShown
-    else
-        doCloseFlyout = false
-    end
-
-    zebug.info:line("20","updateForGerm from Germ : handlers.OnPreClick")
-    self.flyoutMenu:updateForGerm(self)
-    flyoutMenu:SetAttribute("doCloseFlyout", doCloseFlyout)
-    zebug.trace:print("doCloseFlyout",doCloseFlyout)
-    zebug.trace:name(eventId):out(hWidth, "=",":END:")
-end
-]]
-
-local oldGerm
-
--- this is needed for the edge case of clicking on a different germ while the current one is still open
--- in which case there is no OnShow event which is where the below usually happens
----@param self GERM_TYPE
----@param mouseClick MouseClick
-function ScriptHandlers.OnPostClick(self, mouseClick, down)
-    if oldGerm and oldGerm ~= self then
-        self:updateAllBtnCooldownsEtc()
-    end
-    oldGerm = self
+function ScriptHandlers:ON_LEAVE()
+    GameTooltip:Hide()
+    self:doUpdateIfSlow("on-leave")
 end
 
 -------------------------------------------------------------------------------
