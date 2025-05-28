@@ -98,7 +98,7 @@ function IconPicker:OkayButton_OnClick()
             flyoutDef.name = name
             flyoutDef.icon = icon
             flyoutDef:invalidateCache()
-            GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
+            GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
         else
             Catalog:addNewFlyout(name, icon, event)
         end

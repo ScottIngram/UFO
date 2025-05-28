@@ -107,7 +107,7 @@ function ButtonOnFlyoutMenu:handleExcluderClick(mouseClick, isDown)
 
         local flyoutDef = self:getParent():getDef()
         flyoutDef:setModStamp()
-        GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutDef.id, event)
+        GermCommander:notifyOfChangeToFlyoutDef(flyoutDef.id, event)
     end
 end
 
@@ -170,7 +170,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     end
 
     Cursor:clear(event)
-    GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
+    GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
     flyoutMenu.displaceBtnsHere = nil
     flyoutMenu:updateForCatalog(flyoutId, event)
     Ufo.pickedUpBtn = nil
@@ -204,8 +204,9 @@ function ButtonOnFlyoutMenu:setGeometry(direction, prevBtn)
     self:Show()
 end
 
-function ButtonOnFlyoutMenu:installExcluder(i)
-    zebug.info:print("self",self,"i",i)
+function ButtonOnFlyoutMenu:installExcluder(event)
+    local i = self:GetID()
+    zebug.trace:event(event):owner(self):print("i",i)
 
     local nopeIcon = self:CreateTexture("nope") -- name , layer , inherits , subLayer
     nopeIcon:SetPoint("TOPLEFT",-3,3)
@@ -219,8 +220,8 @@ function ButtonOnFlyoutMenu:installExcluder(i)
 end
 
 ---@param self ButtonOnFlyoutMenu
-function ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc(self)
-    self:updateCooldownsAndCountsAndStatesEtc()
+function ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc(self, event)
+    self:updateCooldownsAndCountsAndStatesEtc(event)
 end
 
 function ButtonOnFlyoutMenu:onReceiveDragAddItTryCatch(event)
@@ -352,28 +353,8 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
         flyoutDef:removeButton(self:getId())
         self:setDef(nil, event)
         flyoutFrame:updateForCatalog(flyoutId, event)
-        GermCommander:updateGermsThatHaveFlyoutIdOf(flyoutId, event)
+        GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
     end)
-end
-
---[[
-        <CheckButton name="SpellFlyoutPopupButtonTemplate" inherits="SmallActionButtonTemplate,FlyoutPopupButtonTemplate, SecureFrameTemplate" ...
-		<Scripts>
-			<OnLoad method="OnLoad" inherit="append"/>
-			<OnClick method="OnClick"/>
-			<OnEnter method="SetTooltip"/>
-			<OnLeave method="OnLeave"/>
-			<OnDragStart method="OnDragStart"/>
-		</Scripts>
-]]
-
-function ButtonOnFlyoutMenu:FOR_DEMO_PURPOSES_ONLY()
-    -- methods that get called by the Bliz built-ins
-    self:OnLoad()
-    self:OnClick()
-    self:SetTooltip()
-    self:OnLeave()
-    self:OnDragStart()
 end
 
 -------------------------------------------------------------------------------
