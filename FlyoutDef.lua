@@ -251,7 +251,7 @@ function FlyoutDef:filterOutUnusable()
             zebug.trace:print("can use", btn:getName())
             usableFlyoutDef:addButton(btn)
         else
-            zebug:print("CANNOT use", btn:getName())
+            zebug.info:print("CANNOT use", btn:getName())
         end
     end
     usableFlyoutDef.name = self.name
@@ -267,12 +267,12 @@ function FlyoutDef:hasItem()
         ---@param btnDef ButtonDef
         self:forEachBtn(function(btnDef)
             if btnDef.type == ButtonType.ITEM then
-                zebug.warn:owner(self):print("found an item!", btnDef.name)
+                zebug.info:owner(self):print("found an item!", btnDef.name)
                 self._hasItem = true
             end
         end)
     else
-        zebug.warn:owner(self):print("using cached _hasItem val of", self._hasItem)
+        zebug.trace:owner(self):print("using cached _hasItem val of", self._hasItem)
     end
     return self._hasItem
 end
@@ -282,12 +282,12 @@ function FlyoutDef:hasIMacro()
         ---@param btnDef ButtonDef
         self:forEachBtn(function(btnDef)
             if btnDef.type == ButtonType.MACRO then
-                zebug.warn:owner(self):print("found a macro!", btnDef.name)
+                zebug.info:owner(self):print("found a macro!", btnDef.name)
                 self._hasMacro = true
             end
         end)
     else
-        zebug.warn:owner(self):print("using cached _hasMacro val of", self._hasMacro)
+        zebug.trace:owner(self):print("using cached _hasMacro val of", self._hasMacro)
     end
     return self._hasMacro
 end

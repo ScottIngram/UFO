@@ -172,8 +172,7 @@ function Germ:applyFlyoutDef(event)
     local icon = self:getIcon()
     self:setIcon(icon, event)
     self.Name:SetText(self:getLabel())
-    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event) -- depends on initFlyoutMenu() above
-
+    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
     self.flyoutMenu:updateForGerm(self, event)
 
 
@@ -254,7 +253,7 @@ end
 -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
 function Germ:setVisibilityDriver(visibleIf)
     self.visibleIf = visibleIf
-    zebug.warn:print("visibleIf",visibleIf)
+    zebug.trace:print("visibleIf",visibleIf)
     if visibleIf then
         local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. visibleIf
         RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
@@ -323,7 +322,7 @@ function Germ:pickupFromSlotAndClear(event)
     -- so, handle whatever is currently on the cursor, if anything.
     local cursorBeforeItDrops = Cursor:get()
     if cursorBeforeItDrops then
-        zebug.warn:event(event):owner(self):print("cursorBeforeItDrops", cursorBeforeItDrops)
+        zebug.info:event(event):owner(self):print("cursorBeforeItDrops", cursorBeforeItDrops)
         local foo = cursorBeforeItDrops:isUfoProxy()
         if cursorBeforeItDrops:isUfoProxy() then
             -- the user is dragging a UFO
@@ -548,6 +547,26 @@ function Germ:invalidateFlyoutCache()
     self:getFlyoutDef():invalidateCache()
 end
 
+function Germ:refreshFlyoutDefAndApply(event)
+--[[
+    if self:getLabel() == "Nom Nom" then
+        print("SPEAK label =====>",self:getLabel())
+        event.mySpeakingVolume = 20
+    else
+        print("MUTE label =====>",self:getLabel())
+        event.mySpeakingVolume = -10
+    end
+]]
+
+    --self:zz(event):print("B4 UsableFlyoutDef", self:getUsableFlyoutDef())
+    zebug.info:event(event):owner(self):print("I am a germ?",self, "my label is",  self:getLabel())
+    --zebug.info:event(event):owner(self):dumpy("-B4- UsableFlyoutDef",  self:getUsableFlyoutDef())
+    self:getFlyoutDef():invalidateCache(event)
+    --self:zz(event):print("AF UsableFlyoutDef", self:getUsableFlyoutDef())
+    --zebug.info:event(event):owner(self):dumpy("-AF- UsableFlyoutDef",  self:getUsableFlyoutDef())
+    self:applyFlyoutDef(event)
+end
+
 -------------------------------------------------------------------------------
 -- Key Bindings & UI actions Registerings
 -------------------------------------------------------------------------------
@@ -706,9 +725,9 @@ function Germ:handleReceiveDrag(event)
         end
 
         if flyoutIdOld then
-            zebug.warn:mMoon():event(event):owner(self):print("--------- PRE  UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
+            zebug.info:mMoon():event(event):owner(self):print("--------- PRE  UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
             UfoProxy:pickupUfoOntoCursor(flyoutIdOld, event)
-            zebug.warn:mMoon():event(event):owner(self):print("--------- POST UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
+            zebug.info:mMoon():event(event):owner(self):print("--------- POST UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
         else
             cursor:clear(event) -- will discard the UfoProxy if it's still there
         end
@@ -732,7 +751,6 @@ function ScriptHandlers:ON_UPDATE(elapsed)
     if self:isInactive() then return end
     -- do NOT run ON_UPDATE without first wrapping it in Throttler !!!
     zebug.trace:owner(self):runEventTerse(Event:new(self, "ON_UPDATE"), function(event)
-        local e2 = Event:new(self, "ON_UPDATE", nil, Zebug.MUTE)
         self:doUpdate(event)
     end)
 end

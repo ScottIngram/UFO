@@ -486,10 +486,12 @@ function GermCommander:changeSpec(event)
     self:initializeAllSlots(event)
 end
 
+-- we don't know exactly what in the bags changed, but, such changes could alter usableFlyoutDef.
+-- For example, conjure food would want a UFO with such food to show it.  Or, a UFO showing a potion needs to know if the player drank the last one.
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:notifyAllGermsWithItems(event)
     ---@param germ GERM_TYPE
-    self:forEachGermIf(Germ.invalidateFlyoutCache, Germ.hasItemsAndIsActive, event)
+    self:forEachGermIf(Germ.refreshFlyoutDefAndApply, Germ.hasItemsAndIsActive, event)
 end
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging

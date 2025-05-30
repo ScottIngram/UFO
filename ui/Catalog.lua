@@ -394,7 +394,7 @@ function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
     local flyoutId = btnInCatalog.flyoutId
     flyoutIndexOnTheMouse = btnInCatalog.flyoutIndex
     if exists(flyoutId) then
-        zebug.warn:mSquare():runEvent(event, function()
+        zebug.info:mSquare():runEvent(event, function()
             UfoProxy:pickupUfoOntoCursor(flyoutId, "CatalogEntry_OnDragStart")
         end)
     end

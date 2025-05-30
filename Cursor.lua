@@ -215,7 +215,7 @@ function Cursor:pickupMacro(macroNameOrId, event)
         -- WORSE YET, if I DON'T first ClearCursor() before PickupMacro() again, then,
         -- the fucking BLIZ event dispatcher issues a single CURSOR_CHANGED event during which PickupMacro() thinks the cursor is EMPTY.
         -- There is never CURSOR_CHANGED event to indicate it carries the new version of the macro.  Shit kicking mutherfucking Bliz API.
-        zebug.warn:mCross():mMoon():event(event):owner(self):print("macro",id, "is already on the cursor.  NOP... errr, I mean, I must clear it first to avoid Bliz Bullshit")
+        zebug.info:mCross():mMoon():event(event):owner(self):print("macro",id, "is already on the cursor.  NOP... errr, I mean, I must clear it first to avoid Bliz Bullshit")
         ClearCursor()
         --return -- nope, keep going and do the PickupMacro()
     end
