@@ -56,6 +56,7 @@ BLIZ_BAR_METADATA = {
     [13] = {name="MultiBar5",           yafName="MultiActionBar5"}, -- config UI -> Action Bars -> checkbox #6
     [14] = {name="MultiBar6",           yafName="MultiActionBar6"}, -- config UI -> Action Bars -> checkbox #7
     [15] = {name="MultiBar7",           yafName="MultiActionBar7"}, -- config UI -> Action Bars -> checkbox #8
+    [16] = {name="WhoKnows",            }, -- another vehicle ?
     [18] = {name="OverrideActionBar",   }, -- vehicle
     [19] = {name="ExtraAction",         }, -- center screen popup spell
 
@@ -64,16 +65,18 @@ BLIZ_BAR_METADATA = {
 -------------------------------------------------------------------------------
 --  Methods
 -------------------------------------------------------------------------------
+----- TODO: rework this class with a cache<btnSlotIndex, a-btn>
 
 -- gets the UI frame object for the button / empty slot sitting in btnSlotIndex on the Bliz action bars.
 -- such a button could be EMPTY or contain a spell, a macro, a potion, etc.
 ---@return BlizActionBarButton, AbbInfo
 function BlizActionBarButton:new(btnSlotIndex, event)
+    if btnSlotIndex == 0 then return end -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent btnSlotIndex #0.  Fuck you Bliz.
     assert(btnSlotIndex, "invalid nil value for btnSlotIndex")
-    local barNum, barName, btnNum, btnName, actionBarDef, btn = getBarNumAndBtnNum(btnSlotIndex)
+    local barNum, barName, btnNum, btnName, actionBarDef, btn = getBarNumAndBtnNum(btnSlotIndex, event)
 
-    -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
-    if barNum == 0 then return end
+    if barNum == 0 then return end -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
+    --zebug.error:event(event):mark(Mark.FIRE):print("wtf-2 btnSlotIndex",btnSlotIndex, "barNum",barNum, "actionBarDef", actionBarDef)
 
     local barYafName = actionBarDef.yafName
     local btnYafName = barYafName and (barYafName .. "Button" .. btnNum) or nil
@@ -128,7 +131,7 @@ BlizActionBarButton.get = BlizActionBarButton.new
 ---@return string btnName
 ---@return table meta data about the action bar
 ---@return BABB_INHERITANCE the actual UI Frame object
-function getBarNumAndBtnNum(btnSlotIndex)
+function getBarNumAndBtnNum(btnSlotIndex, event)
     -- TODO: memoize
     assert(btnSlotIndex, "btnSlotIndex is nil.  Try again, plz!")
     local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
@@ -138,7 +141,7 @@ function getBarNumAndBtnNum(btnSlotIndex)
 
     local actionBarDef = BLIZ_BAR_METADATA[barNum]
     assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum.." resulting from event: ".. tostring(event)) -- in case Blizzard adds more bars, complain here clearly.
-
+    -- zebug.error:event(event):mark(Mark.FIRE):print("wtf-1 btnSlotIndex",btnSlotIndex, "actionBarDef", actionBarDef)
     local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
     if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
     local barName = actionBarDef.name
