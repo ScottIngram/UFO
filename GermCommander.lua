@@ -24,6 +24,7 @@ GermCommander = { }
 
 ---@type table<number,Germ|GERM_TYPE>
 local germs = {}
+local slotsByLabel = {}
 
 -------------------------------------------------------------------------------
 -- Methods
@@ -235,6 +236,8 @@ end
 function GermCommander:saveGerm(germ)
     local btnSlotIndex = germ:getBtnSlotIndex()
     germs[btnSlotIndex] = germ
+    local label = germ:getLabel()
+    slotsByLabel[label] = btnSlotIndex
 end
 
 ---@param obj number | GERM_TYPE
@@ -249,6 +252,11 @@ function GermCommander:rememberGerm(obj)
         germ = germs[obj]
     end
     return germ
+end
+
+-- useful for debugging
+function GermCommander:getGermByLabel(label)
+    return self:recallGerm(slotsByLabel[label])
 end
 
 -- Responds to event: ACTIONBAR_SLOT_CHANGED
