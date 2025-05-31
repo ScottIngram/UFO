@@ -1,5 +1,6 @@
--- BlizActionBarButton
--- simplifies tracking what's on the action bars
+-- simplify tracking what's on the action bars
+-- BlizActionBarButtonHelper - helper methods for easy access to bliz action bar buttons and their fields
+-- BlizActionBarButton - a wrapper for the actual bliz action bar buttons Frame objects PLUS all of the above
 
 -------------------------------------------------------------------------------
 -- Module Loading
@@ -10,18 +11,17 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 local zebug = Zebug:new()
 
----@alias BABB_INHERITANCE UfoMixIn | ActionBarActionButtonMixin | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame
----@alias BABB_TYPE BlizActionBarButton | BABB_INHERITANCE
+---@alias LITERAL_BABB  ActionBarActionButtonMixin | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame
+
+---@class BlizActionBarButtonHelper
+BlizActionBarButtonHelper = {
+    ufoType2 = "BLIZACTIONBARBUTTONHELPER"
+
+}
+local BabbClass = BlizActionBarButtonHelper
 
 ---@class BlizActionBarButton : UfoMixIn
----@field btnDesc AbbInfo meta data about the button
 ---@field ufoType string The classname
-BlizActionBarButton = {
-    ufoType = "BlizActionBarButton"
-}
-UfoMixIn:mixInto(BlizActionBarButton)
-
----@class AbbInfo describes various aspects of a button on the Bliz action bars
 ---@field btnSlotIndex number the index of the button among all 100+ buttons
 ---@field barNum number which action bar
 ---@field btnNum number the index of the button among the 12 on the same bar
@@ -31,15 +31,21 @@ UfoMixIn:mixInto(BlizActionBarButton)
 ---@field btnName string one of Bliz's many names for the button
 ---@field btnYafName string yet another of Bliz's many fucking names for the button
 ---@field visibleIf string conditions used by RegisterStateDriver(self, "visibility")
----@field aType string type of the spell/macro/etc that's on the button, if any
----@field aId string id of the spell/macro/etc that's on the button, if any
+BlizActionBarButton = {
+    ufoType = "BlizActionBarButton"
+}
+UfoMixIn:mixInto(BlizActionBarButton)
 
--------------------------------------------------------------------------------
+local BabbInstance = BlizActionBarButton
+
+----------------------------------------------------------------------------------
 -- Constants
 -------------------------------------------------------------------------------
 
+---@class BLIZ_BAR_METADATA
 ---@field name string is how it's identified by /fstack and thus the name of its _G global variable and its buttons
 ---@field yafName string yet another fucking name is how it's identified by the key bindings API
+---@field visibleIf string used by Bliz's visibility driver to decide when to show/hide
 BLIZ_BAR_METADATA = {
     [1]  = {name="Action",              visibleIf="bar:1,nobonusbar:1,nobonusbar:2,nobonusbar:3,nobonusbar:4"}, -- primary "ActionBar" - page #1 - no stance/shapeshift --- ff: actionBarPage = 1
     [2]  = {name="Action",              visibleIf="bar:2"}, -- primary "ActionBar" - page #2 (regardless of stance/shapeshift) --- ff: actionBarPage = 2
@@ -59,80 +65,79 @@ BLIZ_BAR_METADATA = {
     [16] = {name="WhoKnows",            }, -- another vehicle ?
     [18] = {name="OverrideActionBar",   }, -- vehicle
     [19] = {name="ExtraAction",         }, -- center screen popup spell
-
 }
 
 -------------------------------------------------------------------------------
---  Methods
+--  Data
+-------------------------------------------------------------------------------
+
+local babBtns = {}
+
+-------------------------------------------------------------------------------
+--  BlizActionBarButtonHelper Methods
 -------------------------------------------------------------------------------
 ----- TODO: rework this class with a cache<btnSlotIndex, a-btn>
 
 -- gets the UI frame object for the button / empty slot sitting in btnSlotIndex on the Bliz action bars.
 -- such a button could be EMPTY or contain a spell, a macro, a potion, etc.
----@return BlizActionBarButton, AbbInfo
-function BlizActionBarButton:new(btnSlotIndex, event)
+---@return BlizActionBarButton
+function BlizActionBarButtonHelper:get(btnSlotIndex, event)
     if btnSlotIndex == 0 then return end -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent btnSlotIndex #0.  Fuck you Bliz.
     assert(btnSlotIndex, "invalid nil value for btnSlotIndex")
-    local barNum, barName, btnNum, btnName, actionBarDef, btn = getBarNumAndBtnNum(btnSlotIndex, event)
+
+    if babBtns[btnSlotIndex] then
+        return babBtns[btnSlotIndex]
+    end
+
+    local barNum, barName, btnNum, btnName, actionBarDef, literalBlizBtn = getBarAndBtnEtc(btnSlotIndex, event)
+    print("literalBlizBtn.GetName", literalBlizBtn.GetName)
+    print("literalBlizBtn:GetName()", literalBlizBtn:GetName())
 
     if barNum == 0 then return end -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
     --zebug.error:event(event):mark(Mark.FIRE):print("wtf-2 btnSlotIndex",btnSlotIndex, "barNum",barNum, "actionBarDef", actionBarDef)
 
+    ---@type BlizActionBarButton | LITERAL_BABB
+    local instance = deepcopy(BlizActionBarButton, {})
+    setmetatable(instance, { __index = literalBlizBtn }) -- any access to methods or variables that don't exist in BlizActionBarButton will look for those same things on literalBlizBtn
+    print("instance A", instance)
+    --instance:installMyToString()
+
+    print("literalBlizBtn.GetName", literalBlizBtn.GetName)
+    print("instance.GetName", instance.GetName)
+
+    print("literalBlizBtn:GetName()", literalBlizBtn:GetName())
+    --print("instance:GetName()", instance:GetName())
+
+    -- go the extra mile and collect a bunch of "missing from the box" data that Bliz doesn't make easy to find out.
+
     local barYafName = actionBarDef.yafName
     local btnYafName = barYafName and (barYafName .. "Button" .. btnNum) or nil
-    local actionType, actionId = GetActionInfo(btnSlotIndex)
 
-    ---@type AbbInfo
-    local btnDesc = {
-        btnSlotIndex = btnSlotIndex,
-        barNum       = barNum,
-        btnNum       = btnNum,
-        actionBarDef = actionBarDef,
-        barName      = barName,
-        barYafName   = actionBarDef.yafName,
-        btnName      = btnName,
-        btnYafName   = btnYafName,
-        visibleIf    = actionBarDef.visibleIf,
-        aType        = actionType,
-        aId          = actionId,
-    }
+    instance.btnSlotIndex = btnSlotIndex
+    instance.barNum       = barNum
+    instance.btnNum       = btnNum
+    instance.actionBarDef = actionBarDef
+    instance.barName      = barName
+    instance.btnName      = btnName
+    instance.barYafName   = barYafName
+    instance.btnYafName   = btnYafName
+    instance.visibleIf    = actionBarDef.visibleIf
 
-    ---@type BlizActionBarButton
-    local protoSelf = btn -- default to the standard Bliz object
-
-    if ThirdPartyAddonSupport.isAnyActionBarAddonActive then
-        protoSelf = ThirdPartyAddonSupport:getParent(btnDesc)
-    end
-
-    -- TAINT RISK - be careful to not affect any fields or methods used by Bliz
-
-    protoSelf.btnDesc = btnDesc
-
-    local mt = getmetatable(protoSelf)
-    if not mt then
-        mt = {}
-        setmetatable(protoSelf, mt)
-    end
-    mt.__tostring = function()
-        return BlizActionBarButton.toString(protoSelf)
-    end
-
-    ---@type BlizActionBarButton
-    local self = deepcopy(BlizActionBarButton, protoSelf)
-
-    return self, btnDesc
+    print("instance B", instance)
+    return instance
 end
-
-BlizActionBarButton.get = BlizActionBarButton.new
 
 ---@return number barNum
 ---@return string barName
 ---@return number btnNum
 ---@return string btnName
 ---@return table meta data about the action bar
----@return BABB_INHERITANCE the actual UI Frame object
-function getBarNumAndBtnNum(btnSlotIndex, event)
-    -- TODO: memoize
+function getBarAndBtnEtc(btnSlotIndex, event)
+    if babBtns[btnSlotIndex] then
+        local bb = babBtns[btnSlotIndex]
+        return babBtns.barNum, babBtns.barName, babBtns.btnNum, babBtns.btnName
+    end
+
     assert(btnSlotIndex, "btnSlotIndex is nil.  Try again, plz!")
     local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
 
@@ -148,106 +153,106 @@ function getBarNumAndBtnNum(btnSlotIndex, event)
     local btnName = barName .. "Button" .. btnNum
     local btn = _G[btnName]
 
+--[[
+    babBtns[btnSlotIndex] = {
+
+    }
+]]
+
     return barNum, barName, btnNum, btnName, actionBarDef, btn
 end
 
----@return BABB_INHERITANCE
-function BlizActionBarButton:getLiteralBlizBtn(btnSlotIndex)
-    local _, _, _, _, _, btn = getBarNumAndBtnNum(btnSlotIndex)
+---@return LITERAL_BABB
+function BabbClass:getLiteralBlizBtn(btnSlotIndex)
+    local _, _, _, _, _, btn = getBarAndBtnEtc(btnSlotIndex)
     return btn
-end
-
----@return boolean true if Not An Instance
-function BlizActionBarButton:amTheClass()
-    return self == BlizActionBarButton
 end
 
 ---@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
 ---@return boolean true if the btn has nothing on it
-function BlizActionBarButton:isEmpty(btnSlotIndex)
-    ---@type BABB_TYPE
-    local self = self
-
-    if self:amTheClass() then
-        self = self:getLiteralBlizBtn(btnSlotIndex)
-    end
-
-    return not (self and self.HasAction and self:HasAction())
+function BabbClass:isEmpty(btnSlotIndex)
+    assert(btnSlotIndex, "btnSlotIndex arg is missing.  oops!")
+    assert(btnSlotIndex > 0, "btnSlotIndex arg is invalid.  Must be above 0.")
+    local btn = self:getLiteralBlizBtn(btnSlotIndex)
+    return not (btn and btn.HasAction and btn:HasAction())
 end
 
 ---@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
 ---@return ButtonType
-function BlizActionBarButton:getType(btnSlotIndex)
-    if self:amTheClass() then
-        local actionType, actionId = GetActionInfo(btnSlotIndex)
-        return actionType
-    else
-        return self.btnDesc.aType
-    end
-end
-
-function BlizActionBarButton:getId()
-    ---@type BABB_TYPE
-    local self = self
-    return self.btnDesc.aId
-end
-
----@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
----@return number the id of the spell/macro/etc
-function BlizActionBarButton:getId(btnSlotIndex)
-    if self:amTheClass() then
-        local actionType, actionId = GetActionInfo(btnSlotIndex)
-        return actionId
-    else
-        return self.btnDesc.aId
-    end
-end
-
-function BlizActionBarButton:getBtnSlotIndex()
-    ---@type BABB_TYPE
-    local self = self
-    return self.btnDesc.btnSlotIndex
-end
-
-function BlizActionBarButton:isUfoProxy()
-    return UfoProxy:isOnBtn(self)
+function BabbClass:getTypeAndId(btnSlotIndex)
+    assert(btnSlotIndex, "btnSlotIndex arg is missing.  oops!")
+    assert(btnSlotIndex > 0, "btnSlotIndex arg is invalid.  Must be above 0.")
+    return GetActionInfo(btnSlotIndex)
 end
 
 ---@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
 ---@return boolean true if the btn contains a UfoProxy
-function BlizActionBarButton:isUfoProxy(btnSlotIndex)
-    if self:amTheClass() then
-        return UfoProxy:isOnBtnSlot(btnSlotIndex)
-    end
+function BabbClass:isUfoProxy(btnSlotIndex)
+    local btn = self:getLiteralBlizBtn(btnSlotIndex)
+    return UfoProxy:isOnBtn(btn)
+end
 
+function BabbClass:isUfoPlaceholder(btnSlotIndex, event)
+    local btn = self:getLiteralBlizBtn(btnSlotIndex)
+    return Placeholder:isOn(btn, event)
+end
+
+-------------------------------------------------------------------------------
+--  BlizActionBarButton Methods
+-------------------------------------------------------------------------------
+
+---@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
+---@return boolean true if the btn has nothing on it
+function BabbInstance:isEmpty()
+    return BabbClass:isEmpty(self.btnSlotIndex)
+end
+
+function BabbInstance:getParent()
+    if ThirdPartyAddonSupport.isAnyActionBarAddonActive then
+        return ThirdPartyAddonSupport:getParent(self.btnSlotIndex, self.barNum, self.btnNum)
+    else
+        return self:GetParent() -- call Bliz's
+    end
+end
+
+function BabbInstance:getLiteralBlizBtn()
+    return BabbClass:getLiteralBlizBtn(self.btnSlotIndex)
+end
+
+---@return ButtonType
+function BabbInstance:getTypeAndId()
+    return BabbClass:getTypeAndId(self.btnSlotIndex)
+end
+
+function BabbInstance:getBtnSlotIndex()
+    return self.btnSlotIndex
+end
+
+function BabbInstance:isUfoProxy()
     return UfoProxy:isOnBtn(self)
 end
 
-
-
-
--- unused?
-function BlizActionBarButton:isUfoPlaceholder(event)
+function BabbInstance:isUfoPlaceholder(event)
     return Placeholder:isOn(self, event)
 end
 
-function BlizActionBarButton:getFlyoutIdFromUfoProxy()
+function BabbInstance:getFlyoutIdFromUfoProxy()
     return UfoProxy:getFlyoutId()
 end
 
 local s = function(v) return v or "nil"  end
 
-function BlizActionBarButton:toString()
+function BabbInstance:toString()
     if self == BlizActionBarButton then
         return "nil"
     else
-        local d = self.btnDesc
         if self:isEmpty() then
-            return string.format("<A-BTN: s%d EMPTY>", s(d.btnSlotIndex))
+            return string.format("<A-BTN: s%d EMPTY>", s(self.btnSlotIndex))
         else
             local name
-            if d.aType == ButtonType.MACRO then
-                if d.aId == UfoProxy:getMacroId() then
+            local blizType, blizId = self:getTypeAndId()
+            if blizType == ButtonType.MACRO then
+                if blizId == UfoProxy:getMacroId() then
                     name = "UfoProxy: ".. (UfoProxy:getFlyoutName() or "UnKnOwN")
                 elseif Placeholder:isOn(self, "BlizActionBarButton:toString()") then
                     name = "Placeholder"
@@ -255,15 +260,15 @@ function BlizActionBarButton:toString()
             end
 
             if not name then
-                name = self:getNameForBlizThingy(d.aId, d.aType)
+                name = self:getNameForBlizThingy(blizType, blizId)
                 --print("BlizActionBarButton:toString... d.aId",d.aId, "d.aType",d.aType, "name",name)
             end
 
             if name then
-                return string.format("<A-BTN: s%d %s: %s>", s(d.btnSlotIndex), s(d.aType), name)
+                return string.format("<A-BTN: s%d %s: %s>", s(self.btnSlotIndex), s(blizType), name)
             end
 
-            return string.format("<A-BTN: s%d, %s:%s>", s(d.btnSlotIndex), s(d.aType), s(d.aId))
+            return string.format("<A-BTN: s%d, %s:%s>", s(self.btnSlotIndex), s(blizType), s(blizId))
         end
     end
 end
