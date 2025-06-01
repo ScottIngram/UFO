@@ -13,7 +13,7 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-local zebug = Zebug:new(Zebug.INFO)
+local zebug = Zebug:new(zVol or Zebug.INFO)
 
 ---@alias GERM_INHERITANCE UfoMixIn | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Button | Frame | ScriptObject
 ---@alias GERM_TYPE Germ | GERM_INHERITANCE

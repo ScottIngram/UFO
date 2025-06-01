@@ -12,7 +12,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new()
+local zebug = Zebug:new(zVol or Zebug.INFO)
 
 ---@class FlyoutDef : UfoMixIn
 ---@field id string A unique, immutable, permanent identifier.  This is not it's index in any array.
@@ -237,7 +237,7 @@ end
 
 ---@return FlyoutDef
 function FlyoutDef:filterOutUnusable()
-    zebug:print("self.name", self.name)
+    zebug.info:print("self.name", self.name)
 
     if self.cachedUsableFlyoutDef then
         zebug.trace:print("returning cached usableFlyoutDef")

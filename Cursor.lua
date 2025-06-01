@@ -10,7 +10,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new(Zebug.INFO)
+local zebug = Zebug:new(zVol or Zebug.INFO)
 
 ---@class Cursor : UfoMixIn
 ---@field type string
