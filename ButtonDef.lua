@@ -248,12 +248,20 @@ function ButtonDef:getName()
     local t = self.type
     local id = self:getIdForBlizApi()
     if t == ButtonType.SPELL or t == ButtonType.MOUNT or t == ButtonType.PSPELL then
-        if GetSpellInfo then --v10
-            self.name = GetSpellInfo(id)
-        elseif C_Spell.GetSpellInfo then --v11
-            local foo = C_Spell.GetSpellInfo(id)
-            self.name = foo and foo.name
+        zebug.trace:owner(self):print("type",t, "id",id, "mountId", self.mountId)
+
+--[[
+        local foo
+        local isOk, err = pcall( function()  foo = C_Spell.GetSpellInfo(id or self.mountId) end  )
+        if not isOk then
+            zebug.error:owner(self):print("C_Spell.GetSpellInfo() failed for id",id, "and maybe mountId",self.mountId, "with ERROR",err)
         end
+]]
+
+        local foo = C_Spell.GetSpellInfo(id or self.mountId) -- changed to not barf for the "summon random favorite mount" button aka type == "summonmount"
+        self.name = foo and foo.name or "UnKnOwN!"
+        zebug.trace:owner(self):print("name",self.name)
+
     elseif t == ButtonType.ITEM or t == ButtonType.TOY then
         self.name =  C_Item.GetItemInfo(id)
     elseif t == ButtonType.TOY then
@@ -369,7 +377,7 @@ end
 function ButtonDef:getFromCursor(event)
     ---@type ButtonDef
     local type, c1, c2, c3 = GetCursorInfo() -- c1 is usually the ID; c2 is sometimes a tooltip;
-    zebug.trace:event(event):owner(self):print("type",type, "c1",c1, "c2",c2, "c3",c3)
+    zebug.info:event(event):owner(self):print("type",type, "c1",c1, "c2",c2, "c3",c3)
 
     if not type then
         Ufo.pickedUpBtn = nil
