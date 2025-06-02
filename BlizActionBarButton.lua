@@ -90,8 +90,9 @@ function BlizActionBarButtonHelper:get(btnSlotIndex, event)
     end
 
     local barNum, barName, btnNum, btnName, actionBarDef, literalBlizBtn = getBarAndBtnEtc(btnSlotIndex, event)
-    print("literalBlizBtn.GetName", literalBlizBtn.GetName)
-    print("literalBlizBtn:GetName()", literalBlizBtn:GetName())
+    zebug.trace:print("getBarAndBtnEtc UT - btnName",btnName, "literalBlizBtn", literalBlizBtn)
+    --print("literalBlizBtn.GetName", literalBlizBtn.GetName)
+    --print("literalBlizBtn:GetName()", literalBlizBtn:GetName())
 
     if barNum == 0 then return end -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
     --zebug.error:event(event):mark(Mark.FIRE):print("wtf-2 btnSlotIndex",btnSlotIndex, "barNum",barNum, "actionBarDef", actionBarDef)
