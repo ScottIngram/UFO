@@ -53,18 +53,37 @@ function UfoMixIn:isA(other, test)
     return nil
 end
 
+local seen = {}
+
 function UfoMixIn:installMyToString()
-    --assert(self ~= UfoMixIn, "yeah, no.  fixToString() only works on instances, not the UfoMixIn class itself.")
+    assert(self ~= UfoMixIn, "yeah, no.  I think you accidentally called UfoMixIn:installMyToString(otherObj).  Change the ':' to a '.'")
     assert(self.toString, "can't find self:toString() method.")
 
-    local mt = getmetatable(self)
-    if not mt then
-        mt = {}
-        setmetatable(self, mt)
+    local originalMt = getmetatable(self)
+    local newMt
+
+    if originalMt then
+        if seen[originalMt] then
+            zebug.info:mStar():print("REPEATED mt found on ufoType",self.ufoType, "self:toString()",self:toString(), "originalMt.ufoType",originalMt.ufoType, "__tostring", originalMt.__tostring)
+            zebug.info:mStar():dumpKeys(originalMt)
+        end
+        seen[originalMt] = true
+
+        if originalMt.__tostring then
+            zebug.warn:mark(Mark.FIRE):print("ruhroh - __tostring already EXISTS from", originalMt.ufoType, "self.ufoType",self.ufoType)
+        end
+
+        -- create a distinctly new but "identical" metatable so it can hold the toString
+        -- this would/will be a problem if the metatable has anything more than __index
+        newMt = { __index = originalMt.__index }
+    else
+        zebug.trace:print("no mt on self",self , "ufoType",self.ufoType )
+        newMt = {}
+        setmetatable(self, newMt)
     end
-    mt.__tostring = function()
-        return self.toString(self)
-    end
+
+    newMt.ufoType = self.ufoType
+    newMt.__tostring = self.toString
 end
 
 ---@param funcName string name of the method to be overridden
