@@ -97,35 +97,45 @@ function BlizActionBarButtonHelper:get(btnSlotIndex, event)
     if barNum == 0 then return end -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
     --zebug.error:event(event):mark(Mark.FIRE):print("wtf-2 btnSlotIndex",btnSlotIndex, "barNum",barNum, "actionBarDef", actionBarDef)
 
+    --metatable FAILED: got error "error calling FOO on bad self"
+    --local instance = deepcopy(BlizActionBarButton, {})
+    --setmetatable(instance, { __index = literalBlizBtn }) -- any access to methods or variables that don't exist in BlizActionBarButton will look for those same things on literalBlizBtn
+
+    -- So instead, wollop the Bliz button Frame object and bolt all of BlizActionBarButton's fields/methods into it.
+    -- TAINT concerns.  Be careful to not touch any fields read by Bliz code.
     ---@type BlizActionBarButton | LITERAL_BABB
-    local instance = deepcopy(BlizActionBarButton, {})
-    setmetatable(instance, { __index = literalBlizBtn }) -- any access to methods or variables that don't exist in BlizActionBarButton will look for those same things on literalBlizBtn
-    print("instance A", instance)
-    --instance:installMyToString()
+    local self = deepcopy(BlizActionBarButton, literalBlizBtn)
 
-    print("literalBlizBtn.GetName", literalBlizBtn.GetName)
-    print("instance.GetName", instance.GetName)
-
-    print("literalBlizBtn:GetName()", literalBlizBtn:GetName())
-    --print("instance:GetName()", instance:GetName())
+--[[
+    print("babb self A", self)
+    print("babb literalBlizBtn.GetName", literalBlizBtn.GetName)
+    print("babb self.GetName", self.GetName)
+    print("babb literalBlizBtn:GetName()", literalBlizBtn:GetName())
+    print("babb self:GetName()", self:GetName())
+]]
 
     -- go the extra mile and collect a bunch of "missing from the box" data that Bliz doesn't make easy to find out.
 
     local barYafName = actionBarDef.yafName
     local btnYafName = barYafName and (barYafName .. "Button" .. btnNum) or nil
 
-    instance.btnSlotIndex = btnSlotIndex
-    instance.barNum       = barNum
-    instance.btnNum       = btnNum
-    instance.actionBarDef = actionBarDef
-    instance.barName      = barName
-    instance.btnName      = btnName
-    instance.barYafName   = barYafName
-    instance.btnYafName   = btnYafName
-    instance.visibleIf    = actionBarDef.visibleIf
+    self.btnSlotIndex = btnSlotIndex
+    self.barNum       = barNum
+    self.btnNum       = btnNum
+    self.actionBarDef = actionBarDef
+    self.barName      = barName
+    self.btnName      = btnName
+    self.barYafName   = barYafName
+    self.btnYafName   = btnYafName
+    self.visibleIf    = actionBarDef.visibleIf
 
-    print("instance B", instance)
-    return instance
+    --print("babb instance B", instance)
+    local mt = getmetatable(self)
+    zebug.info:print("BABB", "self",self, "mt",mt, "self.toString", self.toString, "mt.__tostring",mt and mt.__tostring, "self:toString()", self:toString())
+    self:installMyToString()
+
+    babBtns[btnSlotIndex] = self
+    return self
 end
 
 ---@return number barNum
@@ -134,33 +144,23 @@ end
 ---@return string btnName
 ---@return table meta data about the action bar
 function getBarAndBtnEtc(btnSlotIndex, event)
-    if babBtns[btnSlotIndex] then
-        local bb = babBtns[btnSlotIndex]
-        return babBtns.barNum, babBtns.barName, babBtns.btnNum, babBtns.btnName
-    end
-
     assert(btnSlotIndex, "btnSlotIndex is nil.  Try again, plz!")
-    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
 
-    -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
-    if barNum == 0 then return end
+    local barNum = ActionButtonUtil.GetPageForSlot(btnSlotIndex)
+    if barNum == 0 then return end -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
 
     local actionBarDef = BLIZ_BAR_METADATA[barNum]
     assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum.." resulting from event: ".. tostring(event)) -- in case Blizzard adds more bars, complain here clearly.
+
     -- zebug.error:event(event):mark(Mark.FIRE):print("wtf-1 btnSlotIndex",btnSlotIndex, "actionBarDef", actionBarDef)
     local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
     if (btnNum == 0) then btnNum = NUM_ACTIONBAR_BUTTONS end -- button #12 divided by 12 is 1 remainder 0.  Thus, treat a 0 as a 12
     local barName = actionBarDef.name
     local btnName = barName .. "Button" .. btnNum
-    local btn = _G[btnName]
+    local literalBlizBtn = _G[btnName]
+    zebug.trace:print("getBarAndBtnEtc IN - btnName",btnName, "literalBlizBtn", literalBlizBtn)
 
---[[
-    babBtns[btnSlotIndex] = {
-
-    }
-]]
-
-    return barNum, barName, btnNum, btnName, actionBarDef, btn
+    return barNum, barName, btnNum, btnName, actionBarDef, literalBlizBtn
 end
 
 ---@return LITERAL_BABB

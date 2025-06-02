@@ -8,12 +8,12 @@
 ---@type Ufo -- IntelliJ-EmmyLua annotation
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-zVol = Zebug.ERROR
+zVol = Zebug.WARN
 local zebug = Zebug:new(zVol or Zebug.TRACE)
 
 ---@alias UfoType string
 
-------@class UfoMixIn
+---@class UfoMixIn
 ---@field UfoType string The classname
 UfoMixIn = { }
 
@@ -97,10 +97,10 @@ function UfoMixIn:newEvent(...)
     return Event:new(self, ...)
 end
 
----@param id number
 ---@param type string
+---@param id number
 ---@return string the name of the spell/mount/toy/etc
-function UfoMixIn:getNameForBlizThingy(id, type)
+function UfoMixIn:getNameForBlizThingy(type, id)
     local name
     if type == ButtonType.SPELL or type == ButtonType.MOUNT or type == ButtonType.PSPELL then
         local foo = C_Spell.GetSpellInfo(id)

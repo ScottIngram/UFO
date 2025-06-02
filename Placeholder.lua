@@ -64,7 +64,7 @@ end
 function Placeholder:put(btnSlotIndex, event)
     if not Config.opts.usePlaceHolders then return end
 
-    local theBtnAlready = BlizActionBarButton:get(btnSlotIndex, event)
+    local theBtnAlready = BlizActionBarButtonHelper:get(btnSlotIndex, event)
     if self:isOn(theBtnAlready, event) then return end
 
     Ufo.droppedPlaceholderOntoActionBar = event or true
@@ -115,7 +115,7 @@ end
 function Placeholder:isOn(btn, event)
     if not btn then return end
 
-    local type, id = btn:getType(), btn:getId()
+    local type, id = btn:getTypeAndId()
     zebug.trace:event(event):--[[owner(btn):]]print("type",type, "id",id)
     if type == ButtonType.MACRO then
         local name = GetMacroInfo(id)

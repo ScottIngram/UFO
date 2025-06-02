@@ -267,7 +267,7 @@ end
 --- * a Ufo proxy for a new flyoutId than was there before this event - update the existing Germ with the new UFO config
 --- * a Ufo Placeholder that we programmatically put there and should be ignored
 function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlotIndex, event)
-    local btnInSlot = BlizActionBarButton:new(btnSlotIndex, event) -- remove when debugging btnSlotIndex > 120
+    local btnInSlot = BlizActionBarButtonHelper:get(btnSlotIndex, event)
     if not btnInSlot then
         zebug.info:event(event):print("bullshit Bliz API reported a change to btnSlotIndex",btnSlotIndex)
         return

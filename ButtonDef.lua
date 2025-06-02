@@ -368,9 +368,16 @@ end
 ---@return ButtonDef
 function ButtonDef:getFromCursor(event)
     ---@type ButtonDef
-    local btnDef = ButtonDef:new()
     local type, c1, c2, c3 = GetCursorInfo() -- c1 is usually the ID; c2 is sometimes a tooltip;
     zebug.trace:event(event):owner(self):print("type",type, "c1",c1, "c2",c2, "c3",c3)
+
+    if not type then
+        Ufo.pickedUpBtn = nil
+        zebug.info:event(event):owner(self):print("Empty cursor is empty")
+        return
+    end
+
+    local btnDef = ButtonDef:new()
 
     btnDef.type = type
     if type == ButtonType.SPELL then

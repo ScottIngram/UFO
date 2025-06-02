@@ -102,19 +102,25 @@ function UfoProxy:isOnBtnSlot(btnSlotIndex)
     return self:isOnBtn(btn)
 end
 
----@param btn BlizActionBarButton | ActionBarActionButtonMixin
+---@param btn number | BlizActionBarButton | ActionBarActionButtonMixin | LITERAL_BABB
 ---@return boolean true if there is a UfoProxy on the thing
 function UfoProxy:isOnBtn(btn)
     assert(btn, "btn is nil.  So, no, it's not a UfoProxy")
 
-    local type, id
-    if UfoMixIn:isA(btn, BlizActionBarButton) then
-        type = btn:getType()
-        id = btn:getId()
+    local btnSlotIndex
+    if isNumber(btn) then
+        btnSlotIndex = btn
     else
-        assert(btn.action, "btn is neither a BlizActionBarButton nor a ActionBarActionButtonMixin")
-        type, id = GetActionInfo(btn.action)
+        if UfoMixIn:isA(btn, BlizActionBarButton) then
+            btnSlotIndex = btn:getBtnSlotIndex()
+        else
+            btnSlotIndex = btn.action
+        end
     end
+
+    assert(btnSlotIndex, "can't figure out what the btn is so I can't ask it if it's holding UfoProxy.")
+
+    local type, id = GetActionInfo(btnSlotIndex)
 
     return self:is(type, id)
 end

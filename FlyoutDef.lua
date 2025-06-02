@@ -237,12 +237,12 @@ end
 
 ---@return FlyoutDef
 function FlyoutDef:filterOutUnusable()
-    zebug.info:print("self.name", self.name)
-
     if self.cachedUsableFlyoutDef then
         zebug.trace:print("returning cached usableFlyoutDef")
         return self.cachedUsableFlyoutDef
     end
+
+    zebug.info:print("self.name", self.name)
 
     local usableFlyoutDef = FlyoutDef:new()
     ---@param btn ButtonDef

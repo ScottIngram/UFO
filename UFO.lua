@@ -83,7 +83,7 @@ function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter, z1
 
     local event = Event:new("Ufo", me, eventCounter)
     if Ufo.germLock then
-        local btnInSlot = BlizActionBarButton:new(btnSlotIndex, event)
+        local btnInSlot = BlizActionBarButtonHelper:get(btnSlotIndex, event)
         zebug.info:event(Ufo.germLock):name("handler"):print("LOCKED - ignoring", event, "caused by",btnInSlot)
         return
     end

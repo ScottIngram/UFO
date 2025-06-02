@@ -67,7 +67,8 @@ local MAX_FREQ_UPDATE = 0.2
 -------------------------------------------------------------------------------
 
 function Germ:new(flyoutId, btnSlotIndex, event)
-    local parentActionBarBtn, bbInfo = BlizActionBarButton:new(btnSlotIndex, "Germ:New() for btnSlotIndex"..btnSlotIndex)
+    local parentActionBarBtn = BlizActionBarButtonHelper:get(btnSlotIndex, "Germ:New() for btnSlotIndex"..btnSlotIndex)
+    --print("Germ parentActionBarBtn",parentActionBarBtn, "parentActionBarBtn.GetName", parentActionBarBtn.GetName)
     local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
 
     ---@type GERM_TYPE | Germ
@@ -80,19 +81,19 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     _G[myName] = self -- so that keybindings can reference it
 
-    -- initialize my fields
-
     -- one-time only initialization --
     self.myName       = myName
     self.btnSlotIndex = btnSlotIndex
-    self.bbInfo       = bbInfo
 
-    -- any-time set whenever the config changes --
+    -- set whenever the config changes --
     self.flyoutId     = flyoutId
-    --self.label        = self:getFlyoutDef().name -- TODO remove?
 
     -- manipulate methods
     self:installMyToString() -- do this as soon as possible for the sake of debugging output
+
+    --local mt = getmetatable(self)
+    --zebug.trace:event(event):owner(self):print("Germ", "self",self, "mt",mt, "self.toString", self.toString, "mt.__tostring",mt and mt.__tostring, "self:toString()", self:toString())
+
     self.originalHide = self:override("Hide", self.hide)
     self.clearAndDisable = Pacifier:pacify(self, "clearAndDisable")
 
@@ -113,7 +114,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:ClearAllPoints()
     self:SetAllPoints(parentActionBarBtn)
 
-    self:setVisibilityDriver(parentActionBarBtn.btnDesc.visibleIf)
+    self:setVisibilityDriver(parentActionBarBtn.visibleIf)
 
     -- FlyoutMenu
     self:initFlyoutMenu(event)
@@ -356,6 +357,11 @@ function Germ:clear()
 end
 ]]
 
+---@return BlizActionBarButton
+function Germ:getParent()
+    return self:GetParent()
+end
+
 function Germ:getDirection()
     -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
     -- ask the bar instance what direction to fly
@@ -575,10 +581,10 @@ end
 function Germ:doKeybinding()
     if isInCombatLockdown("Keybind") then return end
 
-    local bb = self.bbInfo
-    local btnName = bb.btnYafName or bb.btnName
+    local parent = self:getParent()
+    local btnName = parent.btnYafName or parent.btnName
     local ucBtnName = string.upper(btnName)
-    local germName = self:GetName()
+    local myGlobalVarName = self:GetName()
     local keybinds
     if GetBindingKey(ucBtnName) then
         keybinds = { GetBindingKey(ucBtnName) }
@@ -588,10 +594,10 @@ function Germ:doKeybinding()
     if keybinds then
         for i, keyName in ipairs(keybinds) do
             if not tableContainsVal(self.keybinds, keyName) then
-                zebug.trace:owner(self):print("germ",germName, "binding keyName",keyName)
-                SetOverrideBindingClick(self, true, keyName, germName, MouseClick.SIX)
+                zebug.trace:owner(self):print("myGlobalVarName", myGlobalVarName, "binding keyName",keyName)
+                SetOverrideBindingClick(self, true, keyName, myGlobalVarName, MouseClick.SIX)
             else
-                zebug.trace:owner(self):print("germ",germName, "NOT binding keyName",keyName, "because it's already bound.")
+                zebug.trace:owner(self):print("myGlobalVarName", myGlobalVarName, "NOT binding keyName",keyName, "because it's already bound.")
             end
         end
         local keybind1 = keybinds[1]
@@ -609,10 +615,10 @@ function Germ:doKeybinding()
     if (self.keybinds) then
         for i, keyName in ipairs(self.keybinds) do
             if not tableContainsVal(keybinds, keyName) then
-                zebug.trace:owner(self):print("germ",germName, "UN-binding keyName",keyName)
+                zebug.trace:owner(self):print("myGlobalVarName", myGlobalVarName, "UN-binding keyName",keyName)
                 SetOverrideBinding(self, true, keyName, nil)
             else
-                zebug.trace:owner(self):print("germ",germName, "NOT UN-binding keyName",keyName, "because it's still bound.")
+                zebug.trace:owner(self):print("myGlobalVarName", myGlobalVarName, "NOT UN-binding keyName",keyName, "because it's still bound.")
             end
         end
     end
@@ -786,7 +792,7 @@ function ScriptHandlers:ON_MOUSE_UP()
         self:OnMouseUp() -- Call Bliz super()
 
         local isDragging = GetCursorInfo()
-        local mySlotBtn = BlizActionBarButton:get(self.btnSlotIndex, event)
+        local mySlotBtn = BlizActionBarButtonHelper:get(self.btnSlotIndex, event)
         if isDragging then
             self:handleReceiveDrag(event)
         else
@@ -1286,7 +1292,7 @@ function Germ:toString()
         return "<Germ: EMPTY>"
     else
         local icon = self:getIcon()
-        return string.format("<Germ: |T%d:0|t %s>", icon, shortName(self.label) or "UnKnOwN")
+        return string.format("<Germ: |T%d:0|t %s ut=%s>", icon, shortName(self.label or self:getLabel() ) or "UnKnOwN", self.ufoType)
     end
 end
 
