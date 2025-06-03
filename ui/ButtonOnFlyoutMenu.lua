@@ -16,7 +16,7 @@ local zebug = Zebug:new(zVol or Zebug.INFO)
 ---@field id number unique identifier
 ---@field nopeIcon Frame w/ a little X indicator
 
----@type ButtonOnFlyoutMenu
+---@type ButtonOnFlyoutMenu | BOFM_INHERITANCE
 ButtonOnFlyoutMenu = {
     ufoType = "ButtonOnFlyoutMenu",
 }
@@ -81,10 +81,13 @@ function ButtonOnFlyoutMenu:setDef(btnDef, event)
     end
 end
 
+local emptyTable = {}
+
 -- TODO: eval if these are still used now that I've migrated away from the old CATA code
 -- TODO: eval if these are tainty.  If so, can I SetAttribute instead?
+-- TODO: should I move this into Button_Mixin ?
 function ButtonOnFlyoutMenu:copyDefToBlizFields()
-    local d = self.btnDef or {}
+    local d = self.btnDef or emptyTable
     -- the names on the left are used deep inside Bliz code by the likes of SpellFlyoutButton_UpdateCooldown() etc
     self.actionType = d.type
     self.actionID   = d.spellId or d.itemId or d.toyId or d.mountId -- or d.petGuid
@@ -219,9 +222,8 @@ function ButtonOnFlyoutMenu:installExcluder(event)
     self:SetScript(Script.ON_CLICK, self.handleExcluderClick)
 end
 
----@param self ButtonOnFlyoutMenu
-function ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc(self, event)
-    self:updateCooldownsAndCountsAndStatesEtc(event)
+function ButtonOnFlyoutMenu:renderCooldownsAndCountsAndStatesEtcEtc(event)
+    self:renderCooldownsAndCountsAndStatesEtc(self,event)
 end
 
 function ButtonOnFlyoutMenu:onReceiveDragAddItTryCatch(event)

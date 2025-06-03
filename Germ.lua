@@ -131,13 +131,13 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     return self
 end
 
-function Germ:doUpdate(event)
+function Germ:render(event)
     if self:isInactive(event) then return end
 
     self:UpdateArrowRotation() -- VOLATILE if action bar changes direction... and changes when open/closed
 
-    self:updateCooldownsAndCountsAndStatesEtc(event) -- TODO: v11.1 verify this is working properly.  do I need to do more? -- What happens if I remove this?
-    self.flyoutMenu:updateAllBtnCooldownsEtc(event)
+    self:renderCooldownsAndCountsAndStatesEtc(event) -- TODO: v11.1 verify this is working properly.  do I need to do more? -- What happens if I remove this?
+    self.flyoutMenu:renderAllBtnCooldownsEtc(event)
 end
 
 function Germ:notifyOfChangeToFlyoutDef(event)
@@ -590,9 +590,9 @@ function Germ:handleReceiveDrag(event)
 end
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
-function Germ:doUpdateIfSlow(event)
+function Germ:renderIfSlow(event)
     if MAX_FREQ_UPDATE > 0.1 then
-        self:doUpdate(event)
+        self:render(event)
     end
 end
 
@@ -604,7 +604,7 @@ function ScriptHandlers:ON_UPDATE(elapsed)
     if self:isInactive() then return end
     -- do NOT run ON_UPDATE without first wrapping it in Throttler !!!
     zebug.trace:owner(self):runEventTerse(Event:new(self, "ON_UPDATE"), function(event)
-        self:doUpdate(event)
+        self:render(event)
     end)
 end
 

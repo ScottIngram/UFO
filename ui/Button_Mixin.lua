@@ -94,7 +94,7 @@ function Button_Mixin:setIcon(icon, event)
 end
 
 -- TODO - go look at ActionBarActionButtonMixin:Update() and copy anything I'm missing
-function Button_Mixin:updateCooldownsAndCountsAndStatesEtc(event)
+function Button_Mixin:renderCooldownsAndCountsAndStatesEtc(event)
     -- should I call self:Update() aka ActionBarActionButtonMixin:Update() ... um, maybe I'm not an ActionBarActionButtonMixin
     local btnDef = self:getDef()
     local spellId = btnDef and btnDef.spellId
@@ -107,6 +107,9 @@ function Button_Mixin:updateCooldownsAndCountsAndStatesEtc(event)
         self:SetChecked(isThisTheSpell);
     end
 
+    -- the following methods are based on the ones in SpellFlyoutButton
+    -- mine have custom code that can handle both items and spells
+    -- TODO support macros which can have #show which displays spell/item icons & cooldowns
     self:updateUsable(event)
     self:updateCooldown(event)
     self:updateCount(event)
@@ -160,7 +163,7 @@ function Button_Mixin:updateCooldown(event)
     if exists(spellId) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
         zebug.trace:event(event):owner(self):print("spellId",spellId)
-        self.spellID = spellId --v11 -- internal Bliz code expects this field
+        self.spellID = spellId --v11 -- internal Bliz code expects this field -- TAINT?
 
         ActionButton_UpdateCooldown(self);
         return

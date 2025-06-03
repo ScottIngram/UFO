@@ -408,7 +408,7 @@ end
 function ScriptHandlers:ON_SHOW()
     zebug.info:mark(Mark.LOOT):owner(self):runEvent(Event:new(self, "ON_SHOW"), function(event)
         self:GetParent():OnPopupToggled() -- call Bliz super method
-        self:updateAllBtnCooldownsEtc(event)
+        self:renderAllBtnCooldownsEtc(event)
     end)
 end
 
@@ -442,9 +442,9 @@ function FlyoutMenu:onLoadForCatalog()
     self:forEachButton(ButtonOnFlyoutMenu.installExcluder, Event:new(self, "on-load-for-catalog"))
 end
 
-function FlyoutMenu:updateAllBtnCooldownsEtc(event)
+function FlyoutMenu:renderAllBtnCooldownsEtc(event)
     if not self:IsShown() then return end
-    self:forEachButton(ButtonOnFlyoutMenu.FUNC_updateCooldownsAndCountsAndStatesEtc, event)
+    self:forEachButton(ButtonOnFlyoutMenu.renderCooldownsAndCountsAndStatesEtcEtc, event)
 end
 
 function FlyoutMenu:FOR_DEMO_PURPOSES_ONLY()
