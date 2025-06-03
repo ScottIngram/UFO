@@ -186,7 +186,7 @@ end
 function ButtonDef:isUsable()
     local t = self.type
     local id = self:getIdForBlizApi()
-    zebug.trace:owner(self):print("spellId", self.spellId, "id",id)
+    zebug.info:owner(self):print("type",t, "spellId", self.spellId, "id",id)
     if t == ButtonType.MOUNT or t == ButtonType.PET then
         -- TODO: figure out how to find a mount
         return true -- GetMountInfoByID(mountId)
@@ -201,6 +201,7 @@ function ButtonDef:isUsable()
     elseif t == ButtonType.ITEM then
         -- isUseable = C_PlayerInfo.CanUseItem(itemID)
         local n = C_Item.GetItemCount(id)
+        zebug.info:owner(self):print("C_Item.GetItemCount",n)
         return n > 0
     elseif t == ButtonType.MACRO then
         zebug.trace:owner(self):print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
