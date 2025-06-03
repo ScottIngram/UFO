@@ -160,21 +160,16 @@ end
 
 function Germ:notifyOfChangeToFlyoutDef(event)
     self:closeFlyout() -- in case the number of buttons changed?
-    self:applyFlyoutDef(event)
+    self:applyConfigFromFlyoutDef(event)
 end
 
-function Germ:applyFlyoutDef(event)
-    --self:update(self.flyoutId, event)
-
-    -- icon may change based on 1st usable button
-    -- Btn1Clicker may change based on 1st usable button or an override icon
-    -- name might change
-
+function Germ:applyConfigFromFlyoutDef(event)
     local icon = self:getIcon()
     self:setIcon(icon, event)
     self.Name:SetText(self:getLabel())
     self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
-    self.flyoutMenu:updateForGerm(self, event)
+    self.flyoutMenu:applyConfigForGerm(self, event)
+    --self:doUpdate(self.flyoutId, event)
 
 
 end
@@ -243,7 +238,7 @@ function Germ:initFlyoutMenu(event)
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu:new(self)
         zebug.info:event(event):line("20","initFlyoutMenu",self.flyoutMenu)
-        self.flyoutMenu:updateForGerm(self, event)
+        self.flyoutMenu:applyConfigForGerm(self, event)
         self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
     else
         self.flyoutMenu = UFO_FlyoutMenuForGerm
@@ -271,7 +266,7 @@ end
 -- TODO is this serving the same purpose as clearAndDisable ?
 function Germ:hide(event)
     --VisibleRegion:Hide(self) -- L-O-FUCKING-L this threw  "attempt to index global 'VisibleRegion' (a nil value)" was called from SecureStateDriver.lua:103
-    zebug.warn:event(event or "Blizz-Call"):owner(self):print("hiding.")
+    zebug.info:event(event or "Blizz-Call"):owner(self):print("hiding.")
     UnregisterStateDriver(self, "visibility")
     self:originalHide()
 end
@@ -301,7 +296,7 @@ function Germ:changeFlyoutIdAndEnable(flyoutId, event)
 
     self:closeFlyout()
     self:doIcon(event)
-    self.flyoutMenu:updateForGerm(self, event)
+    self.flyoutMenu:applyConfigForGerm(self, event)
     self:registerForBlizUiActions(event)
     self:doKeybinding()
     self:Show()
@@ -371,7 +366,7 @@ function Germ:getDirection()
 end
 
 function Germ:updateAllBtnHotKeyLabels(event)
-    self.flyoutMenu:updateForGerm(self, event)
+    self.flyoutMenu:applyConfigForGerm(self, event)
 end
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
@@ -570,7 +565,7 @@ function Germ:refreshFlyoutDefAndApply(event)
     self:getFlyoutDef():invalidateCache(event)
     --self:zz(event):print("AF UsableFlyoutDef", self:getUsableFlyoutDef())
     --zebug.info:event(event):owner(self):dumpy("-AF- UsableFlyoutDef",  self:getUsableFlyoutDef())
-    self:applyFlyoutDef(event)
+    self:applyConfigFromFlyoutDef(event)
 end
 
 -------------------------------------------------------------------------------

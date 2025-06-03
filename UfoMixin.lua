@@ -117,7 +117,7 @@ function UfoMixIn:getNameForBlizThingy(type, id)
     elseif type == ButtonType.BROKENP or type == ButtonType.PSPELL then
         name = "Some Pet Command" -- BrokenPetCommand[self.brokenPetCommandId].name -- from UFO's PetShitShow.lua
     else
-        zebug.warn:print("Unknown type:", type)
+        zebug.warn:print("Unknown type", type)
     end
 
     return name

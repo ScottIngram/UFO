@@ -237,7 +237,7 @@ end
 -- * doUpdate (changes to the game state -- cooldowns, item counts, etc.)
 
 ---@param germ Germ
-function FlyoutMenu:updateForGerm(germ, event)
+function FlyoutMenu:applyConfigForGerm(germ, event)
     self:SetParent(germ)
     self.direction = germ:getDirection()
     local flyoutId = germ:getFlyoutId()
@@ -262,7 +262,7 @@ function FlyoutMenu:updateForGerm(germ, event)
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SECURE TEMPLATE
 
             -- label the keybinds
-            btnNumber = btnNumber + 1 -- TODO: make first keybind same as the UFO's
+            btnNumber = btnNumber + 1
             updateHotKeyLabel(btnFrame, btnNumber)
         else
             btnFrame:setIcon(DEFAULT_ICON, event)
