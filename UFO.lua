@@ -141,16 +141,43 @@ function EventHandlers:UPDATE_MACROS(me, eventCounter)
     end)
 end
 
-function EventHandlers:BAG_UPDATE(id, me, eventCounter)
+function EventHandlers:UNIT_INVENTORY_CHANGED(id, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     local event = Event:new("Ufo", me, eventCounter)
+    if id ~= "player" then
+        zebug.error:owner("UFO"):event(event):print("not 'player' ! id",id,"me",me)
+    end
+    local pearlMilkId = 81414
+    --local n1 = --[[C_Item.]]GetItemCount(pearlMilkId, false, true)
+    --local nc1 = C_Item.GetItemCount(pearlMilkId, false, true)
+    --local n2 = --[[C_Item.]]GetItemCount(pearlMilkId)
+    --local nc2 = C_Item.GetItemCount(pearlMilkId)
+    --zebug.info:owner("UFO"):event(event):print("---> C_Item.GetItemCount n1",n1, "nc1",nc1, "n2",n2, "nc2",nc2)
+
+
+
     zebug.info:mDiamond():name(me):runEvent(event, function()
         GermCommander:notifyAllGermsWithItems(event)
     end)
+
+
+   -- local n5 = --[[C_Item.]]GetItemCount(pearlMilkId, false, true)
+   -- local nc5 = C_Item.GetItemCount(pearlMilkId, false, true)
+   -- local n6 = --[[C_Item.]]GetItemCount(pearlMilkId)
+   -- local nc6 = C_Item.GetItemCount(pearlMilkId)
+   -- zebug.info:owner("UFO"):event(event):print("---> C_Item.GetItemCount n5", n5, "nc5", nc5, "n6", n6, "nc6", nc6)
+
+   -- C_Timer.After(2, function()
+   --     local n5 = --[[C_Item.]]GetItemCount(pearlMilkId, false, true)
+   --     local nc5 = C_Item.GetItemCount(pearlMilkId, false, true)
+   --     local n6 = --[[C_Item.]]GetItemCount(pearlMilkId)
+   --     local nc6 = C_Item.GetItemCount(pearlMilkId)
+   --     zebug.info:owner("UFO"):event(event):print("C_Timer.After ---> C_Item.GetItemCount n5", n5, "nc5", nc5, "n6", n6, "nc6", nc6)
+   -- end)
 end
 
--- an absolute shitstorm of BAG_UPDATE vomit during the loading screen, so throttle this motherfucker
-EventHandlers.BAG_UPDATE = Throttler:throttleAndNoQueue(1.0, "Ufo:BAG_UPDATE", EventHandlers.BAG_UPDATE)
+-- an absolute shitstorm of UNIT_INVENTORY_CHANGED and BAG_UPDATE vomit during the loading screen, so throttle this motherfucker
+EventHandlers.UNIT_INVENTORY_CHANGED = Throttler:throttleAndNoQueue(1.0, "Ufo:BAG_UPDATE", EventHandlers.UNIT_INVENTORY_CHANGED)
 
 --[[
 function EventHandlers:UPDATE_VEHICLE_ACTIONBAR(me, eventCounter)
