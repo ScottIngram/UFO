@@ -100,7 +100,7 @@ function ButtonOnFlyoutMenu:handleExcluderClick(mouseClick, isDown)
     if not btnDef then return end
 
     if mouseClick == MouseClick.RIGHT and isDown then
-        local event = Event:new(self, "excluder-click")
+        local event = Event:new(self, "bofm-excluder-click")
         zebug.info:event(event):owner(self):print("name",btnDef.name, "changing exclude from",btnDef.noRnd, "to", not btnDef.exclude)
         btnDef.noRnd = not btnDef.noRnd
         self:setExcluderVisibility()
@@ -306,7 +306,7 @@ function ButtonOnFlyoutMenu:onMouseUp()
     -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
     local isDragging = GetCursorInfo()
     if isDragging then
-        zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "mouse-up"), function(event)
+        zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "bofm-mouse-up"), function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
 --        self:onReceiveDragAddItTryCatch(Event:new(self, "mouse-up"))
@@ -315,7 +315,7 @@ end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onReceiveDrag()
-    zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "drag-hit-me"), function(event)
+    zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "bofm-drag-hit-me"), function(event)
         self:onReceiveDragAddItTryCatch(event)
     end)
 end
@@ -334,7 +334,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
 
     local isDragging = GetCursorInfo()
     if isDragging then
-        zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "drag-hit-me"), function(event)
+        zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "bofm-drag-hit-me"), function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
         return
@@ -346,7 +346,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
         return
     end
 
-    zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "dragged-away"), function(event)
+    zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "bofm-dragged-away"), function(event)
         btnDef:pickupToCursor(event)
         local flyoutId = flyoutFrame:getId()
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
