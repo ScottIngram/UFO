@@ -7,8 +7,8 @@
                 SecureActionButtonTemplate
             "
             mixin="
-                GLOBAL_Germ,
-                GLOBAL_Button_Mixin
+                GLOBAL_Button_Mixin,
+                GLOBAL_Germ
             "
     >
         <!--inheritance tree
