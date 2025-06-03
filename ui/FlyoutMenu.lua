@@ -407,13 +407,14 @@ end
 
 function ScriptHandlers:ON_SHOW()
     zebug.info:mark(Mark.LOOT):owner(self):runEvent(Event:new(self, "ON_SHOW"), function(event)
+        self:GetParent():OnPopupToggled() -- call Bliz super method
         self:updateAllBtnCooldownsEtc(event)
     end)
 end
 
 function ScriptHandlers:ON_HIDE()
     zebug.info:mark(Mark.NOLOOT):owner(self):runEvent(Event:new(self, "ON_HIDE"), function(event)
-
+        self:GetParent():OnPopupToggled() -- call Bliz super method
     end)
 end
 

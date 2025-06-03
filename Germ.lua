@@ -60,7 +60,7 @@ local HANDLER_MAKERS_MAP
 local GERM_UI_NAME_PREFIX = "UfoGerm"
 local CLICK_ID_MARKER = "-- CLICK_ID_MARKER:"
 local LEN_CLICK_ID_MARKER = string.len(CLICK_ID_MARKER)
-local MAX_FREQ_UPDATE = 0.2
+local MAX_FREQ_UPDATE = 0.25 -- secs
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -168,11 +168,9 @@ function Germ:applyConfigFromFlyoutDef(event)
     self:setIcon(icon, event)
     self.Name:SetText(self:getLabel())
     self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
-    self.flyoutMenu:close() -- in case the buttons' number/ordering changes
+    self:closeFlyout() -- in case the buttons' number/ordering changes
     self.flyoutMenu:applyConfigForGerm(self, event)
     --self:doUpdate(self.flyoutId, event)
-
-
 end
 
 function Germ:getName()
@@ -779,7 +777,7 @@ function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
         else
             zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_DOWN"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
         end
-        self:doUpdateIfSlow(event)
+        --self:doUpdateIfSlow(event)
     end, cursor)
 end
 
@@ -794,7 +792,7 @@ function ScriptHandlers:ON_MOUSE_UP()
         else
             zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_UP"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
         end
-        self:doUpdateIfSlow(event)
+        --self:doUpdateIfSlow(event)
     end)
 end
 
@@ -813,6 +811,7 @@ function ScriptHandlers:ON_DRAG_START()
     if LOCK_ACTIONBAR then return end
     if not IsShiftKeyDown() then return end
     if isInCombatLockdown("Drag and drop") then return end
+    self:OnDragStart() -- Call Bliz super()
 
     zebug.info:mCircle():owner(self):runEvent(Event:new(self, "ON_DRAG_START"), function(event)
         self:pickupFromSlotAndClear(event)
@@ -821,16 +820,19 @@ end
 
 function ScriptHandlers:ON_ENTER()
     if self:isInactive() then return end
+    self:OnEnter() -- Call Bliz super()
+
     local event = Event:new(self, "OnEnter")
     zebug.info:mDiamond():owner(self):runEvent(Event:new(self, "OnEnter"), function(event)
         self:setToolTip()
-        self:doUpdateIfSlow(event)
+        --self:doUpdateIfSlow(event)
     end)
 end
 
 function ScriptHandlers:ON_LEAVE()
+    self:OnLeave() -- Call Bliz super()
     GameTooltip:Hide()
-    self:doUpdateIfSlow("on-leave")
+    --self:doUpdateIfSlow("on-leave")
 end
 
 -------------------------------------------------------------------------------
