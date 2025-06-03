@@ -360,16 +360,3 @@ function Button_Mixin:makeSafeSetAttribute()
 
     end
 end
-
--------------------------------------------------------------------------------
--- OVERRIDES of
--- SmallActionButtonMixin methods
--- acquired via SmallActionButtonTemplate
--- See Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButton.lua
--------------------------------------------------------------------------------
-
-function Button_Mixin:OnButtonStateChanged()
-    -- defined in ButtonStateBehaviorMixin:OnButtonStateChanged() as "Derive and configure your button to the correct state."
-    zebug.info:owner(self):print("calling parent in FlyoutButtonMixin")
-    FlyoutButtonMixin.OnButtonStateChanged(self)
-end
