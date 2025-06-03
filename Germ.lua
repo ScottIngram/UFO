@@ -168,6 +168,7 @@ function Germ:applyConfigFromFlyoutDef(event)
     self:setIcon(icon, event)
     self.Name:SetText(self:getLabel())
     self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
+    self.flyoutMenu:close() -- in case the buttons' number/ordering changes
     self.flyoutMenu:applyConfigForGerm(self, event)
     --self:doUpdate(self.flyoutId, event)
 
