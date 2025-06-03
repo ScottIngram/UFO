@@ -19,7 +19,7 @@ local zebug = Zebug:new(zVol or Zebug.INFO)
 ---@field nameSuffix string part of its name used to identify it as a flyout frame
 ---@field displaceBtnsHere number used to push buttons out of the way during "OnHover"
 
----@type FlyoutMenu
+---@type FlyoutMenu | FM_INHERITANCE
 FlyoutMenu = {
     ufoType = "FlyoutMenu",
     isForGerm = false,
@@ -32,7 +32,7 @@ GLOBAL_FlyoutMenu = FlyoutMenu
 ---@alias FM_INHERITANCE  UfoMixIn | FlyoutPopupTemplate | SecureFrameTemplate | Frame
 ---@alias FM_TYPE FlyoutMenu | FM_INHERITANCE
 
----@type FM_TYPE for the benefit of my IDE's autocomplete
+---@type FlyoutMenu | FM_INHERITANCE for the benefit of my IDE's autocomplete
 local ScriptHandlers = {}
 
 -------------------------------------------------------------------------------

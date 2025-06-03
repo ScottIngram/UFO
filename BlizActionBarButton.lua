@@ -13,10 +13,12 @@ local zebug = Zebug:new(zVol or Zebug.INFO)
 
 ---@alias LITERAL_BABB  ActionBarActionButtonMixin | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Frame
 
----@class BlizActionBarButtonHelper
-BlizActionBarButtonHelper = {
-    ufoType2 = "BLIZACTIONBARBUTTONHELPER"
+---@class BlizActionBarButtonHelper : UfoMixIn
+---@field ufoType string The classname
 
+---@type BlizActionBarButtonHelper
+BlizActionBarButtonHelper = {
+    ufoType = "BLIZACTIONBARBUTTONHELPER"
 }
 local BabbClass = BlizActionBarButtonHelper
 
@@ -31,6 +33,8 @@ local BabbClass = BlizActionBarButtonHelper
 ---@field btnName string one of Bliz's many names for the button
 ---@field btnYafName string yet another of Bliz's many fucking names for the button
 ---@field visibleIf string conditions used by RegisterStateDriver(self, "visibility")
+
+---@type BlizActionBarButton | LITERAL_BABB
 BlizActionBarButton = {
     ufoType = "BlizActionBarButton"
 }

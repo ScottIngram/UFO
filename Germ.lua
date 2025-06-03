@@ -18,7 +18,7 @@ local zebug = Zebug:new(zVol or Zebug.INFO)
 ---@alias GERM_INHERITANCE UfoMixIn | Button_Mixin | ActionButtonTemplate | SecureActionButtonTemplate | Button | Frame | ScriptObject
 ---@alias GERM_TYPE Germ | GERM_INHERITANCE
 
----@class Germ : GERM_TYPE
+---@class Germ : UfoMixin
 ---@field ufoType string The classname
 ---@field flyoutId number Identifies which flyout is currently copied into this germ
 ---@field flyoutMenu FM_TYPE The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
@@ -27,7 +27,7 @@ local zebug = Zebug:new(zVol or Zebug.INFO)
 ---@field myName string duh
 ---@field label string human friendly identifier
 
----@type GERM_TYPE | Germ
+---@type Germ | GERM_INHERITANCE
 Germ = {
     ufoType = "Germ",
     --clickScriptUpdaters = {},
@@ -697,7 +697,7 @@ end
 -- to enable the Germ's button to do things in response to mouse clicks
 -------------------------------------------------------------------------------
 
----@type Germ|Button_Mixin
+---@type Germ|GERM_INHERITANCE
 local HandlerMaker = { }
 
 ---@param mouseClick MouseClick
@@ -821,7 +821,9 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
         local flyoutLastModified = self:GetAttribute("UFO_FLYOUT_MOD_TIME")
         if (not kidsCachedWhen) or (kidsCachedWhen < flyoutLastModified) then
             flyoutMenuKids = nil
-            --print("clearing kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified)
+            print("clearing kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified)
+        else
+            print("using kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified)
         end
 
         if not flyoutMenuKids then
