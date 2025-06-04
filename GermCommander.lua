@@ -200,12 +200,13 @@ end
 ]]
 
 function GermCommander:updateAllKeybindBehavior(event)
-    if isInCombatLockdown("Keybind") then return end
     ---@param germ GERM_TYPE
     self:forEachActiveGerm(function(germ)
         germ:setMouseClickHandler(MouseClick.SIX, Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
     end, event)
 end
+
+GermCommander.updateAllKeybindBehavior = Pacifier:pacify(GermCommander, "updateAllKeybindBehavior", L10N.CHANGE_KEYBIND_ACTION)
 
 function GermCommander:updateAllActiveGermsWithConfigToBindTheButtons(event)
     local doKeybindTheButtonsOnTheFlyout = Config:get("doKeybindTheButtonsOnTheFlyout")
@@ -218,6 +219,8 @@ function GermCommander:updateAllActiveGermsWithConfigToBindTheButtons(event)
 
 end
 
+GermCommander.updateAllActiveGermsWithConfigToBindTheButtons = Pacifier:pacify(GermCommander, "updateAllActiveGermsWithConfigToBindTheButtons", L10N.RECONFIGURE_FLYOUT_BUTTON_KEYBINDING)
+
 ---@param mouseClick MouseClick
 function GermCommander:updateClickHandlerForAllActiveGerms(mouseClick, event)
     -- can't modify the inactive germs because they have no flyoutId
@@ -226,6 +229,8 @@ function GermCommander:updateClickHandlerForAllActiveGerms(mouseClick, event)
         germ:setMouseClickHandler(mouseClick, Config:getClickBehavior(self.flyoutId, mouseClick), event)
     end, event)
 end
+
+GermCommander.updateClickHandlerForAllActiveGerms = Pacifier:pacify(GermCommander, "updateClickHandlerForAllActiveGerms", "change mouse button behavior.")
 
 ---@return GERM_TYPE
 function GermCommander:recallGerm(btnSlotIndex)
@@ -466,6 +471,9 @@ function GermCommander:ensureAllGermsHavePlaceholders(event)
     end)
     Ufo.droppedPlaceholderOntoActionBar = nil
 end
+
+GermCommander.ensureAllGermsHavePlaceholders = Pacifier:pacify(GermCommander, "ensureAllGermsHavePlaceholders", "switch to placeholders.") -- allow only out of combat
+
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:changeSpec(event)

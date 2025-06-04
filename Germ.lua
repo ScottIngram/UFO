@@ -89,7 +89,6 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     -- manipulate methods
     self:installMyToString() -- do this as soon as possible for the sake of debugging output
     self.originalHide = self:override("Hide", self.hide)
-    self.clearAndDisable = Pacifier:pacify(self, "clearAndDisable") -- allow only out of combat
 
     -- install event handlers
     self:HookScript(Script.ON_HIDE,        function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable() or on a spec change which throws away placeholders
@@ -104,7 +103,6 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     self:registerForBlizUiActions(event)
 
-
     -- FlyoutMenu
     self:initFlyoutMenu(event)
     self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event) -- depends on initFlyoutMenu() above
@@ -118,7 +116,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:setVisibilityDriver(parentActionBarBtn.visibleIf)
 
     -- secure tainty stuff
-    self:SetAttribute("UFO_NAME", self.label)
+    self:safeSetAttribute("UFO_NAME", self.label)
     self:copyDoCloseOnClickConfigValToAttribute()
     self:doMyKeybinding() -- bind me to my action bar slot's keybindings (if any)
 
@@ -254,8 +252,6 @@ function Germ:hide(event)
 end
 
 function Germ:clearAndDisable(event)
-    if self:isInactive(event) then return end
-
     zebug.info:event(event):owner(self):print("DISABLE GERM :-(")
     self:closeFlyout()
     self:hide(event)
@@ -266,6 +262,9 @@ function Germ:clearAndDisable(event)
     self.flyoutId = nil
     self.label = nil
 end
+
+Germ.clearAndDisable = Pacifier:pacify(Germ, "clearAndDisable")
+
 
 function Germ:changeFlyoutIdAndEnable(flyoutId, event)
     if flyoutId == self.flyoutId then
@@ -357,6 +356,8 @@ function Germ:copyDoCloseOnClickConfigValToAttribute()
     self:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
     return self.flyoutMenu and self.flyoutMenu:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
 end
+
+Germ.copyDoCloseOnClickConfigValToAttribute = Pacifier:pacify(Germ, "copyDoCloseOnClickConfigValToAttribute", L10N.RECONFIGURE_UFO)
 
 function Germ:setToolTip()
     local btn1 = self.flyoutMenu:getBtn1()
@@ -473,6 +474,8 @@ function Germ:doMyKeybinding()
     self.keybinds = keybinds
 end
 
+Germ.doMyKeybinding = Pacifier:pacify(Germ, "doMyKeybinding", L10N.CHANGE_KEYBINDING)
+
 function Germ:clearKeybinding()
     if not (self.keybinds) then return end
 
@@ -494,20 +497,6 @@ function Germ:registerForBlizUiActions(event)
     self:EnableMouseMotion(true)
     self:RegisterForDrag(MouseClick.LEFT)
     self:RegisterEvent("CURSOR_CHANGED")
-
-    --self:RegisterForClicks("AnyDown", "AnyUp") -- enable SetAttribute() style action button clicker clicks     adsasdasd
-    --self:maybeRegisterForClicksDependingOnCursorIsEmpty(event) -- removed because of the isEventStuffRegistered short-circuit above
-
-    -- TODO - refactor GermCommander so we do these here in Germ
-    -- leverage BlizGlobalEventsListener
-    --self:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-    --self:RegisterEvent("SPELL_UPDATE_USABLE")
-    --self:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
-    --self:RegisterEvent("ACTIONBAR_PAGE_CHANGED")
-    --self:RegisterEvent("BAG_UPDATE") -- ?
-    --self:RegisterEvent("UNIT_INVENTORY_CHANGED")
-    --self:RegisterEvent("UPDATE_BINDINGS")
-    --self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED") -- usableFlyout may change
 
     self.isEventStuffRegistered = true
 end
@@ -553,6 +542,8 @@ function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
     self:setMouseClickHandler(MouseClick.FIVE,   Config:getClickBehavior(flyoutId, MouseClick.FIVE), event)
     self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
 end
+
+Germ.setAllSecureClickScriptlettesBasedOnCurrentFlyoutId = Pacifier:pacify(Germ, "setAllSecureClickScriptlettesBasedOnCurrentFlyoutId", L10N.RECONFIGURE_BUTTON)
 
 function Germ:handleReceiveDrag(event)
     if isInCombatLockdown("Drag and drop") then return end

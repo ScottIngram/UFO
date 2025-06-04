@@ -109,6 +109,7 @@ function Catalog:clickUfoButton(mouseClick, isDown)
 end
 
 function Catalog:toggle(clickedBtn, forceOpen)
+    if isInCombatLockdown("Configuration") then return end
     local catalogFrame = UFO_Catalog
     local blizFrame = clickedBtn:GetParent()
     local blizFrameName = blizFrame:GetName()

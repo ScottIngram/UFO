@@ -228,13 +228,7 @@ You may disable placeholder macros, but, doing so will require extra UI configur
                     if val then
                         GermCommander:ensureAllGermsHavePlaceholders("config_delta")
                     else
-                        Ufo.deletedPlaceholder = "Config: DELETE PLACEHOLDER"
-                        zebug.warn:name("opt:usePlaceHolders()"):print("DELETE ",PLACEHOLDER_MACRO_NAME,"START")
-
-                        DeleteMacro(Ufo.PLACEHOLDER_MACRO_NAME)
-                        -- they claim lua is single threaded.  lets see i WoW's engine is synchronous
-                        zebug.warn:name("opt:usePlaceHolders()"):print("DELETE ",PLACEHOLDER_MACRO_NAME, "DONE")
-                        Ufo.deletedPlaceholder = nil
+                        Config:deletePlaceholder()
                     end
                 end,
                 get = function()
@@ -401,3 +395,16 @@ function Config:get(key)
     end
 
 end
+
+function Config:deletePlaceholder()
+    Ufo.deletedPlaceholder = "Config: DELETE PLACEHOLDER"
+    zebug.info:name("opt:usePlaceHolders()"):print("DELETE ",PLACEHOLDER_MACRO_NAME,"START")
+
+    DeleteMacro(Ufo.PLACEHOLDER_MACRO_NAME) -- here
+
+    -- they claim lua is single threaded.  lets see i WoW's engine is synchronous
+    zebug.info:name("opt:usePlaceHolders()"):print("DELETE ",PLACEHOLDER_MACRO_NAME, "DONE")
+    Ufo.deletedPlaceholder = nil
+end
+
+Config.deletePlaceholder = Pacifier:pacify(Config, "deletePlaceholder", "delete placeholders.")
