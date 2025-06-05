@@ -24,8 +24,6 @@ local zebug = Zebug:new(zVol or Zebug.TRACE)
 
 time = GetTimePreciseSec -- fuck whole second bullshit
 
-ZEBUG_LEVEL_FOR_CURSOR_CHANGED = Zebug.MUTE -- any listeners for this event should pass this to their Event objects
-
 -- Purely to satisfy my IDE
 DB = Ufo.DB
 L10N = Ufo.L10N
@@ -119,24 +117,25 @@ end, "UFO")
 
 function EventHandlers:UPDATE_MACROS(eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    --if isInCombatLockdownQuiet("Ignoring event UPDATE_MACROS because it") then return end
-
-    if Ufo.thatWasMeThatDidThatMacro then
-        -- the event was caused by an action of this addon and as such we shall ignore it
-        zebug.trace:newEvent("Ufo", eName, n):name("handler"):print("ignoring internally triggered event that was caused by", Ufo.thatWasMeThatDidThatMacro)
-        Ufo.thatWasMeThatDidThatMacro = nil
-        return
-    end
 
     zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
-        MacroShitShow:analyzeMacroUpdate(event)
+        UfoProxy:syncMyId()
+
+        if Ufo.thatWasMeThatDidThatMacro then
+            -- the event was caused by an action of this addon and as such we shall ignore it
+            zebug.trace:newEvent("Ufo", eName, n):name("handler"):print("ignoring internally triggered event that was caused by", Ufo.thatWasMeThatDidThatMacro)
+            Ufo.thatWasMeThatDidThatMacro = nil
+            return
+        else
+            MacroShitShow:analyzeMacroUpdate(event)
+        end
     end)
 end
 
 function EventHandlers:UNIT_INVENTORY_CHANGED(id, eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     if id ~= "player" then
-        zebug.error:owner("UFO"):newEvent("Ufo", eName, n):print("not 'player' ! id",id, "eName",eName)
+        zebug.error:name("handler"):newEvent("Ufo", eName, n):print("not 'player' ! id",id, "eName",eName)
     end
 
     zebug.info:mDiamond():name("handler"):newEvent("Ufo", eName, n):run(function(event)
@@ -167,6 +166,20 @@ end
 
 function EventHandlers:PLAYER_LOGIN(eName, n)
     zebug.trace:mMoon():newEvent("Ufo", eName, n):print("Welcome!")
+end
+
+function EventHandlers:CURSOR_CHANGED(isCursorEmpty, me, eventCounter)
+    eventCounter = eventCounter or "NO-EVENT-COUNTER"
+
+    zebug.trace
+        :name("handler")
+        :newEvent("Ufo", Cursor:nameMakerForCursorChanged(isCursorEmpty), eventCounter, Zebug.trace)
+        :run(function(event)
+            GermCommander:forEachActiveGerm(Germ.maybeRegisterForClicksDependingOnCursorIsEmpty, event)
+            Cursor:clearCache(event)
+            UfoProxy:delayedAsyncDeleteProxyIfNotOnCursor(event)
+            --Placeholder:doNotLetUserDragMe(event) -- this is more trouble than it's worth.
+        end)
 end
 
 -------------------------------------------------------------------------------

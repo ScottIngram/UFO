@@ -32,32 +32,6 @@ UfoMixIn:mixInto(Cursor)
 -------------------------------------------------------------------------------
 
 local cachedCursor
-local secretCachedCursor
-
--------------------------------------------------------------------------------
--- Listeners
--------------------------------------------------------------------------------
-
-local EventHandlers = { }
-
-function EventHandlers:CURSOR_CHANGED(isCursorEmpty, me, eventCounter)
-    eventCounter = eventCounter or "NO-EVENT-COUNTER"
-    --if not Ufo.hasShitCalmedTheFuckDown then return end
-
-    zebug.info
-    :name("handler")
-    :owner(secretCachedCursor)
-    :newEvent(self, Cursor:nameMakerForCursorChanged(isCursorEmpty), eventCounter, ZEBUG_LEVEL_FOR_CURSOR_CHANGED)
-    :run(
-    function(event)
-        local type, id = GetCursorInfo()
-        zebug.info:event(event):name("handler"):print("erasing cachedCursor")
-        secretCachedCursor = cachedCursor
-        cachedCursor = nil
-    end)
-end
-
-BlizGlobalEventsListener:register(Cursor, EventHandlers)
 
 -------------------------------------------------------------------------------
 -- Methods
@@ -254,6 +228,11 @@ function Cursor:isUfoProxy()
     end
     return nil
 ]]
+end
+
+function Cursor:clearCache(event)
+    zebug.trace:event(event):name("handler"):print("erasing cachedCursor")
+    cachedCursor = nil
 end
 
 CURSOR_CHANGED_EMPTY = "CURSOR_CHANGED_{ }"

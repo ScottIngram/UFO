@@ -17,23 +17,6 @@ Placeholder = {
 }
 UfoMixIn:mixInto(Placeholder)
 
-local width = 20
-
--------------------------------------------------------------------------------
--- Listeners
--------------------------------------------------------------------------------
-
-local EventHandlers = { }
-
-function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
-    if not Ufo.hasShitCalmedTheFuckDown then return end
-    zebug.trace:mMoon():name("handler"):newEvent(self, "CURSOR_CHANGED"):run(function(event)
-        --Placeholder:doNotLetUserDragMe(event) -- this is more trouble than it's worth.
-    end)
-end
-
-BlizGlobalEventsListener:register(Placeholder, EventHandlers)
-
 -------------------------------------------------------------------------------
 -- Methods
 -------------------------------------------------------------------------------

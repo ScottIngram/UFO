@@ -49,10 +49,10 @@ function GermCommander:forEachGerm(func, event)
     self:forEachGermIf(func, isAlwaysTrue, event)
 end
 
----@param func fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
+---@param funcFor fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
-function GermCommander:forEachActiveGerm(func, event)
-    self:forEachGermIf(func, Germ.isActive, event)
+function GermCommander:forEachActiveGerm(funcFor, event)
+    self:forEachGermIf(funcFor, Germ.isActive, event)
 end
 
 ---@param func fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event

@@ -99,7 +99,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:SetScript(Script.ON_MOUSE_DOWN,   ScriptHandlers.ON_MOUSE_DOWN)
     self:SetScript(Script.ON_MOUSE_UP,     ScriptHandlers.ON_MOUSE_UP) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
     self:SetScript(Script.ON_DRAG_START,   ScriptHandlers.ON_DRAG_START) -- this is required to get OnDrag to work
-    self:SetScript(Script.ON_EVENT,        ScriptHandlers.ON_EVENT) -- also do a RegisterEvent
+    --self:SetScript(Script.ON_EVENT,        ScriptHandlers.ON_EVENT) -- also do a RegisterEvent -- MOVED INTO Ufo.lua
 
     self:registerForBlizUiActions(event)
 
@@ -504,7 +504,7 @@ function Germ:registerForBlizUiActions(event)
 
     self:EnableMouseMotion(true)
     self:RegisterForDrag(MouseClick.LEFT)
-    self:RegisterEvent("CURSOR_CHANGED")
+    --self:RegisterEvent("CURSOR_CHANGED") -- now handled by Ufo.lua
 
     self.isEventStuffRegistered = true
 end
@@ -513,7 +513,8 @@ function Germ:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
     local type, id = GetCursorInfo()
     local enable = not type
     local wut = enable and "cursor is empty so clicks are Enabled" or "cursor is occupied so clicks are IGNORED"
-    zebug.trace:mStar():mMoon():mCross():event(event):owner(self):print("enable",enable, "GetCursorInfo->",GetCursorInfo, "GetCursorInfo->type",type, "GetCursorInfo->id",id,  "Cursor:getFresh()",Cursor:getFresh(event), wut)
+    --zebug.info:mStar():mMoon():mCross():event(event):owner(self):print("enable",enable, "GetCursorInfo->",GetCursorInfo, "GetCursorInfo->type",type, "GetCursorInfo->id",id,  "Cursor:getFresh()",Cursor:getFresh(event), wut)
+    zebug.trace:event(event):owner(self):print(wut)
     if enable then
         self:RegisterForClicks("AnyDown", "AnyUp")
     else
@@ -528,7 +529,7 @@ function Germ:unregisterForBlizUiActions()
     self:EnableMouseMotion(false)
     self:RegisterForDrag("Button6Down")
     self:RegisterForClicks("Button6Down")
-    self:UnregisterEvent("CURSOR_CHANGED")
+    --self:UnregisterEvent("CURSOR_CHANGED")
 
     --self:UnregisterAllEvents()
 
@@ -613,9 +614,11 @@ end
 ---@param me string event name, literal string "CURSOR_CHANGED"
 ---@param isCursorEmpty boolean true if nothing is on the mouse pointer
 function ScriptHandlers:ON_EVENT(eventName, isCursorEmpty --[[, newCursorType, oldCursorType, oldCursorVirtualID]])
-    zebug.trace:mStar():newEvent(self, Cursor:nameMakerForCursorChanged(isCursorEmpty), nil, ZEBUG_LEVEL_FOR_CURSOR_CHANGED):run(function(event)
+--[[
+    zebug.info:mStar():newEvent(self, Cursor:nameMakerForCursorChanged(isCursorEmpty)):run(function(event)
         self:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
     end)
+]]
 end
 
 function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
@@ -729,7 +732,7 @@ end
 ---@param mouseClick MouseClick
 function HandlerMaker:OpenFlyout(mouseClick, event)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
-    zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("self",self, "mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
+    zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
     local scriptName = "OPENER_SCRIPT_FOR_" .. secureMouseClickId
     zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("germ",self.label, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
     -- TODO v11.1 - wrap in exeNotInCombat() ?
@@ -1152,7 +1155,7 @@ function Germ:toString()
         return "<Germ: EMPTY>"
     else
         local icon = self:getIcon()
-        return string.format("<Germ: |T%d:0|t %s ut=%s>", icon, shortName(self.label or self:getLabel() ) or "UnKnOwN", self.ufoType)
+        return string.format("<Germ: |T%d:0|t %s>", icon, shortName(self.label or self:getLabel() ) or "UnKnOwN")
     end
 end
 
