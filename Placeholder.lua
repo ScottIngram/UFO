@@ -27,8 +27,7 @@ local EventHandlers = { }
 
 function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    local event = Event:new(self, me, eventCounter, ZEBUG_LEVEL_FOR_CURSOR_CHANGED) -- zebug:getNoiseLevel()
-    zebug.trace:mMoon():name("handler"):runEvent(event, function()
+    zebug.trace:mMoon():name("handler"):newEvent(self, "CURSOR_CHANGED"):run(function(event)
         --Placeholder:doNotLetUserDragMe(event) -- this is more trouble than it's worth.
     end)
 end

@@ -63,12 +63,10 @@ end
 local EventHandlers = { }
 
 function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, arg2, arg3, arg4)
-    local eventCounter = arg4 or arg3 -- because either warcraft.wiki.gg or Bliz is full of shit and nobody knows how many args are coming
-    local me = (arg4 and arg3) or arg2 -- because either warcraft.wiki.gg or Bliz is full of shit and nobody knows how many args are coming
-    local event = Event:new("Ufo", me, eventCounter)
-    zebug.info:mSkull():name("handler"):runEvent(event, function()
+    local n = arg4 or arg3 -- because either warcraft.wiki.gg or Bliz is full of shit and nobody knows how many args are coming
+    local eName = (arg4 and arg3) or arg2 -- because either warcraft.wiki.gg or Bliz is full of shit and nobody knows how many args are coming
+    zebug.info:mSkull():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         initalizeAddonStuff(event)
-        --if isInCombatLockdown("Ignoring event PLAYER_ENTERING_WORLD because it") then return end
         GermCommander:initializeAllSlots(event)
     end)
 end
@@ -78,17 +76,16 @@ end
 -- spells/items/etc onto UFOs already on the action bars;
 -- UFOs onto other UFOs already on the action bars.
 -- We don't care any other action bar events.
-function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, me, eventCounter, z1, z2)
+function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, eName, n, z1, z2)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    local event = Event:new("Ufo", me, eventCounter)
     if Ufo.germLock then
-        local btnInSlot = BlizActionBarButtonHelper:get(btnSlotIndex, event)
-        zebug.info:event(Ufo.germLock):name("handler"):print("LOCKED - ignoring", event, "caused by",btnInSlot)
+        local btnInSlot = BlizActionBarButtonHelper:get(btnSlotIndex, eName)
+        zebug.info:event(Ufo.germLock):name("handler"):print("LOCKED - ignoring", eName, "caused by",btnInSlot)
         return
     end
 
-    zebug.info:mSquare():name("handler"):runEvent(event, function()
+    zebug.info:mSquare():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         Ufo.germLock = event
         GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlotIndex, event)
         Ufo.germLock = nil
@@ -97,19 +94,16 @@ end
 
 EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttleAndNoQueue(0.125, "Ufo:ACTIONBAR_SLOT_CHANGED", EventHandlers.ACTIONBAR_SLOT_CHANGED)
 
-function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(id, me, eventCounter)
+function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(id, eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    --if isInCombatLockdownQuiet("Ignoring event PLAYER_SPECIALIZATION_CHANGED because it") then return end
-    local event = Event:new("Ufo", me, eventCounter)
-    zebug.info:mCircle():name("handler"):runEvent(event, function()
+    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         GermCommander:changeSpec(event)
     end)
 end
 
 --[[
-function EventHandlers:EDIT_MODE_LAYOUTS_UPDATED(layoutInfo, me, eventCounter)
-    local event = Event:new("Ufo", me, eventCounter)
-    zebug.info:mCircle():name("handler"):runEvent(event, function()
+function EventHandlers:EDIT_MODE_LAYOUTS_UPDATED(layoutInfo, eName, n)
+    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         --GermCommander:changeSpec(event)
         zebug:dumpy("layoutInfo",layoutInfo)
     end)
@@ -118,93 +112,61 @@ end
 
 -- TODO when action bars change direction update their UFOs to match.
 EventRegistry:RegisterCallback("EditMode.Exit", function()
-    local event = Event:new("Ufo", "EditMode.Exit")
-    zebug.info:mark(Mark.INFO):name("handler"):runEvent(event, function()
+    zebug.info:mark(Mark.INFO):name("handler"):newEvent("Ufo", "EditMode.Exit"):run(function(event)
     end)
 end, "UFO")
 
 
-function EventHandlers:UPDATE_MACROS(me, eventCounter)
+function EventHandlers:UPDATE_MACROS(eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     --if isInCombatLockdownQuiet("Ignoring event UPDATE_MACROS because it") then return end
 
-    local event = Event:new("Ufo", me, eventCounter)
     if Ufo.thatWasMeThatDidThatMacro then
         -- the event was caused by an action of this addon and as such we shall ignore it
-        zebug.trace:event(event):name("handler"):print("ignoring internally triggered event that was caused by", Ufo.thatWasMeThatDidThatMacro)
+        zebug.trace:newEvent("Ufo", eName, n):name("handler"):print("ignoring internally triggered event that was caused by", Ufo.thatWasMeThatDidThatMacro)
         Ufo.thatWasMeThatDidThatMacro = nil
         return
     end
 
-    zebug.info:mCircle():name("handler"):runEvent(event, function()
+    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         MacroShitShow:analyzeMacroUpdate(event)
     end)
 end
 
-function EventHandlers:UNIT_INVENTORY_CHANGED(id, me, eventCounter)
+function EventHandlers:UNIT_INVENTORY_CHANGED(id, eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    local event = Event:new("Ufo", me, eventCounter)
     if id ~= "player" then
-        zebug.error:owner("UFO"):event(event):print("not 'player' ! id",id,"me",me)
+        zebug.error:owner("UFO"):newEvent("Ufo", eName, n):print("not 'player' ! id",id, "eName",eName)
     end
-    local pearlMilkId = 81414
-    --local n1 = --[[C_Item.]]GetItemCount(pearlMilkId, false, true)
-    --local nc1 = C_Item.GetItemCount(pearlMilkId, false, true)
-    --local n2 = --[[C_Item.]]GetItemCount(pearlMilkId)
-    --local nc2 = C_Item.GetItemCount(pearlMilkId)
-    --zebug.info:owner("UFO"):event(event):print("---> C_Item.GetItemCount n1",n1, "nc1",nc1, "n2",n2, "nc2",nc2)
 
-
-
-    zebug.info:mDiamond():name(me):runEvent(event, function()
+    zebug.info:mDiamond():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         GermCommander:notifyAllGermsWithItems(event)
     end)
-
-
-   -- local n5 = --[[C_Item.]]GetItemCount(pearlMilkId, false, true)
-   -- local nc5 = C_Item.GetItemCount(pearlMilkId, false, true)
-   -- local n6 = --[[C_Item.]]GetItemCount(pearlMilkId)
-   -- local nc6 = C_Item.GetItemCount(pearlMilkId)
-   -- zebug.info:owner("UFO"):event(event):print("---> C_Item.GetItemCount n5", n5, "nc5", nc5, "n6", n6, "nc6", nc6)
-
-   -- C_Timer.After(2, function()
-   --     local n5 = --[[C_Item.]]GetItemCount(pearlMilkId, false, true)
-   --     local nc5 = C_Item.GetItemCount(pearlMilkId, false, true)
-   --     local n6 = --[[C_Item.]]GetItemCount(pearlMilkId)
-   --     local nc6 = C_Item.GetItemCount(pearlMilkId)
-   --     zebug.info:owner("UFO"):event(event):print("C_Timer.After ---> C_Item.GetItemCount n5", n5, "nc5", nc5, "n6", n6, "nc6", nc6)
-   -- end)
 end
 
 -- an absolute shitstorm of UNIT_INVENTORY_CHANGED and BAG_UPDATE vomit during the loading screen, so throttle this motherfucker
 EventHandlers.UNIT_INVENTORY_CHANGED = Throttler:throttleAndNoQueue(1.0, "Ufo:BAG_UPDATE", EventHandlers.UNIT_INVENTORY_CHANGED)
 
 --[[
-function EventHandlers:UPDATE_VEHICLE_ACTIONBAR(me, eventCounter)
+function EventHandlers:UPDATE_VEHICLE_ACTIONBAR(eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     --if isInCombatLockdownQuiet("Ignoring event UPDATE_VEHICLE_ACTIONBAR because it") then return end
-    local event = Event:new("Ufo", me, eventCounter)
-    zebug.info:mSquare():name(me):runEvent(event, function()
+    local event = Event:new("Ufo", eName, n)
+    zebug.info:mSquare():name(eName):newEvent("Ufo", eName, n):run(function(event)
         GermCommander:handleEventPetChanged(event)
     end)
 end
 ]]
 
-function EventHandlers:UPDATE_BINDINGS(me, eventCounter)
+function EventHandlers:UPDATE_BINDINGS(eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    local event = Event:new("Ufo", me, eventCounter)
-    zebug.trace:event(event):print("bound!")
+    zebug.trace:newEvent("Ufo", eName, n):print("bound!")
     --if isInCombatLockdownQuiet("Ignoring event UPDATE_BINDINGS because it") then return end
     --GermCommander:updateAll()
 end
 
-function EventHandlers:PLAYER_LOGIN(me, eventCounter)
-    local event = Event:new("Ufo", me, eventCounter)
-    zebug.trace:mMoon():event(event):print("Welcome!")
-end
-
-function makeEventId(name, n)
-    return tostring(name or "UnKnOwN eVeNt") .. "_" .. tostring(n or "UnKnOwN N")
+function EventHandlers:PLAYER_LOGIN(eName, n)
+    zebug.trace:mMoon():newEvent("Ufo", eName, n):print("Welcome!")
 end
 
 -------------------------------------------------------------------------------

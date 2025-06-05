@@ -8,7 +8,7 @@
 ---@type Ufo -- IntelliJ-EmmyLua annotation
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-zVol = Zebug.WARN
+zVol = Zebug.ERROR
 local zebug = Zebug:new(zVol or Zebug.TRACE)
 
 ---@alias UfoType string
@@ -64,8 +64,8 @@ function UfoMixIn:installMyToString()
 
     if originalMt then
         if seen[originalMt] then
-            zebug.info:mStar():print("REPEATED mt found on ufoType",self.ufoType, "self:toString()",self:toString(), "originalMt.ufoType",originalMt.ufoType, "__tostring", originalMt.__tostring)
-            zebug.info:mStar():dumpKeys(originalMt)
+            zebug.trace:mStar():print("REPEATED mt found on ufoType",self.ufoType, "self:toString()",self:toString(), "originalMt.ufoType",originalMt.ufoType, "__tostring", originalMt.__tostring)
+            zebug.trace:mStar():dumpKeys(originalMt)
         end
         seen[originalMt] = true
 
@@ -79,11 +79,12 @@ function UfoMixIn:installMyToString()
     else
         zebug.trace:print("no mt on self",self , "ufoType",self.ufoType )
         newMt = {}
-        setmetatable(self, newMt)
     end
 
     newMt.ufoType = self.ufoType
     newMt.__tostring = self.toString
+    setmetatable(self, newMt)
+    zebug.trace:print("installMyToString",self , "ufoType",self.ufoType )
 end
 
 ---@param funcName string name of the method to be overridden
@@ -91,10 +92,6 @@ end
 ---@return function the original method so it can be invoked by the new one
 function UfoMixIn:override(funcName, newFunc)
     return override(self, funcName, newFunc)
-end
-
-function UfoMixIn:newEvent(...)
-    return Event:new(self, ...)
 end
 
 ---@param type string

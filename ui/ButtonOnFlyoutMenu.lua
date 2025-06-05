@@ -308,16 +308,15 @@ function ButtonOnFlyoutMenu:onMouseUp()
     -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
     local isDragging = GetCursorInfo()
     if isDragging then
-        zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "bofm-mouse-up"), function(event)
+        zebug.info:mTriangle():owner(self):newEvent(self, "bofm-mouse-up"):run(function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
---        self:onReceiveDragAddItTryCatch(Event:new(self, "mouse-up"))
     end
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onReceiveDrag()
-    zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "bofm-drag-hit-me"), function(event)
+    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me"):run(function(event)
         self:onReceiveDragAddItTryCatch(event)
     end)
 end
@@ -336,7 +335,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
 
     local isDragging = GetCursorInfo()
     if isDragging then
-        zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "bofm-drag-hit-me"), function(event)
+        zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me"):run(function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
         return
@@ -348,7 +347,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
         return
     end
 
-    zebug.info:mTriangle():owner(self):runEvent(Event:new(self, "bofm-dragged-away"), function(event)
+    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-dragged-away"):run(function(event)
         btnDef:pickupToCursor(event)
         local flyoutId = flyoutFrame:getId()
         local flyoutDef = FlyoutDefsDb:get(flyoutId)

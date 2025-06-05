@@ -135,7 +135,7 @@ function BlizActionBarButtonHelper:get(btnSlotIndex, event)
 
     --print("babb instance B", instance)
     local mt = getmetatable(self)
-    zebug.info:print("BABB", "self",self, "mt",mt, "self.toString", self.toString, "mt.__tostring",mt and mt.__tostring, "self:toString()", self:toString())
+    --zebug.info:event(event):print("BABB", "self",self, "mt",mt, "self.toString", self.toString, "mt.__tostring",mt and mt.__tostring, "self:toString()", self:toString())
     self:installMyToString()
 
     babBtns[btnSlotIndex] = self
@@ -245,14 +245,12 @@ function BabbInstance:getFlyoutIdFromUfoProxy()
     return UfoProxy:getFlyoutId()
 end
 
-local s = function(v) return v or "nil"  end
-
 function BabbInstance:toString()
     if self == BlizActionBarButton then
         return "nil"
     else
         if self:isEmpty() then
-            return string.format("<A-BTN: s%d EMPTY>", s(self.btnSlotIndex))
+            return string.format("<A-BTN: s%d EMPTY>", nilStr(self.btnSlotIndex))
         else
             local name
             local blizType, blizId = self:getTypeAndId()
@@ -270,10 +268,10 @@ function BabbInstance:toString()
             end
 
             if name then
-                return string.format("<A-BTN: s%d %s: %s>", s(self.btnSlotIndex), s(blizType), name)
+                return string.format("<A-BTN: s%d %s: %s>", nilStr(self.btnSlotIndex), nilStr(blizType), name)
             end
 
-            return string.format("<A-BTN: s%d, %s:%s>", s(self.btnSlotIndex), s(blizType), s(blizId))
+            return string.format("<A-BTN: s%d, %s:%s>", nilStr(self.btnSlotIndex), nilStr(blizType), nilStr(blizId))
         end
     end
 end

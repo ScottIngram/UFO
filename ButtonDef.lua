@@ -130,13 +130,11 @@ function ButtonDef:new()
     return self
 end
 
-local s = function(v) return v or "nil"  end
-
 function ButtonDef:toString()
     if not self.type then
         return "<ButtonDef: EMPTY>"
     else
-        return string.format("<ButtonDef: %s:%s>", s(self.type), s(self.name))
+        return string.format("<ButtonDef: %s:%s>", nilStr(self.type), nilStr(self.name))
     end
 end
 
@@ -186,7 +184,7 @@ end
 function ButtonDef:isUsable()
     local t = self.type
     local id = self:getIdForBlizApi()
-    zebug.info:owner(self):print("type",t, "spellId", self.spellId, "id",id)
+    zebug.trace:owner(self):print("type",t, "spellId", self.spellId, "id",id)
     if t == ButtonType.MOUNT or t == ButtonType.PET then
         -- TODO: figure out how to find a mount
         return true -- GetMountInfoByID(mountId)
@@ -289,7 +287,7 @@ end
 function ButtonDef:getToolTipSetter()
     local type = self.type
     local id = self:getIdForBlizApi()
-    zebug.info:line(20, "type",type, "id",id)
+    zebug.trace:line(20, "type",type, "id",id)
 
     local tooltipSetter
     if type == ButtonType.SPELL or type == ButtonType.MOUNT or type == ButtonType.PSPELL then

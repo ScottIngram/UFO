@@ -89,7 +89,7 @@ function IconPicker:OkayButton_OnClick()
         icon = nil
     end
 
-    zebug.info:mTriangle():runEvent(Event:new(self, "clicked-OK"), function(event)
+    zebug.info:mTriangle():newEvent(self, "clicked-OK"):run(function(event)
         local flyoutId = self.flyoutId
         zebug.info:event(event):print("txt", name, "iconIndex",iconIndex, "icon",icon, "flyoutId",flyoutId)
 

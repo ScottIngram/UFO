@@ -36,8 +36,7 @@ local EventHandlers = { }
 function EventHandlers:UPDATE_MACROS(me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    local event = Event:new(self, me, eventCounter)
-    zebug.trace:name("handler"):runEvent(event, function()
+    zebug.trace:name("handler"):newEvent(self, me, eventCounter):run(function(event)
         zebug.trace:event(event):name("handler"):print("syncMyId")
         UfoProxy:syncMyId()
     end)
@@ -46,8 +45,7 @@ end
 function EventHandlers:CURSOR_CHANGED(isDefault, me, eventCounter)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    local event = Event:new(self, me, eventCounter, ZEBUG_LEVEL_FOR_CURSOR_CHANGED)
-    zebug.trace:name("handler"):runEvent(event, function()
+    zebug.trace:name("handler"):newEvent(self, me, eventCounter, ZEBUG_LEVEL_FOR_CURSOR_CHANGED):run(function(event)
         local cursor = Cursor:getFresh(event)
         zebug.trace:event(event):owner(cursor):print("maybe erasing UfoProxy macro")
         UfoProxy:delayedAsyncDeleteProxyIfNotOnCursor(event)

@@ -44,8 +44,12 @@ function EventHandlers:CURSOR_CHANGED(isCursorEmpty, me, eventCounter)
     eventCounter = eventCounter or "NO-EVENT-COUNTER"
     --if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    local event = Event:new(self, Cursor:nameMakerForCursorChanged(isCursorEmpty), eventCounter, ZEBUG_LEVEL_FOR_CURSOR_CHANGED)
-    zebug.info:name("handler"):owner(secretCachedCursor):runEvent(event, function()
+    zebug.info
+    :name("handler")
+    :owner(secretCachedCursor)
+    :newEvent(self, Cursor:nameMakerForCursorChanged(isCursorEmpty), eventCounter, ZEBUG_LEVEL_FOR_CURSOR_CHANGED)
+    :run(
+    function(event)
         local type, id = GetCursorInfo()
         zebug.info:event(event):name("handler"):print("erasing cachedCursor")
         secretCachedCursor = cachedCursor
@@ -252,10 +256,11 @@ function Cursor:isUfoProxy()
 ]]
 end
 
-local s = function(v) return v or "nil"  end
+CURSOR_CHANGED_EMPTY = "CURSOR_CHANGED_{ }"
+CURSOR_CHANGED_FULL = "CURSOR_CHANGED_{#}"
 
 function Cursor:nameMakerForCursorChanged(isCursorEmpty)
-    return sprintf("CURSOR_CHANGED_{%s}", isCursorEmpty and " " or "#")
+    return isCursorEmpty and CURSOR_CHANGED_EMPTY or CURSOR_CHANGED_FULL
 end
 
 function Cursor:toString()
@@ -274,7 +279,7 @@ function Cursor:toString()
                     name = Placeholder:toString()
                 end
             end
-            return string.format("<Cursor: %s:%s %s>", s(self.type), s(self.id), s(name))
+            return string.format("<Cursor: %s:%s %s>", nilStr(self.type), nilStr(self.id), nilStr(name))
         end
     end
 end

@@ -594,7 +594,7 @@ end
 function ScriptHandlers:ON_UPDATE(elapsed)
     if self:isInactive() then return end
     -- do NOT run ON_UPDATE without first wrapping it in Throttler !!!
-    zebug.trace:owner(self):runEventTerse(Event:new(self, "ON_UPDATE"), function(event)
+    zebug.trace:owner(self):newEvent(self, "ON_UPDATE"):runTerse(function(event)
         self:render(event)
     end)
 end
@@ -605,15 +605,14 @@ end
 ---@param me string event name, literal string "CURSOR_CHANGED"
 ---@param isCursorEmpty boolean true if nothing is on the mouse pointer
 function ScriptHandlers:ON_EVENT(eventName, isCursorEmpty --[[, newCursorType, oldCursorType, oldCursorVirtualID]])
-    local event = Event:new(self, Cursor:nameMakerForCursorChanged(isCursorEmpty), nil, ZEBUG_LEVEL_FOR_CURSOR_CHANGED)
-    zebug.trace:mStar():runEvent(event, function()
+    zebug.trace:mStar():newEvent(self, Cursor:nameMakerForCursorChanged(isCursorEmpty), nil, ZEBUG_LEVEL_FOR_CURSOR_CHANGED):run(function(event)
         self:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
     end)
 end
 
 function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
     local cursor = Cursor:get()
-    zebug.info:mDiamond():owner(self):runEvent(Event:new(self, "OnMouseDown"), function(event)
+    zebug.info:mDiamond():owner(self):newEvent(self, "ScriptHandlers.ON_MOUSE_DOWN"):run(function(event)
         self:OnMouseDown() -- Call Bliz super()
 
         if cursor then
@@ -626,7 +625,7 @@ function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
 end
 
 function ScriptHandlers:ON_MOUSE_UP()
-    zebug.info:mCross():owner(self):runEvent(Event:new(self, "ScriptHandlers.OnMouseUp"), function(event)
+    zebug.info:mCross():owner(self):newEvent(self, "ScriptHandlers.ON_MOUSE_UP"):run(function(event)
         self:OnMouseUp() -- Call Bliz super()
 
         local isDragging = GetCursorInfo()
@@ -646,7 +645,7 @@ end
 ---@param self GERM_TYPE
 function ScriptHandlers:ON_RECEIVE_DRAG()
     if isInCombatLockdown("Drag and drop") then return end
-    zebug.info:mCircle():owner(self):runEvent(Event:new(self, "ON_RECEIVE_DRAG"), function(event)
+    zebug.info:mCircle():owner(self):newEvent(self, "ON_RECEIVE_DRAG"):run(function(event)
         self:handleReceiveDrag(event)
     end)
 end
@@ -657,7 +656,7 @@ function ScriptHandlers:ON_DRAG_START()
     if isInCombatLockdown("Drag and drop") then return end
     self:OnDragStart() -- Call Bliz super()
 
-    zebug.info:mCircle():owner(self):runEvent(Event:new(self, "ON_DRAG_START"), function(event)
+    zebug.info:mCircle():owner(self):newEvent(self, "ON_DRAG_START"):run(function(event)
         self:pickupFromSlotAndClear(event)
     end)
 end
@@ -666,8 +665,7 @@ function ScriptHandlers:ON_ENTER()
     if self:isInactive() then return end
     self:OnEnter() -- Call Bliz super()
 
-    local event = Event:new(self, "OnEnter")
-    zebug.info:mDiamond():owner(self):runEvent(Event:new(self, "OnEnter"), function(event)
+    zebug.info:mDiamond():owner(self):newEvent(self, "ON_ENTER"):run(function(event)
         self:setToolTip()
         --self:doUpdateIfSlow(event)
     end)

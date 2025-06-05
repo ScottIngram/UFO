@@ -52,8 +52,6 @@ function FlyoutMenu:new(germ)
     return self
 end
 
-local s = function(v) return v or "nil"  end
-
 function FlyoutMenu:toString()
     if not self.flyoutId then
         return "<FM: EMPTY>"
@@ -406,14 +404,14 @@ end
 -------------------------------------------------------------------------------
 
 function ScriptHandlers:ON_SHOW()
-    zebug.info:mark(Mark.LOOT):owner(self):runEvent(Event:new(self, "ON_SHOW"), function(event)
+    zebug.info:mark(Mark.LOOT):owner(self):newEvent(self, "ON_SHOW"):run(function(event)
         self:GetParent():OnPopupToggled() -- call Bliz super method
         self:renderAllBtnCooldownsEtc(event)
     end)
 end
 
 function ScriptHandlers:ON_HIDE()
-    zebug.info:mark(Mark.NOLOOT):owner(self):runEvent(Event:new(self, "ON_HIDE"), function(event)
+    zebug.info:mark(Mark.NOLOOT):owner(self):newEvent(self, "ON_HIDE"):run(function(event)
         self:GetParent():OnPopupToggled() -- call Bliz super method
     end)
 end
@@ -434,12 +432,13 @@ function FlyoutMenu:onLoadForGerm()
 end
 
 function FlyoutMenu:onLoadForCatalog()
-    zebug.info:name("ForCatalog_OnLoad"):print("flyoutMenu", self:GetName())
-
     -- initialize fields
     Catalog.flyoutMenu = self
     self.isForCatalog = true
-    self:forEachButton(ButtonOnFlyoutMenu.installExcluder, Event:new(self, "on-load-for-catalog"))
+
+    zebug.trace:name("ForCatalog_OnLoad"):newEvent("FlyoutMenu", "on-load-for-catalog"):run(function(event)
+        self:forEachButton(ButtonOnFlyoutMenu.installExcluder, event)
+    end)
 end
 
 function FlyoutMenu:renderAllBtnCooldownsEtc(event)

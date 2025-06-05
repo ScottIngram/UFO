@@ -75,13 +75,11 @@ function FlyoutDef:new()
     return FlyoutDef:oneOfUs(self)
 end
 
-local s = function(v) return v or "nil"  end
-
 function FlyoutDef:toString()
     if self == Cursor then
         return "nil"
     else
-        return string.format("<FlyDef: %s %s size=%d>", s(self.id), s(self.name), s(self.btns and #(self.btns) or 0))
+        return string.format("<FlyDef: %s %s size=%d>", nilStr(self.id), nilStr(self.name), nilStr(self.btns and #(self.btns) or 0))
     end
 end
 

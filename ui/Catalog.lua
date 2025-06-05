@@ -391,12 +391,13 @@ function GLOBAL_UFO_CatalogEntry_OnEnter(btnInCatalog)
 end
 
 function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
-    local event = Event:new(btnInCatalog, "CatalogEntry_OnDragStart")
+    local eventCapture
     local flyoutId = btnInCatalog.flyoutId
     flyoutIndexOnTheMouse = btnInCatalog.flyoutIndex
     if exists(flyoutId) then
-        zebug.info:mSquare():runEvent(event, function()
-            UfoProxy:pickupUfoOntoCursor(flyoutId, "CatalogEntry_OnDragStart")
+        zebug.info:mSquare():newEvent("CatalogEntry", "OnDragStart"):run(function(event)
+            eventCapture = event
+            UfoProxy:pickupUfoOntoCursor(flyoutId, event)
         end)
     end
     local scrollPane = btnInCatalog:GetParent():GetParent()
@@ -405,7 +406,7 @@ function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
     btnOnTheMouse = btnInCatalog
     btnInCatalog.EditButton:Hide()
     btnInCatalog.DeleteButton:Hide()
-    Catalog:update(event)
+    Catalog:update(eventCapture or "GLOBAL_UFO_CatalogEntry_OnDragStart")
 end
 
 function GLOBAL_UFO_CatalogScrollPane_OnLoad(scrollPane)
@@ -474,7 +475,7 @@ end
 
 function GLOBAL_UFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
     local event = Event:new(btnInCatalog,"CatalogEntryButton_OnClick")
-    zebug.info:event(event):name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
+    zebug.info:newEvent(event):name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
     local scrollPane = UFO_CatalogScrollPane
 
     if ADD_BUTTON_NAME == btnInCatalog.name then
@@ -525,8 +526,7 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)
 end
 
 function GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow(btn)
-    local event = Event:new(btn,"CatalogEntryButtonsMouseOver_OnShow")
-    zebug.info:event(event):name("CatalogEntryButtonsMouseOver_OnShow"):print("btn",btn:GetName())
+    zebug.info:newEvent(btn,"CatalogEntryButtonsMouseOver_OnShow"):name("CatalogEntryButtonsMouseOver_OnShow"):print("btn",btn:GetName())
     if UfoProxy:isOnCursor() then
         btn:Hide()
     else
