@@ -214,6 +214,14 @@ function Germ:doIcon(event)
     self:setIcon(icon, event)
 end
 
+function Germ:glowStart()
+    SharedActionButton_RefreshSpellHighlight(self, true)
+end
+
+function Germ:glowStop()
+    SharedActionButton_RefreshSpellHighlight(self, false)
+end
+
 function Germ:initFlyoutMenu(event)
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu:new(self)

@@ -373,6 +373,7 @@ function GLOBAL_UFO_CatalogEntry_OnLeave(btnInCatalog)
     GameTooltip_Hide()
     btnUnderTheMouse = nil
     Catalog:update(event)
+    GermCommander:forEachGermWithFlyoutId(btnInCatalog.flyoutId, Germ.glowStop)
 end
 
 -- TODO - handle the hover glow here and not in the update() routine
@@ -388,6 +389,7 @@ function GLOBAL_UFO_CatalogEntry_OnEnter(btnInCatalog)
     Catalog:setToolTip(btnInCatalog)
     btnUnderTheMouse = btnInCatalog
     Catalog:update(event)
+    GermCommander:forEachGermWithFlyoutId(btnInCatalog.flyoutId, Germ.glowStart)
 end
 
 function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
