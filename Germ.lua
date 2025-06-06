@@ -92,7 +92,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     -- install event handlers
     self:HookScript(Script.ON_HIDE,        function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable() or on a spec change which throws away placeholders
-    self:SetScript(Script.ON_UPDATE,       Throttler:throttleAndNoQueue(MAX_FREQ_UPDATE, self, ScriptHandlers.ON_UPDATE))
+    --self:SetScript(Script.ON_UPDATE,       Throttler:throttleAndNoQueue(MAX_FREQ_UPDATE, self, ScriptHandlers.ON_UPDATE)) -- moved into Ufo.lua and replaced with SPELL_UPDATE_COOLDOWN
     self:SetScript(Script.ON_ENTER,        ScriptHandlers.ON_ENTER)
     self:SetScript(Script.ON_LEAVE,        ScriptHandlers.ON_LEAVE)
     self:SetScript(Script.ON_RECEIVE_DRAG, ScriptHandlers.ON_RECEIVE_DRAG)
@@ -600,6 +600,7 @@ end
 -- Handlers
 -------------------------------------------------------------------------------
 
+-- no longer used - now render() is triggered in Ufo.lua by SPELL_UPDATE_COOLDOWN etc
 function ScriptHandlers:ON_UPDATE(elapsed)
     if self:isInactive() then return end
     -- do NOT run ON_UPDATE without first wrapping it in Throttler !!!

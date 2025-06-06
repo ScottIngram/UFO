@@ -182,6 +182,24 @@ function EventHandlers:CURSOR_CHANGED(isCursorEmpty, me, eventCounter)
         end)
 end
 
+function EventHandlers:SPELL_UPDATE_COOLDOWN(spellID, --[[baseSpellID, ]]eName, n)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+    zebug.info:mark(Mark.DPS):name("SPELL_UPDATE_COOLDOWN"):newEvent("Ufo", eName, n):run(function(event)
+        local spellInfo = spellID and C_Spell.GetSpellInfo(spellID)
+        local name = spellInfo and spellInfo.name or "UnKnOwN"
+        zebug.info:name("SPELL_UPDATE_COOLDOWN"):event(event):print("spellID",spellID, "spell name", name --[[, "baseSpellID",baseSpellID, "eName",eName, "n",n]])
+        GermCommander:forEachActiveGerm(Germ.render, event)
+    end)
+end
+
+EventHandlers.SPELL_UPDATE_COOLDOWN = Throttler:throttleAndNoQueue(0.1, "Ufo:SPELL_UPDATE_COOLDOWN", EventHandlers.SPELL_UPDATE_COOLDOWN)
+
+function EventHandlers:SPELL_UPDATE_USABLE(eName, n)
+    EventHandlers:SPELL_UPDATE_COOLDOWN(nil, eName, n)
+end
+
+EventHandlers.SPELL_UPDATE_CHARGES = EventHandlers.SPELL_UPDATE_USABLE
+
 -------------------------------------------------------------------------------
 -- Event related methods - TODO: use these?
 -------------------------------------------------------------------------------
