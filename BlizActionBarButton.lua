@@ -107,6 +107,7 @@ function BlizActionBarButtonHelper:get(btnSlotIndex, event)
 
     -- So instead, wollop the Bliz button Frame object and bolt all of BlizActionBarButton's fields/methods into it.
     -- TAINT concerns.  Be careful to not touch any fields read by Bliz code.
+
     ---@type BlizActionBarButton | LITERAL_BABB
     local self = deepcopy(BlizActionBarButton, literalBlizBtn)
 
@@ -212,13 +213,15 @@ function BabbInstance:isEmpty()
     return BabbClass:isEmpty(self.btnSlotIndex)
 end
 
+--[[
 function BabbInstance:getParent()
     if ThirdPartyAddonSupport.isAnyActionBarAddonActive then
-        return ThirdPartyAddonSupport:getParent(self.btnSlotIndex, self.barNum, self.btnNum)
+        return ThirdPartyAddonSupport:getBtnParentAsProvidedByAddon(self.btnSlotIndex, self.barNum, self.btnNum)
     else
         return self:GetParent() -- call Bliz's
     end
 end
+]]
 
 function BabbInstance:getLiteralBlizBtn()
     return BabbClass:getLiteralBlizBtn(self.btnSlotIndex)

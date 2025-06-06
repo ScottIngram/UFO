@@ -237,7 +237,7 @@ end
 ---@param germ Germ
 function FlyoutMenu:applyConfigForGerm(germ, event)
     self:SetParent(germ)
-    self.direction = germ:getDirection()
+    self.direction = germ:getDirection(event)
     local flyoutId = germ:getFlyoutId()
     self:setId(flyoutId)
     local flyoutDef = self:getDef()

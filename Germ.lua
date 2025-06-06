@@ -67,15 +67,18 @@ local MAX_FREQ_UPDATE = 0.25 -- secs
 -------------------------------------------------------------------------------
 
 function Germ:new(flyoutId, btnSlotIndex, event)
-    local parentActionBarBtn = BlizActionBarButtonHelper:get(btnSlotIndex, "Germ:New() for btnSlotIndex"..btnSlotIndex)
+    local parentBlizActionBarBtn = BlizActionBarButtonHelper:get(btnSlotIndex, "Germ:New() for btnSlotIndex"..btnSlotIndex)
+    local parentBtn3rdParty      = ThirdPartyAddonSupport:getBtnParentAsProvidedByAddon(parentBlizActionBarBtn)
+    local parentBtn              = parentBtn3rdParty or parentBlizActionBarBtn
+
     --print("Germ parentActionBarBtn",parentActionBarBtn, "parentActionBarBtn.GetName", parentActionBarBtn.GetName)
-    local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentActionBarBtn:GetName()
+    local myName = GERM_UI_NAME_PREFIX .. "On_" .. parentBtn:GetName()
 
     ---@type GERM_TYPE | Germ
     local self = CreateFrame(
             FrameType.CHECK_BUTTON,
             myName,
-            parentActionBarBtn,
+            parentBtn,
             "GermTemplate"
     )
 
@@ -109,11 +112,11 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     -- UI positioning & appearance
     self:ClearAllPoints()
-    self:SetAllPoints(parentActionBarBtn)
+    self:SetAllPoints(parentBtn)
     self:initLabel()
     self:doIcon(event)
     self.Name:SetText(self.label)
-    self:setVisibilityDriver(parentActionBarBtn.visibleIf)
+    self:setVisibilityDriver(parentBlizActionBarBtn.visibleIf) -- do I even need this? when the parent Hides so will the Germ automatically
 
     -- secure tainty stuff
     self:safeSetAttribute("UFO_NAME", self.label)
@@ -131,9 +134,7 @@ end
 
 function Germ:render(event)
     if self:isInactive(event) then return end
-
     self:UpdateArrowRotation() -- VOLATILE if action bar changes direction... and changes when open/closed
-
     self:renderCooldownsAndCountsAndStatesEtc(event) -- TODO: v11.1 verify this is working properly.  do I need to do more? -- What happens if I remove this?
     self.flyoutMenu:renderAllBtnCooldownsEtc(event)
 end
@@ -346,12 +347,15 @@ function Germ:getParent()
     return self:GetParent()
 end
 
-function Germ:getDirection()
+function Germ:getDirection(event)
     -- TODO: fix bug where edit-mode -> change direction doesn't automatically update existing germs
-    -- ask the bar instance what direction to fly
-    -- removed for Germ == ActionButton
-    local parent = self:GetParent()
-    return parent.bar:GetSpellFlyoutDirection()
+    local parent = self:getParent()
+    -- check if my ThirdPartyAddonSupport has provided a method
+    if parent.GetSpellFlyoutDirection then
+        return parent:GetSpellFlyoutDirection(event)
+    end
+    -- use the std Bliz method
+    return parent.bar:GetSpellFlyoutDirection(event)
 end
 
 function Germ:updateAllBtnHotKeyLabels(event)
@@ -539,7 +543,7 @@ end
 function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
     -- TODO v11.1 - wrap in exeNotInCombat() ? in case "/reload" during combat
     -- set attributes used inside the secure scriptlettes
-    self:SetAttribute("flyoutDirection", self:getDirection())
+    self:SetAttribute("flyoutDirection", self:getDirection(event))
     self:SetAttribute("FLYOUT_MENU_NAME", self.flyoutMenu:GetName())
     self:SetAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
 

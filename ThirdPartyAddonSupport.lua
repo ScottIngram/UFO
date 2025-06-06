@@ -5,6 +5,7 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.WARN)
 
 ---@class ThirdPartyAddonSupport : UfoMixIn
 ---@field isAnyActionBarAddonActive boolean
@@ -23,18 +24,18 @@ UfoMixIn:mixInto(ThirdPartyAddonSupport)
 ---@field activate function
 local SUPPORTED_ADDONS -- to be defined below
 local warned = false
-local _getParent
+local _getterOfBtnParentAsProvidedByAddon
 
 -------------------------------------------------------------------------------
 -- Methods / Functions
 -------------------------------------------------------------------------------
 
 function ThirdPartyAddonSupport:detectSupportedAddons()
-    for addon, methods in pairs(SUPPORTED_ADDONS) do
-        zebug.info:print("Checking - addon",addon)
-        if C_AddOns.IsAddOnLoaded(addon) then
-            msgUser(L10N.DETECTED .. " " .. addon, IS_OPTIONAL)
-            SUPPORTED_ADDONS[addon].activate()
+    for addonName, methods in pairs(SUPPORTED_ADDONS) do
+        zebug.info:print("Checking - addon", addonName)
+        if C_AddOns.IsAddOnLoaded(addonName) then
+            msgUser(L10N.DETECTED .. " " .. addonName, IS_OPTIONAL)
+            SUPPORTED_ADDONS[addonName].activate(addonName)
         end
     end
 end
@@ -43,8 +44,15 @@ end
 -- Action Bar Addons
 -------------------------------------------------------------------------------
 
-function ThirdPartyAddonSupport:getParent(bbInfo)
-    return _getParent(bbInfo)
+---@param babb BlizActionBarButton
+function ThirdPartyAddonSupport:getBtnParentAsProvidedByAddon(babb)
+    if not _getterOfBtnParentAsProvidedByAddon then return end
+    local btnParent = _getterOfBtnParentAsProvidedByAddon(babb)
+    if btnParent then
+        btnParent.btnYafName = babb.btnYafName
+        btnParent.btnName = babb.btnName
+    end
+    return btnParent
 end
 
 function getParentForBartender4(btnBarInfo)
@@ -84,25 +92,55 @@ function getParentForElvUI(btnBarInfo)
     return parent
 end
 
-function getParentForDominos(btnBarInfo)
-    local btnSlotIndex = btnBarInfo.btnSlotIndex
+---@param babb BlizActionBarButton
+function getParentForDominos(babb)
+    local btnSlotIndex = babb.btnSlotIndex
 
     -- for some reason that I can't figure out,
     -- action buttons 13 through 25 won't show UFOs.
     -- so for the moment, I'm just not supporting UFOs in those.
     -- Also, some (but not all) empty button slots will throw this error when you point at them:
     -- Interface/FrameXML/SecureTemplates.lua:120: Wrong object type for function
-    if btnSlotIndex >= 13 and btnSlotIndex <=25 then return end
+    --if btnSlotIndex >= 13 and btnSlotIndex <=25 then return end
 
     local name = "DominosActionButton" .. btnSlotIndex
     local parent = _G[name]
-    zebug.error:name("DOMINOS:getParent"):print("btnSlotIndex",btnSlotIndex, "name",name, "parent",parent)
+
     if parent then
-        -- poor-man's polymorphism
+        zebug.info:owner(babb):name("DOMINOS:getParent"):print("FOUND Dominos button",parent, " with the name",name)
+    else
+        zebug.info:owner(babb):name("DOMINOS:getParent"):print("failed to find a Dominos button with the name",name)
+
+        -- I'm trying to construct something like "MultiBarLeftActionButton4" istead of Blizzard's standard name of "MultiBarLeftButton4" because everybody has to be special.
+        local barName =  babb.barName -- MultiBarLeft
+        local btnNum = babb.btnNum -- 1-12
+        name = barName .."ActionButton".. btnNum
+        parent = _G[name]
+
+        if parent then
+            zebug.info:owner(babb):name("DOMINOS:getParent"):print("FOUND Dominos button",parent, " with the name",name)
+        else
+            zebug.info:owner(babb):name("DOMINOS:getParent"):print("failed to find a Dominos button with the name",name)
+        end
+    end
+
+    --zebug.info:owner(babb):name("DOMINOS:getParent"):print("btnSlotIndex",btnSlotIndex, "name",name, "parent",parent)
+    if parent then
+        -- poor-man's polymorphism - will this cause TAINT ?
         parent.GetName = function() return name end
         parent.btnSlotIndex = btnSlotIndex
-        if not parent.bar then parent.bar = {} end
-        parent.bar.GetSpellFlyoutDirection = function() return parent:GetAttribute("flyoutDirection") or "LEFT" end
+
+        -- UFOs looks to the standard Bliz actionbar button which has a "bar" attribute which in turn has a GetSpellFlyoutDirection() method
+        if parent.GetSpellFlyoutDirection or (parent.bar and parent.bar.GetSpellFlyoutDirection) then
+            zebug.trace:owner(babb):name("DOMINOS:getParent"):print("DOMINOS: already has parent.bar.GetSpellFlyoutDirection", parent.bar.GetSpellFlyoutDirection)
+        else
+            zebug.trace:owner(babb):name("DOMINOS:getParent"):print("DOMINOS: creating target.GetSpellFlyoutDirection")
+            function parent:GetSpellFlyoutDirection(event)
+                local dir = parent:GetAttribute("flyoutDirection") or "LEFT"
+                zebug.info:event(event):owner(babb):name("DOMINOS:GetSpellFlyoutDirection"):print("btnSlotIndex",btnSlotIndex, "name",name, "dir",dir)
+                return dir
+            end
+        end
     else
         if not warned then
             msgUser(L10N.DOMINOS_BAR_DISABLED)
@@ -114,7 +152,7 @@ end
 
 function activateActionBarAddon(parentGetterFunc)
     ThirdPartyAddonSupport.isAnyActionBarAddonActive = true
-    _getParent = parentGetterFunc
+    _getterOfBtnParentAsProvidedByAddon = parentGetterFunc
 end
 
 -------------------------------------------------------------------------------
@@ -147,7 +185,7 @@ SUPPORTED_ADDONS = {
         end,
     },
     Dominos = {
-        activate = function()
+        activate = function(addonName)
             activateActionBarAddon(getParentForDominos)
         end,
     },
