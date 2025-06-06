@@ -8,7 +8,7 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole()
-local zebug = Zebug:new(zVol or Zebug.INFO)
+local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 
 ---@type MouseClick
 MouseClick = Ufo.MouseClick

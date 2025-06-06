@@ -8,8 +8,7 @@
 ---@type Ufo -- IntelliJ-EmmyLua annotation
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-zVol = Zebug.ERROR
-local zebug = Zebug:new(zVol or Zebug.TRACE)
+local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.TRACE)
 
 ---@alias UfoType string
 

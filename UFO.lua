@@ -19,8 +19,8 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 ufoType = "UFO_BASE"
 
-zebug = Zebug:new(zVol or Zebug.INFO) -- will be used by everyone in the Wormhole
-local zebug = Zebug:new(zVol or Zebug.TRACE)
+zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO) -- will be used by everyone in the Wormhole unless they override
+local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.TRACE)
 
 time = GetTimePreciseSec -- fuck whole second bullshit
 

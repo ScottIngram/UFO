@@ -24,7 +24,7 @@ Thanks to this, the following 300+ lines of code exist to overcome the needless 
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new(zVol or Zebug.INFO)
+local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 
 ---@class MacroShitShow
 MacroShitShow = {}
