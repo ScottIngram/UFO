@@ -55,11 +55,12 @@ function ThirdPartyAddonSupport:getBtnParentAsProvidedByAddon(babb)
     return btnParent
 end
 
-function getParentForBartender4(btnBarInfo)
-    local btnSlotIndex = btnBarInfo.btnSlotIndex
+---@param babb BlizActionBarButton
+function getParentForBartender4(babb)
+    local btnSlotIndex = babb.btnSlotIndex
     local name = "BT4Button" .. btnSlotIndex
     local parent = _G[name]
-    zebug.trace:name("BARTENDER4:getParent"):print("btnSlotIndex",btnSlotIndex, "name",name, "parent",parent)
+    zebug.trace:owner(babb):name("BARTENDER4:getParent"):print("btnSlotIndex",btnSlotIndex, "name",name, "parent",parent)
     if parent then
         -- poor-man's polymorphism
         parent.GetName = function() return name end
@@ -175,7 +176,7 @@ end
 
 SUPPORTED_ADDONS = {
     Bartender4 = {
-        activate = function()
+        activate = function(addonName)
             activateActionBarAddon(getParentForBartender4)
         end,
     },
