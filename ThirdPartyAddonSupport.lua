@@ -76,19 +76,22 @@ function getParentForBartender4(babb)
     return parent
 end
 
-function getParentForElvUI(btnBarInfo)
-    local btnSlotIndex = btnBarInfo.btnSlotIndex
-    local barName =  "ElvUI_Bar".. btnBarInfo.barNum
-    local btnName = barName .."Button"..  btnBarInfo.btnNum
+---@param babb BlizActionBarButton
+function getParentForElvUI(babb)
+    local btnSlotIndex = babb.btnSlotIndex
+    local barNum = babb.barNum
+    local btnNum = babb.btnNum
+    local barName =  "ElvUI_Bar" .. barNum
+    local btnName = barName .."Button".. btnNum
     local parent = _G[btnName]
     local zebugger = parent and zebug.trace or zebug.error
-    zebugger:name("ElvUI:getParent"):print("btnSlotIndex",btnSlotIndex, "barNum",btnBarInfo.barNum, "barName",barName, "btnName",btnName, "parent",parent)
+    zebugger:owner(babb):name("ElvUI:getParent"):print("btnSlotIndex",btnSlotIndex, "barNum",barNum, "barName",barName, "btnName",btnName, "parent",parent)
     if parent then
         -- poor-man's polymorphism
         --parent.GetName = function() return barName end
         --parent.btnSlotIndex = btnSlotIndex
         parent.bar = {}
-        parent.bar.GetSpellFlyoutDirection = function() return parent.db.flyoutDirection or "LEFT" end
+        parent.bar.GetSpellFlyoutDirection = function() return parent.db.flyoutDirection or "LEFT" end -- Um, I forgot what this "db" is ? Was that an ElvUI thing?
     end
     return parent
 end
@@ -181,7 +184,7 @@ SUPPORTED_ADDONS = {
         end,
     },
     ElvUI = {
-        activate = function()
+        activate = function(addonName)
             activateActionBarAddon(getParentForElvUI)
         end,
     },
