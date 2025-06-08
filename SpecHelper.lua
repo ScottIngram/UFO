@@ -19,19 +19,18 @@ Spec = { }
 
 local previousSpec
 local currentSpec
-local acknowledgedSpec
+local appliedSpec
 
 -------------------------------------------------------------------------------
 -- Methods
 -------------------------------------------------------------------------------
 
-function Spec:getSpecId()
-    return GetSpecialization() or NON_SPEC_SLOT
+function Spec:initialize()
+    return self:getSpecId()
 end
 
--- keep track of spec changes so getConfigForSpec() can initialize a brand new config based on the old one
-function Spec:recordCurrentSpec()
-    local newSpec = self:getSpecId()
+function Spec:getSpecId()
+    local newSpec = GetSpecialization() or NON_SPEC_SLOT
 
     if currentSpec then
         if currentSpec ~= newSpec then
@@ -40,27 +39,26 @@ function Spec:recordCurrentSpec()
     end
 
     currentSpec = newSpec
-print("recordCurrentSpec",currentSpec, "acknowledgedSpec",acknowledgedSpec)
-    if not acknowledgedSpec then
-        acknowledgedSpec = currentSpec
+
+    if not appliedSpec then
+        appliedSpec = currentSpec
     end
 
     return currentSpec
 end
 
-function Spec:hasChanged()
-    self:recordCurrentSpec()
-    return currentSpec ~= acknowledgedSpec
-    --return Spec:recordCurrentSpec()
+function Spec:hasCurrentSpecBeenApplied()
+    assert(appliedSpec, "There is no recorded appliedSpec.  Before calling Spec:hasBeenApplied() please invoke Spec:initialize() prior to any spec changes")
+    return self:getSpecId() == appliedSpec
 end
 
-function Spec:acknowledgeSpecChange()
-    acknowledgedSpec = currentSpec
+function Spec:flagCurrentSpecAsHasBeenApplied()
+    appliedSpec = self:getSpecId()
 end
 
 ---@return Placements
-function Spec:getAcknowledgedSpec()
-    return acknowledgedSpec
+function Spec:getAppliedSpec()
+    return appliedSpec
 end
 
 ---@return Placements
@@ -74,13 +72,12 @@ end
 
 ---@return Placements
 function Spec:getPreviousSpecPlacementConfig()
-    self:recordCurrentSpec()
+    self:getSpecId()
     return self:getPlacementConfig(previousSpec)
 end
 
 ---@return Placements
 function Spec:getCurrentSpecPlacementConfig()
-    self:recordCurrentSpec()
     local specId = self:getSpecId()
     return self:getPlacementConfig(specId)
 end
@@ -101,12 +98,12 @@ function Spec:getPlacementConfig(specId)
     zebug.trace:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1", placementsForTheSpec)
     if not placementsForTheSpec then -- TODO: identify empty OR nil
         if not previousSpec or specId == previousSpec then
-            zebug:print("initializing spec. specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
+            zebug.info:print("initializing spec. specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
             placementsForTheSpec = {}
         else
             -- initialize the new config based on the old one
             placementsForTheSpec = deepcopy(self:getPlacementConfig(previousSpec))
-            zebug:line(7, "COPYING specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "initialConfig", "result 1b", placementsForTheSpec)
+            zebug.info:line(7, "COPYING specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "initialConfig", "result 1b", placementsForTheSpec)
         end
         placementsForAllSpecs[specId] = placementsForTheSpec
     end

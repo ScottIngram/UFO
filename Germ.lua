@@ -226,7 +226,7 @@ end
 function Germ:initFlyoutMenu(event)
     if Config.opts.supportCombat then
         self.flyoutMenu = FlyoutMenu:new(self)
-        zebug.info:event(event):line("20","initFlyoutMenu",self.flyoutMenu)
+        zebug.info:event(event):owner(self):line("20","initFlyoutMenu",self.flyoutMenu)
         self.flyoutMenu:applyConfigForGerm(self, event)
         self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
     else

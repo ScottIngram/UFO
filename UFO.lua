@@ -92,20 +92,20 @@ end
 
 EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttleAndNoQueue(0.125, "Ufo:ACTIONBAR_SLOT_CHANGED", EventHandlers.ACTIONBAR_SLOT_CHANGED)
 
-function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(unit, eName, n)
-    print("PLAYER_SPECIALIZATION_CHANGED",unit, eName, n)
+function EventHandlers:ACTIVE_TALENT_GROUP_CHANGED(unreliableSpecId, eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    zebug.error:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
-        zebug.error:name("handler"):print("spec was",Spec:getAcknowledgedSpec(), "spec is now", Spec:getSpecId(), "for unit", unit)
-        if Spec:hasChanged() then
-            Spec:getSpecId()
+    zebug.warn:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+        local hasChanged = not Spec:hasCurrentSpecBeenApplied()
+        zebug.warn:name("handler"):event(event):print("An event reports a spec change.  Provided specId", unreliableSpecId, "previously applied spec was",Spec:getAppliedSpec(), "spec is now", Spec:getSpecId(), "hasChanged",hasChanged)
+        if hasChanged then
+            zebug.warn:name("handler"):event(event):print("Applying...")
             GermCommander:changeSpec(event)
         else
-            zebug.warn:name("handler"):print("No actual change to spec.  KTHXBAI!")
+            zebug.error:name("handler"):event(event):print("Erroneous or duplicate event.  Ignoring.  KTHXBAI!")
         end
     end)
 
-    Spec:acknowledgeSpecChange()
+    Spec:flagCurrentSpecAsHasBeenApplied()
 end
 
 --[[
@@ -299,8 +299,6 @@ function initalizeAddonStuff(event)
     Config:initializeOptionsMenu()
 
     MacroShitShow:init()
-    print("initalizeAddonStuff", event)
-    Spec:recordCurrentSpec() -- so we know what it was before any changes
     UfoProxy:deleteProxyMacro("Ufo:initalizeAddonStuff()")
     ThirdPartyAddonSupport:detectSupportedAddons()
     registerSlashCmd("ufo", slashFuncs)
