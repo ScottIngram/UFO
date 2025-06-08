@@ -8,7 +8,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
-local zebug = Zebug:new(Zebug.WARN)
+local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.WARN)
 
 ---@class SpecializationHelper -- IntelliJ-EmmyLua annotation
 Spec = { }
@@ -19,6 +19,7 @@ Spec = { }
 
 local previousSpec
 local currentSpec
+local acknowledgedSpec
 
 -------------------------------------------------------------------------------
 -- Methods
@@ -31,14 +32,40 @@ end
 -- keep track of spec changes so getConfigForSpec() can initialize a brand new config based on the old one
 function Spec:recordCurrentSpec()
     local newSpec = self:getSpecId()
-    local hasChanged = newSpec ~= currentSpec
-    zebug.trace:print("hasChanged",hasChanged, "newSpec",newSpec, "currentSpec",currentSpec, "previousSpec",previousSpec)
-    if hasChanged then
-        previousSpec = currentSpec
-        currentSpec = newSpec
+
+    if currentSpec then
+        if currentSpec ~= newSpec then
+            previousSpec = currentSpec
+        end
     end
 
-    return hasChanged
+    currentSpec = newSpec
+print("recordCurrentSpec",currentSpec, "acknowledgedSpec",acknowledgedSpec)
+    if not acknowledgedSpec then
+        acknowledgedSpec = currentSpec
+    end
+
+    return currentSpec
+end
+
+function Spec:hasChanged()
+    self:recordCurrentSpec()
+    return currentSpec ~= acknowledgedSpec
+    --return Spec:recordCurrentSpec()
+end
+
+function Spec:acknowledgeSpecChange()
+    acknowledgedSpec = currentSpec
+end
+
+---@return Placements
+function Spec:getAcknowledgedSpec()
+    return acknowledgedSpec
+end
+
+---@return Placements
+function Spec:getPreviousSpec()
+    return previousSpec
 end
 
 function Spec:getUfoFlyoutIdForSlot(btnSlotIndex)
@@ -60,6 +87,11 @@ end
 
 ---@return Placements
 function Spec:getPlacementConfig(specId)
+    if specId == nil then
+        zebug.trace:print("exiting due to NIL specId arg... currentSpec",currentSpec, "previousSpec",previousSpec)
+        return
+    end
+
     -- the placement of flyouts on the action bars changes from spec to spec
     local placementsForAllSpecs = DB:getAllSpecsPlacementsConfig()
     assert(placementsForAllSpecs, ADDON_NAME..": Oops!  placements config is nil")
@@ -69,7 +101,7 @@ function Spec:getPlacementConfig(specId)
     zebug.trace:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1", placementsForTheSpec)
     if not placementsForTheSpec then -- TODO: identify empty OR nil
         if not previousSpec or specId == previousSpec then
-            zebug:print("blanking specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
+            zebug:print("initializing spec. specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
             placementsForTheSpec = {}
         else
             -- initialize the new config based on the old one

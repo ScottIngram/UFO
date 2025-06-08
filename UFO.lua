@@ -92,11 +92,20 @@ end
 
 EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttleAndNoQueue(0.125, "Ufo:ACTIONBAR_SLOT_CHANGED", EventHandlers.ACTIONBAR_SLOT_CHANGED)
 
-function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(id, eName, n)
+function EventHandlers:PLAYER_SPECIALIZATION_CHANGED(unit, eName, n)
+    print("PLAYER_SPECIALIZATION_CHANGED",unit, eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
-        GermCommander:changeSpec(event)
+    zebug.error:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+        zebug.error:name("handler"):print("spec was",Spec:getAcknowledgedSpec(), "spec is now", Spec:getSpecId(), "for unit", unit)
+        if Spec:hasChanged() then
+            Spec:getSpecId()
+            GermCommander:changeSpec(event)
+        else
+            zebug.warn:name("handler"):print("No actual change to spec.  KTHXBAI!")
+        end
     end)
+
+    Spec:acknowledgeSpecChange()
 end
 
 --[[
@@ -290,6 +299,8 @@ function initalizeAddonStuff(event)
     Config:initializeOptionsMenu()
 
     MacroShitShow:init()
+    print("initalizeAddonStuff", event)
+    Spec:recordCurrentSpec() -- so we know what it was before any changes
     UfoProxy:deleteProxyMacro("Ufo:initalizeAddonStuff()")
     ThirdPartyAddonSupport:detectSupportedAddons()
     registerSlashCmd("ufo", slashFuncs)
@@ -317,8 +328,5 @@ end
 -------------------------------------------------------------------------------
 -- OK, Go for it!
 -------------------------------------------------------------------------------
-
---EventHandlers.BAG_UPDATE = Throttler:throttle(0.1, "Ufo:BAG_UPDATE", BAG_UPDATE)
---EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttle(0.1, "Ufo:ACTIONBAR_SLOT_CHANGED", function() print("=-=-=-=-=- ACTIONBAR_SLOT_CHANGED ??? =-=-=-=-=-")  end)
 
 BlizGlobalEventsListener:register(Ufo, EventHandlers, HandlersForAddonLoadedEvents)

@@ -14,7 +14,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.TRACE)
 ---@class GermCommander -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
 ---@field updatingAll boolean true when updateAllGerms() is making a LOT of noise
-GermCommander = { }
+GermCommander = { ufoType="GermCommander" }
 
 ---@alias BtnSlotIndex number
 
@@ -477,14 +477,15 @@ GermCommander.ensureAllGermsHavePlaceholders = Pacifier:pacify(GermCommander, "e
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:changeSpec(event)
-    -- clobber any UFOs that exist in the old spec but not the new one
-    ---@type Placements
     local oldPlacements = Spec:getPreviousSpecPlacementConfig()
-    local newPlacements = Spec:getCurrentSpecPlacementConfig()
-    for btnSlotIndex, flyoutId in pairs(oldPlacements) do
-        local inNewConfig =  newPlacements[btnSlotIndex]
-        if not inNewConfig then
-            self:eraseUfoFrom(btnSlotIndex, nil, event)
+    if oldPlacements then
+        -- clobber any UFOs that exist in the old spec but not the new one
+        local newPlacements = Spec:getCurrentSpecPlacementConfig()
+        for btnSlotIndex, flyoutId in pairs(oldPlacements) do
+            local inNewConfig =  newPlacements[btnSlotIndex]
+            if not inNewConfig then
+                self:eraseUfoFrom(btnSlotIndex, nil, event)
+            end
         end
     end
 
