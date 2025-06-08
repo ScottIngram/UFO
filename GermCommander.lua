@@ -208,7 +208,7 @@ end
 
 GermCommander.updateAllKeybindBehavior = Pacifier:pacify(GermCommander, "updateAllKeybindBehavior", L10N.CHANGE_KEYBIND_ACTION)
 
-function GermCommander:updateAllActiveGermsWithConfigToBindTheButtons(event)
+function GermCommander:applyConfigForBindTheButtons(event)
     local doKeybindTheButtonsOnTheFlyout = Config:get("doKeybindTheButtonsOnTheFlyout")
 
     ---@param germ Germ
@@ -219,7 +219,7 @@ function GermCommander:updateAllActiveGermsWithConfigToBindTheButtons(event)
 
 end
 
-GermCommander.updateAllActiveGermsWithConfigToBindTheButtons = Pacifier:pacify(GermCommander, "updateAllActiveGermsWithConfigToBindTheButtons", L10N.RECONFIGURE_FLYOUT_BUTTON_KEYBINDING)
+GermCommander.applyConfigForBindTheButtons = Pacifier:pacify(GermCommander, "applyConfigForBindTheButtons", L10N.RECONFIGURE_FLYOUT_BUTTON_KEYBINDING)
 
 ---@param mouseClick MouseClick
 function GermCommander:updateClickHandlerForAllActiveGerms(mouseClick, event)
