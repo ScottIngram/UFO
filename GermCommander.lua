@@ -504,6 +504,11 @@ function GermCommander:notifyAllGermsWithItems(event)
     self:forEachGermIf(Germ.refreshFlyoutDefAndApply, Germ.hasItemsAndIsActive, event)
 end
 
+-- because the above eventually calls a method that does combat-unfriendly stuff,
+-- silently pacify it here so the user isn't spammed with RECONFIGURE_BUTTON messages
+GermCommander.notifyAllGermsWithItems = Pacifier:pacify(GermCommander, "notifyAllGermsWithItems")
+
+
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:handleEventMacrosChanged(event)
     self:forEachGermIf(Germ.invalidateFlyoutCache, Germ.hasMacrosAndIsActive, event)
