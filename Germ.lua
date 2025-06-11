@@ -120,6 +120,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     -- secure tainty stuff
     self:safeSetAttribute("UFO_NAME", self.label)
+    self:safeSetAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:copyDoCloseOnClickConfigValToAttribute()
     self:doMyKeybinding() -- bind me to my action bar slot's keybindings (if any)
 
@@ -272,7 +273,7 @@ function Germ:clearAndDisable(event)
     self.label = nil
 end
 
-Germ.clearAndDisable = Pacifier:pacify(Germ, "clearAndDisable")
+Germ.clearAndDisable = Pacifier:wrap(Germ.clearAndDisable)
 
 
 function Germ:changeFlyoutIdAndEnable(flyoutId, event)
@@ -369,7 +370,7 @@ function Germ:copyDoCloseOnClickConfigValToAttribute()
     return self.flyoutMenu and self.flyoutMenu:SetAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
 end
 
-Germ.copyDoCloseOnClickConfigValToAttribute = Pacifier:pacify(Germ, "copyDoCloseOnClickConfigValToAttribute", L10N.RECONFIGURE_UFO)
+Germ.copyDoCloseOnClickConfigValToAttribute = Pacifier:wrap(Germ.copyDoCloseOnClickConfigValToAttribute, L10N.RECONFIGURE_AUTO_CLOSE)
 
 function Germ:setToolTip()
     local btn1 = self.flyoutMenu:getBtn1()
@@ -486,7 +487,7 @@ function Germ:doMyKeybinding()
     self.keybinds = keybinds
 end
 
-Germ.doMyKeybinding = Pacifier:pacify(Germ, "doMyKeybinding", L10N.CHANGE_KEYBINDING)
+Germ.doMyKeybinding = Pacifier:wrap(Germ.doMyKeybinding, L10N.CHANGE_KEYBINDING)
 
 function Germ:clearKeybinding()
     if not (self.keybinds) then return end
@@ -556,7 +557,7 @@ function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
     self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
 end
 
-Germ.setAllSecureClickScriptlettesBasedOnCurrentFlyoutId = Pacifier:pacify(Germ, "setAllSecureClickScriptlettesBasedOnCurrentFlyoutId", L10N.RECONFIGURE_BUTTON)
+Germ.setAllSecureClickScriptlettesBasedOnCurrentFlyoutId = Pacifier:wrap(Germ.setAllSecureClickScriptlettesBasedOnCurrentFlyoutId, L10N.RECONFIGURE_BUTTON)
 
 function Germ:handleReceiveDrag(event)
     if isInCombatLockdown("Drag and drop") then return end

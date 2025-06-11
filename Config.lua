@@ -407,4 +407,4 @@ function Config:deletePlaceholder()
     Ufo.deletedPlaceholder = nil
 end
 
-Config.deletePlaceholder = Pacifier:pacify(Config, "deletePlaceholder", "delete placeholders.")
+Config.deletePlaceholder = Pacifier:wrap(Config.deletePlaceholder, L10N.DELETE_PLACEHOLDERS)

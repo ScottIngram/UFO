@@ -206,7 +206,7 @@ function GermCommander:updateAllKeybindBehavior(event)
     end, event)
 end
 
-GermCommander.updateAllKeybindBehavior = Pacifier:pacify(GermCommander, "updateAllKeybindBehavior", L10N.CHANGE_KEYBIND_ACTION)
+GermCommander.updateAllKeybindBehavior = Pacifier:wrap(GermCommander.updateAllKeybindBehavior, L10N.CHANGE_KEYBIND_ACTION)
 
 function GermCommander:applyConfigForBindTheButtons(event)
     local doKeybindTheButtonsOnTheFlyout = Config:get("doKeybindTheButtonsOnTheFlyout")
@@ -219,7 +219,7 @@ function GermCommander:applyConfigForBindTheButtons(event)
 
 end
 
-GermCommander.applyConfigForBindTheButtons = Pacifier:pacify(GermCommander, "applyConfigForBindTheButtons", L10N.RECONFIGURE_FLYOUT_BUTTON_KEYBINDING)
+GermCommander.applyConfigForBindTheButtons = Pacifier:wrap(GermCommander.applyConfigForBindTheButtons, L10N.RECONFIGURE_FLYOUT_BUTTON_KEYBINDING)
 
 ---@param mouseClick MouseClick
 function GermCommander:updateClickHandlerForAllActiveGerms(mouseClick, event)
@@ -230,7 +230,7 @@ function GermCommander:updateClickHandlerForAllActiveGerms(mouseClick, event)
     end, event)
 end
 
-GermCommander.updateClickHandlerForAllActiveGerms = Pacifier:pacify(GermCommander, "updateClickHandlerForAllActiveGerms", "change mouse button behavior.")
+GermCommander.updateClickHandlerForAllActiveGerms = Pacifier:wrap(GermCommander.updateClickHandlerForAllActiveGerms, "change mouse button behavior.")
 
 ---@return GERM_TYPE
 function GermCommander:recallGerm(btnSlotIndex)
@@ -472,7 +472,7 @@ function GermCommander:ensureAllGermsHavePlaceholders(event)
     Ufo.droppedPlaceholderOntoActionBar = nil
 end
 
-GermCommander.ensureAllGermsHavePlaceholders = Pacifier:pacify(GermCommander, "ensureAllGermsHavePlaceholders", "switch to placeholders.") -- allow only out of combat
+GermCommander.ensureAllGermsHavePlaceholders = Pacifier:wrap(GermCommander.ensureAllGermsHavePlaceholders, L10N.SWITCH_TO_PLACEHOLDERS) -- allow only out of combat
 
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
@@ -507,7 +507,7 @@ end
 
 -- because the above eventually calls a method that does combat-unfriendly stuff,
 -- silently pacify it here so the user isn't spammed with RECONFIGURE_BUTTON messages
-GermCommander.notifyAllGermsWithItems = Pacifier:pacify(GermCommander, "notifyAllGermsWithItems")
+GermCommander.notifyAllGermsWithItems = Pacifier:wrap(GermCommander.notifyAllGermsWithItems)
 
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging

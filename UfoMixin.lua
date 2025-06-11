@@ -123,4 +123,4 @@ function UfoMixIn:safeSetAttribute(key, value)
     self:SetAttribute(key, value)
 end
 
-UfoMixIn.safeSetAttribute = Pacifier:pacify(UfoMixIn, "safeSetAttribute") -- allow only out of combat
+UfoMixIn.safeSetAttribute = Pacifier:wrap(UfoMixIn.safeSetAttribute) -- allow only out of combat
