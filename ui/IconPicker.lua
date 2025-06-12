@@ -96,7 +96,9 @@ function IconPicker:OkayButton_OnClick()
         if flyoutId then
             local flyoutDef = FlyoutDefsDb:get(flyoutId)
             flyoutDef.name = name
-            flyoutDef.icon = icon
+            if iconIndex then
+                flyoutDef.icon = icon
+            end
             flyoutDef:invalidateCache()
             GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
         else
