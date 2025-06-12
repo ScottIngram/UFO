@@ -230,7 +230,7 @@ function GermCommander:updateClickHandlerForAllActiveGerms(mouseClick, event)
     end, event)
 end
 
-GermCommander.updateClickHandlerForAllActiveGerms = Pacifier:wrap(GermCommander.updateClickHandlerForAllActiveGerms, "change mouse button behavior.")
+GermCommander.updateClickHandlerForAllActiveGerms = Pacifier:wrap(GermCommander.updateClickHandlerForAllActiveGerms, L10N.CHANGE_MOUSE_BUTTON_BEHAVIOR)
 
 ---@return GERM_TYPE
 function GermCommander:recallGerm(btnSlotIndex)
