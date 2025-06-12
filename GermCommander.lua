@@ -325,6 +325,7 @@ function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlo
         -- a std Bliz thingy.
         -- altho, if that's true it would have been an event on the Germ itself.
         -- so this code may never be reached
+        -- maybe during programmatic button swaps such as changing specs?
         zebug.info:event(event):owner(btnInSlot):print("a std Bliz thingy. ERASE Ufo (if any)")
         self:eraseUfoFrom(btnInSlot, germInSlot, event)
     end

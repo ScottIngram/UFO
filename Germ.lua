@@ -277,11 +277,6 @@ Germ.clearAndDisable = Pacifier:wrap(Germ.clearAndDisable)
 
 
 function Germ:changeFlyoutIdAndEnable(flyoutId, event)
-    if flyoutId == self.flyoutId then
-        zebug.trace:event(event):owner(self):print("Um, that's the same flyoutId as before",flyoutId)
-        return
-    end
-
     self.flyoutId = flyoutId
     zebug.info:event(event):owner(self):print("EnAbLe GeRm :-)")
 

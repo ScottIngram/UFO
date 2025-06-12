@@ -143,16 +143,15 @@ end
 
 function EventHandlers:UNIT_INVENTORY_CHANGED(id, eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    if id ~= "player" then
-        zebug.error:name("handler"):newEvent("Ufo", eName, n):print("not 'player' ! id",id, "eName",eName)
+    -- only care about events that affect the player
+    if id == "player" then
+        zebug.info:mDiamond():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+            GermCommander:notifyAllGermsWithItems(event)
+        end)
     end
-
-    zebug.info:mDiamond():name("handler"):newEvent("Ufo", eName, n):run(function(event)
-        GermCommander:notifyAllGermsWithItems(event)
-    end)
 end
 
--- an absolute shitstorm of UNIT_INVENTORY_CHANGED and BAG_UPDATE vomit during the loading screen, so throttle this motherfucker
+-- an absolute shitstorm of UNIT_INVENTORY_CHANGED and BAG_UPDATE vomit happens during the loading screen, so throttle this motherfucker
 EventHandlers.UNIT_INVENTORY_CHANGED = Throttler:throttleAndNoQueue(1.0, "Ufo:BAG_UPDATE", EventHandlers.UNIT_INVENTORY_CHANGED)
 
 --[[
