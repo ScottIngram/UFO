@@ -803,6 +803,8 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
     	local mouseClick = button
     	local isClicked = down
     	local onlyInitialize = mouseClick == nil
+        local doDebug = self:GetAttribute("DO_DEBUG") or false
+
 
         local iAmFor = "]=].. mouseClick ..[=["
 
@@ -827,9 +829,15 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
         local flyoutLastModified = self:GetAttribute("UFO_FLYOUT_MOD_TIME")
         if (not kidsCachedWhen) or (kidsCachedWhen < flyoutLastModified) then
             flyoutMenuKids = nil
-            print("clearing kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified)
+            if doDebug then
+                local cacheAge = flyoutLastModified - (kidsCachedWhen or 0)
+                print(myName, ": clearing kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified, "cacheAge",cacheAge)
+            end
         else
-            print("using kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified)
+            if doDebug then
+                local cacheAge = kidsCachedWhen - flyoutLastModified
+                print(myName, ": using kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified, "cacheAge",cacheAge)
+            end
         end
 
         if not flyoutMenuKids then
