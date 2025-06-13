@@ -38,10 +38,9 @@ function FlyoutDefsDb:howMany()
 end
 
 function FlyoutDefsDb:forEachFlyoutDef(callback)
-    zebug.trace:out(25,"~")
     for i, flyoutId in ipairs(DB:getOrderedFlyoutIds()) do
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
-        zebug.trace:out(20,"~", "flyoutId",flyoutId, "--> flyoutDef", flyoutDef)
+        zebug.trace:print("flyoutId",flyoutId, "--> flyoutDef", flyoutDef)
         callback(flyoutDef, flyoutDef) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
     end
 end
@@ -51,9 +50,8 @@ function FlyoutDefsDb:clearCaches()
 end
 
 function FlyoutDefsDb:getAll()
-    zebug.trace:out(30,"=")
     local allFlyouts = DB:getFlyoutDefs()
-    zebug.trace:out(10,"=", "allFlyouts", allFlyouts, "self.isInitialized", self.isInitialized, "self.infiniteLoopStopper",self.infiniteLoopStopper)
+    zebug.trace:print("allFlyouts", allFlyouts, "self.isInitialized", self.isInitialized, "self.infiniteLoopStopper",self.infiniteLoopStopper)
     if not self.isInitialized and not self.infiniteLoopStopper then
         self.infiniteLoopStopper = true
         FlyoutDefsDb:forEachFlyoutDef(FlyoutDef.oneOfUs)

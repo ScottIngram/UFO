@@ -48,6 +48,7 @@ function FlyoutDef:oneOfUs(self)
     function privateCache:_cacheUsableFlyoutDef(usableFlyoutDef) privateCache.cachedUsableFlyoutDef = usableFlyoutDef end
     function privateCache:cacheHasItem(hasItem) privateCache._hasItem = hasItem end
     function privateCache:cacheHasMacro(hasMacro) privateCache._hasMacro = hasMacro end
+    function privateCache:cacheHasSpell(hasSpell) privateCache._hasSpell = hasSpell end
 
     -- tie the privateData table to the FlyoutDef class definition
     setmetatable(privateCache, { __index = FlyoutDef })
@@ -79,7 +80,7 @@ function FlyoutDef:toString()
     if self == Cursor then
         return "nil"
     else
-        return string.format("<FlyDef: %s %s size=%d>", nilStr(self.id), nilStr(self.name), nilStr(self.btns and #(self.btns) or 0))
+        return string.format("<FlyDef: %s size=%d>", nilStr(self.name), nilStr(self.btns and #(self.btns) or 0))
     end
 end
 
@@ -108,6 +109,7 @@ function FlyoutDef:invalidateCache()
     self:_cacheUsableFlyoutDef(nil) -- always clear the filtered copy when the base changes
     self:cacheHasItem(nil)
     self:cacheHasMacro(nil)
+    self:cacheHasSpell(nil)
     zebug.trace:owner(self):print("clearing cache... after",self._hasItem)
 end
 
@@ -122,17 +124,17 @@ end
 ---@param callback function if the function returns true, then, that means it did something that requires the caches to be nuked
 function FlyoutDef:forEachBtn(callback)
     local i = Xedni:getFlyoutDef(self.id)
-    zebug.trace:out(20, "-", "i", i, "id",self.id, "self.btns",self.btns)
+    zebug.trace:owner(self):print("i", i, "self.btns",self.btns)
     assert(self.btns, "This instance of FlyoutDef has no 'btns' field.")
 
     self:ensureCoerced()
     local invalidateCaches = false
     ---@param buttonDef ButtonDef
     for j, buttonDef in ipairs(self.btns) do -- this must remain self.btns and NOT self:getAllButtonDefs() - otherwise infinite loop
-        zebug.trace:out(15,"-", "i", i, "btn #", j, "buttonDef.name", buttonDef.name)
+        zebug.trace:owner(self):print("i", i, "btn #", j, "buttonDef.name", buttonDef.name)
         local killCache = callback(buttonDef, buttonDef, j, self) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
         if killCache then
-            zebug.trace:out(10,"-", "i", i, "btn #", j, "buttonDef.name", buttonDef.name, "sent signal to INVALIDATE Caches")
+            zebug.trace:owner(self):print(i, "btn #", j, "buttonDef.name", buttonDef.name, "sent signal to INVALIDATE Caches")
             buttonDef:invalidateCache()
             invalidateCaches = true
         end
@@ -152,7 +154,7 @@ function FlyoutDef:batchDeleteBtns(killTester)
 end
 
 function FlyoutDef:getAllButtonDefs()
-    zebug.trace:print("self.alreadyCoercedMyButtons",self.alreadyCoercedMyButtons)
+    zebug.trace:owner(self):print("self.alreadyCoercedMyButtons",self.alreadyCoercedMyButtons)
     self:ensureCoerced()
     return self.btns
 end
@@ -222,7 +224,7 @@ function FlyoutDef:getIcon()
     local btn1 = self:getButtonDef(1)
     if btn1 then
         local isMe = isClass(self, FlyoutDef)
-        zebug.trace:print("btn1",btn1, "isMe",isMe, "btn1.ufoType",btn1.ufoType, "btn1.getIcon",btn1.getIcon)
+        zebug.trace:owner(self):print("btn1",btn1, "isMe",isMe, "btn1.ufoType",btn1.ufoType, "btn1.getIcon",btn1.getIcon)
         local icon = btn1:getIcon()
         if icon then
             -- compensate for the Bliz UI bug where not all icons have been loaded at the moment of login
@@ -236,20 +238,20 @@ end
 ---@return FlyoutDef
 function FlyoutDef:filterOutUnusable()
     if self.cachedUsableFlyoutDef then
-        zebug.trace:print("returning cached usableFlyoutDef")
+        zebug.trace:owner(self):print("returning cached usableFlyoutDef")
         return self.cachedUsableFlyoutDef
     end
 
-    zebug.info:print("self.name", self.name)
+    zebug.trace:owner(self):print("filtering...")
 
     local usableFlyoutDef = FlyoutDef:new()
     ---@param btn ButtonDef
     for i, btn in ipairs(self:getAllButtonDefs()) do
         if btn:isUsable() then
-            zebug.trace:print("can use", btn:getName())
+            zebug.trace:owner(self):print("can use", btn:getName())
             usableFlyoutDef:addButton(btn)
         else
-            zebug.info:print("CANNOT use", btn:getName())
+            zebug.info:owner(self):print("CANNOT use", btn:getName())
         end
     end
     usableFlyoutDef.name = self.name

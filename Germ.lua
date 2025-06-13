@@ -187,11 +187,11 @@ function Germ:isInactive(event)
     return not (self.flyoutId and true or false)
 end
 
-function Germ:hasItemsAndIsActive()
-    return self:isActive() and self:getFlyoutDef():hasItem()
+function Germ:hasItemsAndIsActive(event)
+    return self:isActive() and self:getFlyoutDef():hasItem(event)
 end
 
-function Germ:hasMacrosAndIsActive()
+function Germ:hasMacrosAndIsActive(event)
     return self:isActive() and self:getFlyoutDef():hasIMacro()
 end
 
