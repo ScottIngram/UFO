@@ -195,6 +195,11 @@ function Germ:hasMacrosAndIsActive(event)
     return self:isActive() and self:getFlyoutDef():hasIMacro()
 end
 
+function Germ:hasSpellsAndIsActive(event)
+    zebug.trace:event():owner(self):print("I'm active", self:isActive(), "and have spells",self:getFlyoutDef():hasSpell())
+    return self:isActive() and self:getFlyoutDef():hasSpell()
+end
+
 function Germ:hasFlyoutId(flyoutId)
     return self:getFlyoutId() == flyoutId
 end

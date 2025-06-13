@@ -262,32 +262,36 @@ function FlyoutDef:filterOutUnusable()
     return usableFlyoutDef
 end
 
-function FlyoutDef:hasItem()
-    if self._hasItem == nil then
-        ---@param btnDef ButtonDef
-        self:forEachBtn(function(btnDef)
-            if btnDef.type == ButtonType.ITEM then
-                zebug.info:owner(self):print("found an item!", btnDef.name)
-                self._hasItem = true
-            end
-        end)
-    else
-        zebug.trace:owner(self):print("using cached _hasItem val of", self._hasItem)
-    end
-    return self._hasItem
+function FlyoutDef:hasItem(event)
+    return self:hasFoo("_hasItem", self.cacheHasItem, ButtonType.ITEM, event)
 end
 
-function FlyoutDef:hasIMacro()
-    if self._hasMacro == nil then
+function FlyoutDef:hasIMacro(event)
+    return self:hasFoo("_hasMacro", self.cacheHasMacro, ButtonType.MACRO, event)
+end
+
+function FlyoutDef:hasSpell(event)
+    return self:hasFoo("_hasSpell", self.cacheHasSpell, ButtonType.SPELL, event)
+end
+
+function FlyoutDef:hasFoo(key, cacher, type, event)
+    zebug.info:mark(Mark.FIRE):event(event):owner(self):print(key, self[key], "type",  type)
+
+    if self[key] == nil then
+        cacher(self, false)
+        zebug.info:mark(Mark.INFO):event(event):owner(self):print("indexing for", key)
         ---@param btnDef ButtonDef
         self:forEachBtn(function(btnDef)
-            if btnDef.type == ButtonType.MACRO then
-                zebug.info:owner(self):print("found a macro!", btnDef.name)
-                self._hasMacro = true
+            if btnDef.type == type then
+                cacher(self, true)
+                zebug.info:event(event):owner(self):print(key, self[key], "btn",  btnDef.name)
+            else
+                zebug.trace:event(event):owner(self):print("the",btnDef.name, "is not a",key )
             end
         end)
     else
-        zebug.trace:owner(self):print("using cached _hasMacro val of", self._hasMacro)
+        zebug.trace:event(event):owner(self):print("using cached",key, "with a val of", self[key])
     end
-    return self._hasMacro
+
+    return self[key]
 end

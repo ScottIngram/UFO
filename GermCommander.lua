@@ -516,6 +516,11 @@ function GermCommander:handleEventMacrosChanged(event)
     self:forEachGermIf(Germ.invalidateFlyoutCache, Germ.hasMacrosAndIsActive, event)
 end
 
+function GermCommander:notifyAllGermsWithSpells(event)
+    ---@param germ GERM_TYPE
+    self:forEachGermIf(Germ.refreshFlyoutDefAndApply, Germ.hasSpellsAndIsActive, event)
+end
+
 --[[
 -- unused atm
 function GermCommander:handleEventPetChanged(event)

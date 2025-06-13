@@ -108,6 +108,17 @@ function EventHandlers:ACTIVE_TALENT_GROUP_CHANGED(unreliableSpecId, eName, n)
     Spec:flagCurrentSpecAsHasBeenApplied()
 end
 
+function EventHandlers:SPELLS_CHANGED(eventName, n)
+    print("eventName",eventName, "n",n)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+    zebug.error:mCircle():name("handler"):newEvent("Ufo", eventName, n):run(function(event)
+        GermCommander:notifyAllGermsWithSpells(event)
+    end)
+end
+
+EventHandlers.SPELLS_CHANGED = Throttler:throttleAndNoQueue(1, "Ufo:SPELLS_CHANGED", EventHandlers.SPELLS_CHANGED)
+
+
 --[[
 function EventHandlers:EDIT_MODE_LAYOUTS_UPDATED(layoutInfo, eName, n)
     zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
@@ -144,11 +155,13 @@ end
 function EventHandlers:UNIT_INVENTORY_CHANGED(id, eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     -- only care about events that affect the player
-    if id == "player" then
-        zebug.info:mDiamond():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+    zebug.info:mDiamond():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+        if id == "player" then
             GermCommander:notifyAllGermsWithItems(event)
-        end)
-    end
+        else
+            zebug.info:mDiamond():name("handler"):print("ignoring not player id", id)
+        end
+    end)
 end
 
 -- an absolute shitstorm of UNIT_INVENTORY_CHANGED and BAG_UPDATE vomit happens during the loading screen, so throttle this motherfucker
