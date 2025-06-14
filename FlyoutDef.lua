@@ -45,10 +45,10 @@ function FlyoutDef:oneOfUs(self)
         alreadyCoercedMyButtons = false,
     }
     function privateCache:setAlreadyCoercedMyButtons() privateCache.alreadyCoercedMyButtons = true end
-    function privateCache:_cacheUsableFlyoutDef(usableFlyoutDef) privateCache.cachedUsableFlyoutDef = usableFlyoutDef end
-    function privateCache:cacheHasItem(hasItem) privateCache._hasItem = hasItem end
-    function privateCache:cacheHasMacro(hasMacro) privateCache._hasMacro = hasMacro end
-    function privateCache:cacheHasSpell(hasSpell) privateCache._hasSpell = hasSpell end
+    function privateCache:cacheUsableFlyoutDef(usableFlyoutDef) privateCache.cachedUsableFlyoutDef = usableFlyoutDef end
+    function privateCache:cacheHasItem(hasIt) privateCache._hasItem = hasIt end
+    function privateCache:cacheHasMacro(hasIt) privateCache._hasMacro = hasIt end
+    function privateCache:cacheHasSpell(hasIt) privateCache._hasSpell = hasIt end
 
     -- tie the privateData table to the FlyoutDef class definition
     setmetatable(privateCache, { __index = FlyoutDef })
@@ -80,7 +80,8 @@ function FlyoutDef:toString()
     if self == Cursor then
         return "nil"
     else
-        return string.format("<FlyDef: %s size=%d>", nilStr(self.name), nilStr(self.btns and #(self.btns) or 0))
+        local icon = self:getIcon() or self.fallbackIcon or DEFAULT_ICON
+        return string.format("<FlyDef: |T%d:0|t %s size=%d>", icon, nilStr(self.name), nilStr(self.btns and #(self.btns) or 0))
     end
 end
 
@@ -97,6 +98,7 @@ function FlyoutDef:getModStamp()
     return self.lastMod
 end
 
+-- UNUSED :-(
 ---@param time number a time ( as returned by a call to the time() function )
 ---@return boolean true if self has been modified more recently than the given time
 function FlyoutDef:isModNewerThan(time)
@@ -104,14 +106,17 @@ function FlyoutDef:isModNewerThan(time)
 end
 
 function FlyoutDef:invalidateCache()
-    zebug.trace:owner(self):print("clearing cache... b4", self._hasItem)
     self:setModStamp()
-    self:_cacheUsableFlyoutDef(nil) -- always clear the filtered copy when the base changes
+    self:cacheUsableFlyoutDef(nil)
     self:cacheHasItem(nil)
     self:cacheHasMacro(nil)
     self:cacheHasSpell(nil)
-    zebug.trace:owner(self):print("clearing cache... after",self._hasItem)
 end
+
+function FlyoutDef:invalidateCacheOfUsableFlyoutDefOnly()
+    self:cacheUsableFlyoutDef(nil)
+end
+
 
 function FlyoutDef:newId()
     return DB:nextN() ..":".. getIdForCurrentToon() ..":".. (time()-1687736964)
@@ -223,8 +228,6 @@ function FlyoutDef:getIcon()
     if self.icon then return self.icon end
     local btn1 = self:getButtonDef(1)
     if btn1 then
-        local isMe = isClass(self, FlyoutDef)
-        zebug.trace:owner(self):print("btn1",btn1, "isMe",isMe, "btn1.ufoType",btn1.ufoType, "btn1.getIcon",btn1.getIcon)
         local icon = btn1:getIcon()
         if icon then
             -- compensate for the Bliz UI bug where not all icons have been loaded at the moment of login
@@ -258,7 +261,7 @@ function FlyoutDef:filterOutUnusable()
     usableFlyoutDef.icon = self.icon
     usableFlyoutDef.fallbackIcon = self.fallbackIcon
     usableFlyoutDef.setAlreadyCoercedMyButtons() -- because the source btns have already been coerced
-    self:_cacheUsableFlyoutDef(usableFlyoutDef)
+    self:cacheUsableFlyoutDef(usableFlyoutDef)
     return usableFlyoutDef
 end
 
@@ -266,7 +269,7 @@ function FlyoutDef:hasItem(event)
     return self:hasFoo("_hasItem", self.cacheHasItem, ButtonType.ITEM, event)
 end
 
-function FlyoutDef:hasIMacro(event)
+function FlyoutDef:hasMacro(event)
     return self:hasFoo("_hasMacro", self.cacheHasMacro, ButtonType.MACRO, event)
 end
 
@@ -275,7 +278,7 @@ function FlyoutDef:hasSpell(event)
 end
 
 function FlyoutDef:hasFoo(key, cacher, type, event)
-    zebug.info:mark(Mark.FIRE):event(event):owner(self):print(key, self[key], "type",  type)
+    zebug.trace:mark(Mark.FIRE):event(event):owner(self):print("key",key, "exists", self[key], "type",  type)
 
     if self[key] == nil then
         cacher(self, false)

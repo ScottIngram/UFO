@@ -109,15 +109,17 @@ function EventHandlers:ACTIVE_TALENT_GROUP_CHANGED(unreliableSpecId, eName, n)
 end
 
 function EventHandlers:SPELLS_CHANGED(eventName, n)
-    print("eventName",eventName, "n",n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    zebug.error:mCircle():name("handler"):newEvent("Ufo", eventName, n):run(function(event)
+    zebug.info:mCircle():name("handler"):newEvent("Ufo", eventName, n):run(function(event)
         GermCommander:notifyAllGermsWithSpells(event)
     end)
 end
 
-EventHandlers.SPELLS_CHANGED = Throttler:throttleAndNoQueue(1, "Ufo:SPELLS_CHANGED", EventHandlers.SPELLS_CHANGED)
-
+-- sometimes SPELLS_CHANGED fires off only once.  Sometimes multiple times.
+-- Sometimes before the API accurately reports if the (un)learned spell is actually (un)known.
+-- So, yet again, fuck you very, VERY hard, Bliz.
+-- Can't risk ignoring / throttling the spam of events.
+EventHandlers.SPELLS_CHANGED = Throttler:throttle(1.5, "Ufo:SPELLS_CHANGED", EventHandlers.SPELLS_CHANGED)
 
 --[[
 function EventHandlers:EDIT_MODE_LAYOUTS_UPDATED(layoutInfo, eName, n)

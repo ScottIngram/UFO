@@ -187,17 +187,22 @@ function Germ:isInactive(event)
     return not (self.flyoutId and true or false)
 end
 
-function Germ:hasItemsAndIsActive(event)
-    return self:isActive() and self:getFlyoutDef():hasItem(event)
+function Germ:hasItemsAndIsActive()
+    local hasItem = self:getFlyoutDef():hasItem()
+    zebug.info:owner(self):print("I'm active", self:isActive(), "and have items",hasItem)
+    return self:isActive() and hasItem
 end
 
-function Germ:hasMacrosAndIsActive(event)
-    return self:isActive() and self:getFlyoutDef():hasIMacro()
+function Germ:hasMacrosAndIsActive()
+    local hasMacro = self:getFlyoutDef():hasMacro()
+    zebug.info:owner(self):print("I'm active", self:isActive(), "and have macros",hasMacro)
+    return self:isActive() and hasMacro
 end
 
-function Germ:hasSpellsAndIsActive(event)
-    zebug.trace:event():owner(self):print("I'm active", self:isActive(), "and have spells",self:getFlyoutDef():hasSpell())
-    return self:isActive() and self:getFlyoutDef():hasSpell()
+function Germ:hasSpellsAndIsActive()
+    local hasSpell = self:getFlyoutDef():hasSpell()
+    zebug.info:owner(self):print("I'm active", self:isActive(), "and have spells",hasSpell)
+    return self:isActive() and hasSpell
 end
 
 function Germ:hasFlyoutId(flyoutId)
@@ -416,22 +421,8 @@ function Germ:invalidateFlyoutCache()
 end
 
 function Germ:refreshFlyoutDefAndApply(event)
---[[
-    if self:getLabel() == "Nom Nom" then
-        print("SPEAK label =====>",self:getLabel())
-        event.mySpeakingVolume = 20
-    else
-        print("MUTE label =====>",self:getLabel())
-        event.mySpeakingVolume = -10
-    end
-]]
-
-    --self:zz(event):print("B4 UsableFlyoutDef", self:getUsableFlyoutDef())
     zebug.info:event(event):owner(self):print("I am a germ?",self, "my label is",  self:getLabel())
-    --zebug.info:event(event):owner(self):dumpy("-B4- UsableFlyoutDef",  self:getUsableFlyoutDef())
-    self:getFlyoutDef():invalidateCache(event)
-    --self:zz(event):print("AF UsableFlyoutDef", self:getUsableFlyoutDef())
-    --zebug.info:event(event):owner(self):dumpy("-AF- UsableFlyoutDef",  self:getUsableFlyoutDef())
+    self:getFlyoutDef():invalidateCacheOfUsableFlyoutDefOnly(event)
     self:applyConfigFromFlyoutDef(event)
 end
 
