@@ -187,22 +187,25 @@ function Germ:isInactive(event)
     return not (self.flyoutId and true or false)
 end
 
-function Germ:hasItemsAndIsActive()
-    local hasItem = self:getFlyoutDef():hasItem()
-    zebug.info:owner(self):print("I'm active", self:isActive(), "and have items",hasItem)
-    return self:isActive() and hasItem
+function Germ:isActiveAndHasFoo(funcName, event)
+    if not self:isActive() then return false end
+    local flyoutDef = self:getFlyoutDef()
+    local func = flyoutDef[funcName]
+    local hasIt = func(flyoutDef, event)
+    zebug.info:event(event):owner(self):print(funcName,hasIt)
+    return hasIt
 end
 
-function Germ:hasMacrosAndIsActive()
-    local hasMacro = self:getFlyoutDef():hasMacro()
-    zebug.info:owner(self):print("I'm active", self:isActive(), "and have macros",hasMacro)
-    return self:isActive() and hasMacro
+function Germ:hasItemsAndIsActive(event)
+    return self:isActiveAndHasFoo("hasItem", event)
 end
 
-function Germ:hasSpellsAndIsActive()
-    local hasSpell = self:getFlyoutDef():hasSpell()
-    zebug.info:owner(self):print("I'm active", self:isActive(), "and have spells",hasSpell)
-    return self:isActive() and hasSpell
+function Germ:hasMacrosAndIsActive(event)
+    return self:isActiveAndHasFoo("hasMacro", event)
+end
+
+function Germ:hasSpellsAndIsActive(event)
+    return self:isActiveAndHasFoo("hasSpell", event)
 end
 
 function Germ:hasFlyoutId(flyoutId)
