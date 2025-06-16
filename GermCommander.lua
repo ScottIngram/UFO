@@ -97,11 +97,11 @@ end
 
 ---@param flyoutId number
 function GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
-    --if isInCombatLockdown("Reconfiguring") then return end
     zebug.info:event(event):print("updating all Germs with",FlyoutDefsDb:get(flyoutId))
-
     self:forEachGermWithFlyoutId(flyoutId, Germ.notifyOfChangeToFlyoutDef, event)
 end
+
+GermCommander.notifyOfChangeToFlyoutDef = Pacifier:wrap(GermCommander.notifyOfChangeToFlyoutDef)
 
 -- go through all placements saved in the DB.
 -- I expect this will happen during
@@ -515,11 +515,13 @@ GermCommander.notifyAllGermsWithItems = Pacifier:wrap(GermCommander.notifyAllGer
 function GermCommander:handleEventMacrosChanged(event)
     self:forEachGermIf(Germ.invalidateFlyoutCache, Germ.hasMacrosAndIsActive, event)
 end
+GermCommander.handleEventMacrosChanged = Pacifier:wrap(GermCommander.handleEventMacrosChanged)
 
 function GermCommander:notifyAllGermsWithSpells(event)
     ---@param germ GERM_TYPE
     self:forEachGermIf(Germ.refreshFlyoutDefAndApply, Germ.hasSpellsAndIsActive, event)
 end
+GermCommander.notifyAllGermsWithSpells = Pacifier:wrap(GermCommander.notifyAllGermsWithSpells)
 
 --[[
 -- unused atm

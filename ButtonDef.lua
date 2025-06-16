@@ -122,13 +122,63 @@ function ButtonDef:oneOfUs(self)
 end
 
 ---@return ButtonDef
-function ButtonDef:new()
+---@param id number|string|nil (optional) a value possibly returned by some Bliz API
+---@param type string|nil (optional) a value possibly returned by some Bliz API
+function ButtonDef:new(id, type)
     ---@type ButtonDef
     local self = {}
     ButtonDef:oneOfUs(self)
+    self:setIdAndType(id, type)
     self:installMyToString()
     return self
 end
+
+function ButtonDef:setIdAndType(id, type)
+    if not (id and type) then
+        return
+    end
+
+    self.type = type
+    if type == ButtonType.SPELL then
+        self.spellId = id
+    elseif type == ButtonType.MOUNT then
+        local name, spellId = C_MountJournal.GetMountInfoByID(id)
+        self.spellId = spellId
+        self.mountId = id
+    elseif type == ButtonType.ITEM then
+        self.itemId = id
+    elseif type == ButtonType.TOY then
+        self.itemId = id
+    elseif type == ButtonType.MACRO then
+        self.macroId = id
+    elseif type == ButtonType.PET then
+        self.petGuid = id
+    elseif type == ButtonType.PSPELL then
+        if id < 10 then
+            self.type = ButtonType.BROKENP
+            local brokenPetCommandId, alsoCommand = PetShitShow:get(id)
+            self.brokenPetCommandId = brokenPetCommandId
+            self.brokenPetCommandId2 = alsoCommand
+        else
+            self.petSpellId = id
+        end
+    else
+        zebug.error:owner(self):print("Sorry, I don't recognize this type of button:", type)
+        Ufo.unknownType = type or "UnKnOwN"
+        type = nil
+        self = nil
+    end
+
+    if self then
+        if type then
+            -- discovering the name requires knowing its type
+            self:getName()
+        end
+    end
+
+    return self
+end
+
 
 function ButtonDef:toString()
     if not self.type then

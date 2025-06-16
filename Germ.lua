@@ -971,7 +971,12 @@ function getOpenerClickerScriptlet()
     end
 
     OPENER_CLICKER_SCRIPTLET = [=[
---print("OPENER_CLICKER_SCRIPTLET <START>")
+    local myName = self:GetAttribute("UFO_NAME")
+    local doDebug = self:GetAttribute("DO_DEBUG") or false
+    if doDebug then
+        print(myName, "OPENER_CLICKER_SCRIPTLET <START>")
+    end
+
 	local germ = self
 	local mouseClick = button
 	local isClicked = down
@@ -979,6 +984,9 @@ function getOpenerClickerScriptlet()
     local isOpen = flyoutMenu:IsShown()
 
 	if isOpen then
+	    if doDebug then
+            print(myName, "closing")
+        end
 		flyoutMenu:Hide()
 		keybindKeeper:ClearBindings()
 		return
@@ -1082,7 +1090,9 @@ function getOpenerClickerScriptlet()
         flyoutMenu:SetWidth((w + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
     end
 
---print("OPENER_CLICKER_SCRIPTLET ... SHOWING flyout")
+    if doDebug then
+        print(myName, "SHOWING flyout")
+    end
     flyoutMenu:Show()
 
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
@@ -1142,6 +1152,17 @@ function Germ:OnButtonStateChanged()
     -- defined in ButtonStateBehaviorMixin:OnButtonStateChanged() as "Derive and configure your button to the correct state."
     zebug.trace:owner(self):print("calling parent in FlyoutButtonMixin")
     FlyoutButtonMixin.OnButtonStateChanged(self) -- "FlyoutButtonMixin" meaning "a button that opens a flyout" not "a button on a flyout"
+end
+
+-------------------------------------------------------------------------------
+-- Debugger tools
+-------------------------------------------------------------------------------
+
+function Germ:printDebugDetails(event)
+    zebug.warn:event(event):name("details"):owner(self):print("isActive",self:isActive(), "IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent", self:GetParent(), "flyoutMenu",self.flyoutMenu)
+    if self.flyoutMenu then self.flyoutMenu:printDebugDetails() end
+    local parent = self:GetParent()
+    if parent and parent.printDebugDetails then parent:printDebugDetails() end
 end
 
 -------------------------------------------------------------------------------

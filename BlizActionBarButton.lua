@@ -248,6 +248,20 @@ function BabbInstance:getFlyoutIdFromUfoProxy()
     return UfoProxy:getFlyoutId()
 end
 
+-------------------------------------------------------------------------------
+-- Debugger tools
+-------------------------------------------------------------------------------
+
+function BabbInstance:printDebugDetails(event)
+    local parent = self:GetParent()
+    local pName = parent and parent:GetName()
+    zebug.warn:event(event):name("details"):owner(self):print("IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent",parent, "parent name",pName, "LiteralBlizBtn",self:getLiteralBlizBtn(), "getTypeAndId",self:getTypeAndId())
+end
+
+-------------------------------------------------------------------------------
+-- toString MAGIC!
+-------------------------------------------------------------------------------
+
 function BabbInstance:toString()
     if self == BlizActionBarButton then
         return "nil"
@@ -270,11 +284,17 @@ function BabbInstance:toString()
                 --print("BlizActionBarButton:toString... d.aId",d.aId, "d.aType",d.aType, "name",name)
             end
 
-            if name then
-                return string.format("<A-BTN: s%d %s: %s>", nilStr(self.btnSlotIndex), nilStr(blizType), name)
+            local icon = QUESTION_MARK_ICON
+            if blizId and blizType then
+                local btnDef = ButtonDef:new(blizId, blizType)
+                icon = btnDef:getIcon()
             end
 
-            return string.format("<A-BTN: s%d, %s:%s>", nilStr(self.btnSlotIndex), nilStr(blizType), nilStr(blizId))
+            if name then
+                return string.format("<A-BTN: |T%d:0|t s%d %s: %s>", icon, nilStr(self.btnSlotIndex), nilStr(blizType), name)
+            end
+
+            return string.format("<A-BTN: |T%d:0|t s%d, %s:%s>", icon, nilStr(self.btnSlotIndex), nilStr(blizType), nilStr(blizId))
         end
     end
 end

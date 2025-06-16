@@ -282,6 +282,29 @@ function HandlersForAddonLoadedEvents:UFO(name)
 end
 
 -------------------------------------------------------------------------------
+-- Debugger tools
+-------------------------------------------------------------------------------
+
+function dumpIfUnderMousePointer()
+    local didOutput
+    zebug.warn:mark(Mark.QUEST):newEvent("Ufo","debug"):run(function(event)
+        local foci  = GetMouseFoci()
+        for i, frame in ipairs(foci) do
+            if UfoMixIn:isA(frame) then
+                didOutput = true
+                local name = frame:GetName()
+                zebug.warn:event(event):name("debug"):owner(frame):print("the mouse is pointing at",name)
+                if frame.printDebugDetails then frame:printDebugDetails(event) end
+            end
+        end
+
+        if not didOutput then
+            zebug.warn:event(event):print("Point at a UFO first then issue this command.")
+        end
+    end)
+end
+
+-------------------------------------------------------------------------------
 -- Config for Slash Commands aka "/ufo"
 -------------------------------------------------------------------------------
 
@@ -293,6 +316,10 @@ local slashFuncs = {
     [L10N.SLASH_CMD_OPEN] = {
         desc = L10N.SLASH_DESC_OPEN,
         fnc = Catalog.open,
+    },
+    debug = {
+        desc = "examine the UFO under the mouse pointer",
+        fnc = dumpIfUnderMousePointer,
     },
 }
 

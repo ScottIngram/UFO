@@ -63,7 +63,7 @@ function UfoMixIn:installMyToString()
 
     if originalMt then
         if seen[originalMt] then
-            zebug.trace:mStar():print("REPEATED mt found on ufoType",self.ufoType, "self:toString()",self:toString(), "originalMt.ufoType",originalMt.ufoType, "__tostring", originalMt.__tostring)
+            zebug.trace:mStar():print("REPEATED mt found on ufoType",self.ufoType, --[["self:toString()",self:toString(),]] "originalMt.ufoType",originalMt.ufoType, "__tostring", originalMt.__tostring)
             zebug.trace:mStar():dumpKeys(originalMt)
         end
         seen[originalMt] = true

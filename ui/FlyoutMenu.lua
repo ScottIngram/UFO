@@ -49,6 +49,8 @@ function FlyoutMenu:new(germ)
     self:installHandlerForCloseOnClick()
     self:HookScript(Script.ON_SHOW, ScriptHandlers.ON_SHOW)
     self:HookScript(Script.ON_HIDE, ScriptHandlers.ON_HIDE)
+    self:safeSetAttribute("DO_DEBUG", not zebug.info:isMute() )
+    self:safeSetAttribute("UFO_NAME", self:getLabel())
     return self
 end
 
@@ -116,10 +118,20 @@ local CLOSE_ON_CLICK_SCRIPTLET = [=[
         germ = flyoutMenu:GetParent()
     end
 
+    local myName = flyoutMenu:GetAttribute("UFO_NAME") or flyoutMenu:GetName() or "bullshit"
+    local doDebug = flyoutMenu:GetAttribute("DO_DEBUG") or false
+    --print(myName, "DO_DEBUG =",doDebug)
+
     local doClose = germ:GetAttribute("doCloseOnClick")
     local doClose2 = flyoutMenu:GetAttribute("doCloseOnClick")
---print("doClose:", doClose, "doClose2",doClose2)
+    if doDebug then
+        print(myName, "doClose:", doClose, "doClose2",doClose2)
+    end
+
     if doClose or doClose2 then
+        if doDebug then
+            print(myName, "CLOSING!  doClose:", doClose, "doClose2:",doClose2)
+        end
         --print("CLOSING: ", germ:GetName() )
         flyoutMenu:Hide()
         flyoutMenu:SetAttribute("doCloseFlyout", false)
@@ -453,6 +465,14 @@ function FlyoutMenu:FOR_DEMO_PURPOSES_ONLY()
     self:SetTooltip()
     self:OnLeave()
     self:OnDragStart()
+end
+
+-------------------------------------------------------------------------------
+-- Debugger tools
+-------------------------------------------------------------------------------
+
+function FlyoutMenu:printDebugDetails(event)
+    zebug.warn:event(event):name("details"):owner(self):print("IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent",self:GetParent())
 end
 
 -------------------------------------------------------------------------------
