@@ -102,13 +102,14 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:SetScript(Script.ON_MOUSE_DOWN,   ScriptHandlers.ON_MOUSE_DOWN)
     self:SetScript(Script.ON_MOUSE_UP,     ScriptHandlers.ON_MOUSE_UP) -- is this short-circuiting my attempts to get the buttons to work on mouse up?
     self:SetScript(Script.ON_DRAG_START,   ScriptHandlers.ON_DRAG_START) -- this is required to get OnDrag to work
-    --self:SetScript(Script.ON_EVENT,        ScriptHandlers.ON_EVENT) -- also do a RegisterEvent -- MOVED INTO Ufo.lua
-
     self:registerForBlizUiActions(event)
 
+    -- Secure Shenanigans required before initFlyoutMenu()
+    SecureHandler_OnLoad(self) -- install self:SetFrameRef()
+
     -- FlyoutMenu
-    self:initFlyoutMenu(event)
-    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event) -- depends on initFlyoutMenu() above
+    self.flyoutMenu = self:initFlyoutMenu(event)
+    self:setAllSecureClickersForFlyoutMenu(event) -- depends on initFlyoutMenu() above
 
     -- UI positioning & appearance
     self:ClearAllPoints()
@@ -119,8 +120,6 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:setVisibilityDriver(parentBlizActionBarBtn.visibleIf) -- do I even need this? when the parent Hides so will the Germ automatically
 
     -- secure tainty stuff
-    self:safeSetAttribute("UFO_NAME", self.label)
-    self:safeSetAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:copyDoCloseOnClickConfigValToAttribute()
     self:doMyKeybinding() -- bind me to my action bar slot's keybindings (if any)
 
@@ -135,6 +134,7 @@ end
 
 function Germ:render(event)
     if self:isInactive(event) then return end
+    self:safeSetAttribute("flyoutDirection", self:getDirection(event))
     self:UpdateArrowRotation() -- VOLATILE if action bar changes direction... and changes when open/closed
     self:renderCooldownsAndCountsAndStatesEtc(event) -- TODO: v11.1 verify this is working properly.  do I need to do more? -- What happens if I remove this?
     self.flyoutMenu:renderAllBtnCooldownsEtc(event)
@@ -145,10 +145,11 @@ function Germ:notifyOfChangeToFlyoutDef(event)
     self:applyConfigFromFlyoutDef(event)
 end
 
+-- too much
 function Germ:applyConfigFromFlyoutDef(event)
     self:doIcon(event)
     self.Name:SetText(self:getLabel())
-    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
+    self:setAllSecureClickersForFlyoutMenu(event) -- don't need to reapply the opener scriptlette... actually, I don't think this does.
     self:closeFlyout() -- in case the buttons' number/ordering changes
     self.flyoutMenu:applyConfigForGerm(self, event)
     --self:doUpdate(self.flyoutId, event)
@@ -247,6 +248,7 @@ function Germ:initFlyoutMenu(event)
         self.flyoutMenu = UFO_FlyoutMenuForGerm
     end
     self.flyoutMenu.isForGerm = true
+    return self.flyoutMenu
 end
 
 -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
@@ -299,7 +301,7 @@ function Germ:changeFlyoutIdAndEnable(flyoutId, event)
     self:registerForBlizUiActions(event)
     self:doMyKeybinding()
     self:Show()
-    self:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event) -- depends on initFlyoutMenu() above
+    self:setAllSecureClickersForFlyoutMenu(event) -- analyze how much of this is needed in this circumstance
     self:Enable()
 end
 
@@ -424,9 +426,9 @@ function Germ:invalidateFlyoutCache()
 end
 
 function Germ:refreshFlyoutDefAndApply(event)
-    zebug.info:event(event):owner(self):print("I am a germ?",self, "my label is",  self:getLabel())
+    zebug.info:event(event):owner(self):name("refreshFlyoutDefAndApply"):print("re-configuring...")
     self:getFlyoutDef():invalidateCacheOfUsableFlyoutDefOnly(event)
-    self:applyConfigFromFlyoutDef(event)
+    self:applyConfigFromFlyoutDef(event) -- exclude clickers?
 end
 
 -------------------------------------------------------------------------------
@@ -535,23 +537,35 @@ function Germ:unregisterForBlizUiActions()
     self.isEventStuffRegistered = false
 end
 
-function Germ:setAllSecureClickScriptlettesBasedOnCurrentFlyoutId(event)
-    -- TODO v11.1 - wrap in exeNotInCombat() ? in case "/reload" during combat
-    -- set attributes used inside the secure scriptlettes
+function Germ:setAllSecureClickersForFlyoutMenu(event)
+    -- set attributes used inside the secure scripts
+    -- some of these only need to be done once, but, must be done before the clickers
     self:SetAttribute("flyoutDirection", self:getDirection(event))
-    self:SetAttribute("FLYOUT_MENU_NAME", self.flyoutMenu:GetName())
     self:SetAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
+    self:SetFrameRef("flyoutMenu", self.flyoutMenu)
+    self:safeSetAttribute("DO_DEBUG", not zebug.info:isMute() )
+    self:safeSetAttribute("UFO_NAME", self:getLabel())
 
-    local flyoutId = self.flyoutId
-    self:setMouseClickHandler(MouseClick.LEFT,   Config:getClickBehavior(flyoutId, MouseClick.LEFT), event)
-    self:setMouseClickHandler(MouseClick.MIDDLE, Config:getClickBehavior(flyoutId, MouseClick.MIDDLE), event)
-    self:setMouseClickHandler(MouseClick.RIGHT,  Config:getClickBehavior(flyoutId, MouseClick.RIGHT), event)
-    self:setMouseClickHandler(MouseClick.FOUR,   Config:getClickBehavior(flyoutId, MouseClick.FOUR), event)
-    self:setMouseClickHandler(MouseClick.FIVE,   Config:getClickBehavior(flyoutId, MouseClick.FIVE), event)
-    self:setMouseClickHandler(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
+    -- set global variables inside the restricted environment of the germ
+    self:Execute([=[
+        germ = self
+        flyoutMenu = germ:GetFrameRef("flyoutMenu")
+        doDebug = self:GetAttribute("DO_DEBUG") or false
+        myName = self:GetAttribute("UFO_NAME")
+    ]=])
+
+    -- set clickers
+    self:setMouseClicker(MouseClick.LEFT,   Config:getClickerName(self.flyoutId, MouseClick.LEFT), event)
+    self:setMouseClicker(MouseClick.MIDDLE, Config:getClickerName(self.flyoutId, MouseClick.MIDDLE), event)
+    self:setMouseClicker(MouseClick.RIGHT,  Config:getClickerName(self.flyoutId, MouseClick.RIGHT), event)
+    self:setMouseClicker(MouseClick.FOUR,   Config:getClickerName(self.flyoutId, MouseClick.FOUR), event)
+    self:setMouseClicker(MouseClick.FIVE,   Config:getClickerName(self.flyoutId, MouseClick.FIVE), event)
+
+    -- special clicker for the KEYBIND
+    self:setMouseClicker(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
 end
 
-Germ.setAllSecureClickScriptlettesBasedOnCurrentFlyoutId = Pacifier:wrap(Germ.setAllSecureClickScriptlettesBasedOnCurrentFlyoutId, L10N.RECONFIGURE_BUTTON)
+Germ.setAllSecureClickersForFlyoutMenu = Pacifier:wrap(Germ.setAllSecureClickersForFlyoutMenu, L10N.RECONFIGURE_BUTTON)
 
 function Germ:handleReceiveDrag(event)
     if isInCombatLockdown("Drag and drop") then return end
@@ -700,20 +714,21 @@ end
 ---@type Germ|GERM_INHERITANCE
 local HandlerMaker = { }
 
----@param mouseClick MouseClick
-function Germ:setMouseClickHandler(mouseClick, behavior, event)
-    self:removeOldHandler(mouseClick, event)
-    local installTheBehavior = getHandlerMaker(behavior)
-    zebug.info:owner(self):event(event):print("mouseClick",mouseClick, "opt", behavior, "handler", installTheBehavior)
-    installTheBehavior(self, mouseClick, event)
-    self.clickers[mouseClick] = behavior
-    SecureHandlerExecute(self, searchForFlyoutMenuScriptlet()) -- initialize the scriptlet's "global" vars
-end
+-- be more selective - do all of them need to change if the flyoutId changes? surely not "open"
 
----@param behavior GermClickBehavior
----@return fun(zelf: Germ, mouseClick: MouseClick, event: Event): nil
-function getHandlerMaker(behavior)
-    assert(behavior, "usage: getHandlerMaker(behavior)")
+---@param mouseClick MouseClick
+function Germ:setMouseClicker(mouseClick, behaviorName, event)
+    -- is there an existing clicker that is also sensitive to the flyoutDef
+    local old = self.clickers[mouseClick]
+    zebug.trace:event(event):owner(self):print("old",old)
+    if old then
+        local needsRemoval = (old == GermClickBehavior.RANDOM_BTN) or (old == GermClickBehavior.CYCLE_ALL_BTNS)
+        zebug.trace:event(event):owner(self):print("old",old, "needsRemoval",needsRemoval)
+        if  needsRemoval then
+            self:removeOldHandler(mouseClick, event)
+        end
+    end
+
     if not HANDLER_MAKERS_MAP then
         HANDLER_MAKERS_MAP = {
             [GermClickBehavior.OPEN]           = HandlerMaker.OpenFlyout,
@@ -723,16 +738,20 @@ function getHandlerMaker(behavior)
             --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = HandlerMaker.ReverseCycleThroughAllBtns,
         }
     end
-    local result = HANDLER_MAKERS_MAP[behavior]
-    assert(result, "Unknown GermClickBehavior: ".. behavior)
-    return result
+
+    local installTheBehavior = HANDLER_MAKERS_MAP[behaviorName]
+    assert(installTheBehavior, "Unknown GermClickBehavior: ".. behaviorName)
+
+
+    zebug.info:owner(self):event(event):print("mouseClick",mouseClick, "opt", behaviorName, "handler", installTheBehavior)
+    installTheBehavior(self, mouseClick, event)
+    self.clickers[mouseClick] = behaviorName
 end
 
 -- open / show
 ---@param mouseClick MouseClick
 function HandlerMaker:OpenFlyout(mouseClick, event)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
-    zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
     local scriptName = "OPENER_SCRIPT_FOR_" .. secureMouseClickId
     zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
     self:SetAttribute(secureMouseClickId,scriptName)
@@ -792,12 +811,9 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
     local mouseBtnNumber = self:getMouseBtnNumber(secureMouseClickId) or ""
     local scriptToSetNextRandomBtn = CLICK_ID_MARKER .. mouseClick .. ";\n" ..
     [=[
-    	local germ = self
     	local mouseClick = button
     	local isClicked = down
     	local onlyInitialize = mouseClick == nil
-        local doDebug = self:GetAttribute("DO_DEBUG") or false
-
 
         local iAmFor = "]=].. mouseClick ..[=["
 
@@ -873,10 +889,7 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
 --    self.clickScriptUpdaters[secureMouseClickId] = scriptToSetNextRandomBtn -- this doesn't seem to actually be required
 
     -- install the script which will install the buttons which will perform the action
-    SecureHandlerWrapScript(self, "OnClick", self, scriptToSetNextRandomBtn)
-
-    -- initialize the scriptlet's "global" vars
-    SecureHandlerExecute(self, searchForFlyoutMenuScriptlet())
+    self:WrapScript(self, Script.ON_CLICK, scriptToSetNextRandomBtn)
 end
 
 -- Fuck you yet again, Bliz, for only providing a way to remove some unknown, generally arbitrary handler but not a specific handler.
@@ -897,13 +910,19 @@ function Germ:removeOldHandler(mouseClick, event)
     local rescue = function(header, preBody, postBody, scriptsClick)
         -- Oopsy daisy!  Blizzy Wizzy tricked me into removing the wrong one!  Remember it so we can put it back.
         i = i + 1
-        lostBoys[i] = { header, preBody, postBody, scriptsClick }
+        lostBoys[i] = { header=header, preBody=preBody, postBody=postBody, scriptsClick=scriptsClick }
     end
 
     local header = self
     local isForThisClick = false
     while header and not isForThisClick do -- assume we will only ever install ONE handler per mouse button
-        local header, preBody, postBody = SecureHandlerUnwrapScript(self, "OnClick")
+        local header, preBody, postBody
+
+        -- avoid "Unable to retrieve unwrap results"
+        local isOk, err = pcall( function()
+            header, preBody, postBody = self:UnwrapScript(Script.ON_CLICK)
+        end)
+
         if not header then
             zebug.error:event(event):owner(self):print("failed to SecureHandlerUnwrapScript",mouseClick, "old",old, "script owner")
             break
@@ -928,46 +947,17 @@ function Germ:removeOldHandler(mouseClick, event)
     -- try to put that shit back
     for i, params in ipairs(lostBoys) do
         local success = pcall(function()
-            SecureHandlerWrapScript(params[1], "OnClick", params[1], params[2], params[3])
+            self:WrapScript(params.header, Script.ON_CLICK, params.preBody, params.postBody, params.scriptsClick)
         end )
         zebug.info:event(event):owner(self):print("germ", self.label, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
     end
 end
 
--- self.OnEvent = ActionBarActionButtonMixin.OnEvent
---[[
-function Germ:OnEvent(event, ...)
-    zebug.error:print("wee?",event)
-    ActionBarActionButtonMixin:OnEvent(event, ...)
-end
-]]
-
-function searchForFlyoutMenuScriptlet()
-    return [=[
-	germ = self
-    local FLYOUT_MENU_NAME = self:GetAttribute("FLYOUT_MENU_NAME")
-
-    -- use a global var to cache the flyout menu
-    if not flyoutMenu then
-        -- search the kids for the flyout menu
-        local kids = table.new(germ:GetChildren())
-        for i, kid in ipairs(kids) do
-            local kidName = kid:GetName()
-            if kidName == FLYOUT_MENU_NAME then
-                flyoutMenu = kid
-                keybindKeeper = flyoutMenu -- not really needed. I added this while debugging a taint problem
-                break
-            end
-        end
-    end
-    ]=]
-end
-
-local OPENER_CLICKER_SCRIPTLET
+local OPENER_CLICKER_SECURE_SCRIPT
 
 function getOpenerClickerScriptlet()
-    if OPENER_CLICKER_SCRIPTLET then
-        return OPENER_CLICKER_SCRIPTLET
+    if OPENER_CLICKER_SECURE_SCRIPT then
+        return OPENER_CLICKER_SECURE_SCRIPT
     end
 
     OPENER_CLICKER_SECURE_SCRIPT = [=[
@@ -975,7 +965,6 @@ function getOpenerClickerScriptlet()
     --[[DEBUG]]     print("<DEBUG>", myName, "OPENER_CLICKER_SECURE_SCRIPT <START> germ =", germ, "flyoutMenu =",flyoutMenu)
     --[[DEBUG]] end
 
-	local germ = self
 	local mouseClick = button
 	local isClicked = down
 	local direction = germ:GetAttribute("flyoutDirection")
@@ -986,18 +975,15 @@ function getOpenerClickerScriptlet()
         --[[DEBUG]]     print("<DEBUG>", myName, "closing")
         --[[DEBUG]] end
 		flyoutMenu:Hide()
-		keybindKeeper:ClearBindings()
+		flyoutMenu:ClearBindings()
 		return
     end
 
---print("OPENER_CLICKER_SCRIPTLET ... 1")
-    keybindKeeper:SetBindingClick(true, "Escape", germ, mouseClick)
+    flyoutMenu:SetBindingClick(true, "Escape", germ, mouseClick)
 
 -- TODO: move this into FlyoutMenu:updateForGerm()
 
---print("OPENER_CLICKER_SCRIPTLET ... 2")
     flyoutMenu:SetParent(germ)  -- holdover from single FM
---print("OPENER_CLICKER_SCRIPTLET ... 3")
     flyoutMenu:ClearAllPoints()
     if direction == "UP" then
         flyoutMenu:SetPoint("BOTTOM", germ, "TOP", 0, 0)
@@ -1015,7 +1001,6 @@ function getOpenerClickerScriptlet()
         table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
     end
 
---print("OPENER_CLICKER_SCRIPTLET ... 4")
 	local prevBtn = nil;
     local numButtons = 0
     for i, btn in ipairs(uiButtons) do
@@ -1056,26 +1041,24 @@ function getOpenerClickerScriptlet()
                 if numButtons < 11 then
                     -- TODO: make first keybind same as the UFO's
                     local numberKey = (numButtons == 10) and "0" or tostring(numButtons)
-                    keybindKeeper:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
+                    flyoutMenu:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
                     if numberKey == "1" then
                         -- make the UFO's first button's keybind be the same as the UFO itself
                         local germKey = self:GetAttribute("UFO_KEYBIND_1")
                         if germKey then
-                            keybindKeeper:SetBindingClick(true, germKey, btn, "]=].. MouseClick.LEFT ..[=[")
+                            flyoutMenu:SetBindingClick(true, germKey, btn, "]=].. MouseClick.LEFT ..[=[")
                         end
                     end
                 end
             end
 
             prevBtn = btn
---print("OPENER_CLICKER_SCRIPTLET ... showing button")
             btn:Show()
         else
             btn:Hide()
         end
     end
 
---print("OPENER_CLICKER_SCRIPTLET ... 5")
     local w = prevBtn and prevBtn:GetWidth() or 10
     local h = prevBtn and prevBtn:GetHeight() or 10
     local minN = (numButtons == 0) and 1 or numButtons
@@ -1092,12 +1075,9 @@ function getOpenerClickerScriptlet()
     --[[DEBUG]]     print("<DEBUG>", myName, "SHOWING flyout")
     --[[DEBUG]] end
     flyoutMenu:Show()
-
-    --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.
-    --flyoutMenu:AddToAutoHide(germ)
 ]=]
 
-    return OPENER_CLICKER_SCRIPTLET
+    return OPENER_CLICKER_SECURE_SCRIPT
 end
 
 

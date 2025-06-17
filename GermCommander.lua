@@ -95,6 +95,7 @@ function GermCommander:forEachPlacement(func, event)
     end
 end
 
+-- is being called mostly when the button move around / change
 ---@param flyoutId number
 function GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
     zebug.info:event(event):print("updating all Germs with",FlyoutDefsDb:get(flyoutId))
@@ -202,7 +203,7 @@ end
 function GermCommander:updateAllKeybindBehavior(event)
     ---@param germ GERM_TYPE
     self:forEachActiveGerm(function(germ)
-        germ:setMouseClickHandler(MouseClick.SIX, Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
+        germ:setMouseClicker(MouseClick.SIX, Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
     end, event)
 end
 
@@ -222,15 +223,15 @@ end
 GermCommander.applyConfigForBindTheButtons = Pacifier:wrap(GermCommander.applyConfigForBindTheButtons, L10N.RECONFIGURE_FLYOUT_BUTTON_KEYBINDING)
 
 ---@param mouseClick MouseClick
-function GermCommander:updateClickHandlerForAllActiveGerms(mouseClick, event)
+function GermCommander:updateClickerForAllActiveGerms(mouseClick, event)
     -- can't modify the inactive germs because they have no flyoutId
     ---@param germ Germ
     self:forEachActiveGerm(function(germ)
-        germ:setMouseClickHandler(mouseClick, Config:getClickBehavior(self.flyoutId, mouseClick), event)
+        germ:setMouseClicker(mouseClick, Config:getClickerName(self.flyoutId, mouseClick), event)
     end, event)
 end
 
-GermCommander.updateClickHandlerForAllActiveGerms = Pacifier:wrap(GermCommander.updateClickHandlerForAllActiveGerms, L10N.CHANGE_MOUSE_BUTTON_BEHAVIOR)
+GermCommander.updateClickerForAllActiveGerms = Pacifier:wrap(GermCommander.updateClickerForAllActiveGerms, L10N.CHANGE_MOUSE_BUTTON_BEHAVIOR)
 
 ---@return GERM_TYPE
 function GermCommander:recallGerm(btnSlotIndex)

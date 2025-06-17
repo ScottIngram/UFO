@@ -43,14 +43,18 @@ function FlyoutMenu:new(germ)
     local myName = germ:GetName() .. FlyoutMenu.nameSuffix
     ---@type FM_TYPE
     local self = CreateFrame(FrameType.FRAME, myName, germ, "UFO_FlyoutMenuTemplate") -- XML's mixin = FlyoutMenu
+
+    -- calling self:GetParent() in any of the methods below returns some unknown object that is NOT the germ.
+    -- but later, it will return the germ.  JFC.
+    -- WORKAROUND - set the parent a SECOND time.  This one seems to stick.  FUCK YOU BLIZ.
+    self:SetParent(germ)
+
     self.isForGerm = true
     self:setId(germ:getFlyoutId())
     self:installMyToString()
     self:installHandlerForCloseOnClick()
     self:HookScript(Script.ON_SHOW, ScriptHandlers.ON_SHOW)
     self:HookScript(Script.ON_HIDE, ScriptHandlers.ON_HIDE)
-    self:safeSetAttribute("DO_DEBUG", not zebug.info:isMute() )
-    self:safeSetAttribute("UFO_NAME", self:getLabel())
     return self
 end
 
@@ -106,33 +110,37 @@ end
 
 -- use non-local "global" variables to save values between executions
 -- because GetParent() returns nil during combat lockdown
-local CLOSE_ON_CLICK_SCRIPTLET = [=[
+local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SECURE_SCRIPT = [=[
     -- follow convention and trigger on mouse UP / key UP, not down (and certainly not both up and down).  the "down" variable is passed in by the Bliz API
     if down then return end
 
     if not flyoutMenu then
-        flyoutMenu = self:GetParent()
+        flyoutMenu = self:GetParent() or self:GetFrameRef("flyoutMenu")
     end
+
+    --[[DEBUG]] local id = self:GetID()
+    --[[DEBUG]] local flyoutName = flyoutMenu:GetAttribute("UFO_NAME") or flyoutMenu:GetName() or "bullshit"
+    --[[DEBUG]] local doDebug = flyoutMenu:GetAttribute("DO_DEBUG") or false
+    --[[DEBUG]] if doDebug then
+    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SECURE_SCRIPT <START>")
+    --[[DEBUG]] end
 
     if not germ then
-        germ = flyoutMenu:GetParent()
+        germ = flyoutMenu:GetParent() or self:GetFrameRef("germ")
     end
-
-    local myName = flyoutMenu:GetAttribute("UFO_NAME") or flyoutMenu:GetName() or "bullshit"
-    local doDebug = flyoutMenu:GetAttribute("DO_DEBUG") or false
-    --print(myName, "DO_DEBUG =",doDebug)
 
     local doClose = germ:GetAttribute("doCloseOnClick")
     local doClose2 = flyoutMenu:GetAttribute("doCloseOnClick")
-    if doDebug then
-        print(myName, "doClose:", doClose, "doClose2",doClose2)
-    end
+
+    --[[DEBUG]] if doDebug then
+    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "doClose:", doClose, "doClose2",doClose2)
+    --[[DEBUG]] end
 
     if doClose or doClose2 then
-        if doDebug then
-            print(myName, "CLOSING!  doClose:", doClose, "doClose2:",doClose2)
-        end
-        --print("CLOSING: ", germ:GetName() )
+        --[[DEBUG]] if doDebug then
+        --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "CLOSING!  doClose:", doClose, "doClose2:",doClose2)
+        --[[DEBUG]] end
+
         flyoutMenu:Hide()
         flyoutMenu:SetAttribute("doCloseFlyout", false)
 		flyoutMenu:ClearBindings()
@@ -142,13 +150,22 @@ local CLOSE_ON_CLICK_SCRIPTLET = [=[
 function FlyoutMenu:installHandlerForCloseOnClick()
     if self.isCloserInitialized or not self.isForGerm then return end
 
-    self:forEachButton(function(button)
-        SecureHandlerWrapScript(button, "PostClick", button, CLOSE_ON_CLICK_SCRIPTLET) -- Is the the cause of "Cannot call restricted closure from insecure code" ??? NOPE
-        SecureHandlerExecute(button, CLOSE_ON_CLICK_SCRIPTLET) -- initialize the scriptlet's "global" vars
+    -- values used inside the secure environment code
+    self:SetAttribute("DO_DEBUG", not zebug.info:isMute() )
+    self:SetAttribute("UFO_NAME", self:getLabel())
+
+    ---@param btnFrame BOFM_TYPE
+    self:forEachButton(function(btnFrame)
+        btnFrame:SetFrameRef("flyoutMenu", self)
+        btnFrame:SetFrameRef("germ", self:GetParent())
+        btnFrame:WrapScript(btnFrame, "PostClick", CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SECURE_SCRIPT) -- Is the the cause of "Cannot call restricted closure from insecure code" ??? NOPE
+        btnFrame:Execute(CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SECURE_SCRIPT) -- initialize the scriptlet's "global" vars
     end)
 
     self.isCloserInitialized = true
 end
+
+FlyoutMenu.installHandlerForCloseOnClick = Pacifier:wrap(FlyoutMenu.installHandlerForCloseOnClick)
 
 function FlyoutMenu:getId()
     return self.id or self.flyoutId
