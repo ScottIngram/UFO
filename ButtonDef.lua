@@ -564,6 +564,6 @@ function ButtonDef:asSecureClickHandlerAttributes(event)
     end
 
     local blizType = self:getTypeForBlizApi()
-    zebug.info:event(event):owner(self):print("done. blizType",blizType)
+    zebug.info:event(event):owner(self):print("blizType",blizType)
     return blizType, blizType, self.name
 end

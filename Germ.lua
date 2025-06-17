@@ -734,8 +734,7 @@ function HandlerMaker:OpenFlyout(mouseClick, event)
     local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
     zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick, "secureMouseClickId", secureMouseClickId)
     local scriptName = "OPENER_SCRIPT_FOR_" .. secureMouseClickId
-    zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("germ",self.label, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
-    -- TODO v11.1 - wrap in exeNotInCombat() ?
+    zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick, "secureMouseClickId",secureMouseClickId, "scriptName",scriptName)
     self:SetAttribute(secureMouseClickId,scriptName)
     self:SetAttribute("_"..scriptName, getOpenerClickerScriptlet()) -- OPENER
 end
@@ -823,15 +822,15 @@ function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScr
         local flyoutLastModified = self:GetAttribute("UFO_FLYOUT_MOD_TIME")
         if (not kidsCachedWhen) or (kidsCachedWhen < flyoutLastModified) then
             flyoutMenuKids = nil
-            if doDebug then
-                local cacheAge = flyoutLastModified - (kidsCachedWhen or 0)
-                print(myName, ": clearing kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified, "cacheAge",cacheAge)
-            end
+            --[[DEBUG]] if doDebug then
+            --[[DEBUG]]     local cacheAge = flyoutLastModified - (kidsCachedWhen or 0)
+            --[[DEBUG]]     print("<DEBUG>", myName, ": clearing kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified, "cacheAge",cacheAge)
+            --[[DEBUG]] end
         else
-            if doDebug then
-                local cacheAge = kidsCachedWhen - flyoutLastModified
-                print(myName, ": using kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified, "cacheAge",cacheAge)
-            end
+            --[[DEBUG]] if doDebug then
+            --[[DEBUG]]     local cacheAge = kidsCachedWhen - flyoutLastModified
+            --[[DEBUG]]     print("<DEBUG>", myName, ": using kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified, "cacheAge",cacheAge)
+            --[[DEBUG]] end
         end
 
         if not flyoutMenuKids then
@@ -906,6 +905,7 @@ function Germ:removeOldHandler(mouseClick, event)
     while header and not isForThisClick do -- assume we will only ever install ONE handler per mouse button
         local header, preBody, postBody = SecureHandlerUnwrapScript(self, "OnClick")
         if not header then
+            zebug.error:event(event):owner(self):print("failed to SecureHandlerUnwrapScript",mouseClick, "old",old, "script owner")
             break
         end
 
@@ -970,12 +970,10 @@ function getOpenerClickerScriptlet()
         return OPENER_CLICKER_SCRIPTLET
     end
 
-    OPENER_CLICKER_SCRIPTLET = [=[
-    local myName = self:GetAttribute("UFO_NAME")
-    local doDebug = self:GetAttribute("DO_DEBUG") or false
-    if doDebug then
-        print(myName, "OPENER_CLICKER_SCRIPTLET <START>")
-    end
+    OPENER_CLICKER_SECURE_SCRIPT = [=[
+    --[[DEBUG]] if doDebug then
+    --[[DEBUG]]     print("<DEBUG>", myName, "OPENER_CLICKER_SECURE_SCRIPT <START> germ =", germ, "flyoutMenu =",flyoutMenu)
+    --[[DEBUG]] end
 
 	local germ = self
 	local mouseClick = button
@@ -984,9 +982,9 @@ function getOpenerClickerScriptlet()
     local isOpen = flyoutMenu:IsShown()
 
 	if isOpen then
-	    if doDebug then
-            print(myName, "closing")
-        end
+	    --[[DEBUG]] if doDebug then
+        --[[DEBUG]]     print("<DEBUG>", myName, "closing")
+        --[[DEBUG]] end
 		flyoutMenu:Hide()
 		keybindKeeper:ClearBindings()
 		return
@@ -1090,9 +1088,9 @@ function getOpenerClickerScriptlet()
         flyoutMenu:SetWidth((w + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
     end
 
-    if doDebug then
-        print(myName, "SHOWING flyout")
-    end
+    --[[DEBUG]] if doDebug then
+    --[[DEBUG]]     print("<DEBUG>", myName, "SHOWING flyout")
+    --[[DEBUG]] end
     flyoutMenu:Show()
 
     --flyoutMenu:RegisterAutoHide(1) -- nah.  Let's match the behavior of the mage teleports. They don't auto hide.

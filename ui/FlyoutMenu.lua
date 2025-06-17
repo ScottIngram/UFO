@@ -417,7 +417,9 @@ end
 
 function ScriptHandlers:ON_SHOW()
     zebug.info:mark(Mark.LOOT):owner(self):newEvent(self, "ON_SHOW"):run(function(event)
-        self:GetParent():OnPopupToggled() -- call Bliz super method
+        local parent = self:GetParent()
+        zebug.info:event(event):owner(self):print("parent", parent)
+        parent:OnPopupToggled() -- call Bliz super method
         self:renderAllBtnCooldownsEtc(event)
     end)
 end

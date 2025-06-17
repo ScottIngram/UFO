@@ -477,7 +477,7 @@ end
 
 function GLOBAL_UFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
     local event = Event:new(btnInCatalog,"CatalogEntryButton_OnClick")
-    zebug.info:newEvent(event):name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
+    zebug.info:event(event):name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("btnInCatalog.flyoutIndex",btnInCatalog.flyoutIndex,"btnInCatalog.name",btnInCatalog.name)
     local scrollPane = UFO_CatalogScrollPane
 
     if ADD_BUTTON_NAME == btnInCatalog.name then
