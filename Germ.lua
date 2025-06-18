@@ -24,6 +24,8 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@field flyoutMenu FM_TYPE The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
 ---@field clickScriptUpdaters table secure scriptlets that must be run during any update()
 ---@field bbInfo table definition of the actionbar/button where the Germ lives
+---@field visibleIf string for RegisterStateDriver -- uses macro-conditionals to control visibility automatically
+---@field visibilityDriver string primarily for debugging
 ---@field myName string duh
 ---@field label string human friendly identifier
 
@@ -83,6 +85,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     )
 
     _G[myName] = self -- so that keybindings can reference it
+    parentBtn.germ = self
 
     -- one-time only initialization --
     self.myName       = myName -- who
@@ -254,12 +257,14 @@ end
 -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
 function Germ:setVisibilityDriver(visibleIf)
     self.visibleIf = visibleIf
-    zebug.trace:print("visibleIf",visibleIf)
+    zebug.trace:owner(self):print("visibleIf",visibleIf)
     if visibleIf then
         local stateCondition = "nopetbattle,nooverridebar,novehicleui,nopossessbar," .. visibleIf
-        RegisterStateDriver(self, "visibility", "["..stateCondition.."] show; hide")
+        self.visibilityDriver = "["..stateCondition.."] show; hide"
+        RegisterStateDriver(self, "visibility", self.visibilityDriver)
     else
         UnregisterStateDriver(self, "visibility")
+        self.visibilityDriver = nil -- just for debugging
     end
 end
 
@@ -540,11 +545,11 @@ end
 function Germ:setAllSecureClickersForFlyoutMenu(event)
     -- set attributes used inside the secure scripts
     -- some of these only need to be done once, but, must be done before the clickers
+    self:SetAttribute("DO_DEBUG", not zebug.info:isMute() )
+    self:SetAttribute("UFO_NAME", self:getLabel())
     self:SetAttribute("flyoutDirection", self:getDirection(event))
     self:SetAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
     self:SetFrameRef("flyoutMenu", self.flyoutMenu)
-    self:safeSetAttribute("DO_DEBUG", not zebug.info:isMute() )
-    self:safeSetAttribute("UFO_NAME", self:getLabel())
 
     -- set global variables inside the restricted environment of the germ
     self:Execute([=[
@@ -716,6 +721,8 @@ local HandlerMaker = { }
 
 -- be more selective - do all of them need to change if the flyoutId changes? surely not "open"
 
+-- sets secure environment scripts to handle mouse clicks (left button, right button, etc)
+-- removes any existing GermClickBehavior.RANDOM_BTN or GermClickBehavior.CYCLE_ALL_BTNS
 ---@param mouseClick MouseClick
 function Germ:setMouseClicker(mouseClick, behaviorName, event)
     -- is there an existing clicker that is also sensitive to the flyoutDef
@@ -723,7 +730,7 @@ function Germ:setMouseClicker(mouseClick, behaviorName, event)
     zebug.trace:event(event):owner(self):print("old",old)
     if old then
         local needsRemoval = (old == GermClickBehavior.RANDOM_BTN) or (old == GermClickBehavior.CYCLE_ALL_BTNS)
-        zebug.trace:event(event):owner(self):print("old",old, "needsRemoval",needsRemoval)
+        zebug.warn:event(event):owner(self):print("mouseClick",mouseClick, "old",old, "needsRemoval",needsRemoval)
         if  needsRemoval then
             self:removeOldHandler(mouseClick, event)
         end
@@ -741,7 +748,6 @@ function Germ:setMouseClicker(mouseClick, behaviorName, event)
 
     local installTheBehavior = HANDLER_MAKERS_MAP[behaviorName]
     assert(installTheBehavior, "Unknown GermClickBehavior: ".. behaviorName)
-
 
     zebug.info:owner(self):event(event):print("mouseClick",mouseClick, "opt", behaviorName, "handler", installTheBehavior)
     installTheBehavior(self, mouseClick, event)
@@ -898,8 +904,8 @@ end
 
 function Germ:removeOldHandler(mouseClick, event)
     local old = self.clickers[mouseClick]
-    zebug.trace:event(event):owner(self):print("old",old)
     if not old then return end
+    zebug.warn:event(event):owner(self):print("mouseClick",mouseClick, "old",old)
 
     local needsRemoval = (old == (GermClickBehavior.RANDOM_BTN) or (old == GermClickBehavior.CYCLE_ALL_BTNS))
     zebug.trace:event(event):owner(self):print("old",old, "needsRemoval",needsRemoval)
@@ -938,7 +944,7 @@ function Germ:removeOldHandler(mouseClick, event)
         local stop  = LEN_CLICK_ID_MARKER + string.len(mouseClick)
         local scriptsClick = string.sub(postBody or "", start, stop)
         isForThisClick = (scriptsClick == mouseClick)
-        zebug.info:event(event):owner(self):print("germ", self.label, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
+        zebug.warn:event(event):owner(self):print("germ", self.label, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
         if not isForThisClick then
             rescue( header, preBody, postBody, scriptsClick )
         end
@@ -949,7 +955,7 @@ function Germ:removeOldHandler(mouseClick, event)
         local success = pcall(function()
             self:WrapScript(params.header, Script.ON_CLICK, params.preBody, params.postBody, params.scriptsClick)
         end )
-        zebug.info:event(event):owner(self):print("germ", self.label, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
+        zebug.warn:event(event):owner(self):print("germ", self.label, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
     end
 end
 
@@ -1136,11 +1142,16 @@ end
 -- Debugger tools
 -------------------------------------------------------------------------------
 
-function Germ:printDebugDetails(event)
-    zebug.warn:event(event):name("details"):owner(self):print("isActive",self:isActive(), "IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent", self:GetParent(), "flyoutMenu",self.flyoutMenu)
-    if self.flyoutMenu then self.flyoutMenu:printDebugDetails() end
-    local parent = self:GetParent()
-    if parent and parent.printDebugDetails then parent:printDebugDetails() end
+function Germ:printDebugDetails(event, okToGo)
+    okToGo = self:notInfiniteLoop(okToGo)
+    if not okToGo then return end
+
+    local parent, parentName = self:getParentAndName()
+    zebug.warn:event(event):name("details"):owner(self):print("isActive",self:isActive(), "IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent", parentName, "flyoutMenu",self.flyoutMenu, "visibilityDriver",self.visibilityDriver)
+    if self.flyoutMenu then self.flyoutMenu:printDebugDetails(event, okToGo) end
+
+    ---@type BlizActionBarButton
+    if parent and parent.printDebugDetails then parent:printDebugDetails(event, okToGo) end
 end
 
 -------------------------------------------------------------------------------

@@ -124,3 +124,21 @@ function UfoMixIn:safeSetAttribute(key, value)
 end
 
 UfoMixIn.safeSetAttribute = Pacifier:wrap(UfoMixIn.safeSetAttribute) -- allow only out of combat
+
+---@param loopGuard table|nil tracks each object to have participated in the loop, or nil if nothing
+---@return table|nil the tracking table, or, nil when it sees the current object has already participated and thus we're in an infiinite loop
+function UfoMixIn:notInfiniteLoop(loopGuard)
+    if not loopGuard then
+        loopGuard = {  }
+    else
+        if loopGuard[self] then return nil end -- ABORT !!!
+    end
+    loopGuard[self] = true
+    return loopGuard
+end
+
+function UfoMixIn:getParentAndName()
+    local p = self:GetParent()
+    return p, p and p.GetName and p:GetName()
+end
+

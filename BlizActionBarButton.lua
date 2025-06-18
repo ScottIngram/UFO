@@ -24,6 +24,7 @@ local BabbClass = BlizActionBarButtonHelper
 
 ---@class BlizActionBarButton : UfoMixIn
 ---@field ufoType string The classname
+---@field germ Germ the germ using me as its parent
 ---@field btnSlotIndex number the index of the button among all 100+ buttons
 ---@field barNum number which action bar
 ---@field btnNum number the index of the button among the 12 on the same bar
@@ -252,10 +253,13 @@ end
 -- Debugger tools
 -------------------------------------------------------------------------------
 
-function BabbInstance:printDebugDetails(event)
-    local parent = self:GetParent()
-    local pName = parent and parent:GetName()
-    zebug.warn:event(event):name("details"):owner(self):print("IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent",parent, "parent name",pName, "LiteralBlizBtn",self:getLiteralBlizBtn(), "getTypeAndId",self:getTypeAndId())
+function BabbInstance:printDebugDetails(event, okToGo)
+    okToGo = self:notInfiniteLoop(okToGo)
+    if not okToGo then return end
+
+    local parent, parentName = self:getParentAndName()
+    zebug.warn:event(event):name("details"):owner(self):print("IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent", parentName, "germ",self.germ, self:getTypeAndId())
+    self.germ:printDebugDetails(event, okToGo)
 end
 
 -------------------------------------------------------------------------------
