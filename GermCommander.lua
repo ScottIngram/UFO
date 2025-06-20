@@ -227,7 +227,7 @@ function GermCommander:updateClickerForAllActiveGerms(mouseClick, event)
     -- can't modify the inactive germs because they have no flyoutId
     ---@param germ Germ
     self:forEachActiveGerm(function(germ)
-        germ:setMouseClicker(mouseClick, Config:getClickerName(self.flyoutId, mouseClick), event)
+        germ:setMouseClicker(mouseClick, Config:getGermClickBehavior(self.flyoutId, mouseClick), event)
     end, event)
 end
 

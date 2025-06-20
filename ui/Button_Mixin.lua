@@ -30,17 +30,6 @@ SecureMouseClickId = {
     type6 = "type6", -- this isn't mentioned in the documentation
 }
 
----@type { [MouseClick]: SecureMouseClickId }
-REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID = {
-    [MouseClick.ANY]    = "type",
-    [MouseClick.LEFT]   = "type1",
-    [MouseClick.RIGHT]  = "type2",
-    [MouseClick.MIDDLE] = "type3",
-    [MouseClick.FOUR]   = "type4",
-    [MouseClick.FIVE]   = "type5",
-    [MouseClick.SIX]    = "type6",
-}
-
 -------------------------------------------------------------------------------
 --  Methods
 -------------------------------------------------------------------------------
@@ -285,81 +274,39 @@ function Button_Mixin:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, ke
 end
 
 ---@param mouseClick MouseClick
-function Button_Mixin:updateSecureClicker(mouseClick, event)
+function Button_Mixin:assignSecEnvAttributeClicker(mouseClick, event)
+    ---@type ButtonDef
     local btnDef = self:getDef()
 
-    -- don't waste time repeating work
-    -- oops! this is too simplistic as it fails to detect changes inside the btnDef
-    -- need something more like FlyoutDef:isModNewerThan()
-    local noChange = (self.mySecureClickerDef == btnDef)
---[[
-    if noChange then
-        return
-    end
-]]
-
     if btnDef then
-        local secureMouseClickId = REMAP_MOUSE_CLICK_TO_SECURE_MOUSE_CLICK_ID[mouseClick]
-        local type, key, val = btnDef:asSecureClickHandlerAttributes(event)
-        local keyAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
-        zebug.trace:event(event):owner(self):print("name",btnDef.name, "type",type, "key",key, "keyAdjusted",keyAdjustedToMatchMouseClick, "val", val)
+        local secureMouseClickId = MouseClickAsSecEnvId[mouseClick] -- "type1" or "type2" etc
+        local typeOfAction, typeOfActionButDumber, actualAction = btnDef:asSecureClickHandlerAttributes(event)
+        local typeOfActionAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, typeOfActionButDumber)
+        zebug.trace:event(event):owner(self):print("name",btnDef.name, "type", typeOfAction, "key", typeOfActionButDumber, "keyAdjusted", typeOfActionAdjustedToMatchMouseClick, "val", actualAction)
 
-        -- TODO: v11.1 this concat is expensive. optimize.
-        local id = "BUTTON-MIXIN:updateSecureClicker for " .. self:getName().. " with btnDef : ".. btnDef:getName();
-        exeOnceNotInCombat(id, function()
-            self:SetAttribute(secureMouseClickId, type)
-            self:SetAttribute(keyAdjustedToMatchMouseClick, val)
-            -- for use by Germ
-            if self.ufoType == ButtonOnFlyoutMenu.ufoType then
-                self:SetAttribute("UFO_KEY", key)
-                self:SetAttribute("UFO_VAL", val)
-            end
-            self.mySecureClickerDef = btnDef
-        end)
+        self:SetAttribute(secureMouseClickId, typeOfAction) -- eg "type1" -> "macro"
+        self:SetAttribute(typeOfActionAdjustedToMatchMouseClick, actualAction) -- eg, "macro1" -> "/say weak sauce"
+        -- for use by Germ
+        if self.ufoType == ButtonOnFlyoutMenu.ufoType then
+            self:SetAttribute("UFO_KEY", typeOfActionButDumber)
+            self:SetAttribute("UFO_VAL", actualAction)
+        end
     else
-        exeOnceNotInCombat("BUTTON-MIXIN:updateSecureClicker w/o btnDef : anon", function()
-            self:SetAttribute("type", nil)
-            self.mySecureClickerDef = btnDef
-        end)
+        self:SetAttribute("type", nil)
     end
 end
 
--------------------------------------------------------------------------------
--- ExTrA SECURE TEMPLATE / RESTRICTED ENVIRONMENT - aka fUcK yOu BlIz
--- bliz base class code keeps calling my code and then
--- complains about taint (ref: stick in spokes of bicycle meme)
--- Which, yes, may mean that I'm extending Bliz mixins/templates that they don't intend for us -- and if so, label that shit plz.
--- But until I figure out that can of worms, here's a sledgehammer to beat back the BS
--------------------------------------------------------------------------------
+Button_Mixin.assignSecEnvAttributeClicker = Pacifier:wrap(Button_Mixin.assignSecEnvAttributeClicker)
 
--- replace the built-in SetAttribute with one that can only happen out of combat
-function Button_Mixin:makeSafeSetAttribute()
+---@param mouseClick MouseClick
+function Button_Mixin:clearSecEnvBehavior(mouseClick)
+    local secureMouseClickId = MouseClickAsSecEnvId[mouseClick] -- "type1" or "type2" etc
+    self:safelySetSecEnvAttribute(secureMouseClickId, nil)
+end
 
-    if not self.originalSetAttribute then
-        local originalSetAttribute = self.SetAttribute
-        assert("self:SetAttribute() is NULL", originalSetAttribute)
+Button_Mixin.setSecEnvAttribute = UfoMixIn.setSecEnvAttribute
+Button_Mixin.safelySetSecEnvAttribute = UfoMixIn.safelySetSecEnvAttribute
 
-        self.originalSetAttribute = originalSetAttribute
-
-        -- FUNC START
-        self.SetAttribute = function(zelf, key, value, isTrusted)
-            local inCombatLockdown = InCombatLockdown()
-            zebug.trace:owner(self):print("self.SetAttribute for",(self.getName and self:getName()) or "misc obj", "key",key, "value",value, "isTrusted",isTrusted)
-            if isTrusted then
-                zebug.info:print("ufo is allowed to call originalSetAttribute with name", key, "value", value)
-                if key == "pressAndHoldAction" then
-                    --zebug.error:print("P&H! - getName",(self.getName and self:getName()) or "no getName", "isTrusted", isTrusted, "inCombat",inCombatLockdown)
-                    return;
-                end
-                return originalSetAttribute(zelf, key, value)
-            else
-                if key == "pressAndHoldAction" then
-                    --zebug.warn:print("P&H? - getName",(self.getName and self:getName()) or "no getName", "isTrusted", isTrusted, "inCombat",inCombatLockdown)
-                end
-                safelySetAttribute(zelf, key, value)
-            end
-        end
-        -- FUNC END
-
-    end
+function Button_Mixin:getSecureMouseClickId(mouseClick)
+    return MouseClickAsSecEnvId[mouseClick]
 end

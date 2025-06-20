@@ -323,7 +323,7 @@ function includeMouseButtonOpts(mouseClick)
         end,
         ---@return GermClickBehavior
         get = function()
-            local val = Config:getClickerName(nil, mouseClick)
+            local val = Config:getGermClickBehavior(nil, mouseClick)
             zebug.info:name("opt:MouseButtonOpts()"):print("mouseClick",mouseClick, "current val", val)
             return val
         end,
@@ -356,7 +356,7 @@ end
 ---@param flyoutId number aspirational param for when I allow users to give each UFO its own configs
 ---@param mouseClick MouseClick
 ---@return GermClickBehavior
-function Config:getClickerName(flyoutId, mouseClick)
+function Config:getGermClickBehavior(flyoutId, mouseClick)
     local clickOpts = Config.opts.clickers.flyouts[flyoutId] or Config.opts.clickers.flyouts.default
     return clickOpts[mouseClick]
 end

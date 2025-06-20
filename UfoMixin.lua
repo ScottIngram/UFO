@@ -119,11 +119,11 @@ function UfoMixIn:getNameForBlizThingy(type, id)
     return name
 end
 
-function UfoMixIn:safeSetAttribute(key, value)
+function UfoMixIn:setSecEnvAttribute(key, value)
     self:SetAttribute(key, value)
 end
 
-UfoMixIn.safeSetAttribute = Pacifier:wrap(UfoMixIn.safeSetAttribute) -- allow only out of combat
+UfoMixIn.safelySetSecEnvAttribute = Pacifier:wrap(UfoMixIn.setSecEnvAttribute) -- allow only out of combat
 
 ---@param loopGuard table|nil tracks each object to have participated in the loop, or nil if nothing
 ---@return table|nil the tracking table, or, nil when it sees the current object has already participated and thus we're in an infiinite loop

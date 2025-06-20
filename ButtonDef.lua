@@ -516,9 +516,9 @@ function ButtonDef:pickupToCursor(event)
     zebug.trace:event(event):owner(self):print("grabbed id", id)
 end
 
----@return ButtonType buttonType what kind of action is performed by the btn
----@return string key for the SecureActionButtonTemplate:SetAttribute(key, val)
----@return string val for the SecureActionButtonTemplate:SetAttribute(key, val)
+---@return ButtonType typeOfAction - what kind of action is performed by the btn
+---@return string typeOfActionButDumber - usually, same as above but with a little "_" attached to it - for the SecureActionButtonTemplate:SetAttribute(key, val)
+---@return string actualAction for the SecureActionButtonTemplate:SetAttribute(key, val) - some macro text, script, or an item/spell/etc's name, eg "Healing Potion" or "Frostbolt"
 function ButtonDef:asSecureClickHandlerAttributes(event)
     -- Check special (as in "short bus" special) cases for special needs
     if ButtonType.PET == self.type then
