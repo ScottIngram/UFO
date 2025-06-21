@@ -73,7 +73,7 @@ function ButtonOnFlyoutMenu:setDef(btnDef, event)
     -- install click behavior but only if it's on a Germ (i.e. not in the Catalog)
     local flyoutMenu = self:GetParent()
     if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
-        self:assignSecEnvAttributeClicker(MouseClick.ANY, event)
+        self:assignSecEnvAttributeForMouseClickFromBtnDef(MouseClick.ANY, event)
         -- TODO: v11.1 build this into my Button_Mixin
         safelySetAttribute(self, "UFO_NO_RND", btnDef and btnDef.noRnd or nil) -- SECURE TEMPLATE
     else

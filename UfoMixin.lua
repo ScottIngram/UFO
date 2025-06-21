@@ -125,6 +125,10 @@ end
 
 UfoMixIn.safelySetSecEnvAttribute = Pacifier:wrap(UfoMixIn.setSecEnvAttribute) -- allow only out of combat
 
+function UfoMixIn:assignSecEnvAttributeForMouseClick(mouseClick, value)
+    self:setSecEnvAttribute(MouseClickAsSecEnvId[mouseClick], value)
+end
+
 ---@param loopGuard table|nil tracks each object to have participated in the loop, or nil if nothing
 ---@return table|nil the tracking table, or, nil when it sees the current object has already participated and thus we're in an infiinite loop
 function UfoMixIn:notInfiniteLoop(loopGuard)

@@ -112,7 +112,6 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     -- install event handlers
     self:HookScript(Script.ON_HIDE,        function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable() or on a spec change which throws away placeholders
-    --self:SetScript(Script.ON_UPDATE,       Throttler:throttleAndNoQueue(MAX_FREQ_UPDATE, self, ScriptHandlers.ON_UPDATE)) -- moved into Ufo.lua and replaced with SPELL_UPDATE_COOLDOWN
     self:SetScript(Script.ON_ENTER,        ScriptHandlers.ON_ENTER)
     self:SetScript(Script.ON_LEAVE,        ScriptHandlers.ON_LEAVE)
     self:SetScript(Script.ON_RECEIVE_DRAG, ScriptHandlers.ON_RECEIVE_DRAG)
@@ -163,14 +162,12 @@ function Germ:notifyOfChangeToFlyoutDef(event)
     self:applyConfigFromFlyoutDef(event)
 end
 
--- too much
 function Germ:applyConfigFromFlyoutDef(event)
     self:doIcon(event)
     self.Name:SetText(self:getLabel())
-    self:setAllSecureClickersForFlyoutMenu(event) -- don't need to reapply the opener scriptlette... actually, I don't think this does.
+    self:updateClickerForBtn1(event)
     self:closeFlyout() -- in case the buttons' number/ordering changes
     self.flyoutMenu:applyConfigForGerm(self, event)
-    --self:doUpdate(self.flyoutId, event)
 end
 
 function Germ:getName()
@@ -310,7 +307,6 @@ end
 
 Germ.clearAndDisable = Pacifier:wrap(Germ.clearAndDisable)
 
-
 function Germ:changeFlyoutIdAndEnable(flyoutId, event)
     self.flyoutId = flyoutId
     zebug.info:event(event):owner(self):print("EnAbLe GeRm :-)")
@@ -321,7 +317,7 @@ function Germ:changeFlyoutIdAndEnable(flyoutId, event)
     self:registerForBlizUiActions(event)
     self:doMyKeybinding()
     self:Show()
-    self:setAllSecureClickersForFlyoutMenu(event) -- analyze how much of this is needed in this circumstance
+    self:updateClickerForBtn1(event)
     self:Enable()
 end
 
@@ -353,25 +349,6 @@ function Germ:pickupFromSlotAndClear(event)
 
     UfoProxy:pickupUfoOntoCursor(pickingUpThisFlyoutId, event)
 end
-
---[[
----@type function
-Germ.clear = Pacifier:pacify(function(self)
-    self:closeFlyout()
-    self:hide()
-end)
-
-function Germ:clear()
-    if not self.pacifierForClear then
-        self.pacifierForClear = Pacifier:new(self:getLabel() .. " : clear()")
-    end
-
-    self.pacifierForClear:exe(function()
-        self:closeFlyout()
-        self:hide()
-    end)
-end
-]]
 
 ---@return BlizActionBarButton
 function Germ:getParent()
@@ -595,38 +572,9 @@ function Germ:handleReceiveDrag(event)
     end
 end
 
----@param event string|Event custom UFO metadata describing the instigating event - good for debugging
-function Germ:renderIfSlow(event)
-    if MAX_FREQ_UPDATE > 0.1 then
-        self:render(event)
-    end
-end
-
 -------------------------------------------------------------------------------
 -- Handlers
 -------------------------------------------------------------------------------
-
--- no longer used - now render() is triggered in Ufo.lua by SPELL_UPDATE_COOLDOWN etc
-function ScriptHandlers:ON_UPDATE(elapsed)
-    if self:isInactive() then return end
-    -- do NOT run ON_UPDATE without first wrapping it in Throttler !!!
-    zebug.trace:owner(self):newEvent(self, "ON_UPDATE"):runTerse(function(event)
-        self:render(event)
-    end)
-end
-
--- if there is something (let's call it "foo") on the mouse pointer, then we need to disable clicks.
--- otherwise, when the "user drags foo, releases mouse button in mid-air. foo remains on mouse pointer. user moves over a UFO.  user clicks."
--- will fail to drop foo onto bars (foo just vanishes with only a cursor_change event) nor will it pick up the UFO
----@param me string event name, literal string "CURSOR_CHANGED"
----@param isCursorEmpty boolean true if nothing is on the mouse pointer
-function ScriptHandlers:ON_EVENT(eventName, isCursorEmpty --[[, newCursorType, oldCursorType, oldCursorVirtualID]])
---[[
-    zebug.info:mStar():newEvent(self, Cursor:nameMakerForCursorChanged(isCursorEmpty)):run(function(event)
-        self:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
-    end)
-]]
-end
 
 function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
     local cursor = Cursor:get()
@@ -638,7 +586,6 @@ function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
         else
             zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_DOWN"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
         end
-        --self:doUpdateIfSlow(event)
     end, cursor)
 end
 
@@ -653,7 +600,6 @@ function ScriptHandlers:ON_MOUSE_UP()
         else
             zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_UP"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
         end
-        --self:doUpdateIfSlow(event)
     end)
 end
 
@@ -685,20 +631,17 @@ function ScriptHandlers:ON_ENTER()
 
     zebug.info:mDiamond():owner(self):newEvent(self, "ON_ENTER"):run(function(event)
         self:setToolTip()
-        --self:doUpdateIfSlow(event)
     end)
 end
 
 function ScriptHandlers:ON_LEAVE()
     self:OnLeave() -- Call Bliz super()
     GameTooltip:Hide()
-    --self:doUpdateIfSlow("on-leave")
 end
 
 -------------------------------------------------------------------------------
--- Mouse Click Handling
 --
--- SECURE TEMPLATE / RESTRICTED ENVIRONMENT
+-- Sec-Env Mouse Click Handling
 --
 -- a bunch of code to make calls to SetAttribute("type",action) or ON_CLICK etc
 -- to enable the Germ's button to do things in response to mouse clicks
@@ -727,11 +670,16 @@ function Germ:initializeSecEnv(event)
 end
 
 function Germ:assignAllMouseClickers(event)
-    -- loop over all mouse buttons
+    -- loop over all mouse buttons: LEFT, MIDDLE, etc.
     for _, mouseClick in ipairs(MOUSE_BUTTONS) do
+        -- assign each one a behavior: OPEN, RANDOM_BTN, etc.
         local behaviorName = Config:getGermClickBehavior(self.flyoutId, mouseClick)
         self:assignTheMouseClicker(mouseClick, behaviorName, event)
     end
+
+    -- special clicker for the KEYBIND
+    local keybindBehavior = Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior
+    self:assignTheMouseClicker(MouseClick.SIX, keybindBehavior, event)
 end
 
 -- sets secure environment scripts to handle mouse clicks (left button, right button, etc)
@@ -751,344 +699,56 @@ function Germ:assignTheMouseClicker(mouseClick, behaviorName, event)
     behave(self, mouseClick, event)
 end
 
--------------------------------------------------------------------------------
---
--- GermClickBehaviorAssignmentFunction
---
--------------------------------------------------------------------------------
-
----@param mouseClick MouseClick
-function GermClickBehaviorAssignmentFunction:OPEN(mouseClick, event)
-    self:clearBehaviorFrom_ON_CLICK(mouseClick) -- clear any assignments for other behaviors
-    local secureMouseClickId = MouseClickAsSecEnvId[mouseClick] -- type or type1 etc
-    zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick, "secureMouseClickId",secureMouseClickId)
-    self:setSecEnvAttribute(secureMouseClickId, SEC_ENV_SCRIPT_NAME_FOR_OPEN)
-end
-
----@param mouseClick MouseClick
-function GermClickBehaviorAssignmentFunction:FIRST_BTN(mouseClick, event)
-    self:clearBehaviorFrom_ON_CLICK(mouseClick) -- clear any assignments for other behaviors
-    self:assignSecEnvAttributeClicker(mouseClick, event) -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
-end
-
----@param mouseClick MouseClick
-function GermClickBehaviorAssignmentFunction:RANDOM_BTN(mouseClick, event)
-    self:setSecEnvAttribute(MouseClickAsSecEnvId[mouseClick], nil) -- clear any assignments for other behaviors
-    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, GermClickBehavior.RANDOM_BTN)
-end
-
----@param mouseClick MouseClick
-function GermClickBehaviorAssignmentFunction:CYCLE_ALL_BTNS(mouseClick, event)
-    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, GermClickBehavior.CYCLE_ALL_BTNS)
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
----@type Germ|GERM_INHERITANCE
-local HandlerMaker = { }
-
-
-function Germ:setAllSecureClickersForFlyoutMenu(event)
-    assert(SEC_ENV_SCRIPT_FOR_ON_CLICK, "do initializeSecureClickers() first")
-
-    self:assignRandomizerToMouseClick(MouseClick.MIDDLE)
-    --self:assignCycleToMouseClick(MouseClick.LEFT)
-
-    -- set clickers
-    self:setMouseClicker(MouseClick.LEFT,   Config:getGermClickBehavior(self.flyoutId, MouseClick.LEFT), event)
-    --self:setMouseClicker(MouseClick.MIDDLE, Config:getClickerName(self.flyoutId, MouseClick.MIDDLE), event)
-    self:setMouseClicker(MouseClick.RIGHT,  Config:getGermClickBehavior(self.flyoutId, MouseClick.RIGHT), event)
-    self:setMouseClicker(MouseClick.FOUR,   Config:getGermClickBehavior(self.flyoutId, MouseClick.FOUR), event)
-    self:setMouseClicker(MouseClick.FIVE,   Config:getGermClickBehavior(self.flyoutId, MouseClick.FIVE), event)
-
-    -- special clicker for the KEYBIND
-    self:setMouseClicker(MouseClick.SIX,    Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
-
-end
-
-Germ.setAllSecureClickersForFlyoutMenu = Pacifier:wrap(Germ.setAllSecureClickersForFlyoutMenu, L10N.RECONFIGURE_BUTTON)
-
--- sets secure environment scripts to handle mouse clicks (left button, right button, etc)
----@param mouseClick MouseClick
-function Germ:setMouseClicker(mouseClick, behaviorName, event)
-    -- is there an existing clicker that is also sensitive to the flyoutDef
-    local old = self.clickers[mouseClick]
-    zebug.trace:event(event):owner(self):print("old",old)
-    if old then
-        local needsRemoval = (old == GermClickBehavior.RANDOM_BTN) or (old == GermClickBehavior.CYCLE_ALL_BTNS)
-        zebug.warn:event(event):owner(self):print("mouseClick",mouseClick, "old",old, "needsRemoval",needsRemoval)
-        if  needsRemoval then
-            self:removeOldHandler(mouseClick, event)
+-- the sec-env handler for "click the first button of the flyout" is special.
+-- it won't automatically accommodate changes to the flyout buttons and must be re-applied for any changes to flyoutDef
+-- TODO: consider folding it into the ON_CLICK script along with the RANDOM_BTN and CYCLE_ALL_BTNS
+function Germ:updateClickerForBtn1(event)
+    -- loop over all mouse buttons
+    for _, mouseClick in ipairs(MOUSE_BUTTONS) do
+        local behaviorName = Config:getGermClickBehavior(self.flyoutId, mouseClick)
+        if behaviorName == GermClickBehavior.FIRST_BTN then
+            self:assignTheMouseClicker(mouseClick, behaviorName, event)
         end
     end
-
-    if not HANDLER_MAKERS_MAP then
-        HANDLER_MAKERS_MAP = {
-            [GermClickBehavior.OPEN]           = HandlerMaker.OpenFlyout,
-            [GermClickBehavior.FIRST_BTN]      = HandlerMaker.ActivateBtn1,
-            [GermClickBehavior.RANDOM_BTN]     = HandlerMaker.ActivateRandomBtn,
-            [GermClickBehavior.CYCLE_ALL_BTNS] = HandlerMaker.CycleThroughAllBtns,
-            --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = HandlerMaker.ReverseCycleThroughAllBtns,
-        }
-    end
-
-    local installTheBehavior = HANDLER_MAKERS_MAP[behaviorName]
-    assert(installTheBehavior, "Unknown GermClickBehavior: ".. behaviorName)
-
-    zebug.info:owner(self):event(event):print("mouseClick",mouseClick, "opt", behaviorName, "handler", installTheBehavior)
-    installTheBehavior(self, mouseClick, event)
-    self.clickers[mouseClick] = behaviorName
-end
-
--- open / show
----@param mouseClick MouseClick
-function HandlerMaker:OpenFlyout(mouseClick, event)
-    local secureMouseClickId = MouseClickAsSecEnvId[mouseClick] -- type or type1 etc
-    zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick, "secureMouseClickId",secureMouseClickId)
-    self:setSecEnvAttribute(secureMouseClickId, SEC_ENV_SCRIPT_NAME_FOR_OPEN)
-end
-
----@param mouseClick MouseClick
-function HandlerMaker:ActivateBtn1(mouseClick, event)
-    self:assignSecEnvAttributeClicker(mouseClick, event)
-end
-
----@param mouseClick MouseClick
-function HandlerMaker:ActivateRandomBtn(mouseClick)
-    self:setSecEnvAttribute("",mouseClick)
-    self:installHandlerForDynamicButtonPickerClicker(mouseClick, "local x = n>0 and random(1,n) or 1")
-end
-
--- TODO: can I make CYCLE_POSITION a global var instead of a SetAttribute() ?
--- yes, but, it still won't be shared between mouse buttons
-
----@param mouseClick MouseClick
-function HandlerMaker:CycleThroughAllBtns(mouseClick)
-    local xGetterScriptlet = [=[
-        local x = self:GetAttribute("CYCLE_POSITION") or 0
-        x = x + 1
-        if x > n then x = 1 end
-        self:setSecEnvAttribute("CYCLE_POSITION", x)
-        --print("CycleThroughAllBtns", self:GetName(), isClicked, n, x)
-]=]
-    -- "self" is actually a Germ and not HandlerMaker
-    self:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScriptlet)
-end
-
----@param mouseClick MouseClick
-function HandlerMaker:ReverseCycleThroughAllBtns(mouseClick)
-    -- not supported at the moment
-end
-
----@param mouseClick MouseClick
-function Germ:installHandlerForDynamicButtonPickerClicker(mouseClick, xGetterScriptlet)
-    -- Sets two handlers (or rather, the first handler creates the second.)
-    -- 1) a SecureHandlerWrapScript script that picks a [random|sequential] button and...
-    -- 2) that script creates another handler via setSecEnvAttribute(mouseButton -> action) that will actually perform the action determined in step #1
-
-    local secureMouseClickId = MouseClickAsSecEnvId[mouseClick]
-    local mouseBtnNumber = self:getMouseBtnNumber(secureMouseClickId) or ""
-
-    local scriptToSetNextRandomBtn = CLICK_ID_MARKER .. mouseClick .. ";\n" ..
-    [=[
-    	local mouseClick = button
-    	local isClicked = down
-    	local onlyInitialize = mouseClick == nil
-
-        local OBSOLETE_FOO = "]=].. mouseClick ..[=["
-
-print("mouseClick",mouseClick, "isClicked",isClicked, "iAmFor",iAmFor)
-
-    	if onlyInitialize then
-    	    -- good to go... this is being called by Germ:update() Or germ:new()? or germ:movedToNewSlot()? in order to initialize the click SetAttribute()s
-        elseif not isClicked then
-            -- abort... only execute once per mouseclick, not on both UP and DOWN
-            return
-        elseif iAmFor ~= mouseClick then
-            -- abort... only execute if the clicked mouse button matches the one this script was specifically created
-            return
-    	end
-
-    	--local myName = self:GetAttribute("UFO_NAME")
-        local secureMouseClickId = "]=].. secureMouseClickId .. [=["
-
-        --print("PickerClicker(): germ =",myName, "(1) flyoutMenuKids =", flyoutMenuKids)
-
-        -- keep a cache of work done to reduce workload
-        -- but invalidate this cache when the user changes the flyout def
-        local kidsCachedWhen     = germ:GetAttribute("UFO_KIDS_CACHED_WHEN")
-        local flyoutLastModified = self:GetAttribute("UFO_FLYOUT_MOD_TIME")
-        if (not kidsCachedWhen) or (kidsCachedWhen < flyoutLastModified) then
-            flyoutMenuKids = nil
-            --[[DEBUG]] if doDebug then
-            --[[DEBUG]]     local cacheAge = flyoutLastModified - (kidsCachedWhen or 0)
-            --[[DEBUG]]     print("<DEBUG>", myName, ": clearing kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified, "cacheAge",cacheAge)
-            --[[DEBUG]] end
-        else
-            --[[DEBUG]] if doDebug then
-            --[[DEBUG]]     local cacheAge = kidsCachedWhen - flyoutLastModified
-            --[[DEBUG]]     print("<DEBUG>", myName, ": using kid cache.  kidsCachedWhen:",kidsCachedWhen, " flyoutLastModified:",flyoutLastModified, "cacheAge",cacheAge)
-            --[[DEBUG]] end
-        end
-
-        if not flyoutMenuKids then
-            flyoutMenuKids = table.new(flyoutMenu:GetChildren())
-            buttonsOnFlyoutMenu = table.new()
-            n = 0
-            for i, btn in ipairs(flyoutMenuKids) do
-                local noRnd = btn:GetAttribute("UFO_NO_RND")
-                local btnName = btn:GetAttribute("UFO_NAME")
-                --print ("RANDOMIZER: i",i, "name",btnName, "noRnd",noRnd)
-                if btnName and not noRnd then
-                    n = n + 1
-                    buttonsOnFlyoutMenu[n] = btn
-                    --print("flyoutMenuKids:", n, btnName, buttonsOnFlyoutMenu[n])
-                end
-            end
-        end
-
-        germ:SetAttribute("UFO_KIDS_CACHED_WHEN", flyoutLastModified) -- Bliz doesn't provide time inside secure protected BS
-
-        --print("PickerClicker(): germ =",myName, "(2) flyoutMenuKids =", flyoutMenuKids)
-
-    	]=] .. xGetterScriptlet .. [=[
-
-        local btn    = buttonsOnFlyoutMenu[x] -- computed by xGetterScriptlet
-        if not btn then return end
-
-        local type   = btn:GetAttribute("type")
-        local adjKey = btn:GetAttribute("UFO_KEY") .. ]=] .. mouseBtnNumber .. [=[
-        local val    = btn:GetAttribute("UFO_VAL")
-
-        --print("PickerClicker(): germ =", myName, "(3) copy btn to clicker... btn#",x, secureMouseClickId, "-->", type, "... adjKey =", adjKey, "-->",val) -- this shows that it is firing for both mouse UP and DOWN
-
-        -- copy the btn's behavior onto myself
-        self:SetAttribute(secureMouseClickId, type)
-        self:SetAttribute(adjKey, val)
-    ]=]
-
-    zebug.info:owner(self):print("germ",self.label, "secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
---    self.clickScriptUpdaters[secureMouseClickId] = scriptToSetNextRandomBtn -- this doesn't seem to actually be required
-
-    -- install the script which will install the buttons which will perform the action
-    self:WrapScript(self, Script.ON_CLICK, scriptToSetNextRandomBtn)
-end
-
--- Fuck you yet again, Bliz, for only providing a way to remove some unknown, generally arbitrary handler but not a specific handler.
--- So now, I cry, and loop through ALL of the SecureHandlerUnwrapScript(self, "OnClick") until I find the one,
--- then restore the others that were needlessly stripped while groping the Frame in a blind, hamfisted search.
-
-function Germ:removeOldHandler(mouseClick, event)
-    local old = self.clickers[mouseClick]
-    if not old then return end
-    zebug.warn:event(event):owner(self):print("mouseClick",mouseClick, "old",old)
-
-    local needsRemoval = (old == (GermClickBehavior.RANDOM_BTN) or (old == GermClickBehavior.CYCLE_ALL_BTNS))
-    zebug.trace:event(event):owner(self):print("old",old, "needsRemoval",needsRemoval)
-    if not needsRemoval then return end
-
-    local i = 0
-    local lostBoys = {}
-    local rescue = function(header, preBody, postBody, scriptsClick)
-        -- Oopsy daisy!  Blizzy Wizzy tricked me into removing the wrong one!  Remember it so we can put it back.
-        i = i + 1
-        lostBoys[i] = { header=header, preBody=preBody, postBody=postBody, scriptsClick=scriptsClick }
-    end
-
-    local header = self
-    local isForThisClick = false
-    while header and not isForThisClick do -- assume we will only ever install ONE handler per mouse button
-        local header, preBody, postBody
-
-        -- avoid "Unable to retrieve unwrap results"
-        local isOk, err = pcall( function()
-            header, preBody, postBody = self:UnwrapScript(Script.ON_CLICK)
-        end)
-
-        if not header then
-            zebug.error:event(event):owner(self):print("failed to SecureHandlerUnwrapScript",mouseClick, "old",old, "script owner")
-            break
-        end
-
-        if header ~= self then
-            rescue(header, preBody, postBody, "unknown")
-            break
-        end
-
-        -- pull the ID marker out of the script body and see if it's the one we're supposed to remove
-        local start = LEN_CLICK_ID_MARKER +1
-        local stop  = LEN_CLICK_ID_MARKER + string.len(mouseClick)
-        local scriptsClick = string.sub(postBody or "", start, stop)
-        isForThisClick = (scriptsClick == mouseClick)
-        zebug.warn:event(event):owner(self):print("germ", self.label, "click",mouseClick, "old",old, "script owner", scriptsClick, "iAmOwner", isForThisClick)
-        if not isForThisClick then
-            rescue( header, preBody, postBody, scriptsClick )
-        end
-    end
-
-    -- try to put that shit back
-    for i, params in ipairs(lostBoys) do
-        local success = pcall(function()
-            self:WrapScript(params.header, Script.ON_CLICK, params.preBody, params.postBody, params.scriptsClick)
-        end )
-        zebug.warn:event(event):owner(self):print("germ", self.label, "click",mouseClick, "RESTORING handler for", params[4], "success?", success)
-    end
-end
-
-local OPENER_CLICKER_SECURE_SCRIPT
-
-function getOpenerClickerScriptlet()
-    if OPENER_CLICKER_SECURE_SCRIPT then
-        return OPENER_CLICKER_SECURE_SCRIPT
-    end
-
-    OPENER_CLICKER_SECURE_SCRIPT = nil
-
-    return OPENER_CLICKER_SECURE_SCRIPT
-end
-
--------------------------------------------------------------------------------
---
--- Sec-Env Click Behavior
---
--------------------------------------------------------------------------------
-
----@param mouseClick MouseClick
-function Germ:assignRandomizerToMouseClick(mouseClick)
-    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, GermClickBehavior.RANDOM_BTN)
-end
-
----@param mouseClick MouseClick
-function Germ:assignCycleToMouseClick(mouseClick)
-    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, GermClickBehavior.CYCLE_ALL_BTNS)
 end
 
 ---@param mouseClick MouseClick
 ---@param clickBehavior GermClickBehavior
 function Germ:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, clickBehavior)
-    self:clearSecEnvBehavior(mouseClick)
     local name = KEY_PREFIX_FOR_ON_CLICK .. mouseClick
     self:setSecEnvAttribute(name, clickBehavior)
 end
 
+-------------------------------------------------------------------------------
+--
+-- Sec-Env - GermClickBehaviorAssignmentFunction
+-- deal with OPEN / FIRST_BTN / RANDOM_BTN / CYCLE_ALL_BTNS
+--
+-------------------------------------------------------------------------------
+
 ---@param mouseClick MouseClick
-function Germ:clearBehaviorFrom_ON_CLICK(mouseClick)
+function GermClickBehaviorAssignmentFunction:OPEN(mouseClick, event)
     self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, nil)
+    zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick)
+    self:assignSecEnvAttributeForMouseClick(mouseClick, SEC_ENV_SCRIPT_NAME_FOR_OPEN)
+end
+
+---@param mouseClick MouseClick
+function GermClickBehaviorAssignmentFunction:FIRST_BTN(mouseClick, event)
+    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, nil)
+    self:assignSecEnvAttributeForMouseClickFromBtnDef(mouseClick, event) -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
+end
+
+---@param mouseClick MouseClick
+function GermClickBehaviorAssignmentFunction:RANDOM_BTN(mouseClick, event)
+    self:assignSecEnvAttributeForMouseClick(mouseClick, nil)
+    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, GermClickBehavior.RANDOM_BTN)
+end
+
+---@param mouseClick MouseClick
+function GermClickBehaviorAssignmentFunction:CYCLE_ALL_BTNS(mouseClick, event)
+    self:assignSecEnvAttributeForMouseClick(mouseClick, nil)
+    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, GermClickBehavior.CYCLE_ALL_BTNS)
 end
 
 -------------------------------------------------------------------------------
@@ -1273,7 +933,7 @@ function Germ:getSecEnvScriptFor_ON_CLICK()
             return
         elseif not behavior then
             --[[DEBUG]] if doDebug then
-            --[[DEBUG]]   print("WARN", myName, "ON_CLICK() has no behavior for", mouseClick)
+            --[[DEBUG]]   print("INFO", myName, "ON_CLICK() has no behavior for", mouseClick)
             --[[DEBUG]] end
             return
         elseif not (doCycle or doRandomizer) then
@@ -1343,8 +1003,8 @@ function Germ:getSecEnvScriptFor_ON_CLICK()
         local btn    = buttonsOnFlyoutMenu[x]
         if not btn then return end
         local type   = btn:GetAttribute("type")
-        local key    = btn:GetAttribute("UFO_KEY") -- set inside updateSecureClicker()
-        local val    = btn:GetAttribute("UFO_VAL") -- set inside updateSecureClicker()
+        local key    = btn:GetAttribute("UFO_KEY") -- set inside assignSecEnvAttributeForMouseClick()
+        local val    = btn:GetAttribute("UFO_VAL") -- set inside assignSecEnvAttributeForMouseClick()
         local adjKey = key .. mouseBtnNumber -- convert "macro" into "marco1" etc
 
         --[[DEBUG]] if doDebug then

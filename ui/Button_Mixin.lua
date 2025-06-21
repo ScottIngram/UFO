@@ -273,8 +273,9 @@ function Button_Mixin:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, ke
     end
 end
 
+
 ---@param mouseClick MouseClick
-function Button_Mixin:assignSecEnvAttributeClicker(mouseClick, event)
+function Button_Mixin:assignSecEnvAttributeForMouseClickFromBtnDef(mouseClick, event)
     ---@type ButtonDef
     local btnDef = self:getDef()
 
@@ -286,7 +287,8 @@ function Button_Mixin:assignSecEnvAttributeClicker(mouseClick, event)
 
         self:SetAttribute(secureMouseClickId, typeOfAction) -- eg "type1" -> "macro"
         self:SetAttribute(typeOfActionAdjustedToMatchMouseClick, actualAction) -- eg, "macro1" -> "/say weak sauce"
-        -- for use by Germ
+
+        -- for use by Germ's ON_CLICK script
         if self.ufoType == ButtonOnFlyoutMenu.ufoType then
             self:SetAttribute("UFO_KEY", typeOfActionButDumber)
             self:SetAttribute("UFO_VAL", actualAction)
@@ -296,13 +298,7 @@ function Button_Mixin:assignSecEnvAttributeClicker(mouseClick, event)
     end
 end
 
-Button_Mixin.assignSecEnvAttributeClicker = Pacifier:wrap(Button_Mixin.assignSecEnvAttributeClicker)
-
----@param mouseClick MouseClick
-function Button_Mixin:clearSecEnvBehavior(mouseClick)
-    local secureMouseClickId = MouseClickAsSecEnvId[mouseClick] -- "type1" or "type2" etc
-    self:safelySetSecEnvAttribute(secureMouseClickId, nil)
-end
+Button_Mixin.assignSecEnvAttributeForMouseClickFromBtnDef = Pacifier:wrap(Button_Mixin.assignSecEnvAttributeForMouseClickFromBtnDef)
 
 Button_Mixin.setSecEnvAttribute = UfoMixIn.setSecEnvAttribute
 Button_Mixin.safelySetSecEnvAttribute = UfoMixIn.safelySetSecEnvAttribute
