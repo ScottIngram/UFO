@@ -125,7 +125,7 @@ end
 
 UfoMixIn.safelySetSecEnvAttribute = Pacifier:wrap(UfoMixIn.setSecEnvAttribute) -- allow only out of combat
 
-function UfoMixIn:assignSecEnvAttributeForMouseClick(mouseClick, value)
+function UfoMixIn:assignSecEnvMouseClickBehaviorViaAttribute(mouseClick, value)
     self:setSecEnvAttribute(MouseClickAsSecEnvId[mouseClick], value)
 end
 

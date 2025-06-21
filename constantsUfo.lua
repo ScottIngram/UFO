@@ -4,7 +4,7 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo.CONST object
 -- Now, FOO = "bar" is equivilent to Ufo.FOO = "bar" - Even though they all look like globals, they are not.
 
-Z_VOLUME_GLOBAL_OVERRIDE = Zebug.INFO
+Z_VOLUME_GLOBAL_OVERRIDE = Zebug.WARN
 
 IS_OPTIONAL = true
 AUTO_ATTACK_SPELL_ID = 6603

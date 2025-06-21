@@ -65,9 +65,6 @@ local SEC_ENV_SCRIPT_FOR_ON_CLICK
 -------------------------------------------------------------------------------
 
 local GERM_UI_NAME_PREFIX = "UfoGerm"
-local CLICK_ID_MARKER = "-- CLICK_ID_MARKER:"
-local LEN_CLICK_ID_MARKER = string.len(CLICK_ID_MARKER)
-local MAX_FREQ_UPDATE = 0.25 -- secs
 local KEY_PREFIX_FOR_ON_CLICK = "BEHAVIOR_FOR_MOUSE_CLICK_"
 local SEC_ENV_SCRIPT_NAME_FOR_OPEN = "SEC_ENV_SCRIPT_NAME_FOR_OPEN"
 local MOUSE_BUTTONS = {
@@ -677,9 +674,7 @@ function Germ:assignAllMouseClickers(event)
         self:assignTheMouseClicker(mouseClick, behaviorName, event)
     end
 
-    -- special clicker for the KEYBIND
-    local keybindBehavior = Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior
-    self:assignTheMouseClicker(MouseClick.SIX, keybindBehavior, event)
+    self:updateClickerForKeybind(event)
 end
 
 -- sets secure environment scripts to handle mouse clicks (left button, right button, etc)
@@ -712,9 +707,14 @@ function Germ:updateClickerForBtn1(event)
     end
 end
 
+function Germ:updateClickerForKeybind(event)
+    local keybindBehavior = Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior
+    self:assignTheMouseClicker(MouseClick.SIX, keybindBehavior, event)
+end
+
 ---@param mouseClick MouseClick
 ---@param clickBehavior GermClickBehavior
-function Germ:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, clickBehavior)
+function Germ:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, clickBehavior)
     local name = KEY_PREFIX_FOR_ON_CLICK .. mouseClick
     self:setSecEnvAttribute(name, clickBehavior)
 end
@@ -728,27 +728,27 @@ end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:OPEN(mouseClick, event)
-    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, nil)
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil)
     zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick)
-    self:assignSecEnvAttributeForMouseClick(mouseClick, SEC_ENV_SCRIPT_NAME_FOR_OPEN)
+    self:assignSecEnvMouseClickBehaviorViaAttribute(mouseClick, SEC_ENV_SCRIPT_NAME_FOR_OPEN)
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:FIRST_BTN(mouseClick, event)
-    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, nil)
-    self:assignSecEnvAttributeForMouseClickFromBtnDef(mouseClick, event) -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil)
+    self:assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef(mouseClick, event) -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:RANDOM_BTN(mouseClick, event)
-    self:assignSecEnvAttributeForMouseClick(mouseClick, nil)
-    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, GermClickBehavior.RANDOM_BTN)
+    self:assignSecEnvMouseClickBehaviorViaAttribute(mouseClick, nil)
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.RANDOM_BTN)
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:CYCLE_ALL_BTNS(mouseClick, event)
-    self:assignSecEnvAttributeForMouseClick(mouseClick, nil)
-    self:assignSecEnvBehaviorFor_ON_CLICK(mouseClick, GermClickBehavior.CYCLE_ALL_BTNS)
+    self:assignSecEnvMouseClickBehaviorViaAttribute(mouseClick, nil)
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.CYCLE_ALL_BTNS)
 end
 
 -------------------------------------------------------------------------------
@@ -896,7 +896,7 @@ end
 function Germ:getSecEnvScriptFor_ON_CLICK()
     if not SEC_ENV_SCRIPT_FOR_ON_CLICK then
         local MAP_MOUSE_CLICK_AS_A_TYPE = serializeAsAssignments("MAP_MOUSE_CLICK_AS_A_TYPE", MouseClickAsSecEnvId)
-        local MAP_MOUSE_CLICK_AS_NUMBER = serializeAsAssignments("MAP_MOUSE_CLICK_AS_NUMBER", MouseClickAsSecureN)
+        local MAP_MOUSE_CLICK_AS_NUMBER = serializeAsAssignments("MAP_MOUSE_CLICK_AS_NUMBER", MouseClickAsSecEnvN)
 
         SEC_ENV_SCRIPT_FOR_ON_CLICK =
 [=[
@@ -1022,13 +1022,11 @@ function Germ:getSecEnvScriptFor_ON_CLICK()
 end
 
 -------------------------------------------------------------------------------
--- OVERRIDES for methods defined in ActionBarActionButtonMixin
+-- OVERRIDES of
+-- ActionBarActionButtonMixin methods
 -- Interface/AddOns/Blizzard_ActionBar/Mainline/ActionButton.lua
 -- because Germ isn't on an action bar and thus:
--- * calling GetActionInfo(self.action) knows nothing of UFOs
--- *
--- maybe I need to re-implement all of ActionBarActionButtonMixin ?
--- ActionBarActionButtonMixin:Update() calls -> ActionBarActionEventsFrame:RegisterFrame(self)
+-- calling GetActionInfo(self.action) knows nothing of UFOs
 -------------------------------------------------------------------------------
 
 Germ.GetPopupDirection = Germ.getDirection
@@ -1069,7 +1067,7 @@ end
 function Germ:OnButtonStateChanged()
     -- defined in ButtonStateBehaviorMixin:OnButtonStateChanged() as "Derive and configure your button to the correct state."
     zebug.trace:owner(self):print("calling parent in FlyoutButtonMixin")
-    FlyoutButtonMixin.OnButtonStateChanged(self) -- "FlyoutButtonMixin" meaning "a button that opens a flyout" not "a button on a flyout"
+    FlyoutButtonMixin.OnButtonStateChanged(self) -- "FlyoutButtonMixin" meaning "a button that opens a flyout" not "a button on a flyout" - English is ambiguous and developers are dumb
 end
 
 -------------------------------------------------------------------------------

@@ -122,89 +122,8 @@ function GermCommander:initializeAllSlots(event)
     end)
 end
 
--- go through all placements saved in the DB.
--- I expect this will happen during
--- * addon initialization
--- * spec change
--- * maybe during zoning / player entering world ?
--- TODO phase out
---[[
-function GermCommander:updateAllSlots(event)
-    zebug.trace:event(event):line(40, "hold on tight!")
-    --if isInCombatLockdown("Reconfiguring") then return end
-
-    -- closeAllGerms() -- this is only required because we sledge hammer all the germs every time. TODO don't do!
-
-    zebug:setLowestAllowedSpeakingVolume(Zebug.INFO)
-    self:forEachPlacement(function(btnSlotIndex, flyoutId)
-        self:updateBtnSlot(btnSlotIndex, flyoutId, event)
-    end)
-    zebug:setLowestAllowedSpeakingVolumeBackToOriginal()
-end
-]]
-
-local originalZebug
-
--- momentarily calm down the debugging noise
----@param hush boolean
---[[
-function GermCommander:beQuiet(hush)
-    if hush then
-        if not originalZebug then
-            originalZebug = zebug
-        end
-        zebug = zebug.error
-    else
-        zebug = originalZebug
-    end
-end
-]]
-
-
--- this can be used to update a slot that contains
--- * no germ
--- * an inactive germ
--- * an active germ which currently has a different flyoutId
----@param btnSlotIndex number
---[[
-function GermCommander:updateBtnSlot(btnSlotIndex, flyoutId, event)
-    --if isInCombatLockdown("Reconfiguring") then return end
-
-    if not flyoutId then
-        local placements = Spec:getCurrentSpecPlacementConfig()
-        flyoutId = placements[btnSlotIndex]
-    end
-
-    local flyoutConf = FlyoutDefsDb:get(flyoutId)
-    local germ = self:recallGerm(btnSlotIndex)
-    local isEnabled = germ and germ:getFlyoutId()
-    zebug.trace:event(event):line(5, "btnSlotIndex",btnSlotIndex, "flyoutId",flyoutId, "flyoutConf", flyoutConf, "germ", germ)
-    if flyoutConf then
-        if not germ then
-            -- create a new germ
-            germ = Germ:new(flyoutId, btnSlotIndex, event)
-            self:saveGerm(germ)
-        end
-        germ:update(flyoutId, event)
-        germ:doKeybinding()
-        germ:putPlaceHolder(event)
-    else
-        -- because one toon can delete a flyout while other toons still have it on their bars
-        -- also, this routine is invoked when the user deletes a UFO from the catalog
-        zebug.warn:event(event):print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
-        self:forgetPlacement(btnSlotIndex)
-        if germ then
-            germ:clearAndDisable(event)
-        end
-    end
-end
-]]
-
 function GermCommander:updateAllKeybindBehavior(event)
-    ---@param germ GERM_TYPE
-    self:forEachActiveGerm(function(germ)
-        germ:setMouseClicker(MouseClick.SIX, Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior, event)
-    end, event)
+    self:forEachActiveGerm(Germ.updateClickerForKeybind, event)
 end
 
 GermCommander.updateAllKeybindBehavior = Pacifier:wrap(GermCommander.updateAllKeybindBehavior, L10N.CHANGE_KEYBIND_ACTION)
@@ -227,7 +146,8 @@ function GermCommander:updateClickerForAllActiveGerms(mouseClick, event)
     -- can't modify the inactive germs because they have no flyoutId
     ---@param germ Germ
     self:forEachActiveGerm(function(germ)
-        germ:setMouseClicker(mouseClick, Config:getGermClickBehavior(self.flyoutId, mouseClick), event)
+        local behaviorName = Config:getGermClickBehavior(germ.flyoutId, mouseClick)
+        germ:assignTheMouseClicker(mouseClick, behaviorName, event)
     end, event)
 end
 
@@ -393,47 +313,7 @@ function GermCommander:nukeFlyoutIdFromDb(flyoutId)
     end
 end
 
--- unused
----@param btnSlotIndex number
---[[
-function GermCommander:createUfo(btnSlotIndex, flyoutId, eventId)
-    if isInCombatLockdown("Creating a new UFO") then return end
-
-    if not flyoutId then
-        local placements = Spec:getPlacementConfigForCurrentSpec()
-        flyoutId = placements[btnSlotIndex]
-    end
-
-    local doesFoExist = doesFlyoutExist(flyoutId)
-    zebug.info:label(eventId):line(5, "btnSlotIndex",btnSlotIndex, "flyoutId",flyLabel(flyoutId), "doesFoExist", doesFoExist)
-    if doesFoExist then
-        local germ = self:recallGerm(btnSlotIndex)
-        if not germ then
-            -- create a new germ
-            germ = Germ:new(flyoutId, btnSlotIndex, eventId)
-            self:saveGerm(germ)
-        end
-        germ:update(flyoutId, eventId)
-        germ:doKeybinding()
-        if Config.opts.usePlaceHolders then
-            if not Placeholder:exists(btnSlotIndex) then
-                Placeholder:put(btnSlotIndex, eventId)
-            end
-        end
-    else
-        -- because one toon can delete a flyout while other toons still have it on their bars
-        zebug.warn:label(eventId):print("flyoutId",flyoutId, "no longer exists. Deleting it from action bar slot",btnSlotIndex)
-        self:deletePlacement(btnSlotIndex)
-    end
-end
-]]
-
--- TODO HEY LOOK HERE!  we seem to be relying on a subsequent updateAll() or for a placeholder, handleActionBarSlotChanged()
--- invoked by Germ:OnPickupAndDrag() and GermCommander:handleActionBarSlotChanged()
--- by the time this is invoked
--- * there is a proxy macro freshly dropped on the action bar
-
--- Ways that will put a UFO onto the action bar
+-- Things that will put a UFO onto the action bar
 -- * addon initialization - all UFOs are newly created and placed based on SAVED_VARIABLES
 -- * a UFO is on the cursor and is dropped onto an action bar slot that is empty
 -- * a UFO is on the cursor and is dropped onto an action bar slot that contains a std bliz thingy
@@ -441,7 +321,6 @@ end
 -- in most of the above, there may be a Germ already there but is perhaps disabled because the user previously dragged it away
 function GermCommander:dropDraggedUfoFromCursorOntoActionBar(btnSlotIndex, flyoutId, eventId)
     self:putUfoOntoActionBar(btnSlotIndex, flyoutId, eventId)
-    --UfoProxy:deleteProxyMacro(eventId) -- um, what if the user swapped one UFO for another. Let the async event handler do this
 end
 
 function GermCommander:putUfoOntoActionBar(btnSlotIndex, flyoutId, event)
@@ -476,7 +355,6 @@ end
 
 GermCommander.ensureAllGermsHavePlaceholders = Pacifier:wrap(GermCommander.ensureAllGermsHavePlaceholders, L10N.SWITCH_TO_PLACEHOLDERS) -- allow only out of combat
 
-
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:changeSpec(event)
     local oldPlacements = Spec:getPreviousSpecPlacementConfig()
@@ -510,7 +388,6 @@ end
 -- because the above eventually calls a method that does combat-unfriendly stuff,
 -- silently pacify it here so the user isn't spammed with RECONFIGURE_BUTTON messages
 GermCommander.notifyAllGermsWithItems = Pacifier:wrap(GermCommander.notifyAllGermsWithItems)
-
 
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:handleEventMacrosChanged(event)

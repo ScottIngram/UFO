@@ -275,7 +275,7 @@ end
 
 
 ---@param mouseClick MouseClick
-function Button_Mixin:assignSecEnvAttributeForMouseClickFromBtnDef(mouseClick, event)
+function Button_Mixin:assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef(mouseClick, event)
     ---@type ButtonDef
     local btnDef = self:getDef()
 
@@ -298,7 +298,7 @@ function Button_Mixin:assignSecEnvAttributeForMouseClickFromBtnDef(mouseClick, e
     end
 end
 
-Button_Mixin.assignSecEnvAttributeForMouseClickFromBtnDef = Pacifier:wrap(Button_Mixin.assignSecEnvAttributeForMouseClickFromBtnDef)
+Button_Mixin.assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef = Pacifier:wrap(Button_Mixin.assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef)
 
 Button_Mixin.setSecEnvAttribute = UfoMixIn.setSecEnvAttribute
 Button_Mixin.safelySetSecEnvAttribute = UfoMixIn.safelySetSecEnvAttribute
