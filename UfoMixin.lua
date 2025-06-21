@@ -141,6 +141,10 @@ function UfoMixIn:notInfiniteLoop(loopGuard)
     return loopGuard
 end
 
+function UfoMixIn:getParent()
+    return self:GetParent()
+end
+
 function UfoMixIn:getParentAndName()
     local p = self:GetParent()
     return p, p and p.GetName and p:GetName()

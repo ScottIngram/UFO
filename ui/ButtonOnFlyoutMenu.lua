@@ -76,6 +76,8 @@ function ButtonOnFlyoutMenu:setDef(btnDef, event)
         self:assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef(MouseClick.ANY, event)
         -- TODO: v11.1 build this into my Button_Mixin
         safelySetAttribute(self, "UFO_NO_RND", btnDef and btnDef.noRnd or nil) -- SECURE TEMPLATE
+        safelySetAttribute(self, "myName", self:getLabel()) -- SECURE TEMPLATE
+
     else
         self:setExcluderVisibility()
     end
@@ -265,6 +267,72 @@ function ButtonOnFlyoutMenu:setTooltip()
 end
 
 -------------------------------------------------------------------------------
+--
+-- Sec-Env Scripts
+--
+-------------------------------------------------------------------------------
+
+function ButtonOnFlyoutMenu:initializeSecEnv()
+    local flyoutMenu = self:getParent()
+    local germ = flyoutMenu:getParent()
+
+    -- set attributes used inside the secure scripts
+    self:setSecEnvAttribute("DO_DEBUG", not zebug.error:isMute() )
+    self:setSecEnvAttribute("UFO_NAME", self:getLabel())
+    self:SetFrameRef("flyoutMenu", flyoutMenu)
+    self:SetFrameRef("germ", germ)
+
+    -- set global variables inside the restricted environment of the germ
+    self:Execute([=[
+        germ       = self:GetFrameRef("germ")
+        flyoutMenu = self:GetFrameRef("flyoutMenu")
+        doDebug    = self:GetAttribute("DO_DEBUG") or false
+    ]=])
+
+    self:installSecEnvScriptFor_ON_CLICK()
+end
+
+local SEC_ENV_SCRIPT_FOR_ON_CLICK
+
+function ButtonOnFlyoutMenu:installSecEnvScriptFor_ON_CLICK()
+    assert(not self.onClickScriptInitialized, "Wut?  The ON_CLICK_SCRIPT is already installed.  Why you call again?")
+    self.isOnClickScriptInitialized = true
+    local script = self:getSecEnvScriptFor_ON_CLICK()
+    self:WrapScript(self, Script.ON_CLICK, script )
+end
+
+function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
+    if not SEC_ENV_SCRIPT_FOR_ON_CLICK then
+        SEC_ENV_SCRIPT_FOR_ON_CLICK =
+[=[
+    -- INCOMING PARAMS - rename/remap Blizard's idiotic variables and SHITTY identifiers
+    local isClicked  = down -- true/false
+    local mouseClick = button -- "LeftButton" etc
+    if not isClicked then
+        -- ABORT - only execute once per mouseclick, not on both UP and DOWN
+        return
+    end
+
+    local myName  = self:GetAttribute("UFO_NAME")
+    local UFO_KEY = self:GetAttribute("UFO_KEY")
+    local UFO_VAL = self:GetAttribute("UFO_VAL")
+
+    --[[DEBUG]] if doDebug and isClicked then
+    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isClicked",isClicked, "mouseClick",mouseClick, "UFO_KEY",UFO_KEY,"UFO_VAL",UFO_VAL)
+    --[[DEBUG]] end
+
+    germ:SetAttribute("UFO_KEY", UFO_KEY)
+    germ:SetAttribute("UFO_VAL", UFO_VAL)
+
+
+
+]=]
+    end
+    return SEC_ENV_SCRIPT_FOR_ON_CLICK
+end
+
+
+-------------------------------------------------------------------------------
 -- XML Callbacks - see ui/ui.xml
 -------------------------------------------------------------------------------
 
@@ -274,6 +342,7 @@ function ButtonOnFlyoutMenu:onLoad()
     -- leverage inheritance - invoke parent's OnLoad()
     self:SmallActionButtonMixin_OnLoad()
     SecureHandler_OnLoad(self) -- TODO: v11.1 evaluate if this is actually safe or is it causing taint
+    self:initializeSecEnv()
 
     -- initialize my fields
     self.maxDisplayCount = 99 -- used inside Bliz code - limits how big of a number to show on stacks
