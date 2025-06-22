@@ -268,13 +268,14 @@ end
 
 -------------------------------------------------------------------------------
 --
--- Sec-Env Scripts
+-- SecEnv Scripts
 --
 -------------------------------------------------------------------------------
 
 function ButtonOnFlyoutMenu:initializeSecEnv()
     local flyoutMenu = self:getParent()
     local germ = flyoutMenu:getParent()
+    zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu)
 
     -- set attributes used inside the secure scripts
     self:setSecEnvAttribute("DO_DEBUG", not zebug.error:isMute() )
@@ -313,19 +314,24 @@ function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
         return
     end
 
+    -- local icon = self:GetNormalTexture() -- nope.  doesn't exist
+
     local myName  = self:GetAttribute("UFO_NAME")
     local UFO_KEY = self:GetAttribute("UFO_KEY")
     local UFO_VAL = self:GetAttribute("UFO_VAL")
 
     --[[DEBUG]] if doDebug and isClicked then
-    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isClicked",isClicked, "mouseClick",mouseClick, "UFO_KEY",UFO_KEY,"UFO_VAL",UFO_VAL)
+    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() germ",germ:GetAttribute("UFO_NAME"), "flyoutMenu",flyoutMenu:GetAttribute("UFO_NAME"))
+    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isClicked",isClicked, "mouseClick",mouseClick, "UFO_KEY",UFO_KEY, "UFO_VAL",UFO_VAL)
     --[[DEBUG]] end
 
     germ:SetAttribute("UFO_KEY", UFO_KEY)
     germ:SetAttribute("UFO_VAL", UFO_VAL)
 
-
-
+    -- copy my behavior to the germ
+    -- TODO: look for a configuration attribute / flag on the germ indicating this is the right thing
+    germ:SetAttribute("type1", UFO_KEY)
+    germ:SetAttribute(UFO_KEY.."1", UFO_VAL)
 ]=]
     end
     return SEC_ENV_SCRIPT_FOR_ON_CLICK
@@ -341,8 +347,7 @@ end
 function ButtonOnFlyoutMenu:onLoad()
     -- leverage inheritance - invoke parent's OnLoad()
     self:SmallActionButtonMixin_OnLoad()
-    SecureHandler_OnLoad(self) -- TODO: v11.1 evaluate if this is actually safe or is it causing taint
-    self:initializeSecEnv()
+    SecureHandler_OnLoad(self)
 
     -- initialize my fields
     self.maxDisplayCount = 99 -- used inside Bliz code - limits how big of a number to show on stacks

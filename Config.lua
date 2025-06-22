@@ -14,7 +14,6 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 MouseClick = Ufo.MouseClick
 
 ---@class Options -- IntelliJ-EmmyLua annotation
----@field supportCombat boolean placate Bliz security rules of "don't SetAnchor() during combat"
 ---@field doCloseOnClick boolean close the flyout after the user clicks one of its buttons
 ---@field usePlaceHolders boolean eliminate the need for "Always Show Buttons" in Bliz UI "Edit Mode" config option for action bars
 ---@field clickers table germ behavior for various mouse clicks
@@ -36,7 +35,6 @@ Config = { }
 function Config:getOptionDefaults()
     ---@type Options
     local defaults = {
-        supportCombat   = true,
         doCloseOnClick  = true,
         usePlaceHolders = true,
         muteLogin       = false,
@@ -234,19 +232,6 @@ You may disable placeholder macros, but, doing so will require extra UI configur
                 get = function()
                     return opts.usePlaceHolders
                 end,
-            },
-            supportCombat = {
-                hidden = true,
-                name = "Support Combat",
-                desc = "Placate Bliz security rules of during combat at the cost of less efficient memory usage.",
-                width = "full",
-                type = "toggle",
-                set = function(info, val)
-                    opts.supportCombat = val
-                end,
-                get = function()
-                    return opts.supportCombat
-                end
             },
 
 

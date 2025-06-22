@@ -251,7 +251,7 @@ function Button_Mixin:updateCount(event)
 end
 
 -------------------------------------------------------------------------------
---  SECURE TEMPLATE / RESTRICTED ENVIRONMENT
+--  SecEnv TEMPLATE / RESTRICTED ENVIRONMENT
 -------------------------------------------------------------------------------
 
 ---@param secureMouseClickId SecureMouseClickId

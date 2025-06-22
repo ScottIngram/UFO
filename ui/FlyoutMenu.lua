@@ -40,7 +40,10 @@ local ScriptHandlers = {}
 -------------------------------------------------------------------------------
 
 function FlyoutMenu:new(germ)
-    local myName = germ:GetName() .. FlyoutMenu.nameSuffix
+    local germName = germ:GetName()
+    local myName = germName .. FlyoutMenu.nameSuffix
+    zebug.info:owner(germ):mark(Mark.HORDE):print("germ",germ, "germName",germName, "myName",myName)
+
     ---@type FM_TYPE
     local self = CreateFrame(FrameType.FRAME, myName, germ, "UFO_FlyoutMenuTemplate") -- XML's mixin = FlyoutMenu
 
@@ -48,13 +51,16 @@ function FlyoutMenu:new(germ)
     -- but later, it will return the germ.  JFC.
     -- WORKAROUND - set the parent a SECOND time.  This one seems to stick.  FUCK YOU BLIZ.
     self:SetParent(germ)
+    self.GetParent = function() return germ end -- fuck you again, Bliz
+    self.getParent = self.GetParent
 
     self.isForGerm = true
     self:setId(germ:getFlyoutId())
     self:installMyToString()
-    self:installHandlerForCloseOnClick()
+    self:installSecEnvScriptForCloseOnClick()
     self:HookScript(Script.ON_SHOW, ScriptHandlers.ON_SHOW)
     self:HookScript(Script.ON_HIDE, ScriptHandlers.ON_HIDE)
+
     return self
 end
 
@@ -110,7 +116,7 @@ end
 
 -- use non-local "global" variables to save values between executions
 -- because GetParent() returns nil during combat lockdown
-local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SECURE_SCRIPT = [=[
+local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
     -- follow convention and trigger on mouse UP / key UP, not down (and certainly not both up and down).  the "down" variable is passed in by the Bliz API
     if down then return end
 
@@ -122,7 +128,7 @@ local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SECURE_SCRIPT = [=[
     --[[DEBUG]] local flyoutName = flyoutMenu:GetAttribute("UFO_NAME") or flyoutMenu:GetName() or "bullshit"
     --[[DEBUG]] local doDebug = flyoutMenu:GetAttribute("DO_DEBUG") or false
     --[[DEBUG]] if doDebug then
-    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SECURE_SCRIPT <START>")
+    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT <START>")
     --[[DEBUG]] end
 
     if not germ then
@@ -147,25 +153,29 @@ local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SECURE_SCRIPT = [=[
     end
 ]=]
 
-function FlyoutMenu:installHandlerForCloseOnClick()
+function FlyoutMenu:installSecEnvScriptForCloseOnClick()
     if self.isCloserInitialized or not self.isForGerm then return end
 
     -- values used inside the secure environment code
     self:SetAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:SetAttribute("UFO_NAME", self:getLabel())
 
+    local germ = self:GetParent()
+    zebug.info:owner(self):print("germ", germ)
+
     ---@param btnFrame BOFM_TYPE
     self:forEachButton(function(btnFrame)
         btnFrame:SetFrameRef("flyoutMenu", self)
-        btnFrame:SetFrameRef("germ", self:GetParent())
-        btnFrame:WrapScript(btnFrame, "PostClick", CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SECURE_SCRIPT) -- Is the the cause of "Cannot call restricted closure from insecure code" ??? NOPE
-        btnFrame:Execute(CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SECURE_SCRIPT) -- initialize the scriptlet's "global" vars
+        btnFrame:SetFrameRef("germ", germ)
+        btnFrame:WrapScript(btnFrame, "PostClick", CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- Is the the cause of "Cannot call restricted closure from insecure code" ??? NOPE
+        btnFrame:Execute(CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- initialize the scriptlet's "global" vars
+        btnFrame:initializeSecEnv()
     end)
 
     self.isCloserInitialized = true
 end
 
-FlyoutMenu.installHandlerForCloseOnClick = Pacifier:wrap(FlyoutMenu.installHandlerForCloseOnClick)
+FlyoutMenu.installSecEnvScriptForCloseOnClick = Pacifier:wrap(FlyoutMenu.installSecEnvScriptForCloseOnClick)
 
 function FlyoutMenu:getId()
     return self.id or self.flyoutId
@@ -181,16 +191,6 @@ function FlyoutMenu:getDef()
     return FlyoutDefsDb:get(self.flyoutId)
 end
 
-
-
-
-
-
-
-
-
-
--- TODO: merge updateForCatalog() and updateForGerm() -- fix updates
 ---@param flyoutId string
 function FlyoutMenu:updateForCatalog(flyoutId, event)
     self.enableTwinkle = true
@@ -286,14 +286,14 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
             btnFrame:setIcon( btnDef:getIcon(), event)
             --btnFrame:setGeometry(self.direction) -- this call breaks the btns on the flyout - they all collapse into the same spot
             --TODO: figure out why
-            btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SECURE TEMPLATE
+            btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
 
             -- label the keybinds
             btnNumber = btnNumber + 1
             updateHotKeyLabel(btnFrame, btnNumber)
         else
             btnFrame:setIcon(DEFAULT_ICON, event)
-            btnFrame:SetAttribute("UFO_NAME",nil) -- SECURE TEMPLATE
+            btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE
             return
         end
     end)
@@ -453,13 +453,6 @@ end
 
 function FlyoutMenu:onLeave()
     self:restoreButtonsAfterHover()
-end
-
-function FlyoutMenu:onLoadForGerm()
-    zebug.info:name("ForGerm_OnLoad"):print("flyoutMenu", self:GetName())
-    -- initialize fields
-    self.isForGerm = true
-    self.isSharedByAllGerms = true
 end
 
 function FlyoutMenu:onLoadForCatalog()

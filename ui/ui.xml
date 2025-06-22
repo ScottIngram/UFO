@@ -110,15 +110,6 @@
         </Frames>
     </Frame>
 
-    <!-- this is the singleton version that is only used when the config option "usable in combat" is false -->
-    <Frame name="UFO_FlyoutMenuForGerm"
-           inherits="UFO_FlyoutMenuTemplate"
-    >
-        <Scripts>
-            <OnLoad method="onLoadForGerm"/>
-        </Scripts>
-    </Frame>
-
     <Frame name="UFO_FlyoutMenuForCatalog"
            inherits="UFO_FlyoutMenuTemplate"
     >

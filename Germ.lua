@@ -251,14 +251,10 @@ function Germ:glowStop()
 end
 
 function Germ:initFlyoutMenu(event)
-    if Config.opts.supportCombat then
-        self.flyoutMenu = FlyoutMenu:new(self)
-        zebug.info:event(event):owner(self):line("20","initFlyoutMenu",self.flyoutMenu)
-        self.flyoutMenu:applyConfigForGerm(self, event)
-        self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
-    else
-        self.flyoutMenu = UFO_FlyoutMenuForGerm
-    end
+    self.flyoutMenu = FlyoutMenu:new(self)
+    zebug.info:event(event):owner(self):line("20","initFlyoutMenu",self.flyoutMenu)
+    self.flyoutMenu:applyConfigForGerm(self, event)
+    self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
     self.flyoutMenu.isForGerm = true
     return self.flyoutMenu
 end
@@ -634,7 +630,7 @@ end
 
 -------------------------------------------------------------------------------
 --
--- Sec-Env Mouse Click Handling
+-- SecEnv Mouse Click Handling
 --
 -- a bunch of code to make calls to SetAttribute("type",action) or ON_CLICK etc
 -- to enable the Germ's button to do things in response to mouse clicks
@@ -690,7 +686,7 @@ function Germ:assignTheMouseClicker(mouseClick, behaviorName, event)
     behave(self, mouseClick, event)
 end
 
--- the sec-env handler for "click the first button of the flyout" is special.
+-- the secEnv handler for "click the first button of the flyout" is special.
 -- it won't automatically accommodate changes to the flyout buttons and must be re-applied for any changes to flyoutDef
 -- TODO: consider folding it into the ON_CLICK script along with the RANDOM_BTN and CYCLE_ALL_BTNS
 function Germ:updateClickerForBtn1(event)
@@ -717,7 +713,7 @@ end
 
 -------------------------------------------------------------------------------
 --
--- Sec-Env - GermClickBehaviorAssignmentFunction
+-- SecEnv - GermClickBehaviorAssignmentFunction
 -- deal with OPEN / FIRST_BTN / RANDOM_BTN / CYCLE_ALL_BTNS
 --
 -------------------------------------------------------------------------------
@@ -749,7 +745,7 @@ end
 
 -------------------------------------------------------------------------------
 --
--- Sec-Env Scripts
+-- SecEnv Scripts
 --
 -------------------------------------------------------------------------------
 
@@ -770,7 +766,7 @@ function Germ:getSecEnvScriptForOpener()
         SEC_ENV_SCRIPT_FOR_OPENER =
 [=[
     --[[DEBUG]] if doDebug then
-    --[[DEBUG]]     print("<DEBUG>", myName, "OPENER_CLICKER_SECURE_SCRIPT <START> germ =", germ, "flyoutMenu =",flyoutMenu)
+    --[[DEBUG]]     print("<DEBUG>", myName, "SEC_ENV_SCRIPT_FOR_OPENER <START> germ =", germ, "flyoutMenu =",flyoutMenu)
     --[[DEBUG]] end
 
     local mouseClick = button
@@ -993,8 +989,9 @@ function Germ:getSecEnvScriptFor_ON_CLICK()
             --[[DEBUG]] end
         end
 
+        -- having calculated which button is being triggered, now
         -- GRAB THE BUTTON FROM THE FLYOUT
-        -- THEN COPY ITS BEHAVIOR ONTO MYSELF
+        -- COPY ITS BEHAVIOR ONTO MYSELF
 
         local btn    = buttonsOnFlyoutMenu[x]
         if not btn then return end
@@ -1076,6 +1073,15 @@ function Germ:printDebugDetails(event, okToGo)
 
     local parent, parentName = self:getParentAndName()
     zebug.warn:event(event):name("details"):owner(self):print("isActive",self:isActive(), "IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent", parentName, "flyoutMenu",self.flyoutMenu, "visibilityDriver",self.visibilityDriver)
+
+    local t1 = self:GetAttribute("type1") or "NIL"
+    local t2 = self:GetAttribute("type2") or "NIL"
+    local t3 = self:GetAttribute("type3") or "NIL"
+    local v1 = self:GetAttribute(t1.."1") or "nIl"
+    local v2 = self:GetAttribute(t2.."2") or "nIl"
+    local v3 = self:GetAttribute(t3.."3") or "nIl"
+    zebug.warn:event(event):name("details"):owner(self):print("t1",t1, "v1",v1, "t2",t2, "v2",v2, "t3",t3, "v3",v3)
+
     if self.flyoutMenu then self.flyoutMenu:printDebugDetails(event, okToGo) end
 
     ---@type BlizActionBarButton
