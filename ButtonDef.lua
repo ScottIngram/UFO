@@ -360,7 +360,7 @@ function ButtonDef:getToolTipSetter()
             zebug.trace:dumpy("self",self)
             local text
             if self:isUsable() then
-                text = "Macro: ".. macroId .." " .. (i_name or "UNKNOWN")
+                text = "Macro: ".. macroId .." " .. (i_name or "UnKnOwNmAcRo")
             else
                 text = "Toon Macro for " .. self.macroOwner
             end
