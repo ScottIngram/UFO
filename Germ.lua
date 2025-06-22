@@ -511,15 +511,9 @@ function Germ:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
     --zebug.info:mStar():mMoon():mCross():event(event):owner(self):print("enable",enable, "GetCursorInfo->",GetCursorInfo, "GetCursorInfo->type",type, "GetCursorInfo->id",id,  "Cursor:getFresh()",Cursor:getFresh(event), wut)
     zebug.trace:event(event):owner(self):print(wut)
     if enable then
-        if not self.isRegisteredForClicks then
-            self:RegisterForClicks("AnyDown", "AnyUp")
-            self.isRegisteredForClicks = true
-        end
+        self:RegisterForClicks("AnyDown", "AnyUp")
     else
-        if self.isRegisteredForClicks then
-            self:RegisterForClicks()
-            self.isRegisteredForClicks = false
-        end
+        self:RegisterForClicks()
     end
 end
 
