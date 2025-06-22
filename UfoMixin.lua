@@ -69,7 +69,7 @@ function UfoMixIn:installMyToString()
         seen[originalMt] = true
 
         if originalMt.__tostring then
-            zebug.warn:mark(Mark.FIRE):print("ruhroh - __tostring already EXISTS from", originalMt.ufoType, "self.ufoType",self.ufoType)
+            zebug.warn:mark(Mark.FIRE):print("ruhroh - __tostring already EXISTS from", originalMt.ufoType, "self.ufoType",self.ufoType, self)
         end
 
         -- create a distinctly new but "identical" metatable so it can hold the toString
