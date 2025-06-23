@@ -275,18 +275,21 @@ end
 function ButtonOnFlyoutMenu:initializeSecEnv()
     local flyoutMenu = self:getParent()
     local germ = flyoutMenu:getParent()
-    zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu)
+    local promoter = germ.promoter
+    zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu,"promoter",promoter)
 
     -- set attributes used inside the secure scripts
     self:setSecEnvAttribute("DO_DEBUG", not zebug.error:isMute() )
     self:setSecEnvAttribute("UFO_NAME", self:getLabel())
     self:SetFrameRef("flyoutMenu", flyoutMenu)
     self:SetFrameRef("germ", germ)
+    self:SetFrameRef("promoter", promoter)
 
     -- set global variables inside the restricted environment of the germ
     self:Execute([=[
         germ       = self:GetFrameRef("germ")
         flyoutMenu = self:GetFrameRef("flyoutMenu")
+        germSignal = self:GetFrameRef("promoter")
         doDebug    = self:GetAttribute("DO_DEBUG") or false
     ]=])
 
@@ -319,10 +322,12 @@ function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
     local myName  = self:GetAttribute("UFO_NAME")
     local UFO_KEY = self:GetAttribute("UFO_KEY")
     local UFO_VAL = self:GetAttribute("UFO_VAL")
+    local icon    = self:GetAttribute("UFO_ICON")
 
     --[[DEBUG]] if doDebug and isClicked then
-    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() germ",germ:GetAttribute("UFO_NAME"), "flyoutMenu",flyoutMenu:GetAttribute("UFO_NAME"))
+    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() germ",germ:GetAttribute("UFO_NAME"), "flyoutMenu",flyoutMenu:GetAttribute("UFO_NAME"),"germSignaler",germSignaler)
     --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isClicked",isClicked, "mouseClick",mouseClick, "UFO_KEY",UFO_KEY, "UFO_VAL",UFO_VAL)
+    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() icon",icon)
     --[[DEBUG]] end
 
     germ:SetAttribute("UFO_KEY", UFO_KEY)
@@ -332,6 +337,9 @@ function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
     -- TODO: look for a configuration attribute / flag on the germ indicating this is the right thing
     germ:SetAttribute("type1", UFO_KEY)
     germ:SetAttribute(UFO_KEY.."1", UFO_VAL)
+    germSignal:SetAttribute("UFO_ICON", icon)
+    germSignal:Hide()
+    germSignal:Show()
 ]=]
     end
     return SEC_ENV_SCRIPT_FOR_ON_CLICK

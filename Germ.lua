@@ -26,6 +26,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@field bbInfo table definition of the actionbar/button where the Germ lives
 ---@field visibleIf string for RegisterStateDriver -- uses macro-conditionals to control visibility automatically
 ---@field visibilityDriver string primarily for debugging
+---@field promoter Frame a special child frame used by ButtonOnFlyoutMenu SecEnv to send combat-safe signals
 ---@field myName string duh
 ---@field label string human friendly identifier
 
@@ -710,6 +711,16 @@ function Germ:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, clickBehavi
     local name = KEY_PREFIX_FOR_ON_CLICK .. mouseClick
     self:setSecEnvAttribute(name, clickBehavior)
 end
+
+function Germ:promote()
+    -- a ButtonOnFlyoutMenu was clicked and called germ.promoter:Show() which called
+    if not self:isActive() then return end
+    local icon = self.promoter:GetAttribute("UFO_ICON")
+    zebug.error:owner(self):print("sneaky! icon", icon)
+    self:setIcon(icon,"promoter")
+end
+
+Germ.promote = Pacifier:wrap(Germ.promote)
 
 -------------------------------------------------------------------------------
 --

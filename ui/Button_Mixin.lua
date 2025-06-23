@@ -80,6 +80,8 @@ function Button_Mixin:setIcon(icon, event)
     end
     zebug.info:event(event):owner(self):print("setting icon",icon)
     self.originalIconSetTextureFunc(iconFrame, icon) -- the iconFrame is the self for the original SetTexture
+    self:SetAttribute("UFO_ICON", icon) -- for use by the promoter
+    self.iconTexture = icon
 end
 
 -- TODO - go look at ActionBarActionButtonMixin:Update() and copy anything I'm missing

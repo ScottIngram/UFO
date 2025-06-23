@@ -20,6 +20,15 @@
 
                 BaseActionButtonMixin <- FlyoutButtonMixin <- ButtonStateBehaviorMixin
         -->
+        <Frames>
+            <Frame name="$parent_Promoter" parentKey="promoter" inherits="SecureHandlerAttributeTemplate" id="1">
+                <Scripts>
+                    <OnShow>
+                        self:GetParent():promote()
+                    </OnShow>
+                </Scripts>
+            </Frame>
+        </Frames>
     </Button>
 
 
