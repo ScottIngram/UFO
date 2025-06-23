@@ -396,6 +396,14 @@ function ButtonOnFlyoutMenu:onMouseUp()
     end
 end
 
+function ButtonOnFlyoutMenu:OnMouseDown()
+    local flyoutMenu = self:GetParent()
+    ---@type GERM_TYPE
+    local germ = flyoutMenu and flyoutMenu:GetParent()
+    zebug.info:owner(self):event("OnMouseDown"):print("flyoutMenu",flyoutMenu, "germ",germ)
+    germ:promote(self.iconTexture)
+end
+
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onReceiveDrag()
     zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me"):run(function(event)

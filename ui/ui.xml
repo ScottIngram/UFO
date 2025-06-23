@@ -24,7 +24,7 @@
             <Frame name="$parent_Promoter" parentKey="promoter" inherits="SecureHandlerAttributeTemplate" id="1">
                 <Scripts>
                     <OnShow>
-                        self:GetParent():promote()
+                        --self:GetParent():promote()
                     </OnShow>
                 </Scripts>
             </Frame>
@@ -61,6 +61,7 @@
             <OnEnter method="onEnter" />
             <OnLeave method="onLeave" />
             <OnMouseUp method="onMouseUp" />
+            <OnMouseDown method="OnMouseDown" />
             <OnDragStart method="onDragStartDoPickup" />
             <OnReceiveDrag method="onReceiveDrag" />
             <PreClick>

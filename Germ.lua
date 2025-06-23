@@ -712,15 +712,15 @@ function Germ:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, clickBehavi
     self:setSecEnvAttribute(name, clickBehavior)
 end
 
-function Germ:promote()
+function Germ:promote(icon)
     -- a ButtonOnFlyoutMenu was clicked and called germ.promoter:Show() which called
     if not self:isActive() then return end
-    local icon = self.promoter:GetAttribute("UFO_ICON")
+    --icon = icon or self.promoter:GetAttribute("UFO_ICON")
     zebug.error:owner(self):print("sneaky! icon", icon)
     self:setIcon(icon,"promoter")
 end
 
-Germ.promote = Pacifier:wrap(Germ.promote)
+Germ.promote = Pacifier:wrap(Germ.promote, L10N.UFO_ICON_PROMOTE)
 
 -------------------------------------------------------------------------------
 --
