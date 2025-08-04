@@ -1,12 +1,10 @@
-local ADDON_NAME, Ufo = ...
+-- many thanks to Translator into Russian ZamestoTV
 
-if "ruRU" == GetLocale() then
-    local ADDON_NAME, Ufo = ...
-    Ufo.Wormhole(Ufo.L10N) -- Lua voodoo magic that replaces the current Global namespace with the Ufo.L10N object
-    -- Now, FOO = "bar" is equivilent to Ufo.L10N.FOO = "bar" - Even though they all look like globals, they are not.
-    -- Translator into Russian ZamestoTV
-    -- Professions / Trade Skills
-    -- These MUST match what Bliz uses in its UI
+if "ruRU" ~= GetLocale() then return end
+
+local ADDON_NAME, Ufo = ...
+Ufo.Wormhole(Ufo.L10N) -- Lua voodoo magic that replaces the current Global namespace with the Ufo.L10N object
+
 CONFIRM_DELETE = "Вы уверены, что хотите удалить набор всплывающих меню %s?"
 NEW_FLYOUT = "Новое\nВсплывающее меню"
 TOY = TOY -- Bliz provides this as a global
@@ -45,4 +43,3 @@ RECONFIGURE_FLYOUT_BUTTON_KEYBINDING = "перенастроить привяз�
 SWITCH_TO_PLACEHOLDERS = "переключиться на заглушки."
 DELETE_PLACEHOLDERS = "удалить заглушки."
 CHANGE_MOUSE_BUTTON_BEHAVIOR = "изменить поведение кнопок мыши"
-end
