@@ -275,7 +275,7 @@ end
 function ButtonOnFlyoutMenu:initializeSecEnv()
     local flyoutMenu = self:getParent()
     local germ = flyoutMenu:getParent()
-    local promoter = germ.promoter
+    --local promoter = germ.promoter
     zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu,"promoter",promoter)
 
     -- set attributes used inside the secure scripts
@@ -283,13 +283,13 @@ function ButtonOnFlyoutMenu:initializeSecEnv()
     self:setSecEnvAttribute("UFO_NAME", self:getLabel())
     self:SetFrameRef("flyoutMenu", flyoutMenu)
     self:SetFrameRef("germ", germ)
-    self:SetFrameRef("promoter", promoter)
+    --self:SetFrameRef("promoter", promoter)
 
     -- set global variables inside the restricted environment of the germ
     self:Execute([=[
         germ       = self:GetFrameRef("germ")
         flyoutMenu = self:GetFrameRef("flyoutMenu")
-        germSignal = self:GetFrameRef("promoter")
+        --germSignal = self:GetFrameRef("promoter")
         doDebug    = self:GetAttribute("DO_DEBUG") or false
     ]=])
 
@@ -334,12 +334,27 @@ function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
     germ:SetAttribute("UFO_VAL", UFO_VAL)
 
     -- copy my behavior to the germ
-    -- TODO: look for a configuration attribute / flag on the germ indicating this is the right thing
-    germ:SetAttribute("type1", UFO_KEY)
-    germ:SetAttribute(UFO_KEY.."1", UFO_VAL)
-    germSignal:SetAttribute("UFO_ICON", icon)
-    germSignal:Hide()
-    germSignal:Show()
+    -- TODO: configuration attribute / flag on the germ indicating this is the right thing
+    local isUseRecent = germ:GetAttribute("IS_USE_RECENT")
+    print ("IS_USE_RECENT",IS_USE_RECENT)
+    if isUseRecent then
+        -- find out which mouse clicks have the "use most recent" behavior
+        for i = 1, 6 do
+            local flagName = "IS_USE_RECENT_" .. i
+            local flag = germ:GetAttribute(flagName)
+            print (flagName,flag)
+            if flag then
+                local typeKey = "type"..i
+                local actionKey = UFO_KEY..i
+                germ:SetAttribute(typeKey, UFO_KEY)
+                germ:SetAttribute(actionKey, UFO_VAL)
+            end
+        end
+    end
+
+    --germSignal:SetAttribute("UFO_ICON", icon)
+    --germSignal:Hide()
+    --germSignal:Show()
 ]=]
     end
     return SEC_ENV_SCRIPT_FOR_ON_CLICK
@@ -401,7 +416,7 @@ function ButtonOnFlyoutMenu:OnMouseDown()
     ---@type GERM_TYPE
     local germ = flyoutMenu and flyoutMenu:GetParent()
     zebug.info:owner(self):event("OnMouseDown"):print("flyoutMenu",flyoutMenu, "germ",germ)
-    germ:promote(self.iconTexture)
+    germ:setRecentIcon(self.iconTexture)
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation

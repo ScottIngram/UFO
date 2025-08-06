@@ -315,15 +315,21 @@ function includeMouseButtonOpts(mouseClick)
     }
 end
 
+local INCLUDE_GERM_CLICK_BEHAVIORS
+
 function includeGermClickBehaviors()
-    local values = {
-        [GermClickBehavior.OPEN]           = zebug.info:colorize("Open") .." the flyout",
-        [GermClickBehavior.FIRST_BTN]      = "Trigger the ".. zebug.info:colorize("first") .." button of the flyout",
-        [GermClickBehavior.RANDOM_BTN]     = "Trigger a ".. zebug.info:colorize("random") .." button of the flyout",
-        [GermClickBehavior.CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle") .." through each button of the flyout",
-        --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle backwards") .." through each button of the flyout",
-    }
-    return values
+    if not INCLUDE_GERM_CLICK_BEHAVIORS then
+        INCLUDE_GERM_CLICK_BEHAVIORS = {
+            [GermClickBehavior.OPEN]           = zebug.info:colorize("Open") .." the flyout",
+            [GermClickBehavior.FIRST_BTN]      = "Trigger the ".. zebug.info:colorize("first") .." button of the flyout",
+            [GermClickBehavior.RECENT_BTN]      = "Trigger the most ".. zebug.info:colorize("recent") .." button clicked.",
+            [GermClickBehavior.RANDOM_BTN]     = "Trigger a ".. zebug.info:colorize("random") .." button of the flyout",
+            [GermClickBehavior.CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle") .." through each button of the flyout",
+            --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle backwards") .." through each button of the flyout",
+        }
+    end
+
+    return INCLUDE_GERM_CLICK_BEHAVIORS
 end
 
 function includeGermClickBehaviorSorting()
@@ -331,6 +337,7 @@ function includeGermClickBehaviorSorting()
         --"default", -- will be useful if I implement each FlyoutId having its own config
         GermClickBehavior.OPEN,
         GermClickBehavior.FIRST_BTN,
+        GermClickBehavior.RECENT_BTN,
         GermClickBehavior.RANDOM_BTN,
         GermClickBehavior.CYCLE_ALL_BTNS,
         --GermClickBehavior.REVERSE_CYCLE_ALL_BTNS,
@@ -346,7 +353,11 @@ function Config:getGermClickBehavior(flyoutId, mouseClick)
     return clickOpts[mouseClick]
 end
 
+local isUsingRecent -- cleared during setClickBehavior() and recalculated by isAnyClickerUsingRecent()
+
 function Config:setClickBehavior(flyoutId, mouseClick, behavior)
+    isUsingRecent = nil
+
     if not flyoutId then
         flyoutId = "default"
     end
@@ -362,6 +373,16 @@ function Config:setClickBehavior(flyoutId, mouseClick, behavior)
     end
 
     clickOpts[mouseClick] = behavior
+end
+
+function Config:isAnyClickerUsingRecent(flyoutId)
+    if isUsingRecent == nil then
+        local clickOpts = Config.opts.clickers.flyouts[flyoutId] or Config.opts.clickers.flyouts.default
+        for k, v in pairs(MouseClick) do
+            if clickOpts[v] == GermClickBehavior.RECENT_BTN then isUsingRecent = true end
+        end
+    end
+    return isUsingRecent
 end
 
 function Config:initializeOptionsMenu()
