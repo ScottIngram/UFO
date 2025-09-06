@@ -136,7 +136,7 @@ function ButtonOnFlyoutMenu:abortIfUnusable(btnDef)
         return false
     end
 
-    local name = btnDef:getName()
+    local name = btnDef:getName() or L10N.UNKNWOWN
     local msg = QUOTE .. name .. QUOTE .. " " .. L10N.CAN_NOT_MOVE
     msgUser(msg)
     zebug.warn:alert(msg)
@@ -260,7 +260,7 @@ function ButtonOnFlyoutMenu:setTooltip()
     if tooltipSetter then
         tooltipSetter()
     else
-        GameTooltip:SetText(btnDef:getName(), HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+        GameTooltip:SetText(btnDef:getName() or L10N.UNKNWOWN, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
     end
 end
 
