@@ -424,7 +424,6 @@ end
 -- TODO: consolidate / integrate with BlizActionBarButton:get()
 ---@return ButtonDef
 function ButtonDef:getFromCursor(event)
-    ---@type ButtonDef
     local type, c1, c2, c3 = GetCursorInfo() -- c1 is usually the ID; c2 is sometimes a tooltip;
     zebug.info:event(event):owner(self):print("type",type, "c1",c1, "c2",c2, "c3",c3)
 
@@ -495,7 +494,7 @@ function ButtonDef:getFromCursor(event)
         end
     end
 
-    Ufo.pickedUpBtn = nil
+    --Ufo.pickedUpBtn = nil -- we can't clear this here because "getFromCursor" doesn't necessarily mean "clearCursor" and we would still need this data
 
     return btnDef
 end
@@ -509,11 +508,11 @@ function ButtonDef:pickupToCursor(event)
     zebug.trace:event(event):owner(self):print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId, "pickup", pickup, "PickupSpell",PickupSpell)
 
     local isOk, err = pcall( function()  pickup(id) end  )
-    if not isOk then
+    if isOk then
+        zebug.info:event(event):owner(self):print("grabbed id", id)
+    else
         zebug.error:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
     end
-    --pickup(id)
-    zebug.trace:event(event):owner(self):print("grabbed id", id)
 end
 
 ---@return ButtonType typeOfAction - what kind of action is performed by the btn
