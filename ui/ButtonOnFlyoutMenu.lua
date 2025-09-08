@@ -264,6 +264,16 @@ function ButtonOnFlyoutMenu:setTooltip()
     end
 end
 
+function ButtonOnFlyoutMenu:warnIfUnusable()
+    local btnDef = self:getDef()
+    if not btnDef then return end
+    local isUsable, err =  btnDef:isUsable()
+    if not isUsable then
+        local btn = btnDef:toString()
+        msgUser(btn .. " " .. L10N.CANNOT_BE_USED_BY_THIS_TOON .. " " .. (err or ""))
+    end
+end
+
 -------------------------------------------------------------------------------
 -- XML Callbacks - see ui/ui.xml
 -------------------------------------------------------------------------------
