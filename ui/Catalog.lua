@@ -237,7 +237,7 @@ function Catalog:update(event)
                 local flyoutId = flyoutDef.id
                 local icon = flyoutDef:getIcon()
 
-                zebug.trace:event(event):print("i",i, "flyoutIndex", row, "flyoutId",flyoutId)
+                zebug.trace:event(event):owner(flyoutDef):print("i",i, "flyoutIndex", row, "icon",icon)
 
                 btnFrame.name = flyoutDef.name
                 btnFrame.label = flyoutDef.name or row
@@ -252,10 +252,10 @@ function Catalog:update(event)
                     if(type(icon) == "number") then
                         btnFrame.icon:SetTexture(icon);
                     else
-                        btnFrame.icon:SetTexture("INTERFACE\\ICONS\\".. icon);
+                        btnFrame.icon:SetTexture(icon)
                     end
                 else
-                    btnFrame.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+                    btnFrame.icon:SetTexture(DEFAULT_ICON_FULL)
                 end
 
                 -- Highlight the selected Flyout
@@ -397,7 +397,8 @@ function GLOBAL_UFO_CatalogEntry_OnDragStart(btnInCatalog)
     local flyoutId = btnInCatalog.flyoutId
     flyoutIndexOnTheMouse = btnInCatalog.flyoutIndex
     if exists(flyoutId) then
-        zebug.info:mSquare():newEvent("CatalogEntry", "OnDragStart"):run(function(event)
+        local flyoutDef = FlyoutDefsDb:get(flyoutId)
+        zebug.info:mSquare():owner(flyoutDef):newEvent("CatalogEntry", "OnDragStart"):run(function(event)
             eventCapture = event
             UfoProxy:pickupUfoOntoCursor(flyoutId, event)
         end)

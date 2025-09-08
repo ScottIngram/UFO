@@ -288,7 +288,7 @@ function BabbInstance:toString()
                 --print("BlizActionBarButton:toString... d.aId",d.aId, "d.aType",d.aType, "name",name)
             end
 
-            local icon = QUESTION_MARK_ICON
+            local icon = DEFAULT_ICON_FULL
             if blizId and blizType then
                 local btnDef = ButtonDef:new(blizId, blizType)
                 icon = btnDef:getIcon()

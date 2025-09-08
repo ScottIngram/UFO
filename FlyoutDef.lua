@@ -80,8 +80,8 @@ function FlyoutDef:toString()
     if self == Cursor then
         return "nil"
     else
-        local icon = self:getIcon() or self.fallbackIcon or DEFAULT_ICON
-        return string.format("<FlyDef: |T%d:0|t %s size=%d>", icon, nilStr(self.name), nilStr(self.btns and #(self.btns) or 0))
+        local icon = self:getIcon() or self.fallbackIcon or DEFAULT_ICON_FULL
+        return string.format("<FlyDef: |T%s:0|t %s size=%d>", icon, nilStr(self.name), nilStr(self.btns and #(self.btns) or 0))
     end
 end
 

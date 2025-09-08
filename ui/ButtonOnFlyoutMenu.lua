@@ -287,6 +287,7 @@ end
 ---@param self ButtonOnFlyoutMenu
 function ButtonOnFlyoutMenu:onEnter()
     self:setTooltip()
+    self:warnIfUnusable()
 
     -- push catalog buttons out of the way for easier btn relocation
     ---@type FlyoutMenu

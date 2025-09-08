@@ -266,7 +266,7 @@ end
 
 ---@param btnDef ButtonDef
 function FlyoutMenu:getIcon(btnDef)
-    local icon = QUESTION_MARK_ICON
+    local icon = DEFAULT_ICON_FULL
     local isOk, err = pcall( function() icon = btnDef:getIcon() end )
     if not isOk then
         zebug.warn:owner(self):print("Encountered bad button data for", btnDef:toString())

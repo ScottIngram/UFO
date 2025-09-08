@@ -245,14 +245,16 @@ end
 function ButtonDef:isUsable()
     local t = self.type
     local id = self:getIdForBlizApi()
+    local isUsable, err
+
     zebug.trace:owner(self):print("type",t, "spellId", self.spellId, "id",id)
     if t == ButtonType.MOUNT then
         local mountId = self.mountId
-        local isUsable, useError = C_MountJournal.GetMountUsabilityByID(mountId, false --[[checkIndoors]])
+        isUsable, err = C_MountJournal.GetMountUsabilityByID(mountId, false --[[checkIndoors]])
         -- local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountId)
-        -- zebug.warn:owner(self):mTriangle():print("id",id, "spellId",self.spellId, "mountId",self.mountId, "isUsable",isUsable, "useError",useError)
+        -- zebug.warn:owner(self):mTriangle():print("mountId",self.mountId, "isUsable",isUsable, "err", err)
         -- zebug.warn:owner(self):mCircle():print("name",name, "spellID",spellID, "isUsable",isUsable, "isFactionSpecific",isFactionSpecific, "faction",faction, "shouldHideOnChar",shouldHideOnChar, "mountID",mountID)
-        return isUsable, useError
+        return isUsable, (err or "Bliz API provided no explanation why not.")
     elseif t == ButtonType.PET then
         -- TODO: figure out how to find a mount
         return true -- GetMountInfoByID(mountId)
@@ -268,10 +270,17 @@ function ButtonDef:isUsable()
         -- isUseable = C_PlayerInfo.CanUseItem(itemID)
         local n = C_Item.GetItemCount(id)
         zebug.info:owner(self):print("C_Item.GetItemCount",n)
-        return n > 0
+        isUsable = n > 0
+        err = isUsable and "" or L10N.THIS_TOON_HAS_NONE
+        return isUsable, err
     elseif t == ButtonType.MACRO then
         zebug.trace:owner(self):print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
-        return isMacroGlobal(self.macroId) or getIdForCurrentToon() == self.macroOwner
+        isUsable = isMacroGlobal(self.macroId) or getIdForCurrentToon() == self.macroOwner
+        err = x or (L10N.NOT_MACRO_OWNER .. " " .. (self.macroOwner or L10N.UNKNWOWN))
+        if not isUsable then
+            zebug.info:owner(self):print("macroId",self.macroId, "isUsable",isUsable, "err", err)
+        end
+        return isUsable, err
     elseif t == ButtonType.BROKENP then
         return PetShitShow:canHazPet()
     elseif t == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT then
@@ -310,7 +319,7 @@ function ButtonDef:getIcon()
             local _, texture, _ = GetMacroInfo(id)
             icon = texture
         else
-            icon = "Interface\\Icons\\" .. DEFAULT_ICON
+            icon = self.fallbackIcon or DEFAULT_ICON_FULL
         end
     elseif t == ButtonType.PET then
         local _, x = getPetNameAndIcon(id)
@@ -512,6 +521,7 @@ function ButtonDef:getFromCursor(event)
         btnDef.macroId = c1
         if not isMacroGlobal(c1) then
             btnDef.macroOwner = (Ufo.pickedUpBtn and Ufo.pickedUpBtn.macroOwner) or getIdForCurrentToon()
+            btnDef.fallbackIcon = btnDef:getIcon()
         end
     elseif type == ButtonType.PET then
         btnDef.petGuid = c1

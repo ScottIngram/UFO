@@ -150,8 +150,22 @@ function UfoProxy:pickupUfoOntoCursor(flyoutId, event)
     self.flyoutId = flyoutId
 
     local flyoutConf = FlyoutDefsDb:get(flyoutId)
-    local icon = flyoutConf:getIcon() or DEFAULT_ICON
     local macroText = flyoutId
+    local icon = flyoutConf:getIcon() or DEFAULT_ICON
+    if isString(icon) then
+        local isOk, err = pcall( function()
+            local prefix = string.sub(icon, 1, string.len(DEFAULT_ICON_PRE_PATH))
+            zebug.info:event(event):owner(self):print("icon", icon, "DEFAULT_ICON_PRE_PATH",DEFAULT_ICON_PRE_PATH, "prefix",prefix)
+            if prefix == DEFAULT_ICON_PRE_PATH then
+                icon = DEFAULT_ICON
+            end
+        end  )
+        if isOk then
+            zebug.info:mark(Mark.CHECK):event(event):owner(self):print("icon", icon)
+        else
+            zebug.info:mark(Mark.NO):event(event):owner(self):print("icon failed! ERROR is",err)
+        end
+    end
 
     -- set a semaphore so other code can decide to respond to the resulting UPDATE_MACROS event
     Ufo.thatWasMeThatDidThatMacro = Event:new(self, "UfoProxy:pickupUfoOntoCursor()")
