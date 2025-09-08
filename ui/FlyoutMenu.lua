@@ -221,7 +221,8 @@ function FlyoutMenu:updateForCatalog(flyoutId, event)
 
         if btnDef then
             btnFrame:setDef(btnDef, event)
-            btnFrame:setIcon( btnDef:getIcon(), event )
+            local icon = self:getIcon(btnDef)
+            btnFrame:setIcon(icon, event)
         else
             -- the empty slot on the end
             btnFrame:setDef(nil, event)
@@ -263,6 +264,17 @@ end
 -- * initialize (changes to flyoutId or flyoutDef)
 -- * doUpdate (changes to the game state -- cooldowns, item counts, etc.)
 
+---@param btnDef ButtonDef
+function FlyoutMenu:getIcon(btnDef)
+    local icon = QUESTION_MARK_ICON
+    local isOk, err = pcall( function() icon = btnDef:getIcon() end )
+    if not isOk then
+        zebug.warn:owner(self):print("Encountered bad button data for", btnDef:toString())
+        zebug.info:owner(self):print("error", err)
+    end
+    return icon, err
+end
+
 ---@param germ Germ
 function FlyoutMenu:applyConfigForGerm(germ, event)
     self:SetParent(germ)
@@ -283,7 +295,8 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
 
         if btnDef then
             zebug.trace:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
-            btnFrame:setIcon( btnDef:getIcon(), event)
+            local icon = self:getIcon(btnDef)
+            btnFrame:setIcon(icon, event)
             --btnFrame:setGeometry(self.direction) -- this call breaks the btns on the flyout - they all collapse into the same spot
             --TODO: figure out why
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SECURE TEMPLATE
