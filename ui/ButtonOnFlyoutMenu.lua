@@ -370,6 +370,32 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
 end
 
 -------------------------------------------------------------------------------
+-- Debugger tools
+-------------------------------------------------------------------------------
+
+function ButtonOnFlyoutMenu:printDebugDetails(event)
+    local t = self:GetAttribute("type")
+    local key = self:GetAttribute("UFO_KEY")
+    local val = self:GetAttribute("UFO_VAL")
+
+    zebug.warn:event(event):name("details"):owner(self):print("SEC key",key, "SEC val",val)
+end
+
+-------------------------------------------------------------------------------
+-- Awesome toString() magic
+-------------------------------------------------------------------------------
+
+function ButtonOnFlyoutMenu:toString()
+    local btnDef = self:getDef()
+    if btnDef then
+        return string.format("<BOFM: %s:%s>", nilStr(btnDef.type), nilStr(btnDef.name))
+    else
+        return "<BOFM: EMPTY>"
+    end
+end
+
+
+-------------------------------------------------------------------------------
 -- OVERRIDES of
 -- SmallActionButtonMixin methods
 -- acquired via SmallActionButtonTemplate
