@@ -124,6 +124,8 @@
 
     <Frame name="UFO_FlyoutMenuForCatalog"
            inherits="UFO_FlyoutMenuTemplate"
+           frameStrata="HIGH"
+           frameLevel="10"
     >
         <Scripts>
             <OnLoad method="onLoadForCatalog"/>

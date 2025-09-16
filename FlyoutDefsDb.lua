@@ -38,10 +38,29 @@ function FlyoutDefsDb:howMany()
 end
 
 function FlyoutDefsDb:forEachFlyoutDef(callback)
-    for i, flyoutId in ipairs(DB:getOrderedFlyoutIds()) do
+    local dead
+    local ids = DB:getOrderedFlyoutIds()
+    for i, flyoutId in ipairs(ids) do
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
-        zebug.trace:print("flyoutId",flyoutId, "--> flyoutDef", flyoutDef)
-        callback(flyoutDef, flyoutDef) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
+        if flyoutDef then
+            zebug.trace:print("flyoutId",flyoutId, "--> flyoutDef", flyoutDef)
+            callback(flyoutDef, flyoutDef) -- support both functions and methods (which expects 1st arg as self and 2nd arg as the actual arg)
+        else
+            -- the config has been corrupted.  remove the offending entry
+            zebug.warn:print("bad flyoutId",flyoutId, "--> flyoutDef", flyoutDef)
+            if not dead then dead = {} end
+            dead[#dead+1] = i
+        end
+    end
+
+    -- delete the dead ids
+    if dead then
+        -- go backwards so that the index doesn't change as we do it
+        for i = #dead, 1, -1 do
+            local di = dead[i]
+            zebug.warn:print("removing bad flyoutId at index",di, "", ids[di])
+            table.remove(ids, di)
+        end
     end
 end
 

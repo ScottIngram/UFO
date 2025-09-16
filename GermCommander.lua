@@ -206,7 +206,7 @@ function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlo
     if btnInSlot:isEmpty() or btnInSlot:isUfoPlaceholder(event) then
         -- an empty slot or one with a Placeholder is meaningless to us.
         zebug.info:event(event):owner(btnInSlot):print("the btn slot is now empty/UfoPlaceholder and nobody cares")
-    elseif btnInSlot:isUfoProxy() then
+    elseif btnInSlot:isUfoProxyForFlyout() then
         -- user just dragged and dropped a UFO onto the bar.
         -- what was there before?
         local draggedAndDroppedFlyoutId = UfoProxy:getFlyoutId()
@@ -242,6 +242,32 @@ function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlo
 
         -- now that we are done with the UfoProxy it should be safe to synchronously nuke it
         UfoProxy:deleteProxyMacro(event)
+    elseif btnInSlot:isUfoProxyForButton() then
+        event = "woo"
+        -- The user has dropped the fake button proxy onto the action bar.
+        ButtonOnFlyoutMenu:abortIfUnusable(Ufo.pickedUpBtn)
+
+        -- Clear it from the bar and put it back on the cursor.
+
+        if Cursor:isEmpty() then
+            zebug.info:event(event):owner(btnInSlot):print("picking up",btnInSlot)
+            PickupAction(btnInSlot.btnSlotIndex)
+        else
+            -- the user dropped the proxy onto an action bar that already had something on it.
+            -- put it back on the action bar.
+            zebug.info:event(event):owner(btnInSlot):print("our net scooped up",Cursor:get(), "put it back!")
+            PlaceAction(btnInSlot.btnSlotIndex)
+            zebug.info:event(event):owner(btnInSlot):print("did it work?  Cursor is now",Cursor:get())
+        end
+
+        -- now put restore the UfoProxyForButton to the cursor
+
+        local isOk = Ufo.pickedUpBtn:pickupToCursor(event)
+        if isOk then
+            zebug.info:event(event):owner(btnInSlot):dumpy("YAY, isOk! post-pickup Ufo.pickedUpBtn",Ufo.pickedUpBtn)
+        else
+            zebug.info:event("wahhhh"):owner(btnInSlot):print("failed to re-pickup Ufo.pickedUpBtn",Ufo.pickedUpBtn)
+        end
     else
         -- a std Bliz thingy.
         -- altho, if that's true it would have been an event on the Germ itself.

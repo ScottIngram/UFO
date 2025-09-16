@@ -138,13 +138,19 @@ function ButtonOnFlyoutMenu:abortIfUnusable(btnDef)
         return false
     end
 
-    local name = btnDef:getName()
-    local msg = QUOTE .. name .. QUOTE .. " " .. L10N.CAN_NOT_MOVE
+    local name = btnDef:getName() or L10N.UNKNOWN
+    local msg = QUOTE .. name .. QUOTE .. " " .. L10N.CANNOT_BE_USED_BY_THIS_TOON
     msgUser(msg)
     zebug.warn:alert(msg)
     return true
 end
 
+function ButtonOnFlyoutMenu:onReceiveDragAddItTryCatch(event)
+    local isOk, err = pcall( function()  self:onReceiveDragAddIt(event) end  )
+    if not isOk then
+        zebug.error:event(event):owner(self):print("Drag and drop failed! ERROR",err)
+    end
+end
 
 function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     local flyoutMenu = self:getParent()
@@ -152,12 +158,8 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
 
     local crsDef = ButtonDef:getFromCursor(event)
     if not crsDef then
-        zebug.error:event(event):owner(self):print("Sorry, unsupported type:", Ufo.unknownType)
-        return
-    end
-
-    local btnDef = self:getDef()
-    if self:abortIfUnusable(btnDef) then
+        zebug.info:event(event):owner(self):print("Sorry, unsupported type:", Ufo.unknownType)
+        msgUser(L10N.UNSUPPORTED_TYPE .. ": " .. Ufo.unknownType)
         return
     end
 
@@ -228,14 +230,6 @@ function ButtonOnFlyoutMenu:renderCooldownsAndCountsAndStatesEtcEtc(event)
     self:renderCooldownsAndCountsAndStatesEtc(self,event)
 end
 
-function ButtonOnFlyoutMenu:onReceiveDragAddItTryCatch(event)
-    -- YAY!  Bliz's code is eating exceptions now so I've got to catch and report them my damn self!
-    local isOk, err = pcall( function()  self:onReceiveDragAddIt(event) end  )
-    if not isOk then
-        zebug.error:event(event):owner(self):print("Drag and drop failed! ERROR",err)
-    end
-end
-
 -- taken from SpellFlyoutButton_SetTooltip in bliz API SpellFlyout.lua
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:setTooltip()
@@ -259,11 +253,29 @@ function ButtonOnFlyoutMenu:setTooltip()
 
     local tooltipSetter = btnDef:getToolTipSetter()
 
+    local name = btnDef:getName()
+    if not name then
+        msgUser(L10N.UNKNOWN .. " button on " .. self:getParent():getLabel())
+        name = L10N.UNKNOWN
+    end
+
     if tooltipSetter then
         tooltipSetter()
     else
-        GameTooltip:SetText(btnDef:getName(), HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+        GameTooltip:SetText(name, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
     end
+end
+
+function ButtonOnFlyoutMenu:warnIfUnusable()
+    local btnDef = self:getDef()
+    if not btnDef then return end
+    local isUsable, err =  btnDef:isUsable()
+--[[
+    if not isUsable then
+        local btn = btnDef:toString()
+        msgUser(btn .. " " .. L10N.CANNOT_BE_USED_BY_THIS_TOON .. " " .. (err or ""))
+    end
+]]
 end
 
 -------------------------------------------------------------------------------
@@ -384,6 +396,7 @@ end
 ---@param self ButtonOnFlyoutMenu
 function ButtonOnFlyoutMenu:onEnter()
     self:setTooltip()
+    self:warnIfUnusable()
 
     -- push catalog buttons out of the way for easier btn relocation
     ---@type FlyoutMenu
@@ -434,26 +447,31 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
 
     ---@type FlyoutMenu
     local flyoutFrame = self:GetParent()
-    if not flyoutFrame.isForCatalog then
-        return
-    end
+    if not flyoutFrame.isForCatalog then return end
 
     local isDragging = GetCursorInfo()
     if isDragging then
-        zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me"):run(function(event)
+        zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me-SWAP"):run(function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
         return
     end
 
     local btnDef = self:getDef()
+--[[
     if self:abortIfUnusable(btnDef) then
         -- TODO - work some sort of proxy magic to let a toon drag around a spell they don't know
         return
     end
+]]
 
     zebug.info:mTriangle():owner(self):newEvent(self, "bofm-dragged-away"):run(function(event)
-        btnDef:pickupToCursor(event)
+        local isOk, err = btnDef:pickupToCursor(event)
+        if not isOk then
+            zebug.error:event(event):owner(self):print("FAILED to drag! err",err)
+            return
+        end
+
         local flyoutId = flyoutFrame:getId()
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
         flyoutDef:removeButton(self:getId())
@@ -462,6 +480,32 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
         GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
     end)
 end
+
+-------------------------------------------------------------------------------
+-- Debugger tools
+-------------------------------------------------------------------------------
+
+function ButtonOnFlyoutMenu:printDebugDetails(event)
+    local t = self:GetAttribute("type")
+    local key = self:GetAttribute("UFO_KEY")
+    local val = self:GetAttribute("UFO_VAL")
+
+    zebug.warn:event(event):name("details"):owner(self):print("SEC key",key, "SEC val",val)
+end
+
+-------------------------------------------------------------------------------
+-- Awesome toString() magic
+-------------------------------------------------------------------------------
+
+function ButtonOnFlyoutMenu:toString()
+    local btnDef = self:getDef()
+    if btnDef then
+        return string.format("<BOFM: %s:%s>", nilStr(btnDef.type), nilStr(btnDef.name))
+    else
+        return "<BOFM: EMPTY>"
+    end
+end
+
 
 -------------------------------------------------------------------------------
 -- OVERRIDES of

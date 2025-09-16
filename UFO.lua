@@ -10,7 +10,7 @@
 ---@field iconTexture string Ufo.toc IconTexture
 ---@field thatWasMeThatDidThatMacro boolean flag used to stop event handler responses to UFO actions related to macros
 ---@field droppedPlaceholderOntoActionBar boolean flag used to stop event handler responses to UFO actions related to drag and drop
----@field pickedUpBtn table table of data for a UFO on the mouse cursor
+---@field pickedUpBtn ButtonDef data for the UFO button on the mouse cursor
 ---@field germLock Event flag to lock out any simultaneous germ events
 ---@field hasShitCalmedTheFuckDown boolean all the loading sequences and initialization chaos is done and the Bliz APIs will provide reliable info (HA!)
 
@@ -101,7 +101,7 @@ function EventHandlers:ACTIVE_TALENT_GROUP_CHANGED(unreliableSpecId, eName, n)
             zebug.warn:name("handler"):event(event):print("Applying...")
             GermCommander:changeSpec(event)
         else
-            zebug.error:name("handler"):event(event):print("Erroneous or duplicate event.  Ignoring.  KTHXBAI!")
+            zebug.info:name("handler"):event(event):print("Erroneous or duplicate event.  Ignoring.  KTHXBAI!")
         end
     end)
 
