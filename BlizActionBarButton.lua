@@ -194,9 +194,16 @@ end
 
 ---@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
 ---@return boolean true if the btn contains a UfoProxy
-function BabbClass:isUfoProxy(btnSlotIndex)
+function BabbClass:isUfoProxyForFlyout(btnSlotIndex)
     local btn = self:getLiteralBlizBtn(btnSlotIndex)
-    return UfoProxy:isOnBtn(btn)
+    return UfoProxy:isOnBtn(btn) and UfoProxy:getFlyoutId()
+end
+
+---@param btnSlotIndex number|nil required only during a class invocation and not via an instance which would already know its btnSlotIndex
+---@return boolean true if the btn contains a UfoProxy
+function BabbClass:isUfoProxyForButton(btnSlotIndex)
+    local btn = self:getLiteralBlizBtn(btnSlotIndex)
+    return UfoProxy:isOnBtn(btn) and UfoProxy:isButtonProxy()
 end
 
 function BabbClass:isUfoPlaceholder(btnSlotIndex, event)
@@ -237,8 +244,12 @@ function BabbInstance:getBtnSlotIndex()
     return self.btnSlotIndex
 end
 
-function BabbInstance:isUfoProxy()
-    return UfoProxy:isOnBtn(self)
+function BabbInstance:isUfoProxyForFlyout()
+    return UfoProxy:isOnBtn(self) and UfoProxy:getFlyoutId()
+end
+
+function BabbInstance:isUfoProxyForButton()
+    return UfoProxy:isOnBtn(self) and UfoProxy:isButtonProxy()
 end
 
 function BabbInstance:isUfoPlaceholder(event)
@@ -277,7 +288,7 @@ function BabbInstance:toString()
             local blizType, blizId = self:getTypeAndId()
             if blizType == ButtonType.MACRO then
                 if blizId == UfoProxy:getMacroId() then
-                    name = "UfoProxy: ".. (UfoProxy:getFlyoutName() or "UnKnOwN")
+                    name = UfoProxy:toString() -- "UfoProxy: ".. (UfoProxy:getFlyoutName() or UfoProxy:getButtonName() or UNKNOWN)
                 elseif Placeholder:isOn(self, "BlizActionBarButton:toString()") then
                     name = "Placeholder"
                 end

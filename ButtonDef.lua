@@ -174,7 +174,7 @@ function ButtonDef:setIdAndType(id, type)
             self.petSpellId = id
         end
     else
-        zebug.error:owner(self):print("Sorry, I don't recognize this type of button:", type)
+        zebug.warn:owner(self):print("Sorry, I don't recognize this type of button:", type)
         Ufo.unknownType = type or "UnKnOwN"
         type = nil
         self = nil
@@ -276,7 +276,7 @@ function ButtonDef:isUsable()
     elseif t == ButtonType.MACRO then
         zebug.trace:owner(self):print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
         isUsable = isMacroGlobal(self.macroId) or getIdForCurrentToon() == self.macroOwner
-        err = x or (L10N.NOT_MACRO_OWNER .. " " .. (self.macroOwner or L10N.UNKNWOWN))
+        err = isUsable or (L10N.NOT_MACRO_OWNER .. " " .. (self.macroOwner or L10N.UNKNOWN))
         if not isUsable then
             zebug.info:owner(self):print("macroId",self.macroId, "isUsable",isUsable, "err", err)
         end
@@ -288,9 +288,10 @@ function ButtonDef:isUsable()
     end
 end
 
+--[[
 local ICON_CACHE = {}
 
-function cacheIcon(type, id, icon)
+function ButtonDef:cacheIcon(type, id, icon)
     if not ICON_CACHE[type] then
         ICON_CACHE[type] = {}
     end
@@ -302,13 +303,14 @@ function getIconFromCache(type, id)
     if not ICON_CACHE[type] then return nil end
     return ICON_CACHE[type][id]
 end
+]]
 
 function ButtonDef:getIcon()
     local t = self.type
     local id = self:getIdForBlizApi()
 
-    local icon = getIconFromCache(t, id)
-    if icon then return icon end
+    local icon -- = getIconFromCache(t, id)
+    -- if icon then return icon end
 
     if t == ButtonType.SPELL or t == ButtonType.MOUNT or t == ButtonType.PSPELL then
         icon = C_Spell.GetSpellTexture(id)
@@ -328,11 +330,11 @@ function ButtonDef:getIcon()
         icon = BrokenPetCommand[self.brokenPetCommandId].icon
     elseif t == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT then
         icon = BlizApiFieldDef[t].icon
+        id = t
     end
 
-    cacheIcon(t, id, icon)
+    --self:cacheIcon(t, id, icon)
     return icon
-
 end
 
 function ButtonDef:getName()
@@ -371,7 +373,7 @@ function ButtonDef:getName()
     elseif t == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT then
         self.name = BlizApiFieldDef[t].name
     else
-        zebug.warn:print("Unknown type:",t)
+        zebug.info:print("Unknown type:",t)
     end
 
     return self.name
@@ -477,14 +479,21 @@ end
 -- TODO: fixx bug - doesn't understand Bliz flyouts such as Dragon Riding
 -- TODO: consolidate / integrate with BlizActionBarButton:get()
 ---@return ButtonDef
-function ButtonDef:getFromCursor(event)
+function ButtonDef:getFromCursor(event, silenceWarnings)
     local type, c1, c2, c3 = GetCursorInfo() -- c1 is usually the ID; c2 is sometimes a tooltip;
     zebug.info:event(event):owner(self):print("type",type, "c1",c1, "c2",c2, "c3",c3)
 
+    local shhh = silenceWarnings and zebug.info or zebug.warn
+
     if not type then
         Ufo.pickedUpBtn = nil
-        zebug.info:event(event):owner(self):print("Empty cursor is empty")
-        return
+        shhh:event(event):owner(self):print("Empty cursor is empty")
+        return nil
+    end
+
+    if UfoProxy:isButtonOnCursor(type, c1, c2, c3) then
+        shhh:event(event):owner(Ufo.pickedUpBtn):print("Ufo.pickedUpBtn")
+        return Ufo.pickedUpBtn
     end
 
     local btnDef = ButtonDef:new()
@@ -499,7 +508,7 @@ function ButtonDef:getFromCursor(event)
         if Ufo.pickedUpBtn then
             btnDef = Ufo.pickedUpBtn
         else
-            zebug.error:event(event):owner(self):print("Sorry, the Blizzard API provided bad data for this mount.")
+            shhh:event(event):owner(self):print("Sorry, the Blizzard API provided bad data for this mount.")
         end
     elseif type == ButtonType.MOUNT then
         local mountId, mountIndex = c1, c2
@@ -537,7 +546,7 @@ function ButtonDef:getFromCursor(event)
             btnDef.petSpellId = c1
         end
     else
-        zebug.error:event(event):owner(self):print("Sorry, I don't recognize this type of button:", type)
+        shhh:event(event):owner(self):print("Sorry, I don't recognize this type of button:", type)
         Ufo.unknownType = type or "UnKnOwN"
         type = nil
         btnDef = nil
@@ -563,17 +572,32 @@ end
 function ButtonDef:pickupToCursor(event)
     local type = self.type
     local id = self:getIdForBlizApi()
-    local pickup = BlizApiFieldDef[type].pickerUpper
+    local cursor, isOk, err
     Ufo.pickedUpBtn = self
 
-    zebug.trace:event(event):owner(self):print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId, "pickup", pickup, "PickupSpell",PickupSpell)
+    zebug.trace:event(event):owner(self):print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId)
 
-    local isOk, err = pcall( function()  pickup(id) end  )
+    if self:canThisToonPickup() then
+        local pickup = BlizApiFieldDef[type].pickerUpper
+        isOk, err = pcall(function() pickup(id) end)
+    else
+        cursor = UfoProxy:pickupButtonDefOntoCursor(self, event)
+        isOk = cursor and true or false
+        err = isOk and "A-OK" or "couldn't transform myself into a UfoProxy"
+    end
+
     if isOk then
         zebug.info:event(event):owner(self):print("grabbed id", id)
     else
-        zebug.error:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
+        shhh:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
     end
+
+    return isOk
+end
+
+function ButtonDef:canThisToonPickup()
+    local canPickup = self:isUsable() or ButtonType.ITEM == self.type
+    return canPickup
 end
 
 ---@return ButtonType typeOfAction - what kind of action is performed by the btn

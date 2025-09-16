@@ -1,5 +1,5 @@
 -- UfoProxy
--- manages the special macro that acts as a UFO on the mouse pointer
+-- manages the special macro that acts as a UFO or ButtonDef on the mouse pointer
 
 -------------------------------------------------------------------------------
 -- Module Loading
@@ -44,7 +44,7 @@ function UfoProxy:getMacroId()
 end
 
 ---@param thing UfoMixIn
----@return boolean true if there is a UfoProxy on the thing
+---@return boolean true if there is a FLYOUT UfoProxy on the thing
 function UfoProxy:isOn(thing)
     if not thing then
         return false
@@ -53,7 +53,7 @@ function UfoProxy:isOn(thing)
     elseif thing:isA(ButtonDef) then
         return self:isOnBtnDef(thing)
     elseif thing:isA(Cursor) then
-        return self:isOnCursor(thing)
+        return self:isFlyoutOnCursor(thing)
     else
         -- maybe it's a Blizzard ActionBarActionButtonMixin
         return self:isOnBtn(thing)
@@ -108,11 +108,33 @@ end
 
 ---@param cursor Cursor
 ---@return FlyoutDef
-function UfoProxy:isOnCursor(cursor)
+function UfoProxy:isFlyoutOnCursor(cursor)
     if not cursor then
         cursor = Cursor:get()
     end
     return (cursor.type == ButtonType.MACRO) and (cursor.id == self:getMacroId()) and self:getFlyoutDef()
+end
+
+---@return ButtonDef
+---@param type string | nil
+---@param macroId string | nil
+function UfoProxy:isButtonOnCursor(type, macroId)
+    -- avoid potential ButtonDef -> Cursor -> ButtonDef
+    if not type or macroId then
+        type, macroId = GetCursorInfo()
+    end
+
+    return (type == ButtonType.MACRO) and (macroId == self:getMacroId()) and self:isButtonProxy() and Ufo.pickedUpBtn
+end
+
+function UfoProxy:isButtonProxy()
+    local _, _, body = GetMacroInfo(PROXY_MACRO_NAME)
+    return body and body == BTN_PROXY
+end
+
+---@return string
+function UfoProxy:getButtonName()
+    return self:isButtonProxy() and Ufo.pickedUpBtn and Ufo.pickedUpBtn:getName()
 end
 
 ---@return string
@@ -131,7 +153,7 @@ end
 
 function UfoProxy:getFlyoutId()
     local _, _, body = GetMacroInfo(PROXY_MACRO_NAME)
-    if body then
+    if body and body ~= BTN_PROXY then
         self.flyoutId = body
     end
     return self.flyoutId
@@ -139,7 +161,6 @@ end
 
 function UfoProxy:put(btnSlotIndex, event)
     if self:isOnBtnSlot(btnSlotIndex) then return end
-
 end
 
 ---@param flyoutId number
@@ -147,11 +168,39 @@ end
 ---@return Cursor
 function UfoProxy:pickupUfoOntoCursor(flyoutId, event)
     if isInCombatLockdown("Drag and drop") then return end
-    self.flyoutId = flyoutId
 
+    self.flyoutId = flyoutId
     local flyoutConf = FlyoutDefsDb:get(flyoutId)
     local macroText = flyoutId
     local icon = flyoutConf:getIcon() or DEFAULT_ICON
+
+    return self:putProxyMacroOnCursor(icon, macroText, event)
+end
+
+---@param btnDef ButtonDef
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+---@return Cursor
+function UfoProxy:pickupButtonDefOntoCursor(btnDef, event)
+    if isInCombatLockdown("Drag and drop") then return end
+
+    local macroText = BTN_PROXY
+    local icon = btnDef:getIcon() or DEFAULT_ICON
+
+    local cursor = self:putProxyMacroOnCursor(icon, macroText, event)
+    if cursor then
+        zebug.info:event(event):owner(btnDef):print("YAY for pickup! icon", icon, "macroText",macroText)
+    else
+        zebug.info:event(event):owner(btnDef):print("FAILED to pickup! icon", icon, "macroText",macroText)
+    end
+
+    return cursor
+end
+
+---@return Cursor
+---@param icon number|string
+---@param macroText string
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+function UfoProxy:putProxyMacroOnCursor(icon, macroText, event)
     if isString(icon) then
         local isOk, err = pcall( function()
             local prefix = string.sub(icon, 1, string.len(DEFAULT_ICON_PRE_PATH))
@@ -209,10 +258,10 @@ function UfoProxy:delayedAsyncDeleteProxyIfNotOnCursor(event, timeToGo)
     else
         local cursor = Cursor:get()
         if self:exists() then
-            if self:isOnCursor() then
+            if self:isFlyoutOnCursor() or self:isButtonOnCursor() then
                 zebug.info:event(event):owner(cursor):print("It's on the cursor.  Exit and defer to the next CURSOR_CHANGED.")
             else
-                zebug.info:event(event):owner(cursor):print("Not on cursor!  Safe to kill!  DIE PROXY !!!")
+                zebug.info:event(event):owner(cursor):print("Not on cursor!  Safe to kill!  DIE PROXY !!! self:isButtonOnCursor()",self:isButtonOnCursor())
                 self:deleteProxyMacro(event)
             end
         end
@@ -220,7 +269,7 @@ function UfoProxy:delayedAsyncDeleteProxyIfNotOnCursor(event, timeToGo)
 end
 
 function UfoProxy:toString()
-    local name = self:getFlyoutName() or "nope"
+    local name = self:getFlyoutName() or self:getButtonName() or "nope"
     return string.format("<UfoProxy: %s>", name)
 end
 

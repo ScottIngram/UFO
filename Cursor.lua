@@ -69,7 +69,7 @@ function Cursor:get()
 
     if type then
         -- this is kind of expensive... maybe reconsider
-        local b = ButtonDef:getFromCursor("rando")
+        local b = ButtonDef:getFromCursor("rando", "silence")
         self.name = b and b:getName()
     end
 
@@ -216,18 +216,16 @@ function Cursor:isUfoPlaceholder()
 end
 
 ---@return FlyoutDef
-function Cursor:isUfoProxy()
+function Cursor:isUfoProxyForFlyout()
     self = self:asInstance()
     zebug.trace:print("type", self.type, "id", self.id)
-    return UfoProxy:isOnCursor(self)
---[[
-    if self.type == ButtonType.MACRO then
-        local name, texture, body = GetMacroInfo(self.id)
-        zebug.trace:print("name",name)
-        return (name == PROXY_MACRO_NAME) and body
-    end
-    return nil
-]]
+    return UfoProxy:isFlyoutOnCursor(self)
+end
+
+---@return ButtonDef
+function Cursor:isUfoProxyForButton()
+    self = self:asInstance()
+    return UfoProxy:isButtonOnCursor()
 end
 
 function Cursor:clearCache(event)

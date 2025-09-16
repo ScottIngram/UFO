@@ -173,7 +173,7 @@ function Catalog:update(event)
     local selectedIdx = scrollPane.selectedIdx
 
     --local flyoutIdOnTheMouse = GermCommander:getFlyoutIdFromCursor()
-    local flyoutDefOnTheMouse = UfoProxy:isOnCursor()
+    local flyoutDefOnTheMouse = UfoProxy:isFlyoutOnCursor()
     local isDragging = flyoutDefOnTheMouse and btnUnderTheMouse
     local hoverIndex = isDragging and tonumber(btnUnderTheMouse.flyoutIndex) -- this can be nil if hovering over the Add+ button
 
@@ -379,7 +379,7 @@ end
 -- TODO - handle the hover glow here and not in the update() routine
 function GLOBAL_UFO_CatalogEntry_OnEnter(btnInCatalog)
     local event = Event:new(btnInCatalog, "CatalogEntry_OnEnter")
-    local flyoutDef = UfoProxy:isOnCursor()
+    local flyoutDef = UfoProxy:isFlyoutOnCursor()
 
     if flyoutDef then
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
@@ -485,7 +485,7 @@ function GLOBAL_UFO_CatalogEntryButton_OnClick(btnInCatalog, mouseClick, down)
         Catalog:selectRow(nil, event)
         IconPicker:open()
     elseif LANDING_BUTTON_NAME == btnInCatalog.name then
-        local flyoutDefOnTheCursor = UfoProxy:isOnCursor()
+        local flyoutDefOnTheCursor = UfoProxy:isFlyoutOnCursor()
         local isDragging = flyoutDefOnTheCursor and btnUnderTheMouse
         zebug.info:event(event):name("GLOBAL_UFO_CatalogEntryButton_OnClick"):print("on cursor", flyoutDefOnTheCursor, "isDragging",isDragging)
         FlyoutDefsDb:move(flyoutDefOnTheCursor.id, btnInCatalog.flyoutIndex)
@@ -530,10 +530,10 @@ end
 
 function GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow(btn)
     zebug.info:newEvent(btn,"CatalogEntryButtonsMouseOver_OnShow"):name("CatalogEntryButtonsMouseOver_OnShow"):print("btn",btn:GetName())
-    if UfoProxy:isOnCursor() then
+    if UfoProxy:isFlyoutOnCursor() then
         btn:Hide()
     else
-        Catalog:update(event)
+        Catalog:update("catalog-on-btn-mouse-over")
     end
 end
 
