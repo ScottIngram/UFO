@@ -23,7 +23,7 @@ ButtonType = {
     PSPELL = "petaction",
     BROKENP = "brokenPetCommand",
     SNAFU = "companion",
-    SUMMON_RANDOM_FAVORITE_MOUNT = "SummonRandomFavoriteMount"
+    SUMMON_RANDOM_FAVORITE_MOUNT = "summonmount"
 }
 
 -------------------------------------------------------------------------------
@@ -50,6 +50,7 @@ BlizApiFieldDef = {
 
     [ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT] = {
         pickerUpper = function() C_MountJournal.Pickup(0)  end,
+        key = "id",
         typeForBliz = ButtonType.MOUNT,
         icon = 413588,
         name = MOUNT_JOURNAL_SUMMON_RANDOM_FAVORITE_MOUNT, -- I18N global defined by Bliz
@@ -519,6 +520,7 @@ function ButtonDef:getFromCursor(event, silenceWarnings)
         -- the Bliz API treats the SUMMON_RANDOM_FAVORITE_MOUNT as index 0
         if mountIndex == 0 then
             btnDef.type = ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT
+            btnDef.id = ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT
         end
     elseif type == ButtonType.ITEM then
         btnDef.itemId = c1

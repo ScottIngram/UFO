@@ -149,6 +149,10 @@ function Button_Mixin:updateCooldown(event)
     local spellId = btnDef and btnDef.spellId
     zebug.trace:event(event):owner(self):print("type",type, "itemId",itemId, "spellId",spellId)
 
+    if type == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT then
+        return
+    end
+
     if exists(spellId) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
         zebug.trace:event(event):owner(self):print("spellId",spellId)
