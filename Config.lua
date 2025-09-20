@@ -20,12 +20,23 @@ MouseClick = Ufo.MouseClick
 ---@field keybindBehavior GermClickBehavior when a keybind is activated, it will perform this action
 ---@field doKeybindTheButtonsOnTheFlyout boolean when a UFO is open, are its buttons bound to number keys?
 ---@field muteLogin boolean don't print out status messages on log in
+---@field primaryButtonIs PrimaryButtonIs which button is considered "primary"
 Options = { }
 
 ---@class Config -- IntelliJ-EmmyLua annotation
 ---@field opts Options
 ---@field optDefaults Options
 Config = { }
+
+-------------------------------------------------------------------------------
+-- Enums
+-------------------------------------------------------------------------------
+
+---@class PrimaryButtonIs
+PrimaryButtonIs = {
+    FIRST  = "FIRST",
+    RECENT = "RECENT",
+}
 
 -------------------------------------------------------------------------------
 -- Data
@@ -41,12 +52,13 @@ function Config:getOptionDefaults()
         hideCooldownsWhen = 99999,
         keybindBehavior = GermClickBehavior.OPEN,
         doKeybindTheButtonsOnTheFlyout = true,
+        primaryButtonIs = PrimaryButtonIs.FIRST,
         clickers = {
             flyouts = {
                 default = {
                     [MouseClick.ANY]    = GermClickBehavior.OPEN,
                     [MouseClick.LEFT]   = GermClickBehavior.OPEN,
-                    [MouseClick.RIGHT]  = GermClickBehavior.FIRST_BTN,
+                    [MouseClick.RIGHT]  = GermClickBehavior.PRIME_BTN,
                     [MouseClick.MIDDLE] = GermClickBehavior.RANDOM_BTN,
                     [MouseClick.FOUR]   = GermClickBehavior.CYCLE_ALL_BTNS,
                     [MouseClick.FIVE]   = GermClickBehavior.OPEN, -- REVERSE_CYCLE_ALL_BTNS,
@@ -82,13 +94,18 @@ local function initializeOptionsMenu()
             -------------------------------------------------------------------------------
 
             helpText = {
-                order = 5,
+                order = 100,
                 type = 'description',
                 fontSize = "small",
-                name = "(Shortcut: Right-click the [UFO] button to open this config menu.)\n\n",
+                name = [=[
+(Shortcut: Right-click the [UFO] button to open this config menu.)
+
+]=] .. Ufo.myTitle .. [=[ lets you create custom flyout menus which you can place on your action bars and include any arbitrary buttons of your choosing (spells, macros, items, pets, mounts, etc.) all with standard drag and drop.
+
+]=]
             },
             doCloseOnClick = {
-                order = 10,
+                order = 110,
                 name = "Auto-Close UFO",
                 desc = "Closes the UFO after clicking any of its buttons",
                 width = "medium",
@@ -102,7 +119,7 @@ local function initializeOptionsMenu()
                 end,
             },
             doMute = {
-                order = 12,
+                order = 120,
                 name = "Mute Login Messages",
                 desc = "Don't print out Addon info during login.",
                 width = "medium",
@@ -114,93 +131,173 @@ local function initializeOptionsMenu()
                     return opts.muteLogin
                 end,
             },
---[[
-            hideCooldownsWhen = {
-                hidden = true, -- this is too nitty gritty
-                order = 20,
-                name = "Hide Long Cooldowns",
-                desc = "When configured with a '?' icon, a UFO on the action bar displays its first button including its cooldown.  This option will hide the cooldown if it's longer than X seconds.",
-                width = "double",
-                type = "range",
-                min = 1,
-                max = 99999,
-                softMax = 9999,
-                step = 1,
-                set = function(optionsMenu, val)
-                    opts.hideCooldownsWhen = val
-                    GermCommander:throttledUpdateAllSlots("user-config-hideCooldownsWhen") -- change to updateAllGerms
-                end,
-                get = function()
-                    return opts.hideCooldownsWhen or 1
-                end,
+
+
+
+            -------------------------------------------------------------------------------
+            -- Define Primary
+            -------------------------------------------------------------------------------
+
+            divHeader = {
+                order = 200,
+                name = "",
+                type = 'header',
             },
-]]
+
+            primaryButtonIsGroup = {
+                order = 210,
+                name = 'The "Primary Button"',
+                type = "group",
+                inline = true,
+                args = {
+                    helpPrim = {
+                        order = 210,
+                        type = 'description',
+                        name = [=[
+One button on the UFO is "Primary," is shown on the actionbar, and can be clicked without necessarily opening the UFO.  By default, the first button on the UFO is its primary.  Alternatively, whenever you use a button it would become the new primary.
+
+]=]
+                    },
+
+                    primaryButtonIsMenu = {
+                        order = 220,
+                        name = 'The "Primary" Button is...',
+                        desc = 'Which button of the flyout should be considered its "Primary" button?',
+                        width = "double",
+                        type = "select",
+                        style = "dropdown",
+                        values = {
+                            [PrimaryButtonIs.FIRST]  = "First Button, Always",
+                            [PrimaryButtonIs.RECENT] = "Most Recently Used",
+                        },
+                        sorting = {PrimaryButtonIs.FIRST, PrimaryButtonIs.RECENT},
+                        set = function(optionsMenu, val)
+                            opts.primaryButtonIs = val
+                            zebug.info:name("opt:primaryButtonIs()"):print("new val",val)
+                            GermCommander:applyConfigForPrimaryButtonIs("config_delta_prime")
+                        end,
+                        get = function()
+                            return Config:get("primaryButtonIs")
+                        end,
+                    },
+                },
+            },
+
+
+
+
+            -------------------------------------------------------------------------------
+            -- Mouse Click opts
+            -------------------------------------------------------------------------------
+
+            mouseClickGroup = {
+                order = 320,
+                name = "Mouse Buttons",
+                type = "group",
+                inline = true, -- set this to false to enable multiple configs, one per flyout.
+                args = {
+                    mouseClickGroupHelp = {
+                        order = 1,
+                        type = 'description',
+                        name = [=[
+You can choose a different action for each mouse button when it clicks on a UFO.
+
+]=]
+                    },
+
+                    leftBtn   = includeMouseButtonOpts(MouseClick.LEFT),
+                    middleBtn = includeMouseButtonOpts(MouseClick.MIDDLE),
+                    rightBtn  = includeMouseButtonOpts(MouseClick.RIGHT),
+                    fourBtn   = includeMouseButtonOpts(MouseClick.FOUR),
+                    fiveBtn   = includeMouseButtonOpts(MouseClick.FIVE),
+
+                    excluderHelpText = {
+                        order = 100,
+                        type = 'description',
+                        fontSize = "small",
+                        name = [[
+
+Tip: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions.
+]],
+                    },
+                },
+            },
+
+
 
             -------------------------------------------------------------------------------
             -- Keybinds
             -------------------------------------------------------------------------------
 
-            keybindBehavior = {
-                order = 25,
-                name = "Keybind's Action",
-                desc = "A UFO on an actionbar button will respond to any keybinding you've given that button.  Choose what the keybind does:",
-                width = "double",
-                type = "select",
-                style = "dropdown",
-                values = includeGermClickBehaviors(),
-                sorting = includeGermClickBehaviorSorting(),
-                set = function(_, behavior)
-                    local isDiff = opts.keybindBehavior ~= behavior
-                    opts.keybindBehavior = behavior
-                    if isDiff then
-                        GermCommander:updateAllKeybindBehavior("Config-ObeyBtnSlotKeybind")
-                    end
-                end,
-                get = function()
-                    return opts.keybindBehavior or Config.optDefaults.keybindBehavior
-                end,
-            },
-            hotkeyWhenOpen = {
-                order = 26,
-                name = "Hot Key the Buttons",
-                desc = "While open, assign keys 1 through 9 and 0 to the first 10 buttons on the UFO.",
-                width = "double",
-                type = "select",
-                style = "dropdown",
-                values = {
-                    [true] = "Bind each button to a number (Escape to close).",
-                    [false] = "An open UFO won't intercept key presses.",
+            keybindGroup = {
+                order = 400,
+                name = "Keybinding Behavior",
+                type = "group",
+                inline = true, -- set this to false to enable multiple configs, one per flyout.
+                args = {
+                    mkeybindHelp = {
+                        order = 10,
+                        type = 'description',
+                        name = [=[
+UFOs on the action bars support keybindings.  Buttons on UFOs can be configured to also have keybindings.
+]=]
+                    },
+
+                    keybindBehavior = {
+                        order = 20,
+                        name = "Actionbar Keybinding",
+                        desc = "A UFO on an actionbar button will respond to any keybinding you've given that button.  Choose what the keybind does:",
+                        width = "double",
+                        type = "select",
+                        style = "dropdown",
+                        values = includeGermClickBehaviors(),
+                        sorting = includeGermClickBehaviorSorting(),
+                        set = function(_, behavior)
+                            local isDiff = opts.keybindBehavior ~= behavior
+                            opts.keybindBehavior = behavior
+                            if isDiff then
+                                GermCommander:updateAllKeybindBehavior("Config-ObeyBtnSlotKeybind")
+                            end
+                        end,
+                        get = function()
+                            return opts.keybindBehavior or Config.optDefaults.keybindBehavior
+                        end,
+                    },
+                    hotkeyWhenOpen = {
+                        order = 30,
+                        name = "Hot Key the Buttons",
+                        desc = "While open, assign keys 1 through 9 and 0 to the first 10 buttons on the UFO.",
+                        width = "double",
+                        type = "select",
+                        style = "dropdown",
+                        values = {
+                            [true] = "Bind each button to a number (Escape to close).",
+                            [false] = "An open UFO won't intercept key presses.",
+                        },
+                        set = function(_, doKeybindTheButtonsOnTheFlyout)
+                            opts.doKeybindTheButtonsOnTheFlyout = doKeybindTheButtonsOnTheFlyout
+                            GermCommander:applyConfigForBindTheButtons("Config-doKeybindTheButtonsOnTheFlyout")
+                        end,
+                        get = function()
+                            return Config:get("doKeybindTheButtonsOnTheFlyout")
+                        end,
+                    },
                 },
-                set = function(_, doKeybindTheButtonsOnTheFlyout)
-                    opts.doKeybindTheButtonsOnTheFlyout = doKeybindTheButtonsOnTheFlyout
-                    GermCommander:applyConfigForBindTheButtons("Config-doKeybindTheButtonsOnTheFlyout")
-                end,
-                get = function()
-                    return Config:get("doKeybindTheButtonsOnTheFlyout")
-                end,
             },
 
-            excluderHelpText = {
-                order = 28,
-                type = 'description',
-                fontSize = "small",
-                name = [[
 
-Tip: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions.
-]],
-            },
 
             -------------------------------------------------------------------------------
             -- Place Holder options
             -------------------------------------------------------------------------------
 
             placeHoldersHeader = {
-                order = 30,
+                order = 500,
                 name = "PlaceHolder Macros VS Edit Mode Config",
                 type = 'header',
             },
             helpTextForPlaceHolders = {
-                order = 40,
+                order = 510,
                 type = 'description',
                 name = [=[
 Each UFO placed onto an action bar has a special macro (named "]=].. Ufo.PLACEHOLDER_MACRO_NAME ..[=[") to hold its place as a button and ensure the UI renders it.
@@ -209,7 +306,7 @@ You may disable placeholder macros, but, doing so will require extra UI configur
 ]=]
             },
             usePlaceHolders = {
-                order = 41,
+                order = 520,
                 name = "Choose your workaround:",
                 desc = "Because UFOs aren't spells or items, when they are placed into an action bar slot, the UI thinks that slot is empty and doesn't render the slot by default.",
                 width = "full",
@@ -224,7 +321,7 @@ You may disable placeholder macros, but, doing so will require extra UI configur
                     opts.usePlaceHolders = val
                     zebug.info:name("opt:usePlaceHolders()"):print("new val",val)
                     if val then
-                        GermCommander:ensureAllGermsHavePlaceholders("config_delta")
+                        GermCommander:ensureAllGermsHavePlaceholders("config_delta_ph")
                     else
                         Config:deletePlaceholder()
                     end
@@ -232,39 +329,6 @@ You may disable placeholder macros, but, doing so will require extra UI configur
                 get = function()
                     return opts.usePlaceHolders
                 end,
-            },
-
-
-            -------------------------------------------------------------------------------
-            -- Mouse Click opts
-            -------------------------------------------------------------------------------
-
-            mouseClickGroupHeader = {
-                order = 100,
-                name = "Mouse Buttons",
-                type = 'header',
-            },
-            mouseClickGroupHelp = {
-                order = 110,
-                type = 'description',
-                name = [=[
-
-You can choose a different action for each mouse button when it clicks on a UFO.
-
-]=]
-            },
-            mouseClickGroup = {
-                order = 120,
-                name = "Mouse Buttons",
-                type = "group",
-                inline = true, -- set this to false to enable multiple configs, one per flyout.
-                args = {
-                    leftBtn   = includeMouseButtonOpts(MouseClick.LEFT),
-                    middleBtn = includeMouseButtonOpts(MouseClick.MIDDLE),
-                    rightBtn  = includeMouseButtonOpts(MouseClick.RIGHT),
-                    fourBtn   = includeMouseButtonOpts(MouseClick.FOUR),
-                    fiveBtn   = includeMouseButtonOpts(MouseClick.FIVE),
-                },
             },
         },
     }
@@ -290,7 +354,7 @@ local mouseButtonName = {
 ---@param click MouseClick
 function includeMouseButtonOpts(mouseClick)
     local opts = Config.opts
-    mouseButtonOptsOrder = mouseButtonOptsOrder + 1
+    mouseButtonOptsOrder = mouseButtonOptsOrder + 10
     return {
         order = mouseButtonOptsOrder,
         name = mouseButtonName[mouseClick],
@@ -321,8 +385,7 @@ function includeGermClickBehaviors()
     if not INCLUDE_GERM_CLICK_BEHAVIORS then
         INCLUDE_GERM_CLICK_BEHAVIORS = {
             [GermClickBehavior.OPEN]           = zebug.info:colorize("Open") .." the flyout",
-            [GermClickBehavior.FIRST_BTN]      = "Trigger the ".. zebug.info:colorize("first") .." button of the flyout",
-            [GermClickBehavior.RECENT_BTN]      = "Trigger the most ".. zebug.info:colorize("recent") .." button clicked.",
+            [GermClickBehavior.PRIME_BTN]      = "Trigger the ".. zebug.info:colorize("primary") .." button of the flyout",
             [GermClickBehavior.RANDOM_BTN]     = "Trigger a ".. zebug.info:colorize("random") .." button of the flyout",
             [GermClickBehavior.CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle") .." through each button of the flyout",
             --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle backwards") .." through each button of the flyout",
@@ -336,8 +399,7 @@ function includeGermClickBehaviorSorting()
     local sorting = {
         --"default", -- will be useful if I implement each FlyoutId having its own config
         GermClickBehavior.OPEN,
-        GermClickBehavior.FIRST_BTN,
-        GermClickBehavior.RECENT_BTN,
+        GermClickBehavior.PRIME_BTN,
         GermClickBehavior.RANDOM_BTN,
         GermClickBehavior.CYCLE_ALL_BTNS,
         --GermClickBehavior.REVERSE_CYCLE_ALL_BTNS,
@@ -375,14 +437,42 @@ function Config:setClickBehavior(flyoutId, mouseClick, behavior)
     clickOpts[mouseClick] = behavior
 end
 
+function Config:isPrimeDefinedAsRecent()
+    return Config:get("primaryButtonIs") == PrimaryButtonIs.RECENT
+end
+
+function Config:isPrimeDefinedAsFirst()
+    return Config:get("primaryButtonIs") == PrimaryButtonIs.FIRST
+end
+
 function Config:isAnyClickerUsingRecent(flyoutId)
+    local prime_is_defined_as_recent = Config:get("primaryButtonIs") == PrimaryButtonIs.RECENT
+    if not prime_is_defined_as_recent then
+        return false
+    end
+
     if isUsingRecent == nil then
         local clickOpts = Config.opts.clickers.flyouts[flyoutId] or Config.opts.clickers.flyouts.default
         for k, v in pairs(MouseClick) do
-            if clickOpts[v] == GermClickBehavior.RECENT_BTN then isUsingRecent = true end
+            if clickOpts[v] == GermClickBehavior.PRIME_BTN then isUsingRecent = true end
         end
     end
     return isUsingRecent
+end
+
+function Config:getPrimeClickers(flyoutId)
+    local primeClickers
+    local clickOpts = Config.opts.clickers.flyouts[flyoutId] or Config.opts.clickers.flyouts.default
+    for k, v in pairs(MouseClick) do
+        if clickOpts[v] == GermClickBehavior.PRIME_BTN then
+            if primeClickers == nil then
+                primeClickers = {}
+            end
+            primeClickers[#primeClickers +1] = v
+            zebug.info:print("isUsingRecent v",v)
+        end
+    end
+    return primeClickers
 end
 
 function Config:initializeOptionsMenu()

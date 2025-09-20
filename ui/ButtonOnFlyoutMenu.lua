@@ -288,10 +288,10 @@ function ButtonOnFlyoutMenu:initializeSecEnv()
     local flyoutMenu = self:getParent()
     local germ = flyoutMenu:getParent()
     --local promoter = germ.promoter
-    zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu,"promoter",promoter)
+    zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu)
 
     -- set attributes used inside the secure scripts
-    self:setSecEnvAttribute("DO_DEBUG", not zebug.error:isMute() )
+    self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:setSecEnvAttribute("UFO_NAME", self:getLabel())
     self:SetFrameRef("flyoutMenu", flyoutMenu)
     self:SetFrameRef("germ", germ)
@@ -335,27 +335,30 @@ function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
     local UFO_KEY = self:GetAttribute("UFO_KEY")
     local UFO_VAL = self:GetAttribute("UFO_VAL")
     local icon    = self:GetAttribute("UFO_ICON")
+    local isPrimeRecent = germ:GetAttribute("IS_PRIME_RECENT")
 
-    --[[DEBUG]] if doDebug and isClicked then
+    --[[DEBUG]] if doDebug then
     --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() germ",germ:GetAttribute("UFO_NAME"), "flyoutMenu",flyoutMenu:GetAttribute("UFO_NAME"),"germSignaler",germSignaler)
     --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isClicked",isClicked, "mouseClick",mouseClick, "UFO_KEY",UFO_KEY, "UFO_VAL",UFO_VAL)
     --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() icon",icon)
+    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isPrimeRecent",isPrimeRecent)
     --[[DEBUG]] end
 
     germ:SetAttribute("UFO_KEY", UFO_KEY)
     germ:SetAttribute("UFO_VAL", UFO_VAL)
 
+    -- when the Prime Button is clicked AND Prime is defined as "most recent"
     -- copy my behavior to the germ
-    -- TODO: configuration attribute / flag on the germ indicating this is the right thing
-    local isUseRecent = germ:GetAttribute("IS_USE_RECENT")
-    print ("IS_USE_RECENT",IS_USE_RECENT)
-    if isUseRecent then
-        -- find out which mouse clicks have the "use most recent" behavior
+    if isPrimeRecent then
+        -- find out which mouse clicks are assigned the "Primary Button" behavior
         for i = 1, 6 do
-            local flagName = "IS_USE_RECENT_" .. i
-            local flag = germ:GetAttribute(flagName)
-            print (flagName,flag)
-            if flag then
+            local flagNameForIsThisBtmPrime = "IS_A_PRIME_BTN_" .. i
+            local isThisBtmPrime = germ:GetAttribute(flagNameForIsThisBtmPrime)
+
+            --[[DEBUG]] if doDebug then print ("<DEBUG>", myName, flagNameForIsThisBtmPrime, isThisBtmPrime) end
+
+            if isThisBtmPrime then
+                -- Bliz nomenclature for "mouse click X" where x=[1,2,3...] which corresponds to left, right, middle...
                 local typeKey = "type"..i
                 local actionKey = UFO_KEY..i
                 germ:SetAttribute(typeKey, UFO_KEY)
@@ -363,15 +366,10 @@ function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
             end
         end
     end
-
-    --germSignal:SetAttribute("UFO_ICON", icon)
-    --germSignal:Hide()
-    --germSignal:Show()
 ]=]
     end
     return SEC_ENV_SCRIPT_FOR_ON_CLICK
 end
-
 
 -------------------------------------------------------------------------------
 -- XML Callbacks - see ui/ui.xml
@@ -426,6 +424,8 @@ end
 
 function ButtonOnFlyoutMenu:OnMouseDown()
     local flyoutMenu = self:GetParent()
+    if not flyoutMenu.isForGerm then return end
+
     ---@type GERM_TYPE
     local germ = flyoutMenu and flyoutMenu:GetParent()
     zebug.info:owner(self):event("OnMouseDown"):print("flyoutMenu",flyoutMenu, "germ",germ)

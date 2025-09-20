@@ -51,7 +51,7 @@ function FlyoutMenu:new(germ)
     -- but later, it will return the germ.  JFC.
     -- WORKAROUND - set the parent a SECOND time.  This one seems to stick.  FUCK YOU BLIZ.
     self:SetParent(germ)
-    self.GetParent = function() return germ end -- fuck you again, Bliz
+    self.GetParent = function() return germ end -- fuck you again, Bliz!
     self.getParent = self.GetParent
 
     self.isForGerm = true

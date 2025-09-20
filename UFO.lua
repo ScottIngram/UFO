@@ -94,11 +94,11 @@ EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttleAndNoQueue(0.125, "Ufo:
 
 function EventHandlers:ACTIVE_TALENT_GROUP_CHANGED(unreliableSpecId, eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    zebug.warn:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         local hasChanged = not Spec:hasCurrentSpecBeenApplied()
-        zebug.warn:name("handler"):event(event):print("An event reports a spec change.  Provided specId", unreliableSpecId, "previously applied spec was",Spec:getAppliedSpec(), "spec is now", Spec:getSpecId(), "hasChanged",hasChanged)
+        zebug.info:name("handler"):event(event):print("An event reports a spec change.  Provided specId", unreliableSpecId, "previously applied spec was",Spec:getAppliedSpec(), "spec is now", Spec:getSpecId(), "hasChanged",hasChanged)
         if hasChanged then
-            zebug.warn:name("handler"):event(event):print("Applying...")
+            zebug.info:name("handler"):event(event):print("Applying...")
             GermCommander:changeSpec(event)
         else
             zebug.info:name("handler"):event(event):print("Erroneous or duplicate event.  Ignoring.  KTHXBAI!")

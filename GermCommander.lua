@@ -141,6 +141,31 @@ end
 
 GermCommander.applyConfigForBindTheButtons = Pacifier:wrap(GermCommander.applyConfigForBindTheButtons, L10N.RECONFIGURE_FLYOUT_BUTTON_KEYBINDING)
 
+function GermCommander:applyConfigForPrimaryButtonIs(event)
+    -- no need to check that the value has actually changed.  The config module is good about invoking this call only on an actual change.
+    local isPrimeDefinedAsRecent = Config:isPrimeDefinedAsRecent()
+
+    ---@param germ Germ
+    self:forEachActiveGerm(function(germ)
+        germ:SetAttribute("IS_PRIME_RECENT", isPrimeDefinedAsRecent)
+        if not isPrimeDefinedAsRecent then
+            -- put the icon back to the default
+            germ:doIcon(event)
+            -- TODO restore 1st btn behavior for whichever MouseClick(s) is/are assigned "Primary"
+            local staleClickers = Config:getPrimeClickers(germ:getFlyoutId())
+            zebug.info:dumpy("staleClickers",staleClickers)
+            if staleClickers then
+                for i, mouseClick in ipairs(staleClickers) do
+                    zebug.info:print("i",i, "mouseClick",mouseClick)
+                    self:updateClickerForAllActiveGerms(mouseClick, event)
+                end
+            end
+        end
+    end, event)
+end
+
+GermCommander.applyConfigForPrimaryButtonIs = Pacifier:wrap(GermCommander.applyConfigForPrimaryButtonIs, L10N.RECONFIGURE_FLYOUT_BUTTON_KEYBINDING)
+
 ---@param mouseClick MouseClick
 function GermCommander:updateClickerForAllActiveGerms(mouseClick, event)
     -- can't modify the inactive germs because they have no flyoutId

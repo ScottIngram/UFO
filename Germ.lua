@@ -26,7 +26,6 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@field bbInfo table definition of the actionbar/button where the Germ lives
 ---@field visibleIf string for RegisterStateDriver -- uses macro-conditionals to control visibility automatically
 ---@field visibilityDriver string primarily for debugging
----@field promoter Frame a special child frame used by ButtonOnFlyoutMenu SecEnv to send combat-safe signals
 ---@field myName string duh
 ---@field label string human friendly identifier
 
@@ -42,9 +41,8 @@ GLOBAL_Germ = Germ
 ---@class GermClickBehavior
 GermClickBehavior = {
     OPEN = "OPEN",
-    FIRST_BTN = "FIRST_BTN",
+    PRIME_BTN = "PRIME_BTN",
     RANDOM_BTN = "RANDOM_BTN",
-    RECENT_BTN = "RECENT_BTN",
     CYCLE_ALL_BTNS = "CYCLE_ALL_BTNS",
     --REVERSE_CYCLE_ALL_BTNS = "REVERSE_CYCLE_ALL_BTNS",
 }
@@ -139,9 +137,9 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:copyDoCloseOnClickConfigValToAttribute()
     self:doMyKeybinding() -- bind me to my action bar slot's keybindings (if any)
 
-    -- TEMP hardcoded -
-    local isUsingRecent = Config:isAnyClickerUsingRecent(self.flyoutId)
-    self:SetAttribute("IS_USE_RECENT", isUsingRecent)
+    -- Initialize the Primary Button option
+    local isPrimeDefinedAsRecent = Config:isPrimeDefinedAsRecent()
+    self:SetAttribute("IS_PRIME_RECENT", isPrimeDefinedAsRecent)
 
     -- Blizz things
     ButtonStateBehaviorMixin.OnLoad(self)
@@ -697,16 +695,10 @@ function Germ:assignTheMouseClicker(mouseClick, behaviorName, event)
     zebug.info:owner(self):event(event):print("mouseClick",mouseClick, "behaviorName", behaviorName, "handler", behave)
     behave(self, mouseClick, event)
 
-    -- tell the ButtonOnFlyoutMenu that this mouseClick is/not set to GermClickBehavior.RECENT_BTN
+    -- tell the ButtonOnFlyoutMenu that this mouseClick is PRIME_BTN
+    local isPrime = behaviorName == GermClickBehavior.PRIME_BTN
     local n = MouseClickAsSecEnvN[mouseClick]
-    local iAmUsingRecent = behaviorName == GermClickBehavior.RECENT_BTN
-    self:SetAttribute("IS_USE_RECENT_"..n, iAmUsingRecent)
-
-    -- put the icon back to the default
-    local isAnyClickerUseRecent = Config:isAnyClickerUsingRecent(self.flyoutId)
-    if not isAnyClickerUseRecent then
-        self:doIcon("fix-during-assignTheMouseClicker")
-    end
+    self:SetAttribute("IS_A_PRIME_BTN_"..n, isPrime) -- assume earlier code blocked exe during combat
 end
 
 -- the secEnv handler for "click the first button of the flyout" is special.
@@ -716,7 +708,7 @@ function Germ:updateClickerForBtn1(event)
     -- loop over all mouse buttons
     for _, mouseClick in ipairs(MOUSE_BUTTONS) do
         local behaviorName = Config:getGermClickBehavior(self.flyoutId, mouseClick)
-        if behaviorName == GermClickBehavior.FIRST_BTN then
+        if behaviorName == GermClickBehavior.PRIME_BTN then
             self:assignTheMouseClicker(mouseClick, behaviorName, event)
         end
     end
@@ -738,7 +730,7 @@ function Germ:setRecentIcon(icon)
     if not self:isActive() then return end
     if not Config:isAnyClickerUsingRecent(self.flyoutId) then return end
     -- icon = icon or self.promoter:GetAttribute("UFO_ICON")
-    zebug.error:owner(self):print("sneaky! icon", icon)
+    zebug.info:owner(self):print("sneaky! icon", icon)
     self:setIcon(icon,"promoter")
 end
 
@@ -748,7 +740,7 @@ end
 -------------------------------------------------------------------------------
 --
 -- SecEnv - GermClickBehaviorAssignmentFunction
--- deal with OPEN / FIRST_BTN / RANDOM_BTN / CYCLE_ALL_BTNS
+-- deal with OPEN / PRIME_BTN / RANDOM_BTN / CYCLE_ALL_BTNS
 --
 -------------------------------------------------------------------------------
 
@@ -760,13 +752,7 @@ function GermClickBehaviorAssignmentFunction:OPEN(mouseClick, event)
 end
 
 ---@param mouseClick MouseClick
-function GermClickBehaviorAssignmentFunction:FIRST_BTN(mouseClick, event)
-    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil)
-    self:assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef(mouseClick, event) -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
-end
-
----@param mouseClick MouseClick
-function GermClickBehaviorAssignmentFunction:RECENT_BTN(mouseClick, event)
+function GermClickBehaviorAssignmentFunction:PRIME_BTN(mouseClick, event)
     self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil)
     self:assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef(mouseClick, event) -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
 end
