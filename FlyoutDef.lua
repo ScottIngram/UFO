@@ -17,6 +17,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@class FlyoutDef : UfoMixIn
 ---@field id string A unique, immutable, permanent identifier.  This is not it's index in any array.
 ---@field name string
+---@field ufoType string
 ---@field icon string user chosen icon
 ---@field fallbackIcon string in absence of the icon field, this is used when the Bliz UI fails to load all the necessary icons on login (usually pets and toys)
 ---@field btns table

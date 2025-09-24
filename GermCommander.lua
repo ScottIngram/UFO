@@ -89,9 +89,28 @@ end
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
 function GermCommander:forEachPlacement(func, event)
     -- this is probably equivalent to forEachActiveGerm()
+    local dead
     local placements = Spec:getCurrentSpecPlacementConfig()
     for btnSlotIndex, flyoutId in pairs(placements) do
-        func(btnSlotIndex, flyoutId, event)
+        local flyoutDef = FlyoutDefsDb:get(flyoutId)
+        if flyoutDef then
+            func(btnSlotIndex, flyoutId, event)
+        else
+            -- the config has been corrupted.  remove the offending entry
+            zebug.warn:print("toon's config contains a bad flyoutId",flyoutId)
+            if not dead then dead = {} end
+            dead[#dead+1] = btnSlotIndex
+        end
+    end
+
+    -- delete the dead ids
+    if dead then
+        -- go backwards so that the index doesn't change as we do it
+        for i = #dead, 1, -1 do
+            local btnSlotIndex = dead[i]
+            zebug.warn:print("removing bad flyoutId from button slot #", btnSlotIndex)
+            table.remove(placements, btnSlotIndex)
+        end
     end
 end
 

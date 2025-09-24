@@ -109,6 +109,9 @@ end
 ---@param flyoutId number
 function FlyoutDefsDb:getName(flyoutId)
     local conf = self:trustedGet(flyoutId)
+    if not conf.getName then
+        zebug.info:dumpy(flyoutId, conf)
+    end
     return conf and conf:getName()
 end
 
@@ -134,12 +137,25 @@ function FlyoutDefsDb:get(flyoutId)
     end
     zebug.trace:print("flyoutConfig", flyoutDef, "flyoutDef.name",flyoutDef.name, "flyoutDef.id",flyoutDef.id )
 
+    self:repair(flyoutDef)
     return flyoutDef
 end
 
 function FlyoutDefsDb:trustedGet(flyoutId)
-    return self:getAll()[flyoutId]
+    local flyoutDef = self:getAll()[flyoutId]
+    self:repair(flyoutDef)
+    return flyoutDef
 end
+
+function FlyoutDefsDb:repair(flyoutDef)
+    if not flyoutDef.ufoType then
+        -- somehow the ID of a valid flyoutDef is missing from the OrderedFlyoutIds
+        -- which prevented it from being properly initialized
+        FlyoutDef:oneOfUs(flyoutDef)
+        FlyoutDefsDb:add(flyoutDef)
+    end
+end
+
 
 ---@param flyoutIndex number
 function FlyoutDefsDb:getByIndex(flyoutIndex)
@@ -171,10 +187,15 @@ function FlyoutDefsDb:add(flyoutDef)
     self:getAll()[flyoutId] = flyoutDef
 
     -- keep the index and the reverse index in sync
+    -- but don't add it if it's already in the index
+    if Xedni:get()[flyoutId] then
+        return
+    end
+
     local list = DB:getOrderedFlyoutIds()
     local i = #list + 1
     list[i] = flyoutId
-    Xedni:get()[flyoutDef.id] = i
+    Xedni:get()[flyoutId] = i
 end
 
 -- erases the flyout def
