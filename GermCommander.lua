@@ -178,6 +178,13 @@ end
 
 GermCommander.updateClickerForAllActiveGerms = Pacifier:wrap(GermCommander.updateClickerForAllActiveGerms, L10N.CHANGE_MOUSE_BUTTON_BEHAVIOR)
 
+function GermCommander:applyConfigForLabels(event)
+    ---@param germ Germ
+    self:forEachActiveGerm(function(germ)
+        germ:applyConfigForShowLabel(event)
+    end, event)
+end
+
 ---@return GERM_TYPE
 function GermCommander:recallGerm(btnSlotIndex)
     return germs[btnSlotIndex]

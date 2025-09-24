@@ -128,9 +128,9 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     -- UI positioning & appearance
     self:ClearAllPoints()
     self:SetAllPoints(parentBtn)
-    self:initLabel()
+    self:initLabelString()
+    self:applyConfigForShowLabel(event)
     self:doIcon(event)
-    self.Name:SetText(self.label)
     self:setVisibilityDriver(parentBlizActionBarBtn.visibleIf) -- do I even need this? when the parent Hides so will the Germ automatically
 
     -- secure tainty stuff
@@ -165,10 +165,15 @@ end
 
 function Germ:applyConfigFromFlyoutDef(event)
     self:doIcon(event)
-    self.Name:SetText(self:getLabel())
+    self:applyConfigForShowLabel(event)
     self:updateClickerForBtn1(event)
     self:closeFlyout() -- in case the buttons' number/ordering changes
     self.flyoutMenu:applyConfigForGerm(self, event)
+end
+
+function Germ:applyConfigForShowLabel(event)
+    local txt = Config:get("showLabels") and self:getLabel() or ""
+    self.Name:SetText(txt)
 end
 
 function Germ:getName()
@@ -184,7 +189,7 @@ function Germ:getLabel()
     return self.label
 end
 
-Germ.initLabel = Germ.getLabel
+Germ.initLabelString = Germ.getLabel
 
 function Germ:getBtnSlotIndex()
     return self.btnSlotIndex

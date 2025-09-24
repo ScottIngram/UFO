@@ -20,6 +20,7 @@ MouseClick = Ufo.MouseClick
 ---@field keybindBehavior GermClickBehavior when a keybind is activated, it will perform this action
 ---@field doKeybindTheButtonsOnTheFlyout boolean when a UFO is open, are its buttons bound to number keys?
 ---@field muteLogin boolean don't print out status messages on log in
+---@field showLabels boolean display a UFO's name on the action bar button
 ---@field primaryButtonIs PrimaryButtonIs which button is considered "primary"
 Options = { }
 
@@ -49,6 +50,7 @@ function Config:getOptionDefaults()
         doCloseOnClick  = true,
         usePlaceHolders = true,
         muteLogin       = false,
+        showLabels       = false,
         hideCooldownsWhen = 99999,
         keybindBehavior = GermClickBehavior.OPEN,
         doKeybindTheButtonsOnTheFlyout = true,
@@ -128,7 +130,21 @@ local function initializeOptionsMenu()
                     opts.muteLogin = val
                 end,
                 get = function()
-                    return opts.muteLogin
+                    return Config:get("muteLogin")
+                end,
+            },
+            showLabels = {
+                order = 120,
+                name = "Show Labels",
+                desc = "Add a label to the action bar button displaying the UFO's name.",
+                width = "medium",
+                type = "toggle",
+                set = function(optionsMenu, val)
+                    opts.showLabels = val
+                    GermCommander:applyConfigForLabels("config_labels")
+                end,
+                get = function()
+                    return Config:get("showLabels")
                 end,
             },
 
