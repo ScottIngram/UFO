@@ -92,4 +92,9 @@ function DB:initializeOptsMemory()
     if not Config.opts.clickers then
         Config.opts.clickers = Config.optDefaults.clickers
     end
+
+    -- new opt introduced by UFO 11.2.0
+    if not Config.opts.keyMods then
+        Config.opts.keyMods = {}
+    end
 end

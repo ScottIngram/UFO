@@ -652,7 +652,8 @@ function ButtonDef:asSecureClickHandlerAttributes(event)
         return ButtonType.MACRO, "macrotext", macroText
     end
 
-    local blizType = self:getTypeForBlizApi()
+    -- "fall-through" block - generic handler for standard cases
+    local blizType = self:getTypeForBlizApi() -- spell, mount, item, etc...
     zebug.info:event(event):owner(self):print("blizType",blizType)
-    return blizType, blizType, self.name
+    return blizType, blizType, self.name -- "standard" types can be cast/summon/use by name
 end

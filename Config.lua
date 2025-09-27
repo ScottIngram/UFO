@@ -19,6 +19,9 @@ MouseClick = Ufo.MouseClick
 ---@field clickers table germ behavior for various mouse clicks
 ---@field keybindBehavior GermClickBehavior when a keybind is activated, it will perform this action
 ---@field doKeybindTheButtonsOnTheFlyout boolean when a UFO is open, are its buttons bound to number keys?
+---@field enableKeymods boolean Incorporate shift, control, etc when using keybindings
+---@field doNotOverwriteExistingKeybindings boolean when enableKeymods are enabled, do not create new key bindings that clobber pre-existing ones
+---@field keyMods table<ModifierKey,GermClickBehavior> maps shift/ctrl/etc to OPEN/PRIME/etc
 ---@field muteLogin boolean don't print out status messages on log in
 ---@field showLabels boolean display a UFO's name on the action bar button
 ---@field primaryButtonIs PrimaryButtonIs which button is considered "primary"
@@ -33,6 +36,11 @@ Config = { }
 -- Enums
 -------------------------------------------------------------------------------
 
+---@class Option
+Option = {
+
+}
+
 ---@class PrimaryButtonIs
 PrimaryButtonIs = {
     FIRST  = "FIRST",
@@ -40,8 +48,15 @@ PrimaryButtonIs = {
 }
 
 -------------------------------------------------------------------------------
--- Data
+-- Constants
 -------------------------------------------------------------------------------
+
+local KEY_MOD_NA = "KEY_MOD_NA"
+
+-------------------------------------------------------------------------------
+-- Data
+-------------------------------
+local keymodOptsOrder = 0
 
 ---@return Options
 function Config:getOptionDefaults()
@@ -53,6 +68,7 @@ function Config:getOptionDefaults()
         showLabels       = false,
         hideCooldownsWhen = 99999,
         keybindBehavior = GermClickBehavior.OPEN,
+        enableKeymods = false,
         doKeybindTheButtonsOnTheFlyout = true,
         primaryButtonIs = PrimaryButtonIs.FIRST,
         clickers = {
@@ -66,6 +82,12 @@ function Config:getOptionDefaults()
                     [MouseClick.FIVE]   = GermClickBehavior.OPEN, -- REVERSE_CYCLE_ALL_BTNS,
                 }
             }
+        },
+        keyMods = {
+            [ModifierKey.SHIFT] = nil,
+            [ModifierKey.ALT]   = nil,
+            [ModifierKey.CTRL]  = nil,
+            [ModifierKey.META]  = nil,
         },
     }
     return defaults
@@ -259,8 +281,28 @@ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured 
 ]=]
                     },
 
-                    keybindBehavior = {
+                    hotkeyWhenOpen = {
                         order = 20,
+                        name = "Hot Key the Buttons on a UFO",
+                        desc = "While open, assign keys 1 through 9 and 0 to the first 10 buttons on the UFO.",
+                        width = "double",
+                        type = "select",
+                        style = "dropdown",
+                        values = {
+                            [true] = "Bind each button to a number (Escape to close).",
+                            [false] = "An open UFO won't intercept key presses.",
+                        },
+                        set = function(_, doKeybindTheButtonsOnTheFlyout)
+                            opts.doKeybindTheButtonsOnTheFlyout = doKeybindTheButtonsOnTheFlyout
+                            GermCommander:applyConfigForBindTheButtons("Config-doKeybindTheButtonsOnTheFlyout")
+                        end,
+                        get = function()
+                            return Config:get("doKeybindTheButtonsOnTheFlyout")
+                        end,
+                    },
+
+                    keybindBehavior = {
+                        order = 30,
                         name = "Actionbar Keybinding",
                         desc = "A UFO on an actionbar button will respond to any keybinding you've given that button.  Choose what the keybind does:",
                         width = "double",
@@ -279,27 +321,71 @@ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured 
                             return opts.keybindBehavior or Config.optDefaults.keybindBehavior
                         end,
                     },
-                    hotkeyWhenOpen = {
-                        order = 30,
-                        name = "Hot Key the Buttons",
-                        desc = "While open, assign keys 1 through 9 and 0 to the first 10 buttons on the UFO.",
+
+
+                    -------------------------------------------------------------------------------
+                    -- Keymods
+                    -------------------------------------------------------------------------------
+
+                    enableKeymods = {
+                        order = 500,
+                        name = "Enable Modifier Keys for Keybinds",
+                        desc = "Incorporate shift, control, etc when using keybindings.",
                         width = "double",
-                        type = "select",
-                        style = "dropdown",
-                        values = {
-                            [true] = "Bind each button to a number (Escape to close).",
-                            [false] = "An open UFO won't intercept key presses.",
-                        },
-                        set = function(_, doKeybindTheButtonsOnTheFlyout)
-                            opts.doKeybindTheButtonsOnTheFlyout = doKeybindTheButtonsOnTheFlyout
-                            GermCommander:applyConfigForBindTheButtons("Config-doKeybindTheButtonsOnTheFlyout")
+                        type = "toggle",
+                        set = function(optionsMenu, val)
+                            opts.enableKeymods = val
+                            GermCommander:applyConfigForAllKeyMods(val, opts.keyMods, Event:new("Config", "mod-ALL-the-mod-keys"))
                         end,
                         get = function()
-                            return Config:get("doKeybindTheButtonsOnTheFlyout")
+                            return Config:get("enableKeymods")
                         end,
+                    },
+                    keymodGroup = {
+                        order = 510,
+                        name = "Modifier Keys for Keybindings",
+                        type = "group",
+                        inline = true, -- set this to false to enable multiple configs, one per flyout.
+                        hidden = function() return not Config:get("enableKeymods")  end,
+                        args = {
+                            keymodHelp = {
+                                order = 10,
+                                type = 'description',
+                                name = [=[
+In addition to using the keybindings configured in the standard WoW menus, UFO can bind extra key + modifier combinations.  For example, if you have a UFO bound to the Z key, then you can add shift-Z or control-Z here.
+
+Note: please choose if you want UFO to override or preserve any such existing bindings.  So, if you already have an action bound to shift-Z, then, use the checkbox below to tell UFO how to handle it.
+]=]
+                            },
+
+                            shiftKey = includeKeyModOpts(ModifierKey.SHIFT),
+                            ctrlKey  = includeKeyModOpts(ModifierKey.CTRL),
+                            altKey   = includeKeyModOpts(ModifierKey.ALT),
+                            cmdtKey  = includeKeyModOpts(ModifierKey.META),
+
+                            doNotOverwriteExistingKeybindings = {
+                                order = keymodOptsOrder + 10,
+                                name = "Do Not Overwrite Existing Keybindings",
+                                desc = "If add a Shift-Z  to your UFO on the Z button (for example) if there already exists some Shift-Z key binding",
+                                width = "double",
+                                type = "toggle",
+                                set = function(optionsMenu, val)
+                                    opts.doNotOverwriteExistingKeybindings = val
+                                    GermCommander:applyConfigForAllKeyMods(val, opts.keyMods, Event:new("Config", "mod-ALL-the-mod-keys"))
+                                end,
+                                get = function()
+                                    return Config:get("doNotOverwriteExistingKeybindings")
+                                end,
+                            },
+                        },
+
+
                     },
                 },
             },
+
+
+
 
 
 
@@ -308,12 +394,12 @@ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured 
             -------------------------------------------------------------------------------
 
             placeHoldersHeader = {
-                order = 500,
+                order = 600,
                 name = "PlaceHolder Macros VS Edit Mode Config",
                 type = 'header',
             },
             helpTextForPlaceHolders = {
-                order = 510,
+                order = 610,
                 type = 'description',
                 name = [=[
 Each UFO placed onto an action bar has a special macro (named "]=].. Ufo.PLACEHOLDER_MACRO_NAME ..[=[") to hold its place as a button and ensure the UI renders it.
@@ -322,7 +408,7 @@ You may disable placeholder macros, but, doing so will require extra UI configur
 ]=]
             },
             usePlaceHolders = {
-                order = 520,
+                order = 620,
                 name = "Choose your workaround:",
                 desc = "Because UFOs aren't spells or items, when they are placed into an action bar slot, the UI thinks that slot is empty and doesn't render the slot by default.",
                 width = "full",
@@ -364,7 +450,7 @@ local mouseButtonName = {
     [MouseClick.MIDDLE] = "Middle",
     [MouseClick.FOUR]   = "Fourth",
     [MouseClick.FIVE]   = "Fifth",
-    [MouseClick.SIX]    = "Keybind",
+    [MouseClick.KEYBIND]    = "Keybind",
 }
 
 ---@param click MouseClick
@@ -395,9 +481,39 @@ function includeMouseButtonOpts(mouseClick)
     }
 end
 
-local INCLUDE_GERM_CLICK_BEHAVIORS
+---@param click ModifierKey
+function includeKeyModOpts(modifierKey, mk2)
+    local opts = Config.opts
+    keymodOptsOrder = keymodOptsOrder + 10
+    return {
+        order = keymodOptsOrder,
+        name = L10N[modifierKey] or "NiL",
+        desc = "Assign an action to the keybind + ".. zebug.warn:colorize(L10N[modifierKey] or "NiL") .." modifier",
+        width = "medium",
+        type = "select",
+        style = "dropdown",
+        values = includeGermClickBehaviors("include empty"),
+        sorting = includeGermClickBehaviorSorting("do it dummy"),
+        ---@param behavior GermClickBehavior
+        set = function(zelf, behavior)
+            zebug.warn:name("opt:KeyModOpts()"):print("modifierKey",modifierKey, "new val", behavior)
+            if behavior == KEY_MOD_NA then
+                behavior = nil
+            end
+            Config.opts.keyMods[modifierKey] = behavior
+            GermCommander:applyConfigForKeyMods(modifierKey, behavior, Event:new("Config", "mod-the-mod-keys"))
+        end,
+        ---@return GermClickBehavior
+        get = function()
+            return Config.opts.keyMods[modifierKey]
+        end,
+    }
+end
 
-function includeGermClickBehaviors()
+local INCLUDE_GERM_CLICK_BEHAVIORS
+local INCLUDE_GERM_CLICK_BEHAVIORS_PLUS_NA
+
+function includeGermClickBehaviors(includeNa)
     if not INCLUDE_GERM_CLICK_BEHAVIORS then
         INCLUDE_GERM_CLICK_BEHAVIORS = {
             [GermClickBehavior.OPEN]           = zebug.info:colorize("Open") .." the flyout",
@@ -406,21 +522,37 @@ function includeGermClickBehaviors()
             [GermClickBehavior.CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle") .." through each button of the flyout",
             --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle backwards") .." through each button of the flyout",
         }
+        INCLUDE_GERM_CLICK_BEHAVIORS_PLUS_NA = deepcopy(INCLUDE_GERM_CLICK_BEHAVIORS)
+        INCLUDE_GERM_CLICK_BEHAVIORS_PLUS_NA[KEY_MOD_NA] = ""-- "Do not include in binding"
     end
 
-    return INCLUDE_GERM_CLICK_BEHAVIORS
+    if includeNa then
+        return INCLUDE_GERM_CLICK_BEHAVIORS_PLUS_NA
+    else
+        return INCLUDE_GERM_CLICK_BEHAVIORS
+    end
 end
 
-function includeGermClickBehaviorSorting()
-    local sorting = {
-        --"default", -- will be useful if I implement each FlyoutId having its own config
-        GermClickBehavior.OPEN,
-        GermClickBehavior.PRIME_BTN,
-        GermClickBehavior.RANDOM_BTN,
-        GermClickBehavior.CYCLE_ALL_BTNS,
-        --GermClickBehavior.REVERSE_CYCLE_ALL_BTNS,
-    }
-    return sorting
+function includeGermClickBehaviorSorting(includeNa)
+    if includeNa then
+        return  {
+            KEY_MOD_NA,
+            GermClickBehavior.OPEN,
+            GermClickBehavior.PRIME_BTN,
+            GermClickBehavior.RANDOM_BTN,
+            GermClickBehavior.CYCLE_ALL_BTNS,
+        }
+    else
+        return  {
+            --"default", -- will be useful if I implement each FlyoutId having its own config
+            -- KEY_MOD_NA,
+            GermClickBehavior.OPEN,
+            GermClickBehavior.PRIME_BTN,
+            GermClickBehavior.RANDOM_BTN,
+            GermClickBehavior.CYCLE_ALL_BTNS,
+            --GermClickBehavior.REVERSE_CYCLE_ALL_BTNS,
+        }
+    end
 end
 
 ---@param flyoutId number aspirational param for when I allow users to give each UFO its own configs
@@ -451,6 +583,12 @@ function Config:setClickBehavior(flyoutId, mouseClick, behavior)
     end
 
     clickOpts[mouseClick] = behavior
+end
+
+---@param keyMod ModifierKey
+---@return GermClickBehavior
+function Config:getKeyModBehavior(keyMod)
+    return Config.keyMod[keyMod]
 end
 
 function Config:isPrimeDefinedAsRecent()

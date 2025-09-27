@@ -47,6 +47,14 @@ GermClickBehavior = {
     --REVERSE_CYCLE_ALL_BTNS = "REVERSE_CYCLE_ALL_BTNS",
 }
 
+---@type table<GermClickBehavior, MouseClick>
+WHICH_CLICK_BEHAVES_AS = {
+    [GermClickBehavior.OPEN]           = MouseClick.SEVEN,
+    [GermClickBehavior.PRIME_BTN]      = MouseClick.EIGHT,
+    [GermClickBehavior.RANDOM_BTN]     = MouseClick.NINE,
+    [GermClickBehavior.CYCLE_ALL_BTNS] = MouseClick.TEN,
+}
+
 ---@type Germ|GERM_INHERITANCE
 local GermClickBehaviorAssignmentFunction = { }
 
@@ -135,7 +143,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     -- secure tainty stuff
     self:copyDoCloseOnClickConfigValToAttribute()
-    self:doMyKeybinding() -- bind me to my action bar slot's keybindings (if any)
+    self:doMyKeybinding(event) -- bind me to my action bar slot's keybindings (if any)
 
     -- Initialize the Primary Button option
     local isPrimeDefinedAsRecent = Config:isPrimeDefinedAsRecent()
@@ -317,7 +325,7 @@ function Germ:changeFlyoutIdAndEnable(flyoutId, event)
     self:doIcon(event)
     self.flyoutMenu:applyConfigForGerm(self, event)
     self:registerForBlizUiActions(event)
-    self:doMyKeybinding()
+    self:doMyKeybinding(event)
     self:Show()
     self:updateClickerForBtn1(event)
     self:Enable()
@@ -433,7 +441,69 @@ end
 -- Key Bindings & UI actions Registerings
 -------------------------------------------------------------------------------
 
-function Germ:doMyKeybinding()
+function Germ:fullModifiedKeyName(key, ...)
+    if select("#", ...) == 0 then return key end -- nothing in "..." means no modifiers means no work to do.
+    local fullKey = strjoin("-", ...) .. "-" .. strupper(key)
+    return fullKey
+end
+
+---@param keyName string
+---@param mouseClick MouseClick
+---@vararg ModifierKey list of 0 or more
+function Germ:modifyAndBindKeyTo(mouseClick, keyName, --[[modifiers]] ...)
+    keyName = strupper(keyName)
+    local keyNamePlusModifiers
+    local overrideExistingBinding
+
+    local modCount = select("#", ...)
+    if modCount == 0 then
+        -- if we didn't pass in any modifiers, then we WANT to steal the existing keybinding and give it to the Germ
+        overrideExistingBinding = true
+        keyNamePlusModifiers = keyName
+    else
+        local filteredModifiers
+        for i = 1, modCount do
+            local modifier = strupper( select(i, ...) )
+            local hasAlready = string.find(keyName, modifier)
+            if not hasAlready then
+                if not filteredModifiers then filteredModifiers = {} end
+                filteredModifiers[#filteredModifiers+1] = modifier
+                zebug.warn:owner(self):print("keyName",keyName, "ok for modifier",modifier)
+            else
+                zebug.warn:owner(self):print("keyName",keyName, "already has a modifier",modifier)
+            end
+        end
+
+        if not filteredModifiers then
+            zebug.warn:owner(self):print("keyName",keyName, "ABORT - all desired modifiers already in base binding", ...)
+            return
+        end
+
+        keyNamePlusModifiers = strjoin("-", unpack(filteredModifiers) ) .. "-" .. keyName
+    end
+
+    if overrideExistingBinding then
+        --
+    else
+        local existingBinding = GetBindingAction(keyNamePlusModifiers, true)
+        local isSkip = Config:get("doNotOverwriteExistingKeybindings")
+        local doSkip = existingBinding and isSkip
+        zebug.warn:owner(self):print("keyNamePlusModifiers",keyNamePlusModifiers, "existingBind", existingBinding, doSkip and "SKIP!" or "do-do")
+        if doSkip then
+            return
+        end
+    end
+
+    local myGlobalVarName = self:GetName()
+    SetOverrideBindingClick(self, true, keyNamePlusModifiers, myGlobalVarName, mouseClick)
+
+    local newBinding = GetBindingAction(keyNamePlusModifiers, true)
+    zebug.warn:owner(self):print("keyNamePlusModifiers",keyNamePlusModifiers, "newBinding", newBinding)
+end
+
+
+function Germ:doMyKeybinding(event)
+    event = "bindy"
     if isInCombatLockdown("Keybind") then return end
 
     local parent = self:getParent()
@@ -449,8 +519,29 @@ function Germ:doMyKeybinding()
     if keybinds then
         for i, keyName in ipairs(keybinds) do
             if not tableContainsVal(self.keybinds, keyName) then
-                zebug.trace:owner(self):print("myGlobalVarName", myGlobalVarName, "binding keyName",keyName)
-                SetOverrideBindingClick(self, true, keyName, myGlobalVarName, MouseClick.SIX)
+                zebug.warn:owner(self):print("myGlobalVarName", myGlobalVarName, "binding keyName",keyName)
+                --SetOverrideBindingClick(self, true, keyName, myGlobalVarName, MouseClick.SIX)
+                self:modifyAndBindKeyTo(MouseClick.KEYBIND, keyName)
+
+                -- TEMP - hardcode a few
+                -- KEYBIND_CLICK_BEHAVIOR
+                local click4prime = WHICH_CLICK_BEHAVES_AS[GermClickBehavior.PRIME_BTN]
+                print("click4prime",click4prime)
+                local click4rnd = WHICH_CLICK_BEHAVES_AS[GermClickBehavior.RANDOM_BTN]
+                self:modifyAndBindKeyTo(MouseClick.LEFT, keyName, ModifierKey.META)
+                self:modifyAndBindKeyTo(MouseClick.MIDDLE, keyName, ModifierKey.SHIFT)
+
+                if Config:get("enableKeymods") then
+                    local keyMods = Config:get("keyMods")
+                    ---@param keyMod ModifierKey
+                    ---@param behavior GermClickBehavior
+                    for keyMod, behavior in pairs(keyMods) do
+                        zebug.warn:owner(self):print("CONFIG LOOP - binding - keyName",keyName, "keyMod",keyMod, "behavior",behavior)
+
+                        -- SetOverrideBindingClick(self, true, keyName, myGlobalVarName, MouseClick.SIX)
+                    end
+                end
+
             else
                 zebug.trace:owner(self):print("myGlobalVarName", myGlobalVarName, "NOT binding keyName",keyName, "because it's already bound.")
             end
@@ -681,6 +772,11 @@ function Germ:assignAllMouseClickers(event)
         self:assignTheMouseClicker(mouseClick, behaviorName, event)
     end
 
+    -- these mouse clicks are unconditionally reserved & hardcoded for special key bindings
+    for behavior, click in pairs(WHICH_CLICK_BEHAVES_AS) do
+        self:assignTheMouseClicker(click, behavior, event)
+    end
+
     self:updateClickerForKeybind(event)
 end
 
@@ -689,7 +785,7 @@ end
 ---@param behaviorName GermClickBehavior
 function Germ:assignTheMouseClicker(mouseClick, behaviorName, event)
     if not GermClickBehavior[behaviorName] then
-        error("Invalid 'behaviorName' arg: " .. behaviorName) -- type checking in Lua!
+        error("Invalid 'behaviorName' arg: " .. (behaviorName or "NiL")) -- type checking in Lua!
     end
 
     local behave = GermClickBehaviorAssignmentFunction[behaviorName]
@@ -721,7 +817,7 @@ end
 
 function Germ:updateClickerForKeybind(event)
     local keybindBehavior = Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior
-    self:assignTheMouseClicker(MouseClick.SIX, keybindBehavior, event)
+    self:assignTheMouseClicker(MouseClick.KEYBIND, keybindBehavior, event)
 end
 
 ---@param mouseClick MouseClick

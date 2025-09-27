@@ -58,3 +58,12 @@ THIS_TOON_HAS_NONE = "This toon has none."
 NOT_MACRO_OWNER = "It can only be used by"
 UNSUPPORTED_TYPE = "Sorry, unsupported type"
 UFO_ICON_PROMOTE = "update the UFO icon to reflect the most recently used member."
+
+SHIFT = "Shift"
+ALT = "Alt"
+CTRL = "Control"
+if IsMacClient() then
+    META = "Command"
+else
+    META = "Meta"
+end

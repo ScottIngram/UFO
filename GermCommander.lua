@@ -197,10 +197,30 @@ end
 
 GermCommander.updateClickerForAllActiveGerms = Pacifier:wrap(GermCommander.updateClickerForAllActiveGerms, L10N.CHANGE_MOUSE_BUTTON_BEHAVIOR)
 
+---@param event Event
 function GermCommander:applyConfigForLabels(event)
     ---@param germ Germ
     self:forEachActiveGerm(function(germ)
         germ:applyConfigForShowLabel(event)
+    end, event)
+end
+
+function GermCommander:applyConfigForAllKeyMods(enable, configs, event)
+    ---@param modifierKey ModifierKey
+    ---@param germClickBehavior GermClickBehavior
+    for modifierKey, germClickBehavior in pairs(configs) do
+        self:applyConfigForKeyMods(modifierKey, enable and germClickBehavior or nil, event)
+    end
+end
+
+---@param keymod ModifierKey
+---@param behavior GermClickBehavior
+---@param event Event
+function GermCommander:applyConfigForKeyMods(keymod, behavior, event)
+    zebug.warn:event(event):print("keymod",keymod, "behavior",behavior)
+    ---@param germ Germ
+    self:forEachActiveGerm(function(germ)
+        --germ:applyConfigForShowLabel(event)
     end, event)
 end
 

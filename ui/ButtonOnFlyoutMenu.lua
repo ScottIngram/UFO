@@ -487,10 +487,10 @@ end
 
 function ButtonOnFlyoutMenu:printDebugDetails(event)
     local t = self:GetAttribute("type")
-    local key = self:GetAttribute("UFO_KEY")
-    local val = self:GetAttribute("UFO_VAL")
+    local secEnvType = self:GetAttribute("UFO_KEY")
+    local secEnvArg = self:GetAttribute("UFO_VAL")
 
-    zebug.warn:event(event):name("details"):owner(self):print("SEC key",key, "SEC val",val)
+    zebug.warn:event(event):name("details"):owner(self):print("SEC key", secEnvType, "SEC val", secEnvArg)
 end
 
 -------------------------------------------------------------------------------
