@@ -167,7 +167,7 @@ function FlyoutMenu:installSecEnvScriptForCloseOnClick()
     self:forEachButton(function(btnFrame)
         btnFrame:SetFrameRef("flyoutMenu", self)
         btnFrame:SetFrameRef("germ", germ)
-        btnFrame:WrapScript(btnFrame, "PostClick", CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- Is the the cause of "Cannot call restricted closure from insecure code" ??? NOPE
+        btnFrame:WrapScript(btnFrame, "PostClick", CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- This threw: "Header frame must be explicitly protected" after combat.  I had managed to move a UFO during combat(?)
         btnFrame:Execute(CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- initialize the scriptlet's "global" vars
         btnFrame:initializeSecEnv()
     end)

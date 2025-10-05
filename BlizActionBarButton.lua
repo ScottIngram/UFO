@@ -43,6 +43,8 @@ UfoMixIn:mixInto(BlizActionBarButton)
 
 local BabbInstance = BlizActionBarButton
 
+local fuckYouYetAgainBlizForYourBullshitInconsistentAndShittyLackOfDesign = {}
+
 ----------------------------------------------------------------------------------
 -- Constants
 -------------------------------------------------------------------------------
@@ -71,6 +73,15 @@ BLIZ_BAR_METADATA = {
     [18] = {name="OverrideActionBar",   }, -- vehicle
     [19] = {name="ExtraAction",         }, -- center screen popup spell
 }
+
+-- I really fucking hate working with Bliz's shitty nonsense
+local BLIZ_NAME_SALAD = { "Action", "Multi", "Bar", "Button", "Right", "Left", "Bottom", "Override", "Extra", }
+
+-- remap key bind names to global variable names
+---@alias BarNameUsedByKeybindings string - the name of an actionbar as it is used by the Keybinding APIs
+---@alias GlobalVarEquivalent string - the name of an actionbar as it is used by the _G[] global variable which holds its Frame object
+---@alias MapFromYafnToTheGlobalNomenclature table<BarNameUsedByKeybindings, GlobalVarEquivalent>
+local BLIZ_ACTION_BAR_NAMES_PAIRED_TO_THEIR_KEYBINDING_NAMES
 
 -------------------------------------------------------------------------------
 --  Data
@@ -142,6 +153,70 @@ function BlizActionBarButtonHelper:get(btnSlotIndex, event)
 
     babBtns[btnSlotIndex] = self
     return self
+end
+
+---@param allCapsNameOfButton string yet another fucking name as it's identified by the key bindings API which is also in ALL CAPS
+---@return BlizActionBarButton
+function BlizActionBarButtonHelper:getViaKeyBinding(allCapsNameOfButton)
+    if not exists(allCapsNameOfButton) then return end
+
+    local btnSlotId = fuckYouYetAgainBlizForYourBullshitInconsistentAndShittyLackOfDesign[allCapsNameOfButton]
+    if btnSlotId then
+        zebug.trace:print("found cache for", allCapsNameOfButton, "btnSlotId",btnSlotId)
+        return self:get(btnSlotId)
+    end
+
+    -- unfuck the all-caps bullshit
+    local unFuckedName = allCapsNameOfButton
+    for i, nameSubstr in ipairs(BLIZ_NAME_SALAD) do
+        unFuckedName = string.gsub(unFuckedName, string.upper(nameSubstr), nameSubstr);
+    end
+
+    -- and try to find its global variable
+    local globalizedName = unFuckedName
+    for barNameUsedByKeybindings, globalVarEquivalent  in pairs(remappedActionBarNames()) do
+        globalizedName = string.gsub(globalizedName, barNameUsedByKeybindings, globalVarEquivalent);
+    end
+
+    local g = _G[globalizedName]
+    --zebug.error:event("ZEEBA"):print("allCapsNameOfButton", allCapsNameOfButton, "_G",_G[allCapsNameOfButton], "unFuckedName", unFuckedName, "globalizedName", globalizedName,  "_G",g)
+
+    ---@type BlizActionBarButton
+    local babb
+    if g then
+        if UfoMixIn:isA(g, BlizActionBarButton) then
+            babb = g
+        else
+            local btnSlotIndex = g.action
+            if btnSlotIndex then
+                babb = self:get(btnSlotIndex)
+            end
+        end
+    end
+
+    if babb then
+        zebug.trace:print("caching", allCapsNameOfButton, "btnSlotId",babb.btnSlotIndex)
+        fuckYouYetAgainBlizForYourBullshitInconsistentAndShittyLackOfDesign[allCapsNameOfButton] = babb.btnSlotIndex
+    end
+
+    return babb
+end
+
+---@return MapFromYafnToTheGlobalNomenclature
+function remappedActionBarNames()
+    if BLIZ_ACTION_BAR_NAMES_PAIRED_TO_THEIR_KEYBINDING_NAMES then
+        return BLIZ_ACTION_BAR_NAMES_PAIRED_TO_THEIR_KEYBINDING_NAMES
+    end
+
+    BLIZ_ACTION_BAR_NAMES_PAIRED_TO_THEIR_KEYBINDING_NAMES = { }
+
+    for i, t in ipairs(BLIZ_BAR_METADATA) do
+        if t.yafName then
+            BLIZ_ACTION_BAR_NAMES_PAIRED_TO_THEIR_KEYBINDING_NAMES[t.yafName] = t.name
+        end
+    end
+
+    return BLIZ_ACTION_BAR_NAMES_PAIRED_TO_THEIR_KEYBINDING_NAMES
 end
 
 ---@return number barNum
@@ -268,8 +343,9 @@ function BabbInstance:printDebugDetails(event, okToGo)
     okToGo = self:notInfiniteLoop(okToGo)
     if not okToGo then return end
 
+    local gName = self:GetName()
     local parent, parentName = self:getParentAndName()
-    zebug.warn:event(event):name("details"):owner(self):print("IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent", parentName, "germ",self.germ, self:getTypeAndId())
+    zebug.warn:event(event):name("details"):owner(self):print("_G Name",gName, "_G",_G[gName], "IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent", parentName, "germ",self.germ, self:getTypeAndId())
     self.germ:printDebugDetails(event, okToGo)
 end
 
@@ -278,11 +354,13 @@ end
 -------------------------------------------------------------------------------
 
 function BabbInstance:toString()
+    local result
     if self == BlizActionBarButton then
-        return "nil"
+        result = "nil"
     else
+        local me = self.isUserFacing and "Actionbar Button" or "A-BTN"
         if self:isEmpty() then
-            return string.format("<A-BTN: s%d EMPTY>", nilStr(self.btnSlotIndex))
+            result = string.format("<"..me..": s%d EMPTY>", nilStr(self.btnSlotIndex))
         else
             local name
             local blizType, blizId = self:getTypeAndId()
@@ -305,11 +383,23 @@ function BabbInstance:toString()
                 icon = btnDef:getIcon()
             end
 
+            local slot = self.isUserFacing and "in slot #" or "s"
+
             if name then
-                return string.format("<A-BTN: |T%d:0|t s%d %s: %s>", icon, nilStr(self.btnSlotIndex), nilStr(blizType), name)
+                result = string.format("<"..me..": |T%d:0|t "..slot.."%d %s: %s>", icon, nilStr(self.btnSlotIndex), nilStr(blizType), name)
+            else
+                result = string.format("<"..me..": |T%d:0|t "..slot.."%d, %s:%s>", icon, nilStr(self.btnSlotIndex), nilStr(blizType), nilStr(blizId))
             end
 
-            return string.format("<A-BTN: |T%d:0|t s%d, %s:%s>", icon, nilStr(self.btnSlotIndex), nilStr(blizType), nilStr(blizId))
         end
     end
+
+    self.isUserFacing = false
+    return result
+end
+
+function BabbInstance:forUser()
+    -- set Flag For User Facing Messaging
+    self.isUserFacing = true
+    return self
 end

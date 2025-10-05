@@ -27,6 +27,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@field visibleIf string for RegisterStateDriver -- uses macro-conditionals to control visibility automatically
 ---@field visibilityDriver string primarily for debugging
 ---@field myName string duh
+---@field mainKeyBindingsKeyNames table<string,boolean> the names of the keys bound to this Germ's action bar button
 ---@field label string human friendly identifier
 
 ---@type Germ | GERM_INHERITANCE
@@ -34,6 +35,7 @@ Germ = {
     ufoType = "Germ",
     --clickScriptUpdaters = {},
     clickers = {},
+    mainKeyBindingsKeyNames = {},
 }
 UfoMixIn:mixInto(Germ)
 GLOBAL_Germ = Germ
@@ -48,7 +50,7 @@ GermClickBehavior = {
 }
 
 ---@type table<GermClickBehavior, MouseClick>
-WHICH_CLICK_BEHAVES_AS = {
+RESERVED_CLICKER_BEHAVES_AS = {
     [GermClickBehavior.OPEN]           = MouseClick.SEVEN,
     [GermClickBehavior.PRIME_BTN]      = MouseClick.EIGHT,
     [GermClickBehavior.RANDOM_BTN]     = MouseClick.NINE,
@@ -67,6 +69,9 @@ local ScriptHandlers = {}
 local HANDLER_MAKERS_MAP
 local SEC_ENV_SCRIPT_FOR_OPENER
 local SEC_ENV_SCRIPT_FOR_ON_CLICK
+
+---@type table<string,Germ> all keybindings currently in use by any Germs
+local mainKeyBindingsForAllGerms = {}
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -105,6 +110,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     _G[myName] = self -- so that keybindings can reference it
     parentBtn.germ = self
+    self.isNew = true -- a flag to silence messages during 1st time creation
 
     -- one-time only initialization --
     self.myName       = myName -- who
@@ -143,7 +149,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     -- secure tainty stuff
     self:copyDoCloseOnClickConfigValToAttribute()
-    self:doMyKeybinding(event) -- bind me to my action bar slot's keybindings (if any)
+    self:doMyKeybindings(event) -- bind me to my action bar slot's keybindings (if any)
 
     -- Initialize the Primary Button option
     local isPrimeDefinedAsRecent = Config:isPrimeDefinedAsRecent()
@@ -154,6 +160,8 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:UpdateArrowShown()
     self:UpdateArrowPosition()
     self:UpdateArrowRotation()
+
+    self.isNew = false
 
     return self
 end
@@ -278,6 +286,9 @@ end
 
 -- set conditional visibility based on which bar we're on.  Some bars are only visible for certain class stances, etc.
 function Germ:setVisibilityDriver(visibleIf)
+
+    -- TODO - fix bug: actionbar #1 buttons vanish
+
     self.visibleIf = visibleIf
     zebug.trace:owner(self):print("visibleIf",visibleIf)
     if visibleIf then
@@ -318,14 +329,18 @@ end
 Germ.clearAndDisable = Pacifier:wrap(Germ.clearAndDisable)
 
 function Germ:changeFlyoutIdAndEnable(flyoutId, event)
+    -- seems like if the new flyoutId is the same as a the old one, then, I could skip a lot (all?) of this...
+    -- but I vaguely remember that I tried that and something went wrong... but I can't remember why.
     self.flyoutId = flyoutId
+    self:initLabelString()
     zebug.info:event(event):owner(self):print("EnAbLe GeRm :-)")
 
     self:closeFlyout()
     self:doIcon(event)
     self.flyoutMenu:applyConfigForGerm(self, event)
     self:registerForBlizUiActions(event)
-    self:doMyKeybinding(event)
+    self:clearKeybinding()
+    self:doMyKeybindings(event)
     self:Show()
     self:updateClickerForBtn1(event)
     self:Enable()
@@ -432,7 +447,7 @@ function Germ:invalidateFlyoutCache()
 end
 
 function Germ:refreshFlyoutDefAndApply(event)
-    zebug.info:event(event):owner(self):name("refreshFlyoutDefAndApply"):print("re-configuring...")
+    zebug.info:event(event):owner(self):print("re-configuring...") -- name("refreshFlyoutDefAndApply"):
     self:getFlyoutDef():invalidateCacheOfUsableFlyoutDefOnly(event)
     self:applyConfigFromFlyoutDef(event) -- exclude clickers?
 end
@@ -441,138 +456,243 @@ end
 -- Key Bindings & UI actions Registerings
 -------------------------------------------------------------------------------
 
+function Germ:doneSaid(key)
+    local result
+    if not self.DONE_SAID then
+        self.DONE_SAID = { }
+    end
+
+    result = self.DONE_SAID[key]
+    self.DONE_SAID[key] = true
+    return result
+end
+
 function Germ:fullModifiedKeyName(key, ...)
     if select("#", ...) == 0 then return key end -- nothing in "..." means no modifiers means no work to do.
     local fullKey = strjoin("-", ...) .. "-" .. strupper(key)
     return fullKey
 end
 
----@param keyName string
+function Germ:bindKeyNameTo(keyName, mouseClick)
+    return self:addModifiersToKeyNameAndBind(keyName, mouseClick) -- no args for any modifiers (shift/alt/etc)
+end
+
+---@param unmodifiedKeyName string
 ---@param mouseClick MouseClick
 ---@vararg ModifierKey list of 0 or more
-function Germ:modifyAndBindKeyTo(mouseClick, keyName, --[[modifiers]] ...)
-    keyName = strupper(keyName)
-    local keyNamePlusModifiers
-    local overrideExistingBinding
+---@return string original name plus modifiers (if any) IF it was successfully bound or is a Germ binding still in use
+function Germ:addModifiersToKeyNameAndBind(unmodifiedKeyName, mouseClick, --[[modifiers]] ...)
+    local keyName = strupper(unmodifiedKeyName)
+    local isMainBinding
 
     local modCount = select("#", ...)
     if modCount == 0 then
-        -- if we didn't pass in any modifiers, then we WANT to steal the existing keybinding and give it to the Germ
-        overrideExistingBinding = true
-        keyNamePlusModifiers = keyName
+        -- if we didn't pass in any modifiers, then this is the Germ's base binding
+        isMainBinding = true
+        self.mainKeyBindingsKeyNames[keyName] = true
     else
+        -- filter out any modifiers that are already present in the in base binding to avoid something like SHIFT-SHIFT-Z
         local filteredModifiers
         for i = 1, modCount do
             local modifier = strupper( select(i, ...) )
             local hasAlready = string.find(keyName, modifier)
             if not hasAlready then
+                zebug.trace:owner(self):print("KEY",keyName, "ok to add modifier",modifier)
                 if not filteredModifiers then filteredModifiers = {} end
                 filteredModifiers[#filteredModifiers+1] = modifier
-                zebug.warn:owner(self):print("keyName",keyName, "ok for modifier",modifier)
             else
-                zebug.warn:owner(self):print("keyName",keyName, "already has a modifier",modifier)
+                zebug.trace:owner(self):print("KEY",keyName, "already includes modifier",modifier)
             end
         end
 
         if not filteredModifiers then
-            zebug.warn:owner(self):print("keyName",keyName, "ABORT - all desired modifiers already in base binding", ...)
+            zebug.info:owner(self):print("KEY",keyName, "ABORT - all desired modifiers already in base binding", ...)
             return
         end
 
-        keyNamePlusModifiers = strjoin("-", unpack(filteredModifiers) ) .. "-" .. keyName
+        local keyNamePlusModifiers = strjoin("-", unpack(filteredModifiers) ) .. "-" .. keyName -- TODO: does the order matter? Is ALT-SHIFT-Z as good as SHIFT-ALT-Z
+        keyName = keyNamePlusModifiers
     end
 
-    if overrideExistingBinding then
-        --
+    local isAlreadyProcessedAndBoundToMe = tableContainsVal(self.keybinds, keyName)
+    if isAlreadyProcessedAndBoundToMe then
+        zebug.info:owner(self):print("KEY",keyName, "SKIP: already bound! self.keybinds contains this key.")
+        -- returning the name to signal the caller that this one is still in use so don't remove it
+        return keyName
+    end
+
+    if isMainBinding then
+        self:claimMainKeyBinding(keyName)
     else
-        local existingBinding = GetBindingAction(keyNamePlusModifiers, true)
-        local isSkip = Config:get("doNotOverwriteExistingKeybindings")
-        local doSkip = existingBinding and isSkip
-        zebug.warn:owner(self):print("keyNamePlusModifiers",keyNamePlusModifiers, "existingBind", existingBinding, doSkip and "SKIP!" or "do-do")
-        if doSkip then
+        -- decide if we can steal a key that is already bound
+        local isOkForExtra = true
+        local otherGerm = self:isAlreadyMainKeyBindingOfSomeOtherGerm(keyName)
+        if otherGerm then
+            -- never steal a "main binding" from another germ
+            zebug.info:owner(self):print("KEY",keyName, "Will not add extra binding for this key because existing UFO", otherGerm, "is already bound to it.")
+            if not self.isNew then
+                msgUser(self:forUser(), "with keybinding", unmodifiedKeyName, "will not bind", keyName, "because that one is already bound to", otherGerm:forUser())
+            end
+            isOkForExtra = false
+            return
+        end
+
+        local action
+        local targetBtn
+        local isNoClobber = Config:get("doNotOverwriteExistingKeybindings")
+        if isNoClobber then
+
+            -- check for an existing key binding
+            action = GetBindingAction(keyName, true) -- returns empty string instead of nil - FU Bliz
+            action = exists(action) and action or nil -- ensure a meaningful value and not Bliz BS
+
+            if action then
+                -- but, is it an action bar button?
+                targetBtn = BlizActionBarButtonHelper:getViaKeyBinding(action)
+                if targetBtn then
+                    zebug.info:owner(self):print("KEY", keyName, "existingBinding", action, "btn", targetBtn)
+
+                    -- is that button EMPTY?
+                    isOkForExtra = targetBtn:isEmpty()
+                    if not isOkForExtra then
+                        zebug.info:owner(self):print("KEY", keyName, "Will not add extra binding for this key because it conflicts with", targetBtn)
+                        --if not self:doneSaid(keyName) then
+                        if not self.isNew then
+                            msgUser(self:forUser(), "with keybinding", unmodifiedKeyName, "will not bind", keyName, "because that one is already bound to", targetBtn:forUser())
+                        end
+                        --end
+                        return
+                    end
+                else
+                    -- there is an action but it's not a button, eg FORWARD or TOGGLERUN.  Don't touch it!
+                    isOkForExtra = false
+                end
+            end
+        end
+
+        zebug.info:owner(self):print("KEY", keyName, "existingBinding", action, "btn", targetBtn, "isOkForExtra",isOkForExtra)
+
+        if not isOkForExtra then
             return
         end
     end
 
     local myGlobalVarName = self:GetName()
-    SetOverrideBindingClick(self, true, keyNamePlusModifiers, myGlobalVarName, mouseClick)
+    SetOverrideBindingClick(self, true, keyName, myGlobalVarName, mouseClick)
 
-    local newBinding = GetBindingAction(keyNamePlusModifiers, true)
-    zebug.warn:owner(self):print("keyNamePlusModifiers",keyNamePlusModifiers, "newBinding", newBinding)
+    -- debugging err check - remove when done
+    local newBinding = GetBindingAction(keyName, true)
+    zebug.info:owner(self):print("KEY", keyName, "BOUND! newBinding", newBinding)
+
+    return keyName
 end
 
+---@return Germ the germ that is already bound to this keyName
+function Germ:isAlreadyMainKeyBindingOfSomeOtherGerm(keyName)
+    ---@type Germ
+    local someGerm = mainKeyBindingsForAllGerms[keyName]
+    if someGerm then
+        -- is that Germ me?
+        return (someGerm ~= self) and someGerm
+    end
+    return nil -- no Germ claims this binding
+end
 
-function Germ:doMyKeybinding(event)
-    event = "bindy"
+function Germ:isMyBoundKey(isMyBoundKey)
+    for keyName, foo in pairs(self.mainKeyBindingsKeyNames) do
+        if keyName == isMyBoundKey then return true end
+    end
+end
+
+function Germ:claimMainKeyBinding(keyName)
+    ---@type Germ
+    self.mainKeyBindingsKeyNames[keyName] = true
+    mainKeyBindingsForAllGerms[keyName] = self
+end
+
+function Germ:doMyKeybindings(event)
     if isInCombatLockdown("Keybind") then return end
 
     local parent = self:getParent()
     local btnName = parent.btnYafName or parent.btnName
     local ucBtnName = string.upper(btnName)
     local myGlobalVarName = self:GetName()
-    local keybinds
+    local keybindingsAssignedToMyActionBarButton
     if GetBindingKey(ucBtnName) then
-        keybinds = { GetBindingKey(ucBtnName) }
+        keybindingsAssignedToMyActionBarButton = { GetBindingKey(ucBtnName) }
     end
 
     -- add new keybinds
-    if keybinds then
-        for i, keyName in ipairs(keybinds) do
-            if not tableContainsVal(self.keybinds, keyName) then
-                zebug.warn:owner(self):print("myGlobalVarName", myGlobalVarName, "binding keyName",keyName)
-                --SetOverrideBindingClick(self, true, keyName, myGlobalVarName, MouseClick.SIX)
-                self:modifyAndBindKeyTo(MouseClick.KEYBIND, keyName)
+    local newKeyBindings = {}
+    if keybindingsAssignedToMyActionBarButton then
+        for i, keyName in ipairs(keybindingsAssignedToMyActionBarButton) do
 
-                -- TEMP - hardcode a few
-                -- KEYBIND_CLICK_BEHAVIOR
-                local click4prime = WHICH_CLICK_BEHAVES_AS[GermClickBehavior.PRIME_BTN]
-                print("click4prime",click4prime)
-                local click4rnd = WHICH_CLICK_BEHAVES_AS[GermClickBehavior.RANDOM_BTN]
-                self:modifyAndBindKeyTo(MouseClick.LEFT, keyName, ModifierKey.META)
-                self:modifyAndBindKeyTo(MouseClick.MIDDLE, keyName, ModifierKey.SHIFT)
+            -- handle the MAIN keybinding(s)
+            table.insert(newKeyBindings, keyName)
+            local isAdded = self:bindKeyNameTo(keyName, MouseClick.RESERVED_FOR_KEYBIND)
+            if isAdded then
+                zebug.info:event(event):owner(self):print("bound keyName", keyName)
 
-                if Config:get("enableKeymods") then
-                    local keyMods = Config:get("keyMods")
-                    ---@param keyMod ModifierKey
-                    ---@param behavior GermClickBehavior
-                    for keyMod, behavior in pairs(keyMods) do
-                        zebug.warn:owner(self):print("CONFIG LOOP - binding - keyName",keyName, "keyMod",keyMod, "behavior",behavior)
+                local keybind1 = keybindingsAssignedToMyActionBarButton[1]
+                self:setHotKeyOverlay(keybind1)
+                if not isNumber(keybind1) then
+                    -- store it for use inside the secure code
+                    -- so we can make the first button's keybind be the same as the UFO's
+                    self:setSecEnvAttribute("UFO_KEYBIND_1", keybind1)
+                end
+            else
+                zebug.info:event(event):owner(self):print("NOT binding keyName", keyName, "because it's already bound.")
+            end
 
-                        -- SetOverrideBindingClick(self, true, keyName, myGlobalVarName, MouseClick.SIX)
+            -- handle the MODIFIED (shift/alt/etc) keybinding(s)
+            if Config:get("enableBonusModifierKeys") then
+                local bonusModifierKeys = Config:get("bonusModifierKeys")
+
+                ---@param modifierKey ModifierKey
+                ---@param behavior GermClickBehavior
+                for modifierKey, behavior in pairs(bonusModifierKeys) do
+
+                    local clicker = RESERVED_CLICKER_BEHAVES_AS[behavior]
+
+
+
+                    -- DONE? - I must differentiate between KB I create VS those in the Bliz Opt
+
+                    zebug.info:event(event):owner(self):print("CONFIG OPTS LOOP - binding - keyName", keyName, "modifierKey",modifierKey, "behavior",behavior)
+                    local modName = self:addModifiersToKeyNameAndBind(keyName, clicker, modifierKey)
+
+                    if modName then
+                        table.insert(newKeyBindings, modName)
+                    else
+                        zebug.info:event(event):owner(self):print("NOT binding BonusModifier for Key", keyName, "plus",modifierKey)
                     end
                 end
-
             else
-                zebug.trace:owner(self):print("myGlobalVarName", myGlobalVarName, "NOT binding keyName",keyName, "because it's already bound.")
+                zebug.info:event(event):owner(self):print("CONFIG OPTS - nope!  No bonusModifierKeys for you!")
             end
-        end
-        local keybind1 = keybinds[1]
-        self:setHotKeyOverlay(keybind1)
-        if not isNumber(keybind1) then
-            -- store it for use inside the secure code
-            -- so we can make the first button's keybind be the same as the UFO's
-            self:setSecEnvAttribute("UFO_KEYBIND_1", keybind1)
+
         end
     else
         self:setHotKeyOverlay(nil)
+        self:clearKeybinding()
     end
 
     -- remove deleted keybinds
     if (self.keybinds) then
         for i, keyName in ipairs(self.keybinds) do
-            if not tableContainsVal(keybinds, keyName) then
-                zebug.trace:owner(self):print("myGlobalVarName", myGlobalVarName, "UN-binding keyName",keyName)
+            if not tableContainsVal(newKeyBindings, keyName) then
+                zebug.trace:event(event):owner(self):print("myGlobalVarName", myGlobalVarName, "UN-binding keyName",keyName)
                 SetOverrideBinding(self, true, keyName, nil)
             else
-                zebug.trace:owner(self):print("myGlobalVarName", myGlobalVarName, "NOT UN-binding keyName",keyName, "because it's still bound.")
+                zebug.trace:event(event):owner(self):print("myGlobalVarName", myGlobalVarName, "NOT UN-binding keyName",keyName, "because it's still bound.")
             end
         end
     end
 
-    self.keybinds = keybinds
+    self.keybinds = newKeyBindings
 end
 
-Germ.doMyKeybinding = Pacifier:wrap(Germ.doMyKeybinding, L10N.CHANGE_KEYBINDING)
+Germ.doMyKeybindings = Pacifier:wrap(Germ.doMyKeybindings, L10N.CHANGE_KEYBINDING)
 
 function Germ:clearKeybinding()
     if not (self.keybinds) then return end
@@ -580,8 +700,12 @@ function Germ:clearKeybinding()
     exeOnceNotInCombat("Keybind removal "..self:getName(), function()
         -- FUNC START
         ClearOverrideBindings(self)
-        self:setHotKeyOverlay(nil)
         self.keybinds = nil
+        for keyName, foo in pairs(self.mainKeyBindingsKeyNames) do
+            mainKeyBindingsForAllGerms[keyName] = nil
+        end
+        self.mainKeyBindingsKeyNames = { }
+        self:setHotKeyOverlay(nil)
         -- FUNC END
     end)
 
@@ -679,7 +803,7 @@ function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
         if cursor then
             -- self:handleReceiveDrag(event)
         else
-            zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_DOWN"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
+            zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_DOWN"):print("not dragging, so, exiting. proxy",UfoProxy)
         end
     end, cursor)
 end
@@ -773,17 +897,22 @@ function Germ:assignAllMouseClickers(event)
     end
 
     -- these mouse clicks are unconditionally reserved & hardcoded for special key bindings
-    for behavior, click in pairs(WHICH_CLICK_BEHAVES_AS) do
+    for behavior, click in pairs(RESERVED_CLICKER_BEHAVES_AS) do
         self:assignTheMouseClicker(click, behavior, event)
     end
 
-    self:updateClickerForKeybind(event)
+    self:applyConfigForMainKeybind(event)
 end
 
 -- sets secure environment scripts to handle mouse clicks (left button, right button, etc)
 ---@param mouseClick MouseClick
 ---@param behaviorName GermClickBehavior
 function Germ:assignTheMouseClicker(mouseClick, behaviorName, event)
+    if not behaviorName then
+        GermClickBehaviorAssignmentFunction.NONE(self, mouseClick, event)
+        return
+    end
+
     if not GermClickBehavior[behaviorName] then
         error("Invalid 'behaviorName' arg: " .. (behaviorName or "NiL")) -- type checking in Lua!
     end
@@ -815,9 +944,13 @@ function Germ:updateClickerForBtn1(event)
     end
 end
 
-function Germ:updateClickerForKeybind(event)
+function Germ:applyConfigForMainKeybind(event)
     local keybindBehavior = Config.opts.keybindBehavior or Config.optDefaults.keybindBehavior
-    self:assignTheMouseClicker(MouseClick.KEYBIND, keybindBehavior, event)
+    self:assignTheMouseClicker(MouseClick.RESERVED_FOR_KEYBIND, keybindBehavior, event)
+end
+
+function Germ:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil)
 end
 
 ---@param mouseClick MouseClick
@@ -846,27 +979,33 @@ end
 -------------------------------------------------------------------------------
 
 ---@param mouseClick MouseClick
+function GermClickBehaviorAssignmentFunction:NONE(mouseClick, event)
+    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
+    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick)
+end
+
+---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:OPEN(mouseClick, event)
-    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil)
+    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
     zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick)
-    self:assignSecEnvMouseClickBehaviorViaAttribute(mouseClick, SEC_ENV_SCRIPT_NAME_FOR_OPEN)
+    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, SEC_ENV_SCRIPT_NAME_FOR_OPEN)
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:PRIME_BTN(mouseClick, event)
-    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil)
-    self:assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef(mouseClick, event) -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
+    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
+    self:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(mouseClick, event) -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:RANDOM_BTN(mouseClick, event)
-    self:assignSecEnvMouseClickBehaviorViaAttribute(mouseClick, nil)
+    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick)
     self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.RANDOM_BTN)
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:CYCLE_ALL_BTNS(mouseClick, event)
-    self:assignSecEnvMouseClickBehaviorViaAttribute(mouseClick, nil)
+    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick)
     self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.CYCLE_ALL_BTNS)
 end
 
@@ -1029,7 +1168,7 @@ function Germ:getSecEnvScriptFor_ON_CLICK()
         -- INCOMING PARAMS - rename/remap Blizard's idiotic variables and SHITTY identifiers
         local isClicked          = down -- true/false
         local mouseClick         = button -- "LeftButton" etc
-        local secureMouseClickId = MAP_MOUSE_CLICK_AS_A_TYPE[mouseClick] -- turn "LeftButton" into "type1" etc
+        local secEnvMouseClickId = MAP_MOUSE_CLICK_AS_A_TYPE[mouseClick] -- turn "LeftButton" into "type1" etc
         local mouseBtnNumber     = MAP_MOUSE_CLICK_AS_NUMBER[mouseClick] -- turn "LeftButton" into "1" etc
 
         -- logic figuring out what's going to happen
@@ -1042,7 +1181,7 @@ function Germ:getSecEnvScriptFor_ON_CLICK()
         --[[DEBUG]] if doDebug and isClicked then
         --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() mouseClick",mouseClick, "isClicked",isClicked, "onlyInitialize",onlyInitialize)
         --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() behaviorKey",behaviorKey, "behavior",behavior, "doCycle",doCycle, "doRandomizer",doRandomizer)
-        --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() secureMouseClickId",secureMouseClickId, "mouseBtnNumber",mouseBtnNumber)
+        --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() secEnvMouseClickId",secEnvMouseClickId, "mouseBtnNumber",mouseBtnNumber)
         --[[DEBUG]] end
 
         if onlyInitialize then
@@ -1123,19 +1262,23 @@ function Germ:getSecEnvScriptFor_ON_CLICK()
         local btn    = buttonsOnFlyoutMenu[x]
         if not btn then return end
         local type   = btn:GetAttribute("type")
-        local key    = btn:GetAttribute("UFO_KEY") -- set inside assignSecEnvAttributeForMouseClick()
-        local val    = btn:GetAttribute("UFO_VAL") -- set inside assignSecEnvAttributeForMouseClick()
-        local adjKey = key .. mouseBtnNumber -- convert "macro" into "marco1" etc
+        local SEC_ENV_ACTION_TYPE   = btn:GetAttribute("SEC_ENV_ACTION_TYPE") -- set inside assignSecEnvAttributeForMouseClick()
+        local SEC_ENV_ACTION_TYPE_D = btn:GetAttribute("SEC_ENV_ACTION_TYPE_DUMBER") -- set inside assignSecEnvAttributeForMouseClick()
+        local SEC_ENV_ACTION_ARG    = btn:GetAttribute("SEC_ENV_ACTION_ARG") -- set inside assignSecEnvAttributeForMouseClick()
+        local SEC_ENV_ACTION_TYPE_ADJUSTED = SEC_ENV_ACTION_TYPE .. mouseBtnNumber -- convert "macro" into "marco1" etc
+        local SEC_ENV_ACTION_TYPE_DUMBER_AND_ADJUSTED = SEC_ENV_ACTION_TYPE_D .. mouseBtnNumber -- convert "macrotext" into "macrotext1" etc
 
         --[[DEBUG]] if doDebug then
-        --[[DEBUG]]     print("<DEBUG>", myName)
+        --[[DEBUG]]     print("<DEBUG>", myName, "type",type, "SEC_ENV_TYPE_DUMB_ADJ",SEC_ENV_ACTION_TYPE_DUMBER_AND_ADJUSTED, "SEC_ENV_ACTION_ARG",SEC_ENV_ACTION_ARG)
         --[[DEBUG]] end
 
-        --print("PickerClicker(): germ =", myName, "(3) copy btn to clicker... btn#",x, secureMouseClickId, "-->", type, "... adjKey =", adjKey, "-->",val) -- this shows that it is firing for both mouse UP and DOWN
-
         -- copy the btn's behavior onto myself
-        self:SetAttribute(secureMouseClickId, type)
-        self:SetAttribute(adjKey, val)
+        self:SetAttribute(secEnvMouseClickId, type)
+        self:SetAttribute(SEC_ENV_ACTION_TYPE_DUMBER_AND_ADJUSTED, SEC_ENV_ACTION_ARG)
+
+        if SEC_ENV_ACTION_TYPE ~= SEC_ENV_ACTION_TYPE_D then
+            self:SetAttribute(SEC_ENV_ACTION_TYPE_ADJUSTED, nil) -- handle case of macro, macrotext, "/petattack" which would leave macro -> stale data
+        end
 ]=]
     end
     return SEC_ENV_SCRIPT_FOR_ON_CLICK
@@ -1199,15 +1342,27 @@ function Germ:printDebugDetails(event, okToGo)
     if not okToGo then return end
 
     local parent, parentName = self:getParentAndName()
-    zebug.warn:event(event):name("details"):owner(self):print("isActive",self:isActive(), "IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent", parentName, "flyoutMenu",self.flyoutMenu, "visibilityDriver",self.visibilityDriver)
+    zebug.warn:event(event):owner(self):print("isActive",self:isActive(), "IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent", parentName, "flyoutMenu",self.flyoutMenu, "visibilityDriver",self.visibilityDriver)
 
+    local t = self:GetAttribute("type") or "NIL"
     local t1 = self:GetAttribute("type1") or "NIL"
     local t2 = self:GetAttribute("type2") or "NIL"
     local t3 = self:GetAttribute("type3") or "NIL"
+    local t6 = self:GetAttribute("type6") or "NIL"
+
+    local v  = self:GetAttribute(t) or "nIl"
     local v1 = self:GetAttribute(t1.."1") or "nIl"
     local v2 = self:GetAttribute(t2.."2") or "nIl"
     local v3 = self:GetAttribute(t3.."3") or "nIl"
-    zebug.warn:event(event):name("details"):owner(self):print("t1",t1, "v1",v1, "t2",t2, "v2",v2, "t3",t3, "v3",v3)
+    local v6 = self:GetAttribute(t6.."6") or "nIl"
+
+    local d  = self:GetAttribute("SEC_ENV_ACTION_TYPE_DUMBER") or "nIl"
+    local d0 = self:GetAttribute(d) or "nIl"
+    local d1 = self:GetAttribute(d.."1") or "nIl"
+    local d2 = self:GetAttribute(d.."2") or "nIl"
+    local d3 = self:GetAttribute(d.."3") or "nIl"
+    local d6 = self:GetAttribute(d.."6") or "nIl"
+    zebug.warn:event(event):owner(self):print("t=atr['typeX'] and atr[tX] - t",t, "v",v,  "d",d, "d0",d0, "t1",t1, "v1",v1, "d1",d1,   "t2",t2, "v2",v2, "d2",d2, "t3",t3, "v3",v3,"d3",d3, "t6",t6, "v6",v6, "d6",d6)
 
     if self.flyoutMenu then self.flyoutMenu:printDebugDetails(event, okToGo) end
 
@@ -1230,12 +1385,23 @@ local function shortName(s)
 end
 
 function Germ:toString()
+    local result
     if not self.flyoutId then
-        return "<Germ: EMPTY>"
+        result = self.isUserFacing and "<UFO: EMPTY>" or "<Germ: EMPTY>"
     else
         local icon = self:getIcon()
-        return string.format("<Germ: |T%d:0|t %s>", icon, shortName(self.label or self:getLabel() ) or "UnKnOwN")
+        local label = self.isUserFacing and self.label or self:getLabel() or shortName(self.label or self:getLabel() )
+        result = self.isUserFacing
+                and string.format("<UFO: |T%d:0|t %s>", icon, label or "UnKnOwN")
+                or string.format("<Germ: |T%d:0|t %s>", icon, label or "UnKnOwN")
     end
+
+    self.isUserFacing = false
+    return result
 end
 
-
+function Germ:forUser()
+    -- set Flag For User Facing Messaging
+    self.isUserFacing = true
+    return self
+end

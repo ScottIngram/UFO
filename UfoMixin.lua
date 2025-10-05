@@ -129,7 +129,11 @@ function UfoMixIn:getSecEnvAttribute(key)
     self:GetAttribute(key)
 end
 
-function UfoMixIn:assignSecEnvMouseClickBehaviorViaAttribute(mouseClick, value)
+function UfoMixIn:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, value)
+    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, nil)
+end
+
+function UfoMixIn:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, value)
     self:setSecEnvAttribute(MouseClickAsSecEnvId[mouseClick], value)
 end
 

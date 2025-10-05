@@ -73,7 +73,7 @@ function ButtonOnFlyoutMenu:setDef(btnDef, event)
     -- install click behavior but only if it's on a Germ (i.e. not in the Catalog)
     local flyoutMenu = self:GetParent()
     if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
-        self:assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef(MouseClick.ANY, event)
+        self:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(MouseClick.ANY, event)
         -- TODO: v11.1 build this into my Button_Mixin
         safelySetAttribute(self, "UFO_NO_RND", btnDef and btnDef.noRnd or nil) -- SECURE TEMPLATE
         safelySetAttribute(self, "myName", self:getLabel()) -- SECURE TEMPLATE
@@ -159,7 +159,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     local crsDef = ButtonDef:getFromCursor(event)
     if not crsDef then
         zebug.info:event(event):owner(self):print("Sorry, unsupported type:", Ufo.unknownType)
-        msgUser(L10N.UNSUPPORTED_TYPE .. ": " .. Ufo.unknownType)
+        msgUser(L10N.UNSUPPORTED_TYPE, ": ", Ufo.unknownType)
         return
     end
 
@@ -255,7 +255,7 @@ function ButtonOnFlyoutMenu:setTooltip()
 
     local name = btnDef:getName()
     if not name then
-        msgUser(L10N.UNKNOWN .. " button on " .. self:getParent():getLabel())
+        msgUser(L10N.UNKNOWN, "button on", self:getParent():getLabel())
         name = L10N.UNKNOWN
     end
 
@@ -332,26 +332,29 @@ function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
     -- local icon = self:GetNormalTexture() -- nope.  doesn't exist
 
     local myName  = self:GetAttribute("UFO_NAME")
-    local UFO_KEY = self:GetAttribute("UFO_KEY")
-    local UFO_VAL = self:GetAttribute("UFO_VAL")
-    local icon    = self:GetAttribute("UFO_ICON")
+    local SEC_ENV_ACTION_TYPE   = self:GetAttribute("SEC_ENV_ACTION_TYPE")
+    local SEC_ENV_ACTION_TYPE_D = self:GetAttribute("SEC_ENV_ACTION_TYPE_DUMBER")
+    local SEC_ENV_ACTION_ARG    = self:GetAttribute("SEC_ENV_ACTION_ARG")
+    local icon          = self:GetAttribute("UFO_ICON")
     local isPrimeRecent = germ:GetAttribute("IS_PRIME_RECENT")
 
     --[[DEBUG]] if doDebug then
     --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() germ",germ:GetAttribute("UFO_NAME"), "flyoutMenu",flyoutMenu:GetAttribute("UFO_NAME"),"germSignaler",germSignaler)
-    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isClicked",isClicked, "mouseClick",mouseClick, "UFO_KEY",UFO_KEY, "UFO_VAL",UFO_VAL)
+    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isClicked",isClicked, "mouseClick",mouseClick, "SEC_ENV_ACTION_TYPE",SEC_ENV_ACTION_TYPE, "SEC_ENV_ACTION_TYPE_D",SEC_ENV_ACTION_TYPE_D, "SEC_ENV_ACTION_ARG",SEC_ENV_ACTION_ARG)
     --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() icon",icon)
     --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isPrimeRecent",isPrimeRecent)
     --[[DEBUG]] end
 
-    germ:SetAttribute("UFO_KEY", UFO_KEY)
-    germ:SetAttribute("UFO_VAL", UFO_VAL)
+    -- are these 3 in use ?
+    germ:SetAttribute("SEC_ENV_ACTION_TYPE", SEC_ENV_ACTION_TYPE)
+    germ:SetAttribute("SEC_ENV_ACTION_ARG", SEC_ENV_ACTION_ARG)
+    germ:SetAttribute("SEC_ENV_ACTION_TYPE_DUMBER_AND_ADJUSTED", SEC_ENV_ACTION_TYPE_D) -- misnomer
 
     -- when the Prime Button is clicked AND Prime is defined as "most recent"
     -- copy my behavior to the germ
     if isPrimeRecent then
         -- find out which mouse clicks are assigned the "Primary Button" behavior
-        for i = 1, 6 do
+        for i = 1, 10 do -- TODO: don't hardcode this
             local flagNameForIsThisBtmPrime = "IS_A_PRIME_BTN_" .. i
             local isThisBtmPrime = germ:GetAttribute(flagNameForIsThisBtmPrime)
 
@@ -360,9 +363,20 @@ function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
             if isThisBtmPrime then
                 -- Bliz nomenclature for "mouse click X" where x=[1,2,3...] which corresponds to left, right, middle...
                 local typeKey = "type"..i
-                local actionKey = UFO_KEY..i
-                germ:SetAttribute(typeKey, UFO_KEY)
-                germ:SetAttribute(actionKey, UFO_VAL)
+                local actionKeyAdj = SEC_ENV_ACTION_TYPE .. i -- macrotext1
+                local actionKeyDumberAdj = SEC_ENV_ACTION_TYPE_D .. i -- macrotext1
+
+                if SEC_ENV_ACTION_TYPE == SEC_ENV_ACTION_TYPE_D then
+                    germ:SetAttribute(typeKey, SEC_ENV_ACTION_TYPE) -- macro
+                    germ:SetAttribute(actionKeyAdj, SEC_ENV_ACTION_ARG)
+                    --[[DEBUG]] if doDebug then print ("<DEBUG> EQUALZ", myName, flagNameForIsThisBtmPrime, isThisBtmPrime, typeKey, "=", SEC_ENV_ACTION_TYPE, actionKeyAdj, '= "', SEC_ENV_ACTION_ARG, '"',  actionKeyDumberAdj, "= nil") end
+                else
+                    germ:SetAttribute(typeKey, SEC_ENV_ACTION_TYPE) -- macro
+                    germ:SetAttribute(actionKeyDumberAdj, SEC_ENV_ACTION_ARG)
+                    -- clear stale data
+                    germ:SetAttribute(actionKeyAdj, nil)
+                    --[[DEBUG]] if doDebug then print ("<DEBUG> ELSE", myName, flagNameForIsThisBtmPrime, isThisBtmPrime, typeKey, "=", SEC_ENV_ACTION_TYPE, actionKeyDumberAdj, '= "', SEC_ENV_ACTION_ARG, '"',  actionKeyAdj, "= nil") end
+                end
             end
         end
     end
@@ -487,10 +501,13 @@ end
 
 function ButtonOnFlyoutMenu:printDebugDetails(event)
     local t = self:GetAttribute("type")
-    local secEnvType = self:GetAttribute("UFO_KEY")
-    local secEnvArg = self:GetAttribute("UFO_VAL")
+    local secEnvType = self:GetAttribute("SEC_ENV_ACTION_TYPE")
+    local secEnvTypeDumb = self:GetAttribute("SEC_ENV_ACTION_TYPE_DUMBER")
+    local secEnvArg = self:GetAttribute("SEC_ENV_ACTION_ARG")
+    local type = self:GetAttribute("type")
+    local tVal = self:GetAttribute(type)
 
-    zebug.warn:event(event):name("details"):owner(self):print("SEC key", secEnvType, "SEC val", secEnvArg)
+    zebug.warn:event(event):name("details"):owner(self):print("type",type, "tVal",tVal, "SEC type", secEnvType, "DUMB type", secEnvTypeDumb, "SEC arg", secEnvArg)
 end
 
 -------------------------------------------------------------------------------

@@ -19,8 +19,8 @@ GLOBAL_Button_Mixin = Button_Mixin
 --  Constants
 -------------------------------------------------------------------------------
 
----@class SecureMouseClickId
-SecureMouseClickId = {
+---@class SecEnvMouseClickId
+SecEnvMouseClickId = {
     type = "type", -- all buttons
     type1 = "type1",
     type2 = "type2",
@@ -260,18 +260,18 @@ end
 --  SecEnv TEMPLATE / RESTRICTED ENVIRONMENT
 -------------------------------------------------------------------------------
 
----@param secureMouseClickId SecureMouseClickId
-function Button_Mixin:getMouseBtnNumber(secureMouseClickId)
-    local mouseBtnNumber = string.sub(secureMouseClickId, -1) -- last digit of "type1" or "type3" etc
+---@param secEnvMouseClickId SecEnvMouseClickId
+function Button_Mixin:getMouseBtnNumber(secEnvMouseClickId)
+    local mouseBtnNumber = string.sub(secEnvMouseClickId, -1) -- last digit of "type1" or "type3" etc
     return tonumber(mouseBtnNumber) and mouseBtnNumber or nil
 end
 
 -- because in the world of Bliz SECURE
 -- if your type = "type3"
 -- then your key must be key.."3" where key is typically "spell" or "item" etc.
----@param secureMouseClickId SecureMouseClickId
-function Button_Mixin:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, key)
-    local mouseBtnNumber = self:getMouseBtnNumber(secureMouseClickId)
+---@param secEnvMouseClickId SecEnvMouseClickId
+function Button_Mixin:adjustSecureKeyToMatchTheMouseClick(secEnvMouseClickId, key)
+    local mouseBtnNumber = self:getMouseBtnNumber(secEnvMouseClickId)
     if mouseBtnNumber then
         return key .. mouseBtnNumber
     else
@@ -281,34 +281,39 @@ end
 
 
 ---@param mouseClick MouseClick
-function Button_Mixin:assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef(mouseClick, event)
+function Button_Mixin:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(mouseClick, event)
     ---@type ButtonDef
     local btnDef = self:getDef()
 
     if btnDef then
-        local secureMouseClickId = MouseClickAsSecEnvId[mouseClick] -- "type1" or "type2" etc
+        local secEnvMouseClickId = MouseClickAsSecEnvId[mouseClick] -- "type1" or "type2" etc
         local typeOfAction, typeOfActionButDumber, actualAction = btnDef:asSecureClickHandlerAttributes(event)
-        local typeOfActionAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secureMouseClickId, typeOfActionButDumber)
-        zebug.trace:event(event):owner(self):print("name",btnDef.name, "type", typeOfAction, "key", typeOfActionButDumber, "keyAdjusted", typeOfActionAdjustedToMatchMouseClick, "val", actualAction)
+        -- typeOfActionButDumber = typeOfActionButDumber or typeOfAction
+        local typeOfActionButDumberAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secEnvMouseClickId, typeOfActionButDumber)
+        zebug.info:event(event):owner(self):noName():print("t",secEnvMouseClickId, "type", typeOfAction, "typeDumber", typeOfActionButDumber, "typeDumberAdjusted", typeOfActionButDumberAdjustedToMatchMouseClick, "actualAction", actualAction)
 
-        self:SetAttribute(secureMouseClickId, typeOfAction) -- eg "type1" -> "macro"
-        self:SetAttribute(typeOfActionAdjustedToMatchMouseClick, actualAction) -- eg, "macro1" -> "/say weak sauce"
+        self:SetAttribute(secEnvMouseClickId, typeOfAction) -- eg "type1" -> "macro"
+        self:SetAttribute(typeOfActionButDumberAdjustedToMatchMouseClick, actualAction) -- eg, "macro1" -> "/say weak sauce"
+
+        -- TODO - investigate potential bug of WHEN a flyout def changes and the btnDefs change / change positions THEN will there be stale macro/macrotext values?  See prime button code
 
         -- for use by Germ's ON_CLICK script
         if self.ufoType == ButtonOnFlyoutMenu.ufoType then
-            self:SetAttribute("UFO_KEY", typeOfActionButDumber)
-            self:SetAttribute("UFO_VAL", actualAction)
+            self:SetAttribute("SEC_ENV_ACTION_TYPE", typeOfAction)-- typeOfActionButDumber)
+            self:SetAttribute("SEC_ENV_ACTION_TYPE_DUMBER", typeOfActionButDumber)-- typeOfActionButDumber)
+            self:SetAttribute("SEC_ENV_ACTION_ARG", actualAction)
         end
     else
         self:SetAttribute("type", nil)
     end
 end
 
-Button_Mixin.assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef = Pacifier:wrap(Button_Mixin.assignSecEnvMouseClickBehaviorViaAttributeFromBtnDef)
+Button_Mixin.assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef = Pacifier:wrap(Button_Mixin.assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef)
+
+function Button_Mixin:getsecEnvMouseClickId(mouseClick)
+    return MouseClickAsSecEnvId[mouseClick]
+end
 
 Button_Mixin.setSecEnvAttribute = UfoMixIn.setSecEnvAttribute
 Button_Mixin.safelySetSecEnvAttribute = UfoMixIn.safelySetSecEnvAttribute
 
-function Button_Mixin:getSecureMouseClickId(mouseClick)
-    return MouseClickAsSecEnvId[mouseClick]
-end

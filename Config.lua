@@ -19,9 +19,9 @@ MouseClick = Ufo.MouseClick
 ---@field clickers table germ behavior for various mouse clicks
 ---@field keybindBehavior GermClickBehavior when a keybind is activated, it will perform this action
 ---@field doKeybindTheButtonsOnTheFlyout boolean when a UFO is open, are its buttons bound to number keys?
----@field enableKeymods boolean Incorporate shift, control, etc when using keybindings
----@field doNotOverwriteExistingKeybindings boolean when enableKeymods are enabled, do not create new key bindings that clobber pre-existing ones
----@field keyMods table<ModifierKey,GermClickBehavior> maps shift/ctrl/etc to OPEN/PRIME/etc
+---@field enableBonusModifierKeys boolean Incorporate shift, control, etc when using keybindings
+---@field doNotOverwriteExistingKeybindings boolean when enableBonusModifierKeys are enabled, do not create new key bindings that clobber pre-existing ones
+---@field bonusModifierKeys table<ModifierKey,GermClickBehavior> maps shift/ctrl/etc to OPEN/PRIME/etc
 ---@field muteLogin boolean don't print out status messages on log in
 ---@field showLabels boolean display a UFO's name on the action bar button
 ---@field primaryButtonIs PrimaryButtonIs which button is considered "primary"
@@ -68,7 +68,7 @@ function Config:getOptionDefaults()
         showLabels       = false,
         hideCooldownsWhen = 99999,
         keybindBehavior = GermClickBehavior.OPEN,
-        enableKeymods = false,
+        enableBonusModifierKeys = false,
         doKeybindTheButtonsOnTheFlyout = true,
         primaryButtonIs = PrimaryButtonIs.FIRST,
         clickers = {
@@ -79,11 +79,11 @@ function Config:getOptionDefaults()
                     [MouseClick.RIGHT]  = GermClickBehavior.PRIME_BTN,
                     [MouseClick.MIDDLE] = GermClickBehavior.RANDOM_BTN,
                     [MouseClick.FOUR]   = GermClickBehavior.CYCLE_ALL_BTNS,
-                    [MouseClick.FIVE]   = GermClickBehavior.OPEN, -- REVERSE_CYCLE_ALL_BTNS,
+                    [MouseClick.FIVE]   = nil, -- REVERSE_CYCLE_ALL_BTNS,
                 }
             }
         },
-        keyMods = {
+        bonusModifierKeys = {
             [ModifierKey.SHIFT] = nil,
             [ModifierKey.ALT]   = nil,
             [ModifierKey.CTRL]  = nil,
@@ -314,7 +314,7 @@ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured 
                             local isDiff = opts.keybindBehavior ~= behavior
                             opts.keybindBehavior = behavior
                             if isDiff then
-                                GermCommander:updateAllKeybindBehavior("Config-ObeyBtnSlotKeybind")
+                                GermCommander:applyConfigForMainKeybind("Config-Main-Keybind")
                             end
                         end,
                         get = function()
@@ -327,18 +327,18 @@ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured 
                     -- Keymods
                     -------------------------------------------------------------------------------
 
-                    enableKeymods = {
+                    enableBonusModifierKeys = {
                         order = 500,
                         name = "Enable Modifier Keys for Keybinds",
                         desc = "Incorporate shift, control, etc when using keybindings.",
                         width = "double",
                         type = "toggle",
                         set = function(optionsMenu, val)
-                            opts.enableKeymods = val
-                            GermCommander:applyConfigForAllKeyMods(val, opts.keyMods, Event:new("Config", "mod-ALL-the-mod-keys"))
+                            opts.enableBonusModifierKeys = val
+                            GermCommander:applyConfigForBonusModifierKeys(Event:new("Config", "mod-ALL-the-mod-keys"))
                         end,
                         get = function()
-                            return Config:get("enableKeymods")
+                            return Config:get("enableBonusModifierKeys")
                         end,
                     },
                     keymodGroup = {
@@ -346,15 +346,13 @@ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured 
                         name = "Modifier Keys for Keybindings",
                         type = "group",
                         inline = true, -- set this to false to enable multiple configs, one per flyout.
-                        hidden = function() return not Config:get("enableKeymods")  end,
+                        hidden = function() return not Config:get("enableBonusModifierKeys")  end,
                         args = {
                             keymodHelp = {
                                 order = 10,
                                 type = 'description',
                                 name = [=[
 In addition to using the keybindings configured in the standard WoW menus, UFO can bind extra key + modifier combinations.  For example, if you have a UFO bound to the Z key, then you can add shift-Z or control-Z here.
-
-Note: please choose if you want UFO to override or preserve any such existing bindings.  So, if you already have an action bound to shift-Z, then, use the checkbox below to tell UFO how to handle it.
 ]=]
                             },
 
@@ -363,15 +361,26 @@ Note: please choose if you want UFO to override or preserve any such existing bi
                             altKey   = includeKeyModOpts(ModifierKey.ALT),
                             cmdtKey  = includeKeyModOpts(ModifierKey.META),
 
-                            doNotOverwriteExistingKeybindings = {
+                            keymodOverwriteHelp = {
                                 order = keymodOptsOrder + 10,
+                                type = 'description',
+                                name = [=[
+
+(Note: modifiers are additive.  So, if a UFO's main keybind is CMD-X then its extra bindings will always include "CMD-X" plus the modifiers.  Expect CMD-SHIFT-X (not SHIFT-X) and CMD-ALT-X (not ALT-X)
+
+In the above example, there is a UFO on the Z key.  What if there is also an action bound to Shift-Z (for example) already.  How do you want UFO how to handle such a conflict?
+]=]
+                            },
+
+                            doNotOverwriteExistingKeybindings = {
+                                order = keymodOptsOrder + 20,
                                 name = "Do Not Overwrite Existing Keybindings",
-                                desc = "If add a Shift-Z  to your UFO on the Z button (for example) if there already exists some Shift-Z key binding",
+                                desc = "Leave existing keybindings intact rather than overwrite them with new ones specific to a UFO",
                                 width = "double",
                                 type = "toggle",
                                 set = function(optionsMenu, val)
                                     opts.doNotOverwriteExistingKeybindings = val
-                                    GermCommander:applyConfigForAllKeyMods(val, opts.keyMods, Event:new("Config", "mod-ALL-the-mod-keys"))
+                                    GermCommander:applyConfigForBonusModifierKeys(Event:new("Config", "config-key-mods-clobber"))
                                 end,
                                 get = function()
                                     return Config:get("doNotOverwriteExistingKeybindings")
@@ -450,7 +459,7 @@ local mouseButtonName = {
     [MouseClick.MIDDLE] = "Middle",
     [MouseClick.FOUR]   = "Fourth",
     [MouseClick.FIVE]   = "Fifth",
-    [MouseClick.KEYBIND]    = "Keybind",
+    [MouseClick.RESERVED_FOR_KEYBIND]    = "Keybind",
 }
 
 ---@param click MouseClick
@@ -464,10 +473,13 @@ function includeMouseButtonOpts(mouseClick)
         width = "double",
         type = "select",
         style = "dropdown",
-        values = includeGermClickBehaviors(),
-        sorting = includeGermClickBehaviorSorting(),
+        values = includeGermClickBehaviors("include empty"),
+        sorting = includeGermClickBehaviorSorting("include empty"),
         ---@param behavior GermClickBehavior
         set = function(zelf, behavior)
+            if behavior == KEY_MOD_NA then
+                behavior = nil
+            end
             Config:setClickBehavior(nil, mouseClick, behavior)
             zebug.info:name("opt:MouseButtonOpts()"):print("mouseClick",mouseClick, "new val", behavior)
             GermCommander:updateClickerForAllActiveGerms(mouseClick, Event:new("Config", "bind-a-mouse-button"))
@@ -489,23 +501,23 @@ function includeKeyModOpts(modifierKey, mk2)
         order = keymodOptsOrder,
         name = L10N[modifierKey] or "NiL",
         desc = "Assign an action to the keybind + ".. zebug.warn:colorize(L10N[modifierKey] or "NiL") .." modifier",
-        width = "medium",
+        width = "double",
         type = "select",
         style = "dropdown",
         values = includeGermClickBehaviors("include empty"),
         sorting = includeGermClickBehaviorSorting("do it dummy"),
         ---@param behavior GermClickBehavior
         set = function(zelf, behavior)
-            zebug.warn:name("opt:KeyModOpts()"):print("modifierKey",modifierKey, "new val", behavior)
+            zebug.info:name("opt:KeyModOpts()"):print("modifierKey",modifierKey, "new val", behavior)
             if behavior == KEY_MOD_NA then
                 behavior = nil
             end
-            Config.opts.keyMods[modifierKey] = behavior
-            GermCommander:applyConfigForKeyMods(modifierKey, behavior, Event:new("Config", "mod-the-mod-keys"))
+            Config.opts.bonusModifierKeys[modifierKey] = behavior
+            GermCommander:applyConfigForBonusModifierKeys(modifierKey, behavior, Event:new("Config", "mod-the-mod-keys"))
         end,
         ---@return GermClickBehavior
         get = function()
-            return Config.opts.keyMods[modifierKey]
+            return Config.opts.bonusModifierKeys[modifierKey]
         end,
     }
 end
@@ -585,10 +597,10 @@ function Config:setClickBehavior(flyoutId, mouseClick, behavior)
     clickOpts[mouseClick] = behavior
 end
 
----@param keyMod ModifierKey
+---@param modifierKey ModifierKey
 ---@return GermClickBehavior
-function Config:getKeyModBehavior(keyMod)
-    return Config.keyMod[keyMod]
+function Config:getKeyModBehavior(modifierKey)
+    return Config.modifierKey[modifierKey]
 end
 
 function Config:isPrimeDefinedAsRecent()

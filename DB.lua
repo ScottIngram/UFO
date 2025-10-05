@@ -94,7 +94,7 @@ function DB:initializeOptsMemory()
     end
 
     -- new opt introduced by UFO 11.2.0
-    if not Config.opts.keyMods then
-        Config.opts.keyMods = {}
+    if not Config.opts.bonusModifierKeys then
+        Config.opts.bonusModifierKeys = {}
     end
 end

@@ -14,7 +14,9 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.TRACE)
 ---@class GermCommander -- IntelliJ-EmmyLua annotation
 ---@field ufoType string The classname
 ---@field updatingAll boolean true when updateAllGerms() is making a LOT of noise
-GermCommander = { ufoType="GermCommander" }
+GermCommander = {
+    ufoType="GermCommander",
+}
 
 ---@alias BtnSlotIndex number
 
@@ -141,11 +143,11 @@ function GermCommander:initializeAllSlots(event)
     end)
 end
 
-function GermCommander:updateAllKeybindBehavior(event)
-    self:forEachActiveGerm(Germ.updateClickerForKeybind, event)
+function GermCommander:applyConfigForMainKeybind(event)
+    self:forEachActiveGerm(Germ.applyConfigForMainKeybind, event)
 end
 
-GermCommander.updateAllKeybindBehavior = Pacifier:wrap(GermCommander.updateAllKeybindBehavior, L10N.CHANGE_KEYBIND_ACTION)
+GermCommander.applyConfigForMainKeybind = Pacifier:wrap(GermCommander.applyConfigForMainKeybind, L10N.CHANGE_KEYBIND_ACTION)
 
 function GermCommander:applyConfigForBindTheButtons(event)
     local doKeybindTheButtonsOnTheFlyout = Config:get("doKeybindTheButtonsOnTheFlyout")
@@ -159,6 +161,19 @@ function GermCommander:applyConfigForBindTheButtons(event)
 end
 
 GermCommander.applyConfigForBindTheButtons = Pacifier:wrap(GermCommander.applyConfigForBindTheButtons, L10N.RECONFIGURE_FLYOUT_BUTTON_KEYBINDING)
+
+---@param keymod ModifierKey
+---@param behavior GermClickBehavior
+---@param event Event
+function GermCommander:applyConfigForBonusModifierKeys(event)
+    ---@param germ Germ
+    self:forEachActiveGerm(function(germ)
+        germ:clearKeybinding() -- nuke them all and start from scratch
+        germ:doMyKeybindings(event)
+    end, event)
+end
+
+GermCommander.applyConfigForBonusModifierKeys = Pacifier:wrap(GermCommander.applyConfigForBonusModifierKeys, L10N.RECONFIGURE_FLYOUT_BUTTON_KEYBINDING)
 
 function GermCommander:applyConfigForPrimaryButtonIs(event)
     -- no need to check that the value has actually changed.  The config module is good about invoking this call only on an actual change.
@@ -205,25 +220,6 @@ function GermCommander:applyConfigForLabels(event)
     end, event)
 end
 
-function GermCommander:applyConfigForAllKeyMods(enable, configs, event)
-    ---@param modifierKey ModifierKey
-    ---@param germClickBehavior GermClickBehavior
-    for modifierKey, germClickBehavior in pairs(configs) do
-        self:applyConfigForKeyMods(modifierKey, enable and germClickBehavior or nil, event)
-    end
-end
-
----@param keymod ModifierKey
----@param behavior GermClickBehavior
----@param event Event
-function GermCommander:applyConfigForKeyMods(keymod, behavior, event)
-    zebug.warn:event(event):print("keymod",keymod, "behavior",behavior)
-    ---@param germ Germ
-    self:forEachActiveGerm(function(germ)
-        --germ:applyConfigForShowLabel(event)
-    end, event)
-end
-
 ---@return GERM_TYPE
 function GermCommander:recallGerm(btnSlotIndex)
     return germs[btnSlotIndex]
@@ -259,6 +255,7 @@ end
 -- Responds to event: ACTIONBAR_SLOT_CHANGED
 -- The altered slot could now be:
 --- * empty - so we must clear any existing UFO that was there before
+---   TODO - award the keybindinds of the newly empty slot to any UFO who had deferred to the former occupant
 --- * a std Bliz thingy - ditto
 --- * a Ufo proxy for the same flyoutId as before this event - NO ACTION REQUIRED
 --- * a Ufo proxy for a new flyoutId than was there before this event - update the existing Germ with the new UFO config

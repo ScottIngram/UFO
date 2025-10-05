@@ -356,8 +356,7 @@ function initalizeAddonStuff(event)
     IconPicker:init()
 
     local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
-    local msg = L10N.LOADED .. " v"..version
-    msgUser(msg, IS_OPTIONAL)
+    msgUserOrNot(L10N.LOADED, "v"..version)
 
     -- flags to wait out the chaos happening when the UI first loads / reloads.
     isUfoInitialized = true

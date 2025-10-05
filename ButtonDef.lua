@@ -377,6 +377,8 @@ function ButtonDef:getName()
         zebug.info:print("Unknown type:",t)
     end
 
+    self.name = stripEol(self.name)
+
     return self.name
 end
 
@@ -384,6 +386,12 @@ function trim1(s)
     if not s then return nil end
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
+
+function stripEol(s)
+    if not s then return nil end
+    return s:gsub("\n", " ")
+end
+
 
 function ButtonDef:getToolTipSetter()
     local type = self.type
