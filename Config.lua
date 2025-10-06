@@ -25,6 +25,7 @@ MouseClick = Ufo.MouseClick
 ---@field muteLogin boolean don't print out status messages on log in
 ---@field showLabels boolean display a UFO's name on the action bar button
 ---@field primaryButtonIs PrimaryButtonIs which button is considered "primary"
+---@field version number identifies the config data's format. determines when the config is (in)compatible with the addon code's version
 Options = { }
 
 ---@class Config -- IntelliJ-EmmyLua annotation
@@ -670,3 +671,60 @@ function Config:deletePlaceholder()
 end
 
 Config.deletePlaceholder = Pacifier:wrap(Config.deletePlaceholder, L10N.DELETE_PLACEHOLDERS)
+
+-------------------------------------------------------------------------------
+-- Versioning and Migration
+-------------------------------------------------------------------------------
+
+local migrationFuncs = {}
+
+function Config:getRequiredVersion()
+    local vString = C_AddOns.GetAddOnMetadata(ADDON_NAME, "X-Config-Version") or 0
+    return tonumber(vString)
+end
+
+function Config:getCurrentVersion()
+    if not self.opts.version then
+        self.opts.version = 1
+    end
+    return self.opts.version
+end
+
+function Config:migrateToCurrentVersion()
+    local v = self:getCurrentVersion()
+    local required = self:getRequiredVersion()
+
+    if v == required then
+        return
+    elseif v > required then
+        -- um, hello time traveler
+        return
+    else
+        -- v < required
+        -- fix incompatible data, etc.
+
+        for i = v, required do
+            local migrate = migrationFuncs[i]
+            if migrate then
+                msgUserOrNot("Migrating config from version",self.opts.version, "to",i)
+                migrate()
+                self.opts.version = i
+            end
+        end
+
+        self.opts.version = required
+    end
+end
+
+migrationFuncs[2] = function()
+    local clickers = Config.opts.clickers.flyouts.default
+
+    ---@param behavior GermClickBehavior
+    ---@param clicker MouseClick
+    for clicker, behavior in pairs(clickers) do
+        if behavior == "FIRST_BTN" then
+            msgUserOrNot("Fixing clicker",clicker, "from",clickers[clicker], "to", GermClickBehavior.PRIME_BTN)
+            clickers[clicker] = GermClickBehavior.PRIME_BTN
+        end
+    end
+end

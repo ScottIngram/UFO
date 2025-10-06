@@ -148,6 +148,7 @@ function FlyoutDefsDb:trustedGet(flyoutId)
 end
 
 function FlyoutDefsDb:repair(flyoutDef)
+    if not flyoutDef then return end
     if not flyoutDef.ufoType then
         -- somehow the ID of a valid flyoutDef is missing from the OrderedFlyoutIds
         -- which prevented it from being properly initialized

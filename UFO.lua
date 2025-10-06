@@ -337,6 +337,7 @@ function initalizeAddonStuff(event)
     DB:initializeFlyouts()
     DB:initializePlacements()
     DB:initializeOptsMemory()
+    Config:migrateToCurrentVersion()
     Config:initializeOptionsMenu()
 
     MacroShitShow:init()
