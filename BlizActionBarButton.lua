@@ -54,7 +54,7 @@ local fuckYouYetAgainBlizForYourBullshitInconsistentAndShittyLackOfDesign = {}
 ---@field yafName string yet another fucking name is how it's identified by the key bindings API
 ---@field visibleIf string used by Bliz's visibility driver to decide when to show/hide
 BLIZ_BAR_METADATA = {
-    [1]  = {name="Action",              visibleIf="bar:1,nobonusbar:1,nobonusbar:2,nobonusbar:3,nobonusbar:4"}, -- primary "ActionBar" - page #1 - no stance/shapeshift --- ff: actionBarPage = 1
+    [1]  = {name="Action",              visibleIf="bar:1,nobonusbar:1,nobonusbar:2,nobonusbar:3,nobonusbar:4,nobonusbar:5,nobonusbar:6"}, -- primary "ActionBar" - page #1 - no stance/shapeshift --- ff: actionBarPage = 1
     [2]  = {name="Action",              visibleIf="bar:2"}, -- primary "ActionBar" - page #2 (regardless of stance/shapeshift) --- ff: actionBarPage = 2
     [3]  = {name="MultiBarRight",       yafName="MultiActionBar3"}, -- config UI -> Action Bars -> checkbox #4
     [4]  = {name="MultiBarLeft",        yafName="MultiActionBar4"}, -- config UI -> Action Bars -> checkbox #5

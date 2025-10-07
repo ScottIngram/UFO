@@ -306,11 +306,10 @@ function Germ:closeFlyout()
 end
 
 -- will replace Germ:Hide() via Germ:new()
--- TODO is this serving the same purpose as clearAndDisable ?
 function Germ:hide(event)
     --VisibleRegion:Hide(self) -- L-O-FUCKING-L this threw  "attempt to index global 'VisibleRegion' (a nil value)" was called from SecureStateDriver.lua:103
     zebug.info:event(event or "Blizz-Call"):owner(self):print("hiding.")
-    UnregisterStateDriver(self, "visibility")
+    -- evidently, self:Hide() is called several times per second during state driver of visibility state==hide
     self:originalHide()
 end
 
