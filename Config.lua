@@ -703,7 +703,7 @@ function Config:migrateToCurrentVersion()
         -- v < required
         -- fix incompatible data, etc.
 
-        for i = v, required do
+        for i = v+1, required do
             local migrate = migrationFuncs[i]
             if migrate then
                 msgUserOrNot("Migrating config from version",self.opts.version, "to",i)
@@ -716,15 +716,23 @@ function Config:migrateToCurrentVersion()
     end
 end
 
-migrationFuncs[2] = function()
-    local clickers = Config.opts.clickers.flyouts.default
+migrationFuncs[3] = function()
+    local x = Config.opts
+    local clickers = x.clickers.flyouts.default
+    local old = "FIRST_BTN"
+    local new = GermClickBehavior.PRIME_BTN
 
     ---@param behavior GermClickBehavior
     ---@param clicker MouseClick
     for clicker, behavior in pairs(clickers) do
-        if behavior == "FIRST_BTN" then
-            msgUserOrNot("Fixing clicker",clicker, "from",clickers[clicker], "to", GermClickBehavior.PRIME_BTN)
-            clickers[clicker] = GermClickBehavior.PRIME_BTN
+        if behavior == old then
+            msgUserOrNot("Fixing clicker",clicker, "from",old, "to",new)
+            clickers[clicker] = new
         end
+    end
+
+    if x.keybindBehavior == old then
+        msgUserOrNot("Fixing keybindBehavior from ",old, "to",new)
+        x.keybindBehavior = new
     end
 end
