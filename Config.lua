@@ -122,17 +122,12 @@ local function initializeOptionsMenu()
                 order = 100,
                 type = 'description',
                 fontSize = "small",
-                name = [=[
-(Shortcut: Right-click the [UFO] button to open this config menu.)
-
-]=] .. Ufo.myTitle .. [=[ lets you create custom flyout menus which you can place on your action bars and include any arbitrary buttons of your choosing (spells, macros, items, pets, mounts, etc.) all with standard drag and drop.
-
-]=]
+                name = L10N.cfg.SHORTCUT .. "\n\n" .. Ufo.myTitle .. L10N.cfg.UFO_LETS_YOU .. EOLx2
             },
             doCloseOnClick = {
                 order = 110,
-                name = "Auto-Close UFO",
-                desc = "Closes the UFO after clicking any of its buttons",
+                name = L10N.cfg.AUTO_CLOSE_UFO,
+                desc = L10N.cfg.CLOSES_THE_UFO,
                 width = "medium",
                 type = "toggle",
                 set = function(optionsMenu, val)
@@ -145,8 +140,8 @@ local function initializeOptionsMenu()
             },
             doMute = {
                 order = 120,
-                name = "Mute Login Messages",
-                desc = "Don't print out Addon info during login.",
+                name = L10N.cfg.MUTE_LOGIN_MESSAGES,
+                desc = L10N.cfg.DONT_PRINT,
                 width = "medium",
                 type = "toggle",
                 set = function(optionsMenu, val)
@@ -158,8 +153,8 @@ local function initializeOptionsMenu()
             },
             showLabels = {
                 order = 120,
-                name = "Show Labels",
-                desc = "Add a label to the action bar button displaying the UFO's name.",
+                name = L10N.cfg.SHOW_LABELS, -- "Show Labels",
+                desc = L10N.cfg.ADD_A_LABEL, -- "Add a label to the action bar button displaying the UFO's name.",
                 width = "medium",
                 type = "toggle",
                 set = function(optionsMenu, val)
@@ -185,29 +180,26 @@ local function initializeOptionsMenu()
 
             primaryButtonIsGroup = {
                 order = 210,
-                name = 'The "Primary Button"',
+                name = L10N.cfg.THE_PRIMARY_BUTTON, -- 'The "Primary Button"',
                 type = "group",
                 inline = true,
                 args = {
                     helpPrim = {
                         order = 210,
                         type = 'description',
-                        name = [=[
-One button on the UFO is "Primary," is shown on the actionbar, and can be clicked without necessarily opening the UFO.  By default, the first button on the UFO is its primary.  Alternatively, whenever you use a button it would become the new primary.
-
-]=]
+                        name = L10N.cfg.ONE_BUTTON_ON_THE_UFO_IS_PRIMARY .. EOLx2, -- One button on the UFO is "Primary," is shown on the actionbar, and can be clicked without necessarily opening the UFO.  By default, the first button on the UFO is its primary.  Alternatively, whenever you use a button it would become the new primary.
                     },
 
                     primaryButtonIsMenu = {
                         order = 220,
-                        name = 'The "Primary" Button is...',
-                        desc = 'Which button of the flyout should be considered its "Primary" button?',
+                        name = L10N.cfg.THE_PRIMARY_BUTTON_IS, --'The "Primary" Button is...',
+                        desc = L10N.cfg.WHICH_BUTTON_OF_THE_FLYOUT, --'Which button of the flyout should be considered its "Primary" button?',
                         width = "double",
                         type = "select",
                         style = "dropdown",
                         values = {
-                            [PrimaryButtonIs.FIRST]  = "First Button, Always",
-                            [PrimaryButtonIs.RECENT] = "Most Recently Used",
+                            [PrimaryButtonIs.FIRST]  = L10N.cfg.FIRST_BUTTON_ALWAYS, --"First Button, Always",
+                            [PrimaryButtonIs.RECENT] = L10N.cfg.MOST_RECENTLY_USED, --"Most Recently Used",
                         },
                         sorting = {PrimaryButtonIs.FIRST, PrimaryButtonIs.RECENT},
                         set = function(optionsMenu, val)
@@ -231,17 +223,14 @@ One button on the UFO is "Primary," is shown on the actionbar, and can be clicke
 
             mouseClickGroup = {
                 order = 320,
-                name = "Mouse Buttons",
+                name = L10N.cfg.MOUSE_BUTTONS, --"Mouse Buttons",
                 type = "group",
                 inline = true, -- set this to false to enable multiple configs, one per flyout.
                 args = {
                     mouseClickGroupHelp = {
                         order = 1,
                         type = 'description',
-                        name = [=[
-You can choose a different action for each mouse button when it clicks on a UFO.
-
-]=]
+                        name = L10N.cfg.YOU_CAN_CHOOSE_A_DIFFERENT .. EOLx2, -- You can choose a different action for each mouse button when it clicks on a UFO.
                     },
 
                     leftBtn   = includeMouseButtonOpts(MouseClick.LEFT),
@@ -254,10 +243,7 @@ You can choose a different action for each mouse button when it clicks on a UFO.
                         order = 100,
                         type = 'description',
                         fontSize = "small",
-                        name = [[
-
-Tip: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions.
-]],
+                        name = EOLx2 .. L10N.cfg.TIP_IN_THE_CATALOG, --Tip: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions.
                     },
                 },
             },
@@ -270,28 +256,26 @@ Tip: In the catalog, open a UFO and right click a button to exclude it from the 
 
             keybindGroup = {
                 order = 400,
-                name = "Keybinding Behavior",
+                name = L10N.cfg.KEYBINDING_BEHAVIOR, --"Keybinding Behavior",
                 type = "group",
                 inline = true, -- set this to false to enable multiple configs, one per flyout.
                 args = {
                     mkeybindHelp = {
                         order = 10,
                         type = 'description',
-                        name = [=[
-UFOs on the action bars support keybindings.  Buttons on UFOs can be configured to also have keybindings.
-]=]
+                        name = L10N.cfg.UFOS_ON_THE_ACTION_BARS .. EOLx2, --UFOs on the action bars support keybindings.  Buttons on UFOs can be configured to also have keybindings.
                     },
 
                     hotkeyWhenOpen = {
                         order = 20,
-                        name = "Hot Key the Buttons on a UFO",
-                        desc = "While open, assign keys 1 through 9 and 0 to the first 10 buttons on the UFO.",
+                        name = L10N.cfg.HOT_KEY_THE_BUTTONS_ON_A_UFO, --"Hot Key the Buttons on a UFO",
+                        desc = L10N.cfg.WHILE_OPEN_ASSIGN_KEYS, --"While open, assign keys 1 through 9 and 0 to the first 10 buttons on the UFO.",
                         width = "double",
                         type = "select",
                         style = "dropdown",
                         values = {
-                            [true] = "Bind each button to a number (Escape to close).",
-                            [false] = "An open UFO won't intercept key presses.",
+                            [true] = L10N.cfg.BIND_EACH_BUTTON, --"Bind each button to a number (Escape to close).",
+                            [false] = L10N.cfg.AN_OPEN_UFO_WONT, --"An open UFO won't intercept key presses.",
                         },
                         set = function(_, doKeybindTheButtonsOnTheFlyout)
                             opts.doKeybindTheButtonsOnTheFlyout = doKeybindTheButtonsOnTheFlyout
@@ -304,8 +288,8 @@ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured 
 
                     keybindBehavior = {
                         order = 30,
-                        name = "Actionbar Keybinding",
-                        desc = "A UFO on an actionbar button will respond to any keybinding you've given that button.  Choose what the keybind does:",
+                        name = L10N.cfg.ACTIONBAR_KEYBINDING, --"Actionbar Keybinding",
+                        desc = L10N.cfg.A_UFO_ON_AN_ACTIONBAR_BUTTON_WILL_RESPOND, --"A UFO on an actionbar button will respond to any keybinding you've given that button.  Choose what the keybind does:",
                         width = "double",
                         type = "select",
                         style = "dropdown",
@@ -330,8 +314,8 @@ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured 
 
                     enableBonusModifierKeys = {
                         order = 500,
-                        name = "Enable Modifier Keys for Keybinds",
-                        desc = "Incorporate shift, control, etc when using keybindings.",
+                        name = L10N.cfg.ENABLE_MODIFIER_KEYS_FOR_KEYBINDS, --"Enable Modifier Keys for Keybinds",
+                        desc = L10N.cfg.INCORPORATE_SHIFT_ETC, --"Incorporate shift, control, etc when using keybindings.",
                         width = "double",
                         type = "toggle",
                         set = function(optionsMenu, val)
@@ -344,7 +328,7 @@ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured 
                     },
                     keymodGroup = {
                         order = 510,
-                        name = "Modifier Keys for Keybindings",
+                        name = L10N.cfg.INCORPORATE_SHIFT_ETC, --"Modifier Keys for Keybindings",
                         type = "group",
                         inline = true, -- set this to false to enable multiple configs, one per flyout.
                         hidden = function() return not Config:get("enableBonusModifierKeys")  end,
@@ -352,9 +336,7 @@ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured 
                             keymodHelp = {
                                 order = 10,
                                 type = 'description',
-                                name = [=[
-In addition to using the keybindings configured in the standard WoW menus, UFO can bind extra key + modifier combinations.  For example, if you have a UFO bound to the Z key, then you can add shift-Z or control-Z here.
-]=]
+                                name = L10N.cfg.IN_ADDITION_TO_USING_THE_KEYBINDINGS, --In addition to using the keybindings configured in the standard WoW menus, UFO can bind extra key + modifier combinations.  For example, if you have a UFO bound to the Z key, then you can add shift-Z or control-Z here.
                             },
 
                             shiftKey = includeKeyModOpts(ModifierKey.SHIFT),
@@ -365,18 +347,15 @@ In addition to using the keybindings configured in the standard WoW menus, UFO c
                             keymodOverwriteHelp = {
                                 order = keymodOptsOrder + 10,
                                 type = 'description',
-                                name = [=[
-
-(Note: modifiers are additive.  So, if a UFO's main keybind is CMD-X then its extra bindings will always include "CMD-X" plus the modifiers.  Expect CMD-SHIFT-X (not SHIFT-X) and CMD-ALT-X (not ALT-X)
-
-In the above example, there is a UFO on the Z key.  What if there is also an action bound to Shift-Z (for example) already.  How do you want UFO how to handle such a conflict?
-]=]
+                                name = L10N.cfg.MODIFIERS_ARE_ADDITIVE_IN_THE_ABOVE_EXAMPLE,
+                                    -- (Note: modifiers are additive.  So, if a UFO's main keybind is CMD-X then its extra bindings will always include "CMD-X" plus the modifiers.  Expect CMD-SHIFT-X (not SHIFT-X) and CMD-ALT-X (not ALT-X)
+                                    -- In the above example, there is a UFO on the Z key.  What if there is also an action bound to Shift-Z (for example) already.  How do you want UFO how to handle such a conflict?
                             },
 
                             doNotOverwriteExistingKeybindings = {
                                 order = keymodOptsOrder + 20,
-                                name = "Do Not Overwrite Existing Keybindings",
-                                desc = "Leave existing keybindings intact rather than overwrite them with new ones specific to a UFO",
+                                name = L10N.cfg.DO_NOT_OVERWRITE_EXISTING_KEYBINDINGS, --"Do Not Overwrite Existing Keybindings",
+                                desc = L10N.cfg.LEAVE_EXISTING_KEYBINDINGS, --"Leave existing keybindings intact rather than overwrite them with new ones specific to a UFO",
                                 width = "double",
                                 type = "toggle",
                                 set = function(optionsMenu, val)
@@ -405,28 +384,27 @@ In the above example, there is a UFO on the Z key.  What if there is also an act
 
             placeHoldersHeader = {
                 order = 600,
-                name = "PlaceHolder Macros VS Edit Mode Config",
+                name = L10N.cfg.PLACEHOLDER_MACROS_VS_EDIT_MODE_CONFIG, --"PlaceHolder Macros VS Edit Mode Config",
                 type = 'header',
             },
             helpTextForPlaceHolders = {
                 order = 610,
                 type = 'description',
-                name = [=[
-Each UFO placed onto an action bar has a special macro (named "]=].. Ufo.PLACEHOLDER_MACRO_NAME ..[=[") to hold its place as a button and ensure the UI renders it.
+                name = L10N.cfg.EACH_UFO_PLACED,
+                    -- Each UFO placed onto an action bar has a special macro (named "]=].. Ufo.PLACEHOLDER_MACRO_NAME ..[=[") to hold its place as a button and ensure the UI renders it.
+                    -- You may disable placeholder macros, but, doing so will require extra UI configuration on your part: You must set the "Always Show Buttons" config option for action bars in Bliz UI "Edit Mode" (in Bartender4 the same option is called "Button Grid").
 
-You may disable placeholder macros, but, doing so will require extra UI configuration on your part: You must set the "Always Show Buttons" config option for action bars in Bliz UI "Edit Mode" (in Bartender4 the same option is called "Button Grid").
-]=]
             },
             usePlaceHolders = {
                 order = 620,
-                name = "Choose your workaround:",
-                desc = "Because UFOs aren't spells or items, when they are placed into an action bar slot, the UI thinks that slot is empty and doesn't render the slot by default.",
+                name = L10N.cfg.CHOOSE_YOUR_WORKAROUND, --"Choose your workaround:",
+                desc = L10N.cfg.BECAUSE_UFOS_ARENT_SPELLS, --"Because UFOs aren't spells or items, when they are placed into an action bar slot, the UI thinks that slot is empty and doesn't render the slot by default.",
                 width = "full",
                 type = "select",
                 style = "radio",
                 values = {
-                    [true]  = "Placeholder Macros",
-                    [false] = "Extra UI Configuration" ,
+                    [true]  = L10N.cfg.PLACEHOLDER_MACROS, --"Placeholder Macros",
+                    [false] = L10N.cfg.EXTRA_UI_CONFIGURATION, --"Extra UI Configuration" ,
                 },
                 sorting = {true,false},
                 set = function(optionsMenu, val)
@@ -454,13 +432,13 @@ end
 
 local mouseButtonOptsOrder = 0
 local mouseButtonName = {
-    [MouseClick.ANY]    = "All Buttons",
-    [MouseClick.LEFT]   = "Left",
-    [MouseClick.RIGHT]  = "Right",
-    [MouseClick.MIDDLE] = "Middle",
-    [MouseClick.FOUR]   = "Fourth",
-    [MouseClick.FIVE]   = "Fifth",
-    [MouseClick.RESERVED_FOR_KEYBIND]    = "Keybind",
+    [MouseClick.ANY]    = L10N.cfg.ALL_BUTTONS, --"All Buttons",
+    [MouseClick.LEFT]   = L10N.cfg.LEFT, --"Left",
+    [MouseClick.RIGHT]  = L10N.cfg.RIGHT, --"Right",
+    [MouseClick.MIDDLE] = L10N.cfg.MIDDLE, --"Middle",
+    [MouseClick.FOUR]   = L10N.cfg.FOURTH, --"Fourth",
+    [MouseClick.FIVE]   = L10N.cfg.FIFTH, --"Fifth",
+    [MouseClick.RESERVED_FOR_KEYBIND]    = L10N.cfg.KEYBIND, --"Keybind",
 }
 
 ---@param click MouseClick
@@ -470,7 +448,7 @@ function includeMouseButtonOpts(mouseClick)
     return {
         order = mouseButtonOptsOrder,
         name = mouseButtonName[mouseClick],
-        desc = "Assign an action to the ".. zebug.warn:colorize(mouseButtonName[mouseClick]) .." mouse button",
+        desc = L10N.cfg.ASSIGN_AN_ACTION_TO_THE .." ".. zebug.warn:colorize(mouseButtonName[mouseClick]) .." ".. L10N.cfg.MOUSE_BUTTON, -- "Assign an action to the ".. zebug.warn:colorize(mouseButtonName[mouseClick]) .." mouse button",
         width = "double",
         type = "select",
         style = "dropdown",
@@ -501,7 +479,7 @@ function includeKeyModOpts(modifierKey, mk2)
     return {
         order = keymodOptsOrder,
         name = L10N[modifierKey] or "NiL",
-        desc = "Assign an action to the keybind + ".. zebug.warn:colorize(L10N[modifierKey] or "NiL") .." modifier",
+        desc = L10N.cfg.ASSIGN_AN_ACTION_TO_THE_KEYBIND .." ".. zebug.warn:colorize(L10N[modifierKey] or "NiL") .." ".. L10N.cfg.MODIFIER, --"Assign an action to the keybind + ".. zebug.warn:colorize(L10N[modifierKey] or "NiL") .." modifier",
         width = "double",
         type = "select",
         style = "dropdown",
@@ -529,11 +507,11 @@ local INCLUDE_GERM_CLICK_BEHAVIORS_PLUS_NA
 function includeGermClickBehaviors(includeNa)
     if not INCLUDE_GERM_CLICK_BEHAVIORS then
         INCLUDE_GERM_CLICK_BEHAVIORS = {
-            [GermClickBehavior.OPEN]           = zebug.info:colorize("Open") .." the flyout",
-            [GermClickBehavior.PRIME_BTN]      = "Trigger the ".. zebug.info:colorize("primary") .." button of the flyout",
-            [GermClickBehavior.RANDOM_BTN]     = "Trigger a ".. zebug.info:colorize("random") .." button of the flyout",
-            [GermClickBehavior.CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle") .." through each button of the flyout",
-            --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = zebug.info:colorize("Cycle backwards") .." through each button of the flyout",
+            [GermClickBehavior.OPEN]           = zebug.info:colorize(L10N.cfg.OPEN) .." ".. L10N.cfg.THE_FLYOUT,
+            [GermClickBehavior.PRIME_BTN]      = L10N.cfg.TRIGGER_THE .." ".. zebug.info:colorize(L10N.cfg.PRIMARY) .." ".. L10N.cfg.BUTTON_OF_THE_FLYOUT, -- "Trigger the ".. zebug.info:colorize(L10N.cfg.PRIMARY) .." button of the flyout",
+            [GermClickBehavior.RANDOM_BTN]     = L10N.cfg.TRIGGER_A .." ".. zebug.info:colorize(L10N.cfg.RANDOM) .." ".. L10N.cfg.BUTTON_OF_THE_FLYOUT, -- "Trigger a ".. zebug.info:colorize(L10N.cfg.RANDOM) .." button of the flyout",
+            [GermClickBehavior.CYCLE_ALL_BTNS] = zebug.info:colorize(L10N.cfg.CYCLE) .." ".. L10N.cfg.THROUGH_EACH_BUTTON_OF_THE_FLYOUT,
+            --[GermClickBehavior.REVERSE_CYCLE_ALL_BTNS] = zebug.info:colorize(L10N.cfg.CYCLE_BACKWARDS) .." ".. L10N.cfg.THROUGH_EACH_BUTTON_OF_THE_FLYOUT,
         }
         INCLUDE_GERM_CLICK_BEHAVIORS_PLUS_NA = deepcopy(INCLUDE_GERM_CLICK_BEHAVIORS)
         INCLUDE_GERM_CLICK_BEHAVIORS_PLUS_NA[KEY_MOD_NA] = ""-- "Do not include in binding"
@@ -706,7 +684,7 @@ function Config:migrateToCurrentVersion()
         for i = v+1, required do
             local migrate = migrationFuncs[i]
             if migrate then
-                msgUserOrNot("Migrating config from version",self.opts.version, "to",i)
+                msgUserOrNot(L10N.cfg.MIGRATING_CONFIG_FROM_VERSION, self.opts.version, L10N.cfg.TO, i)
                 migrate()
                 self.opts.version = i
             end
@@ -726,13 +704,13 @@ migrationFuncs[3] = function()
     ---@param clicker MouseClick
     for clicker, behavior in pairs(clickers) do
         if behavior == old then
-            msgUserOrNot("Fixing clicker",clicker, "from",old, "to",new)
+            msgUserOrNot(L10N.cfg.FIXING_CLICKER,clicker, L10N.cfg.FROM,old, L10N.cfg.TO, new)
             clickers[clicker] = new
         end
     end
 
     if x.keybindBehavior == old then
-        msgUserOrNot("Fixing keybindBehavior from ",old, "to",new)
+        msgUserOrNot(L10N.cfg.FIXING_KEYBINDBEHAVIOR_FROM, old, L10N.cfg.TO, new)
         x.keybindBehavior = new
     end
 end
