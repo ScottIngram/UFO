@@ -476,9 +476,10 @@ end
 function includeKeyModOpts(modifierKey, mk2)
     local opts = Config.opts
     keymodOptsOrder = keymodOptsOrder + 10
+    local l10nKey = modifierKey .. "_INIT_CAP"
     return {
         order = keymodOptsOrder,
-        name = L10N[modifierKey] or "NiL",
+        name = L10N.cfg[l10nKey] or "NiL",
         desc = L10N.cfg.ASSIGN_AN_ACTION_TO_THE_KEYBIND .." ".. zebug.warn:colorize(L10N[modifierKey] or "NiL") .." ".. L10N.cfg.MODIFIER, --"Assign an action to the keybind + ".. zebug.warn:colorize(L10N[modifierKey] or "NiL") .." modifier",
         width = "double",
         type = "select",

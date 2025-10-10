@@ -61,20 +61,28 @@ NOT_MACRO_OWNER = "It can only be used by"
 UNSUPPORTED_TYPE = "Sorry, unsupported type"
 UFO_ICON_PROMOTE = "update the UFO icon to reflect the most recently used member."
 
-SHIFT = "Shift"
-ALT = "Alt"
-CTRL = "Control"
-if IsMacClient() then
-    META = "Command"
-else
-    META = "Meta"
-end
-
 -------------------------------------------------------------------------------
 -- Configuration Screen
 -------------------------------------------------------------------------------
 
 Ufo.Wormhole(cfg)
+
+SHIFT_INIT_CAP = "Shift"
+SHIFT_ALL_CAPS = "SHIFT"
+CTRL_INIT_CAP = "Control"
+CTRL_ALL_CAPS = "CONTROL"
+
+if IsMacClient() then
+    META_INIT_CAP = "Command"
+    META_ALL_CAPS = "COMMAND"
+    ALT_INIT_CAP = "Option"
+    ALT_ALL_CAPS = "OPTION"
+else
+    META_INIT_CAP = "Meta"
+    META_ALL_CAPS = "META"
+    ALT_INIT_CAP = "Alt"
+    ALT_ALL_CAPS = "ALT"
+end
 
 SHORTCUT = "(Shortcut: Right-click the [UFO] button to open this config menu.)"
 UFO_LETS_YOU = "lets you create custom flyout menus which you can place on your action bars and include any arbitrary buttons of your choosing (spells, macros, items, pets, mounts, etc.) all with standard drag and drop."
@@ -106,9 +114,9 @@ INCORPORATE_SHIFT_ETC = "Incorporate shift, control, etc when using keybindings.
 IN_ADDITION_TO_USING_THE_KEYBINDINGS = "In addition to using the keybindings configured in the standard WoW menus, UFO can bind extra key + modifier combinations.  For example, if you have a UFO bound to the Z key, then you can add shift-Z or control-Z here."
 MODIFIERS_ARE_ADDITIVE_IN_THE_ABOVE_EXAMPLE = [=[
 
-(Note: modifiers are additive.  So, if a UFO's main keybind is CMD-X then its extra bindings will always include "CMD-X" plus the modifiers.  Expect CMD-SHIFT-X (not SHIFT-X) and CMD-ALT-X (not ALT-X)
+(Note: modifiers are additive.  So, if a UFO's main keybind is CTRL-X then its extra bindings will always include "CTRL-X" plus the modifiers.  Expect CTRL-SHIFT-X (not SHIFT-X) and CTRL-]=]..ALT_ALL_CAPS..[=[-X (not ]=]..ALT_ALL_CAPS..[=[-X)
 
-In the above example, there is a UFO on the Z key.  What if there is also an action bound to Shift-Z (for example) already.  How do you want UFO how to handle such a conflict?
+In the above example, there is a UFO on the Z key.  What if there is also an action bound to SHIFT-Z (for example) already.  How do you want UFO how to handle such a conflict?
 
 ]=]
 
