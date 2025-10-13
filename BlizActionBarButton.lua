@@ -346,7 +346,9 @@ function BabbInstance:printDebugDetails(event, okToGo)
     local gName = self:GetName()
     local parent, parentName = self:getParentAndName()
     zebug.warn:event(event):name("details"):owner(self):print("_G Name",gName, "_G",_G[gName], "IsShown",self:IsShown(), "IsVisible",self:IsVisible(), "parent", parentName, "germ",self.germ, self:getTypeAndId())
-    self.germ:printDebugDetails(event, okToGo)
+    if self.germ then
+        self.germ:printDebugDetails(event, okToGo)
+    end
 end
 
 -------------------------------------------------------------------------------

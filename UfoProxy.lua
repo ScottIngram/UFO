@@ -87,6 +87,11 @@ function UfoProxy:isOnBtn(btn)
 
     local type, id = GetActionInfo(btnSlotIndex)
 
+    if not type then
+        zebug.info:owner(btn):print("GetActionInfo() for ", btnSlotIndex,"returned type = nil")
+        return false
+    end
+
     return self:is(type, id)
 end
 
@@ -94,8 +99,8 @@ end
 ---@param id number
 ---@return boolean true if the type and ID match those of the UfoProxy
 function UfoProxy:is(type, id)
-    assert(type, "invalid nil type")
-    assert(id, "invalid nil id")
+    assert(type, "invalid type: nil")
+    assert(id, "invalid id: nil")
     return (type == ButtonType.MACRO) and (id == self:getMacroId())
 end
 
