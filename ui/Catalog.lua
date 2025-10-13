@@ -442,7 +442,7 @@ end
 
 function GLOBAL_UFO_CatalogScrollPane_OnHide(scrollPane)
     IconPicker:Hide()
-    UFO_FlyoutMenuForCatalog:Hide()
+    -- UFO_FlyoutMenuForCatalog:Hide()
 end
 
 ---@param mouseClick MouseClick
