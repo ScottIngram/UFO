@@ -195,6 +195,8 @@ function Catalog:update(event)
     ---@type FlyoutMenu
     local flyoutMenu = UFO_FlyoutMenuForCatalog
     flyoutMenu:Hide()
+    flyoutMenu:SetParent(UFO_Catalog) -- seemingly, I can't attach it to the btnFrame becoz then it's invisible despite visible==true
+    flyoutMenu:SetFrameStrata(FrameStrata.HIGH) -- altho set in the XML, this value gets clobbered somehow somewhere.
 
     for i = 1, #visibleBtnFrames do
         ---@type number
