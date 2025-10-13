@@ -75,6 +75,7 @@ function Catalog:createToggleButton(parentFrame, xBtnOverride)
     assert(parentFrame, "can't find parent frame")
     local parentFrameName = parentFrame:GetName()
     local btnName = "UFO_BtnToToggleCatalog_On".. parentFrameName
+    ---@type Button
     local btnFrame = _G[btnName]
     if btnFrame then
         -- we've already made it
@@ -92,9 +93,21 @@ function Catalog:createToggleButton(parentFrame, xBtnOverride)
     btnFrame.Text:SetText("UFO")
     btnFrame:RegisterForClicks("AnyUp")
     btnFrame:SetScript(Script.ON_CLICK, Catalog.clickUfoButton)
+    btnFrame:SetScript(Script.ON_ENTER, Catalog.ON_ENTER)
+    btnFrame:SetScript(Script.ON_LEAVE, Catalog.ON_LEAVE)
     btnFrame:Show()
 
     toggleBtns[parentFrame] = btnFrame
+end
+
+function Catalog:ON_LEAVE()
+    self:OnLeave() -- Call Bliz super()
+    GameTooltip:Hide()
+end
+
+function Catalog:ON_ENTER()
+    self:OnEnter() -- Call Bliz super()
+    GLOBAL_UFO_BlizCompartment_OnEnter(ADDON_NAME, self)
 end
 
 ---@param mouseClick MouseClick
