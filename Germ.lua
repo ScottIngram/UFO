@@ -119,7 +119,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
 
     -- manipulate methods
     self:installMyToString() -- do this as soon as possible for the sake of debugging output
-    self.originalHide = self:override("Hide", self.hide)
+    -- self.originalHide = self:override("Hide", self.hide)
 
     -- install event handlers
     self:HookScript(Script.ON_HIDE,        function(self) zebug.info:owner(self):event("Script.ON_HIDE"):print('byeeeee'); end) -- This fires IF the germ is on a dynamic action bar that switches (stance / druid form / etc. or on clearAndDisable() or on a spec change which throws away placeholders
@@ -310,7 +310,8 @@ function Germ:hide(event)
     --VisibleRegion:Hide(self) -- L-O-FUCKING-L this threw  "attempt to index global 'VisibleRegion' (a nil value)" was called from SecureStateDriver.lua:103
     zebug.info:event(event or "Blizz-Call"):owner(self):print("hiding.")
     -- evidently, self:Hide() is called several times per second during state driver of visibility state==hide
-    self:originalHide()
+    local hide = self.originalHide or self.Hide
+    hide(self)
 end
 
 function Germ:clearAndDisable(event)
