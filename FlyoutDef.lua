@@ -225,11 +225,17 @@ function FlyoutDef:removeButton(removeAtIndex)
     self:invalidateCache()
 end
 
-function FlyoutDef:getIcon()
-    if self.icon then return self.icon end
-    local btn1 = self:getButtonDef(1)
-    if btn1 then
-        local icon = btn1:getIcon()
+function FlyoutDef:getIcon(n)
+    if not n or n==1 then
+        -- do we have a defined, static icon?
+        if self.icon then
+            return self.icon
+        end
+    end
+
+    local btn = self:getButtonDef(n or 1)
+    if btn then
+        local icon = btn:getIcon()
         if icon then
             -- compensate for the Bliz UI bug where not all icons have been loaded at the moment of login
             self.fallbackIcon = icon

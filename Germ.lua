@@ -21,6 +21,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@class Germ : UfoMixin
 ---@field ufoType string The classname
 ---@field flyoutId number Identifies which flyout is currently copied into this germ
+---@field primeBtnIndex number Identifies which button on the flyout is currently the PRIME_BTN
 ---@field flyoutMenu FM_TYPE The UI object serving as the onscreen flyoutMenu (there's only one and it's reused by all germs)
 ---@field clickScriptUpdaters table secure scriptlets that must be run during any update()
 ---@field bbInfo table definition of the actionbar/button where the Germ lives
@@ -36,6 +37,7 @@ Germ = {
     --clickScriptUpdaters = {},
     clickers = {},
     mainKeyBindingsKeyNames = {},
+    primeBtnIndex = 1,
 }
 UfoMixIn:mixInto(Germ)
 GLOBAL_Germ = Germ
@@ -259,7 +261,7 @@ function Germ:getIcon()
     if not self.flyoutId then return DEFAULT_ICON end
     local flyoutDef = FlyoutDefsDb:get(self.flyoutId)
     local usableFlyout = flyoutDef:filterOutUnusable()
-    return usableFlyout:getIcon() or flyoutDef.fallbackIcon or DEFAULT_ICON
+    return usableFlyout:getIcon(self.primeBtnIndex) or flyoutDef.fallbackIcon or DEFAULT_ICON
 end
 
 function Germ:doIcon(event)
@@ -404,9 +406,9 @@ end
 Germ.copyDoCloseOnClickConfigValToAttribute = Pacifier:wrap(Germ.copyDoCloseOnClickConfigValToAttribute, L10N.RECONFIGURE_AUTO_CLOSE)
 
 function Germ:setToolTip()
-    local btn1 = self.flyoutMenu:getBtn1()
-    if btn1 and btn1.hasDef and btn1:hasDef() then
-        btn1:setTooltip()
+    local btn = self:getPrimeBtn()
+    if btn and btn.hasDef and btn:hasDef() then
+        btn:setTooltip()
         return
     end
 
@@ -432,14 +434,17 @@ function Germ:getUsableFlyoutDef()
 end
 
 function Germ:getBtnDef(n)
-    -- treat the first button in the flyout as the "definition" for the Germ
     return self:getUsableFlyoutDef():getButtonDef(n)
 end
 
 -- required by Button_Mixin
 function Germ:getDef()
-    -- treat the first button in the flyout as the "definition" for the Germ
-    return self:getBtnDef(1)
+    return self:getBtnDef(self.primeBtnIndex or 1)
+end
+
+---@return BOFM_TYPE
+function Germ:getPrimeBtn()
+    return self.flyoutMenu:getBtn(self.primeBtnIndex or 1)
 end
 
 function Germ:invalidateFlyoutCache()
@@ -968,8 +973,15 @@ function Germ:setRecentIcon(icon)
     self:setIcon(icon,"promoter")
 end
 
--- removed: let it happen during combat.
---Germ.promote = Pacifier:wrap(Germ.promote, L10N.UFO_ICON_PROMOTE)
+---@param btn ButtonOnFlyoutMenu
+function Germ:promoteButtonToPrime(btn)
+    if not self:isActive() then return end
+
+    local n = btn:getId()
+    self.primeBtnIndex = n or 1
+    self:setIcon(btn.iconTexture, "promoter")
+end
+
 
 -------------------------------------------------------------------------------
 --
@@ -1031,14 +1043,14 @@ function Germ:getSecEnvScriptForOpener()
     if not SEC_ENV_SCRIPT_FOR_OPENER then
         SEC_ENV_SCRIPT_FOR_OPENER =
 [=[
-    --[[DEBUG]] if doDebug then
-    --[[DEBUG]]     print("<DEBUG>", myName, "SEC_ENV_SCRIPT_FOR_OPENER <START> germ =", germ, "flyoutMenu =",flyoutMenu)
-    --[[DEBUG]] end
-
     local mouseClick = button
     local isClicked = down
     local direction = germ:GetAttribute( "]=].. SecEnvAttribute.flyoutDirection ..[=[" )
     local isOpen = flyoutMenu:IsShown()
+
+    --[[DEBUG]] if doDebug then
+    --[[DEBUG]]     print("<DEBUG>", myName, "SEC_ENV_SCRIPT_FOR_OPENER <START> germ =", germ, "flyoutMenu =",flyoutMenu, "mouseClick",mouseClick, "isClicked",isClicked, "direction",direction, "isOpen",isOpen)
+    --[[DEBUG]] end
 
 	if isOpen then
 	    --[[DEBUG]] if doDebug then

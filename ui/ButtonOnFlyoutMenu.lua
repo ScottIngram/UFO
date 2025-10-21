@@ -287,7 +287,6 @@ end
 function ButtonOnFlyoutMenu:initializeSecEnv()
     local flyoutMenu = self:getParent()
     local germ = flyoutMenu:getParent()
-    --local promoter = germ.promoter
     zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu)
 
     -- set attributes used inside the secure scripts
@@ -295,15 +294,13 @@ function ButtonOnFlyoutMenu:initializeSecEnv()
     self:setSecEnvAttribute("UFO_NAME", self:getLabel())
     self:SetFrameRef("flyoutMenu", flyoutMenu)
     self:SetFrameRef("germ", germ)
-    --self:SetFrameRef("promoter", promoter)
 
-    -- set global variables inside the restricted environment of the germ
+    -- set global variables inside the restricted "secure" environment
     self:Execute([=[
         germ       = self:GetFrameRef("germ")
         flyoutMenu = self:GetFrameRef("flyoutMenu")
-        --germSignal = self:GetFrameRef("promoter")
         doDebug    = self:GetAttribute("DO_DEBUG") or false
-    ]=])
+     ]=])
 
     self:installSecEnvScriptFor_ON_CLICK()
 end
@@ -337,12 +334,13 @@ function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
     local SEC_ENV_ACTION_ARG    = self:GetAttribute("SEC_ENV_ACTION_ARG")
     local icon          = self:GetAttribute("UFO_ICON")
     local isPrimeRecent = germ:GetAttribute("IS_PRIME_RECENT")
+    local isModifierKeyDown = IsModifierKeyDown()
 
     --[[DEBUG]] if doDebug then
     --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() germ",germ:GetAttribute("UFO_NAME"), "flyoutMenu",flyoutMenu:GetAttribute("UFO_NAME"),"germSignaler",germSignaler)
     --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isClicked",isClicked, "mouseClick",mouseClick, "SEC_ENV_ACTION_TYPE",SEC_ENV_ACTION_TYPE, "SEC_ENV_ACTION_TYPE_D",SEC_ENV_ACTION_TYPE_D, "SEC_ENV_ACTION_ARG",SEC_ENV_ACTION_ARG)
     --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() icon",icon)
-    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isPrimeRecent",isPrimeRecent)
+    --[[DEBUG]]     print("<DEBUG>", myName, "ON_CLICK() isPrimeRecent",isPrimeRecent, "isModifierKeyDown",isModifierKeyDown)
     --[[DEBUG]] end
 
     -- are these 3 in use ?
@@ -351,8 +349,9 @@ function ButtonOnFlyoutMenu:getSecEnvScriptFor_ON_CLICK()
     germ:SetAttribute("SEC_ENV_ACTION_TYPE_DUMBER_AND_ADJUSTED", SEC_ENV_ACTION_TYPE_D) -- misnomer
 
     -- when the Prime Button is clicked AND Prime is defined as "most recent"
+    -- OR -- shift/alt/etc was also pressed
     -- copy my behavior to the germ
-    if isPrimeRecent then
+    if isPrimeRecent or isModifierKeyDown then
         -- find out which mouse clicks are assigned the "Primary Button" behavior
         for i = 1, 10 do -- TODO: don't hardcode this
             local flagNameForIsThisBtmPrime = "IS_A_PRIME_BTN_" .. i
@@ -436,14 +435,20 @@ function ButtonOnFlyoutMenu:onMouseUp()
     end
 end
 
-function ButtonOnFlyoutMenu:OnMouseDown()
+---@param mouseClick MouseClick
+function ButtonOnFlyoutMenu:OnMouseDown(mouseClick)
     local flyoutMenu = self:GetParent()
     if not flyoutMenu.isForGerm then return end
+
+    -- is any mouse button configured for PrimaryButtonIs.RECENT ?
+    -- OR - is shift/alt/etc also pressed?
+    local doPromote = IsModifierKeyDown() or Config:isAnyClickerUsingRecent(self.flyoutId)
+    if not doPromote then return end -- NOPE!  No promotion for you!
 
     ---@type GERM_TYPE
     local germ = flyoutMenu and flyoutMenu:GetParent()
     zebug.info:owner(self):event("OnMouseDown"):print("flyoutMenu",flyoutMenu, "germ",germ)
-    germ:setRecentIcon(self.iconTexture)
+    germ:promoteButtonToPrime(self)
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation

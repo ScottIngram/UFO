@@ -192,13 +192,13 @@ local function initializeOptionsMenu()
 
                     primaryButtonIsMenu = {
                         order = 220,
-                        name = L10N.cfg.THE_PRIMARY_BUTTON_IS, --'The "Primary" Button is...',
+                        name = L10N.cfg.THE_PRIMARY_BUTTON_IS_THE, --'The "Primary" Button is the:',
                         desc = L10N.cfg.WHICH_BUTTON_OF_THE_FLYOUT, --'Which button of the flyout should be considered its "Primary" button?',
                         width = "double",
                         type = "select",
                         style = "dropdown",
                         values = {
-                            [PrimaryButtonIs.FIRST]  = L10N.cfg.FIRST_BUTTON_ALWAYS, --"First Button, Always",
+                            [PrimaryButtonIs.FIRST]  = L10N.cfg.FIRST_BUTTON, --"First Button, usually",
                             [PrimaryButtonIs.RECENT] = L10N.cfg.MOST_RECENTLY_USED, --"Most Recently Used",
                         },
                         sorting = {PrimaryButtonIs.FIRST, PrimaryButtonIs.RECENT},
@@ -211,6 +211,15 @@ local function initializeOptionsMenu()
                             return Config:get("primaryButtonIs")
                         end,
                     },
+
+                    promoteViaShiftKey = {
+                        order = 230,
+                        -- hidden = function() return Config:get("primaryButtonIs") ~= PrimaryButtonIs.FIRST end,
+                        type = 'description',
+                        -- fontSize = "small",
+                        name = EOLx2 .. 'Also, any button can be promoted to "Primary" by holding a modifier key (shift, control, etc) while clicking the button.'
+                    },
+
                 },
             },
 
@@ -592,8 +601,8 @@ function Config:isPrimeDefinedAsFirst()
 end
 
 function Config:isAnyClickerUsingRecent(flyoutId)
-    local prime_is_defined_as_recent = Config:get("primaryButtonIs") == PrimaryButtonIs.RECENT
-    if not prime_is_defined_as_recent then
+    local isPrimeDefinedAsRecent = Config:get("primaryButtonIs") == PrimaryButtonIs.RECENT
+    if not isPrimeDefinedAsRecent then
         return false
     end
 

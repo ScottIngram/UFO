@@ -179,6 +179,8 @@ function GermCommander:applyConfigForPrimaryButtonIs(event)
     -- no need to check that the value has actually changed.  The config module is good about invoking this call only on an actual change.
     local isPrimeDefinedAsRecent = Config:isPrimeDefinedAsRecent()
 
+    -- TODO - revamp
+
     ---@param germ Germ
     self:forEachActiveGerm(function(germ)
         germ:SetAttribute("IS_PRIME_RECENT", isPrimeDefinedAsRecent)

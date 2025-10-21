@@ -95,8 +95,10 @@ ADD_A_LABEL = "Add a label to the action bar button displaying the UFO's name"
 THE_PRIMARY_BUTTON = 'The "Primary Button"'
 ONE_BUTTON_ON_THE_UFO_IS_PRIMARY = [=[One button on the UFO is "Primary," is shown on the actionbar, and can be clicked without necessarily opening the UFO.  By default, the first button on the UFO is its primary.  Alternatively, whenever you use a button it would become the new primary.]=]
 THE_PRIMARY_BUTTON_IS = 'The "Primary" Button is...'
+THE_PRIMARY_BUTTON_IS_THE = 'The "Primary" Button is the:'
 WHICH_BUTTON_OF_THE_FLYOUT = 'Which button of the flyout should be considered its "Primary" button?'
 FIRST_BUTTON_ALWAYS = "First Button, Always"
+FIRST_BUTTON = "First Button"
 MOST_RECENTLY_USED = "Most Recently Used"
 MOUSE_BUTTONS = "Mouse Buttons"
 YOU_CAN_CHOOSE_A_DIFFERENT = "You can choose a different action for each mouse button when it clicks on a UFO."

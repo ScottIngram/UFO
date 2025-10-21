@@ -114,6 +114,12 @@ function FlyoutMenu:getBtn1()
     return self:getBtnKids()[1]
 end
 
+---@return BOFM_TYPE
+function FlyoutMenu:getBtn(n)
+    assert(n, "Invalid value for n: nil")
+    return self:getBtnKids()[n]
+end
+
 -- use non-local "global" variables to save values between executions
 -- because GetParent() returns nil during combat lockdown
 local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
