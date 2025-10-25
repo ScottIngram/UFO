@@ -133,8 +133,9 @@ function UfoMixIn:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, value)
     self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, nil)
 end
 
-function UfoMixIn:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, value)
-    self:setSecEnvAttribute(MouseClickAsSecEnvId[mouseClick], value)
+function UfoMixIn:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, scriptName)
+    local type1or2or3etc = MouseClickAsSecEnvId[mouseClick]
+    self:setSecEnvAttribute(type1or2or3etc, scriptName)
 end
 
 ---@param loopGuard table|nil tracks each object to have participated in the loop, or nil if nothing

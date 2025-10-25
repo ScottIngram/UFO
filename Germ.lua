@@ -68,8 +68,6 @@ local GermClickBehaviorAssignmentFunction = { }
 
 ---@type GERM_TYPE for the benefit of my IDE's autocomplete
 local ScriptHandlers = {}
-local HANDLER_MAKERS_MAP
-local SEC_ENV_SCRIPT_FOR_OPENER
 local SEC_ENV_SCRIPT_FOR_ON_CLICK
 
 ---@type table<string,Germ> all keybindings currently in use by any Germs
@@ -80,8 +78,6 @@ local mainKeyBindingsForAllGerms = {}
 -------------------------------------------------------------------------------
 
 local GERM_UI_NAME_PREFIX = "UfoGerm"
-local KEY_PREFIX_FOR_ON_CLICK = "BEHAVIOR_FOR_MOUSE_CLICK_"
-local SEC_ENV_SCRIPT_NAME_FOR_OPEN = "SEC_ENV_SCRIPT_NAME_FOR_OPEN"
 local MOUSE_BUTTONS = {
     MouseClick.LEFT,
     MouseClick.MIDDLE,
@@ -839,7 +835,7 @@ function ScriptHandlers:ON_RECEIVE_DRAG()
 end
 
 function ScriptHandlers:ON_DRAG_START()
-    if LOCK_ACTIONBAR then return end
+    if _G.LOCK_ACTIONBAR then return end
     if not IsShiftKeyDown() then return end
     if isInCombatLockdown("Drag and drop") then return end
     self:OnDragStart() -- Call Bliz super()
@@ -870,6 +866,16 @@ end
 -- a bunch of code to make calls to SetAttribute("type",action) or ON_CLICK etc
 -- to enable the Germ's button to do things in response to mouse clicks
 -------------------------------------------------------------------------------
+
+---@class SecEnvConst
+---@field OPENER_NAME string key for the sec-env attribute that will hold the OPENER_SCRIPT
+---@field OPENER_SCRIPT string code. will be initialized on-demand
+---@field ON_CLICK_PICK_BTN_NAME_PREFIX string code key for the sec-env attribute that will hold the
+---@field ON_CLICK_PICK_BTN_SCRIPT string code. will be initialized on-demand
+local SecEnvConst = {
+    OPENER_NAME = "SEC_ENV_OPENER_NAME",
+    ON_CLICK_PICK_BTN_NAME_PREFIX = "SEC_ENV_ON_CLICK_PICK_BTN_NAME_PREFIX_",
+}
 
 function Germ:initializeSecEnv(event)
     assert(self.flyoutMenu, "do initFlyoutMenu() first")
@@ -961,7 +967,7 @@ end
 ---@param mouseClick MouseClick
 ---@param clickBehavior GermClickBehavior
 function Germ:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, clickBehavior)
-    local name = KEY_PREFIX_FOR_ON_CLICK .. mouseClick
+    local name = SecEnvConst.ON_CLICK_PICK_BTN_NAME_PREFIX .. mouseClick
     self:setSecEnvAttribute(name, clickBehavior)
 end
 
@@ -1000,7 +1006,7 @@ end
 function GermClickBehaviorAssignmentFunction:OPEN(mouseClick, event)
     self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
     zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, SEC_ENV_SCRIPT_NAME_FOR_OPEN)
+    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, SecEnvConst.OPENER_NAME)
 end
 
 ---@param mouseClick MouseClick
@@ -1030,7 +1036,7 @@ end
 function Germ:installSecEnvScriptFor_Opener()
     assert(not self.isOpenerScriptInitialized, "Wut?  The OPENER script is already installed.  Why you call again?")
     self.isOpenerScriptInitialized = true
-    self:setSecEnvAttribute("_".. SEC_ENV_SCRIPT_NAME_FOR_OPEN, self:getSecEnvScriptForOpener())
+    self:setSecEnvAttribute("_".. SecEnvConst.OPENER_NAME, self:getSecEnvScriptFor_Opener())
 end
 
 function Germ:installSecEnvScriptFor_ON_CLICK()
@@ -1039,17 +1045,26 @@ function Germ:installSecEnvScriptFor_ON_CLICK()
     self:WrapScript(self, Script.ON_CLICK, self:getSecEnvScriptFor_ON_CLICK() )
 end
 
-function Germ:getSecEnvScriptForOpener()
-    if not SEC_ENV_SCRIPT_FOR_OPENER then
-        SEC_ENV_SCRIPT_FOR_OPENER =
+function Germ:getSecEnvScriptFor_Opener()
+    if not SecEnvConst.OPENER_SCRIPT then
+        local DIRECTION_AS_ANCHOR = serializeAsAssignments("DIRECTION_AS_ANCHOR", DirectionAsAnchor)
+        local ANCHOR_OPPOSITE = serializeAsAssignments("ANCHOR_OPPOSITE", AnchorOpposite)
+
+        SecEnvConst.OPENER_SCRIPT =
 [=[
     local mouseClick = button
     local isClicked = down
-    local direction = germ:GetAttribute( "]=].. SecEnvAttribute.flyoutDirection ..[=[" )
+    local dir = germ:GetAttribute( "]=].. SecEnvAttribute.flyoutDirection ..[=[" )
+    local isVert = dir == "UP" or dir == "DOWN"
     local isOpen = flyoutMenu:IsShown()
+    local initialSpacing = ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[
+    local defaultSpacing = ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[
+    local finalSpacing   = ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[
+    ]=].. DIRECTION_AS_ANCHOR ..[=[
+    ]=].. ANCHOR_OPPOSITE ..[=[
 
     --[[DEBUG]] if doDebug then
-    --[[DEBUG]]     print("<DEBUG>", myName, "SEC_ENV_SCRIPT_FOR_OPENER <START> germ =", germ, "flyoutMenu =",flyoutMenu, "mouseClick",mouseClick, "isClicked",isClicked, "direction",direction, "isOpen",isOpen)
+    --[[DEBUG]]     print("<DEBUG>", myName, "OPENER_SCRIPT <START> germ =", germ, "flyoutMenu =",flyoutMenu, "mouseClick",mouseClick, "isClicked",isClicked, "dir",dir, "isOpen",isOpen)
     --[[DEBUG]] end
 
 	if isOpen then
@@ -1065,64 +1080,133 @@ function Germ:getSecEnvScriptForOpener()
 
 -- TODO: move this into FlyoutMenu:updateForGerm()
 
-    flyoutMenu:SetParent(germ)  -- holdover from single FM
-    flyoutMenu:ClearAllPoints()
-    if direction == "UP" then
-        flyoutMenu:SetPoint("BOTTOM", germ, "TOP", 0, 0)
-    elseif direction == "DOWN" then
-        flyoutMenu:SetPoint("TOP", germ, "BOTTOM", 0, 0)
-    elseif direction == "LEFT" then
-        flyoutMenu:SetPoint("RIGHT", germ, "LEFT", 0, 0)
-    elseif direction == "RIGHT" then
-        flyoutMenu:SetPoint("LEFT", germ, "RIGHT", 0, 0)
-    end
+    -- attach the flyout to the germ
 
+    flyoutMenu:ClearAllPoints()
+    flyoutMenu:SetParent(germ)  -- holdover from single FM
+    local anchorOnGerm = DIRECTION_AS_ANCHOR[dir]
+    local anchorOnMe   = ANCHOR_OPPOSITE[anchorOnGerm]
+    flyoutMenu:SetPoint(anchorOnMe, germ, anchorOnGerm, 0, 0)
+
+    -- arrange all the buttons onto the flyout
+
+    -- get the buttons, filtering out trash
     local uiButtons = table.new(flyoutMenu:GetChildren())
     while uiButtons[1] and uiButtons[1]:GetObjectType() ~= "CheckButton" do
-    --if uiButtons[1]:GetObjectType() ~= "CheckButton" then
         table.remove(uiButtons, 1) -- this is the non-button UI element "Background" from ui.xml
     end
 
-	local prevBtn = nil;
+    -- count the buttons being used on the flyout
     local numButtons = 0
     for i, btn in ipairs(uiButtons) do
         local isInUse = btn:GetAttribute("UFO_NAME")
-        --print(i, numButtons, isInUse)
         if isInUse then
             numButtons = numButtons + 1
+        end
+    end
+
+-- calculate if the flyout is too long, then how many rows & columns
+local configMaxLen = 20
+local vertLineWrapDir = "RIGHT"
+local horizLineWrapDir = "UP"
+local linesCountMax = math.ceil(numButtons / configMaxLen, 1)
+local maxBtnsPerLine = math.ceil(numButtons / linesCountMax)
+print("configMaxLen",configMaxLen, "numButtons =",numButtons, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax)
+if linesCountMax > configMaxLen then
+    linesCountMax = math.floor( math.sqrt(numButtons) )
+    print("TOO WIDE! sqrt =",linesCountMax)
+end
+
+    local x,y,linesCount,lineBtnCount = 1,1,1,0
+    local lineGirth, lineOff
+	local anyBtn = nil
+	local firstBtnOfPreviousLine = nil
+	local parent = flyoutMenu
+    for i, btn in ipairs(uiButtons) do
+        local isInUse = btn:GetAttribute("UFO_NAME")
+        if isInUse then
 
             --print("SNIPPET... i:",i, "btn:",btn:GetName())
             btn:ClearAllPoints()
 
-            local parent = prevBtn or "$parent"
-            if prevBtn then
-                if direction == "UP" then
-                    btn:SetPoint("BOTTOM", parent, "TOP", 0, ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[)
-                elseif direction == "DOWN" then
-                    btn:SetPoint("TOP", parent, "BOTTOM", 0, -]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[)
-                elseif direction == "LEFT" then
-                    btn:SetPoint("RIGHT", parent, "LEFT", -]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[, 0)
-                elseif direction == "RIGHT" then
-                    btn:SetPoint("LEFT", parent, "RIGHT", ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[, 0)
+-- lineBtnCount
+            local xOffBump = 0
+            local yOffBump = 0
+            lineBtnCount = lineBtnCount + 1
+local isFirstBtnOfLine
+if lineBtnCount > maxBtnsPerLine then
+    isFirstBtnOfLine = true
+    parent = firstBtnOfPreviousLine or flyoutMenu
+    linesCount = linesCount + 1
+    local btnSize = isVert and btn:GetHeight() or btn:GetWidth()
+    lineGirth = (btnSize + defaultSpacing)
+    lineOff = lineGirth * (linesCount-1)
+    xOffBump = 0 -- isVert and lineOff or 0
+    yOffBump = 0 -- not isVert and lineOff or 0
+    print("linesCount",linesCount, "lineBtnCount",lineBtnCount, "xOffBump",xOffBump, "yOffBump",yOffBump)
+    lineBtnCount = 0
+end
+
+            local isFirstBtn     = parent == flyoutMenu
+            local spacing        = isFirstBtn and initialSpacing or defaultSpacing
+            local anchorForDir   = DIRECTION_AS_ANCHOR[dir]
+            local anchorOpposite = ANCHOR_OPPOSITE[anchorForDir]
+            local anchorOnMe     = anchorOpposite
+            local anchorOnParent = isFirstBtn and anchorOpposite or anchorForDir
+
+            local xOff =
+                   dir == "UP"    and 0
+                or dir == "DOWN"  and 0
+                or dir == "LEFT"  and -spacing
+                or dir == "RIGHT" and spacing
+            local yOff =
+                   dir == "UP"    and spacing
+                or dir == "DOWN"  and -spacing
+                or dir == "LEFT"  and 0
+                or dir == "RIGHT" and 0
+
+
+            if isFirstBtn then
+                -- anchor a corner of the btn to the same corner of the flyout
+                -- the anchor is the opposite corner from the flyout's grow direction and wrap dir
+                -- eg, flies up and grows right, then anchor corner is bottom-left
+                local pre, tmp, post
+                if isVert then
+                    pre = anchorOpposite
+                    tmp = DIRECTION_AS_ANCHOR[vertLineWrapDir]
+                    post = ANCHOR_OPPOSITE[tmp]
+                else
+                    tmp = DIRECTION_AS_ANCHOR[horizLineWrapDir]
+                    pre = ANCHOR_OPPOSITE[tmp]
+                    post = anchorOpposite
                 end
-            else
-                if direction == "UP" then
-                    btn:SetPoint("BOTTOM", parent, 0, ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[)
-                elseif direction == "DOWN" then
-                    btn:SetPoint("TOP", parent, 0, -]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[)
-                elseif direction == "LEFT" then
-                    btn:SetPoint("RIGHT", parent, -]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[, 0)
-                elseif direction == "RIGHT" then
-                    btn:SetPoint("LEFT", parent, ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[, 0)
+                anchorOnParent = pre..post
+                print("anchorOnParent",anchorOnParent)
+                anchorOnMe = anchorOnMe
+                xOff = btn:GetWidth() / 2
+                yOff = btn:GetHeight() / 2
+            elseif isFirstBtnOfLine then
+                if isVert then
+                    anchorOnParent = DIRECTION_AS_ANCHOR[vertLineWrapDir]
+                    anchorOnMe = ANCHOR_OPPOSITE[anchorOnParent]
+                else
+                    anchorOnParent = DIRECTION_AS_ANCHOR[horizLineWrapDir]
+                    anchorOnMe = ANCHOR_OPPOSITE[anchorOnParent]
                 end
             end
 
+
+            btn:SetPoint(anchorOnMe, parent, anchorOnParent, xOff+xOffBump, yOff+yOffBump)
+
+            --
             -- keybind each button to 1-9 and 0
+            --
+
             local doKeybindTheButtonsOnTheFlyout = germ:GetAttribute("doKeybindTheButtonsOnTheFlyout")
             if doKeybindTheButtonsOnTheFlyout then
-                if numButtons < 11 then
+                if i < 11 then
                     -- TODO: make first keybind same as the UFO's
-                    local numberKey = (numButtons == 10) and "0" or tostring(numButtons)
+                    local numberKey = (i == 10) and "0" or tostring(i)
                     flyoutMenu:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
                     if numberKey == "1" then
                         -- make the UFO's first button's keybind be the same as the UFO itself
@@ -1134,23 +1218,28 @@ function Germ:getSecEnvScriptForOpener()
                 end
             end
 
-            prevBtn = btn
+if lineBtnCount == 1 then
+    firstBtnOfPreviousLine = btn
+end
+
+            anyBtn = btn
+            parent = btn
             btn:Show()
         else
             btn:Hide()
         end
     end
 
-    local w = prevBtn and prevBtn:GetWidth() or 10
-    local h = prevBtn and prevBtn:GetHeight() or 10
-    local minN = (numButtons == 0) and 1 or numButtons
+    local w = anyBtn and anyBtn:GetWidth() or 10
+    local h = anyBtn and anyBtn:GetHeight() or 10
+    local minN = (numButtons == 0) and 1 or maxBtnsPerLine
 
-    if direction == "UP" or direction == "DOWN" then
-        flyoutMenu:SetWidth(w)
-        flyoutMenu:SetHeight((h + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
+    if isVert then
+        flyoutMenu:SetWidth(w * linesCountMax)
+        flyoutMenu:SetHeight((h + defaultSpacing) * minN - defaultSpacing + initialSpacing + finalSpacing)
     else
-        flyoutMenu:SetHeight(h)
-        flyoutMenu:SetWidth((w + ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[) * minN - ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[ + ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[ + ]=].. SPELLFLYOUT_FINAL_SPACING ..[=[)
+        flyoutMenu:SetHeight(h * linesCountMax)
+        flyoutMenu:SetWidth((w + defaultSpacing) * minN - defaultSpacing + initialSpacing + finalSpacing)
     end
 
     --[[DEBUG]] if doDebug then
@@ -1160,20 +1249,20 @@ function Germ:getSecEnvScriptForOpener()
 ]=]
     end
 
-    return SEC_ENV_SCRIPT_FOR_OPENER
+    return SecEnvConst.OPENER_SCRIPT
 end
 
 function Germ:getSecEnvScriptFor_ON_CLICK()
-    if not SEC_ENV_SCRIPT_FOR_ON_CLICK then
+    if not SecEnvConst.ON_CLICK_PICK_BTN_SCRIPT then
         local MAP_MOUSE_CLICK_AS_A_TYPE = serializeAsAssignments("MAP_MOUSE_CLICK_AS_A_TYPE", MouseClickAsSecEnvId)
         local MAP_MOUSE_CLICK_AS_NUMBER = serializeAsAssignments("MAP_MOUSE_CLICK_AS_NUMBER", MouseClickAsSecEnvN)
 
-        SEC_ENV_SCRIPT_FOR_ON_CLICK =
+        SecEnvConst.ON_CLICK_PICK_BTN_SCRIPT =
 [=[
         -- CONSTANTS
         local CYCLE_ALL_BTNS  = "]=].. GermClickBehavior.CYCLE_ALL_BTNS ..[=["
         local RANDOM_BTN      = "]=].. GermClickBehavior.RANDOM_BTN ..[=["
-        local KEY_PREFIX_BMC  = "]=].. KEY_PREFIX_FOR_ON_CLICK ..[=["
+        local ON_CLICK_PREFIX = "]=].. SecEnvConst.ON_CLICK_PICK_BTN_NAME_PREFIX ..[=["
         ]=].. MAP_MOUSE_CLICK_AS_A_TYPE ..[=[
         ]=].. MAP_MOUSE_CLICK_AS_NUMBER ..[=[
 
@@ -1184,7 +1273,7 @@ function Germ:getSecEnvScriptFor_ON_CLICK()
         local mouseBtnNumber     = MAP_MOUSE_CLICK_AS_NUMBER[mouseClick] -- turn "LeftButton" into "1" etc
 
         -- logic figuring out what's going to happen
-        local behaviorKey    = KEY_PREFIX_BMC .. mouseClick
+        local behaviorKey    = ON_CLICK_PREFIX .. mouseClick
         local behavior       = self:GetAttribute(behaviorKey)
         local doCycle        = (behavior == CYCLE_ALL_BTNS)
         local doRandomizer   = (behavior == RANDOM_BTN)
@@ -1293,7 +1382,7 @@ function Germ:getSecEnvScriptFor_ON_CLICK()
         end
 ]=]
     end
-    return SEC_ENV_SCRIPT_FOR_ON_CLICK
+    return SecEnvConst.ON_CLICK_PICK_BTN_SCRIPT
 end
 
 -------------------------------------------------------------------------------

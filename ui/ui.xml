@@ -73,6 +73,23 @@
         <NormalTexture/>
     </CheckButton>
 
+    <Frame name="UFO_Padded_ButtonOnFlyoutMenu_Template"
+           virtual="true"
+           frameStrata="MEDIUM"
+           frameLevel="75"
+           toplevel="true"
+    >
+        <Frames>
+            <CheckButton name="$parent_ActualBtn" inherits="UFO_ButtonOnFlyoutMenu_Template">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativePoint="TOPLEFT" x="-5" y="-5" />
+                    <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" x="5" y="5" />
+                </Anchors>
+            </CheckButton>
+        </Frames>
+    </Frame>
+
+
     <Frame name="UFO_FlyoutMenuTemplate"
            inherits="FlyoutPopupTemplate, SecureFrameTemplate"
            mixin="GLOBAL_FlyoutMenu"
