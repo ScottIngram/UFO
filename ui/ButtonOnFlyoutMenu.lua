@@ -45,7 +45,8 @@ ButtonOnFlyoutMenu.getLabel = ButtonOnFlyoutMenu.getName
 
 ---@return FlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:getParent()
-    return self:GetParent()
+    local wrapper = self:GetParent()
+    return wrapper:GetParent()
 end
 
 function ButtonOnFlyoutMenu:isEmpty()
@@ -71,7 +72,7 @@ function ButtonOnFlyoutMenu:setDef(btnDef, event)
     self:copyDefToBlizFields()
 
     -- install click behavior but only if it's on a Germ (i.e. not in the Catalog)
-    local flyoutMenu = self:GetParent()
+    local flyoutMenu = self:getParent()
     if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
         self:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(MouseClick.ANY, event)
         -- TODO: v11.1 build this into my Button_Mixin
@@ -402,6 +403,25 @@ function ButtonOnFlyoutMenu:onLoad()
     self:RegisterForDrag("LeftButton")
     self:RegisterForClicks("AnyDown", "AnyUp")
     -- TODO - register for spell and cooldown events (?)
+
+    -- purely for easier UI layout, I am wrapped by a ornamental Frame
+    local wrapper = self:GetParent()
+
+    -- adjust my wrapper
+    local w = self:GetWidth()
+    local h = self:GetHeight()
+    local padding = SPELLFLYOUT_DEFAULT_SPACING
+    -- wrapper:SetWidth(w + padding*2)
+    -- wrapper:SetHeight(h + padding*2)
+
+    -- copy from my wrapper
+    self:SetID( wrapper:GetID() )
+
+    -- self:SetPoint(Anchor.TOPLEFT, wrapper, Anchor.TOPLEFT, -padding, -padding)
+    -- self:SetPoint(Anchor.BOTTOMRIGHT, wrapper, Anchor.BOTTOMRIGHT, padding, padding)
+    local w2 = wrapper:GetWidth()
+    local h2 = wrapper:GetHeight()
+
 end
 
 ---@param self ButtonOnFlyoutMenu
@@ -411,7 +431,7 @@ function ButtonOnFlyoutMenu:onEnter()
 
     -- push catalog buttons out of the way for easier btn relocation
     ---@type FlyoutMenu
-    local flyoutMenu = self:GetParent()
+    local flyoutMenu = self:getParent()
     flyoutMenu:setMouseOverKid(self)
     flyoutMenu:displaceButtonsOnHover(self:getId())
 end
@@ -419,7 +439,7 @@ end
 function ButtonOnFlyoutMenu:onLeave()
     GameTooltip:Hide()
     ---@type FlyoutMenu
-    local flyoutMenu = self:GetParent()
+    local flyoutMenu = self:getParent()
     flyoutMenu:clearMouseOverKid(self)
     flyoutMenu:restoreButtonsAfterHover()
 end
@@ -437,7 +457,7 @@ end
 
 ---@param mouseClick MouseClick
 function ButtonOnFlyoutMenu:OnMouseDown(mouseClick)
-    local flyoutMenu = self:GetParent()
+    local flyoutMenu = self:getParent()
     if not flyoutMenu.isForGerm then return end
 
     -- is any mouse button configured for PrimaryButtonIs.RECENT ?
@@ -446,7 +466,7 @@ function ButtonOnFlyoutMenu:OnMouseDown(mouseClick)
     if not doPromote then return end -- NOPE!  No promotion for you!
 
     ---@type GERM_TYPE
-    local germ = flyoutMenu and flyoutMenu:GetParent()
+    local germ = flyoutMenu and flyoutMenu:getParent()
     zebug.info:owner(self):event("OnMouseDown"):print("flyoutMenu",flyoutMenu, "germ",germ)
     germ:promoteButtonToPrime(self)
 end
@@ -465,7 +485,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     if self:isEmpty() then return end
 
     ---@type FlyoutMenu
-    local flyoutFrame = self:GetParent()
+    local flyoutFrame = self:getParent()
     if not flyoutFrame.isForCatalog then return end
 
     local isDragging = GetCursorInfo()

@@ -33,6 +33,11 @@
 -->
     </Button>
 
+    <!--
+    ============================================================================
+    ===== SecEnv action BUTTON on the FlyoutMenu
+    ============================================================================
+    -->
 
     <CheckButton name="UFO_ButtonOnFlyoutMenu_Template"
             virtual="true"
@@ -73,69 +78,88 @@
         <NormalTexture/>
     </CheckButton>
 
-    <Frame name="UFO_Padded_ButtonOnFlyoutMenu_Template"
+    <!--
+    ============================================================================
+    ===== PADDED wrapper around the SecEnv action BUTTON on the FlyoutMenu
+    ============================================================================
+    -->
+
+    <Frame name="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template"
            virtual="true"
+           inherits="SecureActionButtonTemplate"
            frameStrata="MEDIUM"
            frameLevel="75"
            toplevel="true"
     >
+        <Size x="38" y="38"/> <!-- size of the wrapped button (30) plus 4 on each side -->
         <Frames>
             <CheckButton name="$parent_ActualBtn" inherits="UFO_ButtonOnFlyoutMenu_Template">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativePoint="TOPLEFT" x="-5" y="-5" />
-                    <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" x="5" y="5" />
+                    <Anchor point="CENTER" relativeTo="$parent" relativePoint="CENTER"/>
+
+<!--
+                    <Anchor point="TOPLEFT"     relativeTo="$parent" relativePoint="TOPLEFT"     x="0" y="0" />
+-->
+<!--
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT" x="0" y="0"  />
+-->
                 </Anchors>
             </CheckButton>
         </Frames>
     </Frame>
 
+    <!--
+    ============================================================================
+    ===== FlyoutMenu
+    ============================================================================
+    -->
 
     <Frame name="UFO_FlyoutMenuTemplate"
            inherits="FlyoutPopupTemplate, SecureFrameTemplate"
            mixin="GLOBAL_FlyoutMenu"
            virtual="true"
            frameStrata="MEDIUM"
-           frameLevel="75"
+           frameLevel="1"
            toplevel="true"
            parent="UIParent"
            hidden="true"
     >
         <Frames>
-            <CheckButton name="$parent_Button1" inherits="UFO_ButtonOnFlyoutMenu_Template" id="1" />
-            <CheckButton name="$parent_Button2" inherits="UFO_ButtonOnFlyoutMenu_Template" id="2" />
-            <CheckButton name="$parent_Button3" inherits="UFO_ButtonOnFlyoutMenu_Template" id="3" />
-            <CheckButton name="$parent_Button4" inherits="UFO_ButtonOnFlyoutMenu_Template" id="4" />
-            <CheckButton name="$parent_Button5" inherits="UFO_ButtonOnFlyoutMenu_Template" id="5" />
-            <CheckButton name="$parent_Button6" inherits="UFO_ButtonOnFlyoutMenu_Template" id="6" />
-            <CheckButton name="$parent_Button7" inherits="UFO_ButtonOnFlyoutMenu_Template" id="7" />
-            <CheckButton name="$parent_Button8" inherits="UFO_ButtonOnFlyoutMenu_Template" id="8" />
-            <CheckButton name="$parent_Button9" inherits="UFO_ButtonOnFlyoutMenu_Template" id="9" />
-            <CheckButton name="$parent_Button10" inherits="UFO_ButtonOnFlyoutMenu_Template" id="10" />
-            <CheckButton name="$parent_Button11" inherits="UFO_ButtonOnFlyoutMenu_Template" id="11" />
-            <CheckButton name="$parent_Button12" inherits="UFO_ButtonOnFlyoutMenu_Template" id="12" />
-            <CheckButton name="$parent_Button13" inherits="UFO_ButtonOnFlyoutMenu_Template" id="13" />
-            <CheckButton name="$parent_Button14" inherits="UFO_ButtonOnFlyoutMenu_Template" id="14" />
-            <CheckButton name="$parent_Button15" inherits="UFO_ButtonOnFlyoutMenu_Template" id="15" />
-            <CheckButton name="$parent_Button16" inherits="UFO_ButtonOnFlyoutMenu_Template" id="16" />
-            <CheckButton name="$parent_Button17" inherits="UFO_ButtonOnFlyoutMenu_Template" id="17" />
-            <CheckButton name="$parent_Button18" inherits="UFO_ButtonOnFlyoutMenu_Template" id="18" />
-            <CheckButton name="$parent_Button19" inherits="UFO_ButtonOnFlyoutMenu_Template" id="19" />
-            <CheckButton name="$parent_Button20" inherits="UFO_ButtonOnFlyoutMenu_Template" id="20" />
-            <CheckButton name="$parent_Button21" inherits="UFO_ButtonOnFlyoutMenu_Template" id="21" />
-            <CheckButton name="$parent_Button22" inherits="UFO_ButtonOnFlyoutMenu_Template" id="22" />
-            <CheckButton name="$parent_Button23" inherits="UFO_ButtonOnFlyoutMenu_Template" id="23" />
-            <CheckButton name="$parent_Button24" inherits="UFO_ButtonOnFlyoutMenu_Template" id="24" />
-            <CheckButton name="$parent_Button25" inherits="UFO_ButtonOnFlyoutMenu_Template" id="25" />
-            <CheckButton name="$parent_Button26" inherits="UFO_ButtonOnFlyoutMenu_Template" id="26" />
-            <CheckButton name="$parent_Button27" inherits="UFO_ButtonOnFlyoutMenu_Template" id="27" />
-            <CheckButton name="$parent_Button28" inherits="UFO_ButtonOnFlyoutMenu_Template" id="28" />
-            <CheckButton name="$parent_Button29" inherits="UFO_ButtonOnFlyoutMenu_Template" id="29" />
-            <CheckButton name="$parent_Button30" inherits="UFO_ButtonOnFlyoutMenu_Template" id="30" />
-            <CheckButton name="$parent_Button31" inherits="UFO_ButtonOnFlyoutMenu_Template" id="31" />
-            <CheckButton name="$parent_Button32" inherits="UFO_ButtonOnFlyoutMenu_Template" id="32" />
-            <CheckButton name="$parent_Button33" inherits="UFO_ButtonOnFlyoutMenu_Template" id="33" />
-            <CheckButton name="$parent_Button34" inherits="UFO_ButtonOnFlyoutMenu_Template" id="34" />
-            <CheckButton name="$parent_Button35" inherits="UFO_ButtonOnFlyoutMenu_Template" id="35" />
+            <CheckButton name="$parent_PaddedWrapper1" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="1" />
+            <CheckButton name="$parent_PaddedWrapper2" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="2" />
+            <CheckButton name="$parent_PaddedWrapper3" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="3" />
+            <CheckButton name="$parent_PaddedWrapper4" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="4" />
+            <CheckButton name="$parent_PaddedWrapper5" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="5" />
+            <CheckButton name="$parent_PaddedWrapper6" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="6" />
+            <CheckButton name="$parent_PaddedWrapper7" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="7" />
+            <CheckButton name="$parent_PaddedWrapper8" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="8" />
+            <CheckButton name="$parent_PaddedWrapper9" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="9" />
+            <CheckButton name="$parent_PaddedWrapper10" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="10" />
+            <CheckButton name="$parent_PaddedWrapper11" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="11" />
+            <CheckButton name="$parent_PaddedWrapper12" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="12" />
+            <CheckButton name="$parent_PaddedWrapper13" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="13" />
+            <CheckButton name="$parent_PaddedWrapper14" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="14" />
+            <CheckButton name="$parent_PaddedWrapper15" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="15" />
+            <CheckButton name="$parent_PaddedWrapper16" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="16" />
+            <CheckButton name="$parent_PaddedWrapper17" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="17" />
+            <CheckButton name="$parent_PaddedWrapper18" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="18" />
+            <CheckButton name="$parent_PaddedWrapper19" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="19" />
+            <CheckButton name="$parent_PaddedWrapper20" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="20" />
+            <CheckButton name="$parent_PaddedWrapper21" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="21" />
+            <CheckButton name="$parent_PaddedWrapper22" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="22" />
+            <CheckButton name="$parent_PaddedWrapper23" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="23" />
+            <CheckButton name="$parent_PaddedWrapper24" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="24" />
+            <CheckButton name="$parent_PaddedWrapper25" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="25" />
+            <CheckButton name="$parent_PaddedWrapper26" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="26" />
+            <CheckButton name="$parent_PaddedWrapper27" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="27" />
+            <CheckButton name="$parent_PaddedWrapper28" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="28" />
+            <CheckButton name="$parent_PaddedWrapper29" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="29" />
+            <CheckButton name="$parent_PaddedWrapper30" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="30" />
+            <CheckButton name="$parent_PaddedWrapper31" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="31" />
+            <CheckButton name="$parent_PaddedWrapper32" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="32" />
+            <CheckButton name="$parent_PaddedWrapper33" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="33" />
+            <CheckButton name="$parent_PaddedWrapper34" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="34" />
+            <CheckButton name="$parent_PaddedWrapper35" inherits="UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template" id="35" />
         </Frames>
     </Frame>
 
