@@ -44,9 +44,8 @@ end
 ButtonOnFlyoutMenu.getLabel = ButtonOnFlyoutMenu.getName
 
 ---@return FlyoutMenu -- IntelliJ-EmmyLua annotation
-function ButtonOnFlyoutMenu:getParent()
-    local wrapper = self:GetParent()
-    return wrapper:GetParent()
+function ButtonOnFlyoutMenu:getFlyoutMenu()
+    return self:GetParent()
 end
 
 function ButtonOnFlyoutMenu:isEmpty()
@@ -54,7 +53,7 @@ function ButtonOnFlyoutMenu:isEmpty()
 end
 
 function ButtonOnFlyoutMenu:isForCatalog()
-    return self:getParent().isForCatalog
+    return self:getFlyoutMenu().isForCatalog
 end
 
 function ButtonOnFlyoutMenu:hasDef()
@@ -72,7 +71,7 @@ function ButtonOnFlyoutMenu:setDef(btnDef, event)
     self:copyDefToBlizFields()
 
     -- install click behavior but only if it's on a Germ (i.e. not in the Catalog)
-    local flyoutMenu = self:getParent()
+    local flyoutMenu = self:getFlyoutMenu()
     if flyoutMenu.isForGerm then -- essentially, not self.isForCatalog
         self:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(MouseClick.ANY, event)
         -- TODO: v11.1 build this into my Button_Mixin
@@ -111,7 +110,7 @@ function ButtonOnFlyoutMenu:handleExcluderClick(mouseClick, isDown)
         btnDef.noRnd = not btnDef.noRnd
         self:setExcluderVisibility()
 
-        local flyoutDef = self:getParent():getDef()
+        local flyoutDef = self:getFlyoutMenu():getDef()
         flyoutDef:setModStamp()
         GermCommander:notifyOfChangeToFlyoutDef(flyoutDef.id, event)
     end
@@ -154,7 +153,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddItTryCatch(event)
 end
 
 function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
-    local flyoutMenu = self:getParent()
+    local flyoutMenu = self:getFlyoutMenu()
     if not flyoutMenu.isForCatalog then return end -- only the flyouts in the catalog are valid drop targets.  TODO: let flyouts on the germs receive too?
 
     local crsDef = ButtonDef:getFromCursor(event)
@@ -238,7 +237,7 @@ function ButtonOnFlyoutMenu:setTooltip()
         -- this is the empty btn in the catalog... or is it?
         if not self:isForCatalog() then
             local btnId = self:getId()
-            local flyoutId = self:getParent():getId()
+            local flyoutId = self:getFlyoutMenu():getId()
             zebug.info:print("No btnDef found for flyoutId",flyoutId, "btnId",btnId)
         end
         return
@@ -256,7 +255,7 @@ function ButtonOnFlyoutMenu:setTooltip()
 
     local name = btnDef:getName()
     if not name then
-        msgUser(L10N.UNKNOWN, "button on", self:getParent():getLabel())
+        msgUser(L10N.UNKNOWN, "button on", self:getFlyoutMenu():getLabel())
         name = L10N.UNKNOWN
     end
 
@@ -286,7 +285,7 @@ end
 -------------------------------------------------------------------------------
 
 function ButtonOnFlyoutMenu:initializeSecEnv()
-    local flyoutMenu = self:getParent()
+    local flyoutMenu = self:getFlyoutMenu()
     local germ = flyoutMenu:getParent()
     zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu)
 
@@ -431,7 +430,7 @@ function ButtonOnFlyoutMenu:onEnter()
 
     -- push catalog buttons out of the way for easier btn relocation
     ---@type FlyoutMenu
-    local flyoutMenu = self:getParent()
+    local flyoutMenu = self:getFlyoutMenu()
     flyoutMenu:setMouseOverKid(self)
     flyoutMenu:displaceButtonsOnHover(self:getId())
 end
@@ -439,7 +438,7 @@ end
 function ButtonOnFlyoutMenu:onLeave()
     GameTooltip:Hide()
     ---@type FlyoutMenu
-    local flyoutMenu = self:getParent()
+    local flyoutMenu = self:getFlyoutMenu()
     flyoutMenu:clearMouseOverKid(self)
     flyoutMenu:restoreButtonsAfterHover()
 end
@@ -457,7 +456,7 @@ end
 
 ---@param mouseClick MouseClick
 function ButtonOnFlyoutMenu:OnMouseDown(mouseClick)
-    local flyoutMenu = self:getParent()
+    local flyoutMenu = self:getFlyoutMenu()
     if not flyoutMenu.isForGerm then return end
 
     -- is any mouse button configured for PrimaryButtonIs.RECENT ?
@@ -485,8 +484,8 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     if self:isEmpty() then return end
 
     ---@type FlyoutMenu
-    local flyoutFrame = self:getParent()
-    if not flyoutFrame.isForCatalog then return end
+    local flyoutMenu = self:getFlyoutMenu()
+    if not flyoutMenu.isForCatalog then return end
 
     local isDragging = GetCursorInfo()
     if isDragging then
@@ -511,11 +510,11 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
             return
         end
 
-        local flyoutId = flyoutFrame:getId()
+        local flyoutId = flyoutMenu:getId()
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
         flyoutDef:removeButton(self:getId())
         self:setDef(nil, event)
-        flyoutFrame:updateForCatalog(flyoutId, event)
+        flyoutMenu:updateForCatalog(flyoutId, event)
         GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
     end)
 end
