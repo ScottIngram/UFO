@@ -79,7 +79,7 @@ end
 
 ---@return BOFM_TYPE
 function FlyoutMenu:getButtonFrame(i)
-    return _G[ self:GetName().."_PaddedWrapper"..i.."_ActualBtn" ]
+    return self[tostring(i)] -- the ui.xml defines parentKey="1" which evidently creates a string and not a number
 end
 
 function FlyoutMenu:close()
@@ -95,36 +95,11 @@ function FlyoutMenu:getBtnKids()
     -- eliminate the non-button UI element "Background" defined in ui.xml
     -- sometimes (during combat) it's already excluded from GetChildren() so... we have to jump through extra hoops
     local btnKids = { self:GetChildren() }
-    -- zebug.error:owner(self):dumpy("btnKids", btnKids)
-    -- zebug.error:owner(self):print("btnKids[1]", btnKids[1]:GetID())
 
-    --
-    while btnKids[1] and (btnKids[1]:GetID() or 0) < 1 do
-        zebug.info:owner(self):print("discarding", btnKids[1]:GetObjectType())
+    while btnKids[1] and btnKids[1]:GetObjectType() ~= "CheckButton" do
+        zebug.info:owner(self):print("discarding id", btnKids[1]:GetID(), "of",  btnKids[1]:GetObjectType())
         table.remove(btnKids, 1)
     end
-
-    --zebug.error:owner(self):dumpy("btnKids TWO", btnKids)
-
-    -- we don't care about the UFO_PaddedWrapperFor_ButtonOnFlyoutMenu_Template
-    -- unwrap the SecureActionButton inside it
-    for i, btn in ipairs(btnKids) do
-        local firstKid = btn:GetChildren() -- grab the first one (and there is only one) and ignore the rest (of which there are none)
-        local name = firstKid and firstKid.GetName and firstKid:GetName() or "noname"
-        zebug.info:owner(self):print("unwrapping", btn, "and got firstKid",name, "id",btn:GetID())
-        --zebug.error:owner(self):dumpy("and got firstKid", firstKid)
-
-        -- each wrapped button is an only child of its parent.
-        -- downstream code expects it to know if it's the first, second, etc button in the flyout.
---[[
-        local id = btn:GetID()
-        firstKid:SetID(id)
-]]
-        btnKids[i] = firstKid
-    end
-
--- btnKid:SetID([wrapper]:GetID())
-
 
     self.btnKids = btnKids
 

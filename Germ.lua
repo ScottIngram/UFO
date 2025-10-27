@@ -1097,16 +1097,15 @@ function Germ:getSecEnvScriptFor_Opener()
     -- arrange all the buttons onto the flyout
 
     -- get the buttons, filtering out trash
-    local wrappers = table.new(flyoutMenu:GetChildren())
-    while wrappers[1] and wrappers[1]:GetID() < 1 do
-        --print("discarding", wrappers[1]:GetObjectType())
-        table.remove(wrappers, 1) -- this is the non-button UI element "Background" from ui.xml
+    local btns = table.new(flyoutMenu:GetChildren())
+    while btns[1] and btns[1]:GetID() < 1 do
+        --print("discarding", btns[1]:GetObjectType())
+        table.remove(btns, 1) -- this is the non-button UI element "Background" from ui.xml
     end
 
     -- count the buttons being used on the flyout
     local numButtons = 0
-    for i, wrapper in ipairs(wrappers) do
-        local btn = wrapper:GetChildren()
+    for i, btn in ipairs(btns) do
         local isInUse = btn:GetAttribute("UFO_NAME")
         if isInUse then
             numButtons = numButtons + 1
@@ -1119,7 +1118,7 @@ local vertLineWrapDir = "RIGHT"
 local horizLineWrapDir = "UP"
 local linesCountMax = math.ceil(numButtons / configMaxLen, 1)
 local maxBtnsPerLine = math.ceil(numButtons / linesCountMax)
---[[DEBUG]] --print("configMaxLen",configMaxLen, "numButtons =",numButtons, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax)
+--[[DEBUG]] -- print("configMaxLen",configMaxLen, "numButtons =",numButtons, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax)
 if linesCountMax > configMaxLen then
     linesCountMax = math.floor( math.sqrt(numButtons) )
 	    --[[DEBUG]] if doDebug then
@@ -1127,64 +1126,66 @@ if linesCountMax > configMaxLen then
         --[[DEBUG]] end
 end
 
-    local x,y,linesCount,lineBtnCount = 1,1,1,0
+    local x,y,linesCount,btnCountForThisLine = 1,1,1,0
     local lineGirth, lineOff
-	local anyBtn = nil
-	local firstBtnOfPreviousLine = nil
-	local buddy = flyoutMenu
-    for i, wrapper in ipairs(wrappers) do
-        local actualBtn = wrapper:GetChildren() -- first (and only) kid is the ButtonOnFlyoutMenu
-        local isInUse = actualBtn:GetAttribute("UFO_NAME")
+	local anyBumper = nil
+	local firstBumperOfPreviousLine = nil
+	local anchorBuddy = flyoutMenu
+    for i, btn in ipairs(btns) do
+        local wrapper = btn.bumper
+        local bumper = btn.bumper
+        --[[DEBUG]] --print("wrapper =",wrapper)
+
+
+    local muhKids = table.new(btn:GetChildren())
+    for i, frame in ipairs(muhKids) do
+        --[[DEBUG]] -- print("i =",i, "name", frame:GetName(), frame:GetID())
+        if frame:GetID() == 99 then
+            bumper = frame
+        end
+    end
+
+        local isInUse = btn:GetAttribute("UFO_NAME")
 
 	    --[[DEBUG]] if doDebug then
-        --[[DEBUG]] print("i:",i, "actualBtn:",actualBtn:GetName(), "isInUse",isInUse)
+        --[[DEBUG]] print("i:",i, "btn:",btn:GetName(), "isInUse",isInUse)
         --[[DEBUG]] end
 
         if isInUse then
 
             --[[DEBUG]] if doDebug then
-            --[[DEBUG]] print("SNIPPET... i:",i, "wrapper:",wrapper:GetName())
+            --[[DEBUG]] print("SNIPPET... i:",i, "bumper:",bumper:GetName())
             --[[DEBUG]] end
-            wrapper:ClearAllPoints()
+            bumper:ClearAllPoints()
 
--- lineBtnCount
-            local xOffBump = 0
-            local yOffBump = 0
-            lineBtnCount = lineBtnCount + 1
+            local xLineBump = 0
+            local yLineBump = 0
+            btnCountForThisLine = btnCountForThisLine + 1
+
+--local doDebug = true
+
 local isFirstBtnOfLine
-if lineBtnCount > maxBtnsPerLine then
+if btnCountForThisLine > maxBtnsPerLine then
     isFirstBtnOfLine = true
-    buddy = firstBtnOfPreviousLine or flyoutMenu
+    anchorBuddy = firstBumperOfPreviousLine or flyoutMenu
     linesCount = linesCount + 1
-    local btnSize = isVert and wrapper:GetHeight() or wrapper:GetWidth()
+    local btnSize = isVert and bumper:GetHeight() or bumper:GetWidth()
     lineGirth = (btnSize + defaultSpacing)
     lineOff = lineGirth * (linesCount-1)
-    xOffBump = 0 -- isVert and lineOff or 0
-    yOffBump = 0 -- not isVert and lineOff or 0
+    xLineBump = 0 -- isVert and lineOff or 0
+    yLineBump = 0 -- not isVert and lineOff or 0
     --[[DEBUG]] if doDebug then
-    --[[DEBUG]] print("=== BREAK === linesCount",linesCount, "lineBtnCount",lineBtnCount, "btnSize",btnSize, "lineGirth",lineGirth)
+    --[[DEBUG]] print("=== BREAK === maxBtnsPerLine",maxBtnsPerLine, "linesCount",linesCount, "btnCountForThisLine",btnCountForThisLine, "btnSize",btnSize, "lineGirth",lineGirth)
     --[[DEBUG]] end
-    lineBtnCount = 0
+    btnCountForThisLine = 0
 end
 
-            local isFirstBtn     = buddy == flyoutMenu
+            local isFirstBtn     = anchorBuddy == flyoutMenu
             local spacing        = isFirstBtn and initialSpacing or defaultSpacing
             local anchorForDir   = DIRECTION_AS_ANCHOR[dir]
             local anchorOpposite = ANCHOR_OPPOSITE[anchorForDir]
             local ptOnMe     = anchorOpposite
-            local ptOnBuddy = isFirstBtn and anchorOpposite or anchorForDir
-
-            local xOff =
-                   dir == "UP"    and 0
-                or dir == "DOWN"  and 0
-                or dir == "LEFT"  and -spacing
-                or dir == "RIGHT" and spacing
-            local yOff =
-                   dir == "UP"    and spacing
-                or dir == "DOWN"  and -spacing
-                or dir == "LEFT"  and 0
-                or dir == "RIGHT" and 0
-
+            local ptOnAnchorBuddy = isFirstBtn and anchorOpposite or anchorForDir
 
             if isFirstBtn then
                 -- anchor a corner of the btn to the same corner of the flyout
@@ -1200,35 +1201,33 @@ end
                     anchPrefix = ANCHOR_OPPOSITE[tmp]
                     anchPost = anchorOpposite
                 end
-                ptOnBuddy = anchPrefix..anchPost
-                ptOnMe = ptOnBuddy
-                xOff = wrapper:GetWidth() / 2
-                yOff = wrapper:GetHeight() / 2
+                ptOnAnchorBuddy = anchPrefix..anchPost
+                ptOnMe = ptOnAnchorBuddy
             elseif isFirstBtnOfLine then
                 if isVert then
-                    ptOnBuddy = DIRECTION_AS_ANCHOR[vertLineWrapDir]
-                    ptOnMe = ANCHOR_OPPOSITE[ptOnBuddy]
+                    ptOnAnchorBuddy = DIRECTION_AS_ANCHOR[vertLineWrapDir]
+                    ptOnMe = ANCHOR_OPPOSITE[ptOnAnchorBuddy]
                 else
-                    ptOnBuddy = DIRECTION_AS_ANCHOR[horizLineWrapDir]
-                    ptOnMe = ANCHOR_OPPOSITE[ptOnBuddy]
+                    ptOnAnchorBuddy = DIRECTION_AS_ANCHOR[horizLineWrapDir]
+                    ptOnMe = ANCHOR_OPPOSITE[ptOnAnchorBuddy]
                 end
             end
 
-            local wW = wrapper:GetWidth()
-            local wH = wrapper:GetHeight()
-            local aW = actualBtn:GetWidth()
-            local aH = actualBtn:GetHeight()
+            local wW = bumper:GetWidth()
+            local wH = bumper:GetHeight()
+            local aW = btn:GetWidth()
+            local aH = btn:GetHeight()
 
             --[[DEBUG]] if doDebug then
-            --[[DEBUG]] print("ptOnMe",ptOnMe, "ptOnBuddy",ptOnBuddy, "buddy", buddy:GetName(), "wW",math.floor(wW), "wH",math.floor(wH),  "aW",math.floor(aW), "aH",math.floor(aH))
+            --[[DEBUG]] print("ptOnMe",ptOnMe, "ptOnAnchorBuddy",ptOnAnchorBuddy, "anchorBuddy", anchorBuddy:GetName(), "wW",math.floor(wW), "wH",math.floor(wH),  "aW",math.floor(aW), "aH",math.floor(aH))
             --[[DEBUG]] end
 
-            --btn:SetPoint(ptOnMe, buddy, ptOnBuddy, xOff+xOffBump, yOff+yOffBump)
-            wrapper:SetPoint(ptOnMe, buddy, ptOnBuddy, 0, 0)
+            --btn:SetPoint(ptOnMe, anchorBuddy, ptOnAnchorBuddy, xOff+xLineBump, yOff+yLineBump)
+            bumper:SetPoint(ptOnMe, anchorBuddy, ptOnAnchorBuddy, 0, 0)
             fmBg:SetPoint("TOPLEFT", flyoutMenu, "TOPLEFT", 0, 0)
             fmBg:SetPoint("BOTTOMRIGHT", flyoutMenu, "BOTTOMRIGHT", 0, 0)
 
-            buddy:Show()
+            anchorBuddy:Show()
 
             --
             -- keybind each button to 1-9 and 0
@@ -1239,31 +1238,31 @@ end
                 if i < 11 then
                     -- TODO: make first keybind same as the UFO's
                     local numberKey = (i == 10) and "0" or tostring(i)
-                    flyoutMenu:SetBindingClick(true, numberKey, actualBtn, "]=].. MouseClick.LEFT ..[=[")
+                    flyoutMenu:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
                     if numberKey == "1" then
                         -- make the UFO's first button's keybind be the same as the UFO itself
                         local germKey = self:GetAttribute("UFO_KEYBIND_1")
                         if germKey then
-                            flyoutMenu:SetBindingClick(true, germKey, actualBtn, "]=].. MouseClick.LEFT ..[=[")
+                            flyoutMenu:SetBindingClick(true, germKey, btn, "]=].. MouseClick.LEFT ..[=[")
                         end
                     end
                 end
             end
 
-if lineBtnCount == 1 then
-    firstBtnOfPreviousLine = wrapper
-end
+            if btnCountForThisLine == 1 then
+                firstBumperOfPreviousLine = bumper
+            end
 
-            anyBtn = wrapper
-            buddy = wrapper
-            wrapper:Show()
+            anyBumper = bumper
+            anchorBuddy = bumper
+            btn:Show()
         else
-            wrapper:Hide()
+            btn:Hide()
         end
     end
 
-    local btnW = anyBtn and anyBtn:GetWidth() or 10
-    local btnH = anyBtn and anyBtn:GetHeight() or 10
+    local btnW = anyBumper and anyBumper:GetWidth() or 10
+    local btnH = anyBumper and anyBumper:GetHeight() or 10
     local btnsPerLine = (numButtons == 0) and 2 or maxBtnsPerLine
 
     if isVert then

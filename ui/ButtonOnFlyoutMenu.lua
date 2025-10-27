@@ -403,24 +403,9 @@ function ButtonOnFlyoutMenu:onLoad()
     self:RegisterForClicks("AnyDown", "AnyUp")
     -- TODO - register for spell and cooldown events (?)
 
-    -- purely for easier UI layout, I am wrapped by a ornamental Frame
-    local wrapper = self:GetParent()
-
-    -- adjust my wrapper
-    local w = self:GetWidth()
-    local h = self:GetHeight()
-    local padding = SPELLFLYOUT_DEFAULT_SPACING
-    -- wrapper:SetWidth(w + padding*2)
-    -- wrapper:SetHeight(h + padding*2)
-
-    -- copy from my wrapper
-    self:SetID( wrapper:GetID() )
-
-    -- self:SetPoint(Anchor.TOPLEFT, wrapper, Anchor.TOPLEFT, -padding, -padding)
-    -- self:SetPoint(Anchor.BOTTOMRIGHT, wrapper, Anchor.BOTTOMRIGHT, padding, padding)
-    local w2 = wrapper:GetWidth()
-    local h2 = wrapper:GetHeight()
-
+    -- purely for easier UI layout, I include an ornamental Frame with a phat margin
+    local bumper = self.bumper
+    self:SetPoint(Anchor.CENTER, bumper, Anchor.CENTER)
 end
 
 ---@param self ButtonOnFlyoutMenu
