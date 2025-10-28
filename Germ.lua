@@ -886,17 +886,11 @@ function Germ:initializeSecEnv(event)
     self:setSecEnvAttribute(SecEnvAttribute.flyoutDirection, self:getDirection(event))
     self:setSecEnvAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
     self:SetFrameRef("flyoutMenu", self.flyoutMenu)
-    self:SetFrameRef("fmBg", self.flyoutMenu.Background)
-    -- print("self.flyoutMenu.Background.End",self.flyoutMenu.Background.End)
-    -- self:SetFrameRef("fmBgEnd", self.flyoutMenu.Background.End)
-    --fmBgEnd:SetPoint("TOPLEFT", fmBg, "TOPLEFT", 0, 0)
-    --fmBgEnd:SetPoint("BOTTOMRIGHT", fmBg, "BOTTOMRIGHT", 0, 0)
 
     -- set global variables inside the restricted environment of the germ
     self:Execute([=[
         germ       = self
         flyoutMenu = germ:GetFrameRef("flyoutMenu")
-        fmBg       = germ:GetFrameRef("fmBg")
         myName     = self:GetAttribute("UFO_NAME")
         doDebug    = self:GetAttribute("DO_DEBUG") or false
     ]=])
@@ -1058,6 +1052,8 @@ function Germ:getSecEnvScriptFor_Opener()
 
         SecEnvConst.OPENER_SCRIPT =
 [=[
+--local doDebug = true
+
     local mouseClick = button
     local isClicked = down
     local dir = germ:GetAttribute( "]=].. SecEnvAttribute.flyoutDirection ..[=[" )
@@ -1222,11 +1218,7 @@ end
             --[[DEBUG]] print("ptOnMe",ptOnMe, "ptOnAnchorBuddy",ptOnAnchorBuddy, "anchorBuddy", anchorBuddy:GetName(), "wW",math.floor(wW), "wH",math.floor(wH),  "aW",math.floor(aW), "aH",math.floor(aH))
             --[[DEBUG]] end
 
-            --btn:SetPoint(ptOnMe, anchorBuddy, ptOnAnchorBuddy, xOff+xLineBump, yOff+yLineBump)
             bumper:SetPoint(ptOnMe, anchorBuddy, ptOnAnchorBuddy, 0, 0)
-            fmBg:SetPoint("TOPLEFT", flyoutMenu, "TOPLEFT", 0, 0)
-            fmBg:SetPoint("BOTTOMRIGHT", flyoutMenu, "BOTTOMRIGHT", 0, 0)
-
             anchorBuddy:Show()
 
             --
