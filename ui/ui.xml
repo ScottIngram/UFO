@@ -144,6 +144,7 @@
             <CheckButton parentKey="33" name="$parent_Button33" inherits="UFO_ButtonOnFlyoutMenu_Template" id="33" />
             <CheckButton parentKey="34" name="$parent_Button34" inherits="UFO_ButtonOnFlyoutMenu_Template" id="34" />
             <CheckButton parentKey="35" name="$parent_Button35" inherits="UFO_ButtonOnFlyoutMenu_Template" id="35" />
+            <CheckButton parentKey="36" name="$parent_Button36" inherits="UFO_ButtonOnFlyoutMenu_Template" id="36" />
         </Frames>
     </Frame>
 
