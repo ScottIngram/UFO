@@ -7,26 +7,25 @@
     -->
 
     <Button name="GermTemplate"
-            virtual="true"
-            inherits="
-                ActionButtonTemplate,
-                SecureActionButtonTemplate
-            "
-            mixin="
-                GLOBAL_Button_Mixin,
-                GLOBAL_Germ
-            "
-    >
-        <!--inheritance tree
-            ActionButtonTemplate              :: mixin = BaseActionButtonMixin
-                + ActionButtonSpellFXTemplate :: mixin = none
-                + FlyoutButtonTemplate        :: mixin = FlyoutButtonMixin
-            SecureActionButtonTemplate        :: mixin = SecureActionButtonMixin
-                + SecureFrameTemplate         :: mixin = none
+        virtual="true"
+        inherits="
+            ActionButtonTemplate,
+            SecureActionButtonTemplate
+        "
+        mixin="
+            GLOBAL_Button_Mixin,
+            GLOBAL_Germ
+        "
+    />
+    <!--inheritance tree
+        ActionButtonTemplate              :: mixin = BaseActionButtonMixin
+            + ActionButtonSpellFXTemplate :: mixin = none
+            + FlyoutButtonTemplate        :: mixin = FlyoutButtonMixin
+        SecureActionButtonTemplate        :: mixin = SecureActionButtonMixin
+            + SecureFrameTemplate         :: mixin = none
 
-                BaseActionButtonMixin <- FlyoutButtonMixin <- ButtonStateBehaviorMixin
-        -->
-    </Button>
+            BaseActionButtonMixin <- FlyoutButtonMixin <- ButtonStateBehaviorMixin
+    -->
 
     <!--
     ============================================================================
@@ -36,11 +35,11 @@
     -->
 
     <CheckButton name="UFO_BumperForBOFM_Template"
-           virtual="true"
-           inherits="SecureActionButtonTemplate"
-           frameStrata="LOW"
-           frameLevel="1"
-           toplevel="true"
+       virtual="true"
+       inherits="SecureActionButtonTemplate"
+       frameStrata="LOW"
+       frameLevel="1"
+       toplevel="true"
     >
         <Size x="38" y="38"/> <!-- size of the wrapped button (30) plus 4 on each side -->
     </CheckButton>
@@ -148,15 +147,27 @@
         </Frames>
     </Frame>
 
+    <!--
+    ============================================================================
+    ===== one FlyoutMenu instance for CATALOG... see Germ:new() for more flyouts
+    ============================================================================
+    -->
+
     <Frame name="UFO_FlyoutMenuForCatalog"
-           inherits="UFO_FlyoutMenuTemplate"
-           frameStrata="HIGH"
-           frameLevel="10"
+       inherits="UFO_FlyoutMenuTemplate"
+       frameStrata="HIGH"
+       frameLevel="10"
     >
         <Scripts>
             <OnLoad method="onLoadForCatalog"/>
         </Scripts>
     </Frame>
+
+    <!--
+    ============================================================================
+    ===== UFOs in the Catalog
+    ============================================================================
+    -->
 
     <Button name="UFO_CatalogEntry" virtual="true">
         <Size x="105" y="44"/>
@@ -314,6 +325,12 @@
         </NormalTexture>
     </Button>
 
+    <!--
+    ============================================================================
+    ===== Catalog of UFOs
+    ============================================================================
+    -->
+
     <Frame name="UFO_DUM_DUM" hidden="true">
     </Frame>
 
@@ -363,21 +380,27 @@
         </Frames>
     </Frame>
 
+    <!--
+    ============================================================================
+    ===== the Icon Picker popup spawned from the Catalog
+    ============================================================================
+    -->
+
     <Script>
         C_AddOns.LoadAddOn("Blizzard_MacroUI")
         UfoIconPickerMixin = CreateFromMixins(IconSelectorPopupFrameTemplateMixin, MacroPopupFrameMixin, GLOBAL_IconPickerMixin)
     </Script>
 
     <Frame
-            name="UFO_IconPicker"
-            mixin="UfoIconPickerMixin"
-            inherits="IconSelectorPopupFrameTemplate"
-            toplevel="true"
-            frameStrata="HIGH"
-            parent="UFO_Catalog"
-            movable="true"
-            enableMouse="true"
-            hidden="true"
+        name="UFO_IconPicker"
+        mixin="UfoIconPickerMixin"
+        inherits="IconSelectorPopupFrameTemplate"
+        toplevel="true"
+        frameStrata="HIGH"
+        parent="UFO_Catalog"
+        movable="true"
+        enableMouse="true"
+        hidden="true"
     >
         <Anchors>
             <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="0" y="5"/>
