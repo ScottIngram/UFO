@@ -23,6 +23,7 @@ ScottFreeWowLibs\index.xml
 # UFO specific code
 constantsUfo.lua
 locales\index.xml
+SecEnvDrugMule.lua
 UfoMixin.lua
 DB.lua
 Config.lua
