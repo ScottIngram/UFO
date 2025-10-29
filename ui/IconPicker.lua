@@ -62,6 +62,10 @@ function IconPicker:open(btnInCatalog)
     self.BorderBox.IconSelectorEditBox:SetText(name or "")
 end
 
+function IconPicker:close()
+    self:Hide()
+end
+
 function IconPicker:OnShow()
     MacroPopupFrameMixin.OnShow(self)
     alreadyPlayedSoundViaOnShow = true

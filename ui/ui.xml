@@ -170,7 +170,7 @@
     ============================================================================
     -->
 
-    <Button name="UFO_CatalogEntry" virtual="true">
+    <Button name="UFO_CatalogEntry" virtual="true" mixin="GLOBAL_UFO_MIXIN_FOR_CatalogEntry">
         <Size x="105" y="44"/>
         <Anchors>
             <Anchor point="LEFT" x="2" y="0"/>
@@ -236,7 +236,7 @@
             </Layer>
         </Layers>
         <Frames>
-            <Button name="$parentDeleteButton" parentKey="DeleteButton" hidden="true">
+            <Button name="$parentDeleteButton" parentKey="deleteButton" hidden="true">
                 <Size>
                     <AbsDimension x="14" y="14"/>
                 </Size>
@@ -268,7 +268,7 @@
                     <OnClick function="GLOBAL_UFO_CatalogEntryDeleteButton_OnClick" />
                 </Scripts>
             </Button>
-            <Button name="$parentEditButton" parentKey="EditButton" hidden="true">
+            <Button name="$parentEditButton" parentKey="editButton" hidden="true">
                 <Size>
                     <AbsDimension x="16" y="16"/>
                 </Size>
@@ -302,15 +302,11 @@
             </Button>
         </Frames>
         <Scripts>
-            <OnEnter function="GLOBAL_UFO_CatalogEntry_OnEnter" />
-            <OnLeave function="GLOBAL_UFO_CatalogEntry_OnLeave" />
-            <OnLoad>
-                self:RegisterForDrag("LeftButton");
-                SetClampedTextureRotation(self.BgBottom, 180);
-                SetClampedTextureRotation(self.Arrow, 90);
-            </OnLoad>
-            <OnClick function="GLOBAL_UFO_CatalogEntryButton_OnClick" />
-            <OnDragStart function="GLOBAL_UFO_CatalogEntry_OnDragStart" />
+            <OnLoad method="OnLoad"/>
+            <OnEnter method="OnLeave"/>
+            <OnLeave method="OnLeave"/>
+            <OnClick method="OnClick"/>
+            <OnDragStart method="OnDragStart"/>
         </Scripts>
         <NormalTexture name="$parentIcon" parentKey="icon">
             <Size>
