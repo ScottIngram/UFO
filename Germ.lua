@@ -146,7 +146,7 @@ function Germ:new(flyoutId, btnSlotIndex, event)
     self:setVisibilityDriver(parentBlizActionBarBtn.visibleIf) -- do I even need this? when the parent Hides so will the Germ automatically
 
     -- secure tainty stuff
-    self:copyDoCloseOnClickConfigValToAttribute()
+    --self:copyDoCloseOnClickConfigValToAttribute()
     self:doMyKeybindings(event) -- bind me to my action bar slot's keybindings (if any)
 
     -- Initialize the Primary Button option
@@ -186,7 +186,7 @@ function Germ:applyConfigFromFlyoutDef(event)
 end
 
 function Germ:applyConfigForShowLabel(event)
-    local txt = Config:get("showLabels") and self:getLabel() or ""
+    local txt = Config:get("showLabels") and self:getUfoLabel() or ""
     self.Name:SetText(txt)
 end
 
@@ -199,8 +199,9 @@ function Germ:copyToCursor(eventId)
 end
 
 function Germ:getLabel()
-    self.label = self.flyoutId and self:getFlyoutDef().name
-    return self.label
+    return self:getUfoLabel()
+    --self.label = self.flyoutId and self:getFlyoutDef().name
+    --return self.label
 end
 
 Germ.initLabelString = Germ.getLabel
@@ -274,7 +275,7 @@ function Germ:glowStop()
 end
 
 function Germ:initFlyoutMenu(event)
-    self.flyoutMenu = FlyoutMenu:new(self)
+    self.flyoutMenu = FlyoutMenu:new(self, event)
     zebug.info:event(event):owner(self):line("20","initFlyoutMenu",self.flyoutMenu)
     self.flyoutMenu:applyConfigForGerm(self, event)
     self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
@@ -392,14 +393,18 @@ function Germ:updateAllBtnHotKeyLabels(event)
     self.flyoutMenu:applyConfigForGerm(self, event)
 end
 
+--[[
 function Germ:copyDoCloseOnClickConfigValToAttribute()
     -- haven't figured out why it doesn't work on the germ but does on the flyout
     --zebug.trace:mCross():owner(self):print("self.flyoutMenu",self.flyoutMenu, "setting new value from Config.opts.doCloseOnClick", Config.opts.doCloseOnClick)
-    self:setSecEnvAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
-    return self.flyoutMenu and self.flyoutMenu:setSecEnvAttribute("doCloseOnClick", Config.opts.doCloseOnClick)
+    local doCloseOnClick =  Config.opts.doCloseOnClick
+    UFO_DUM_DUM:setSecEnvAttribute("doCloseOnClick", doCloseOnClick)
+    self:setSecEnvAttribute("doCloseOnClick", doCloseOnClick)
+    return self.flyoutMenu and self.flyoutMenu:setSecEnvAttribute("doCloseOnClick", doCloseOnClick)
 end
 
 Germ.copyDoCloseOnClickConfigValToAttribute = Pacifier:wrap(Germ.copyDoCloseOnClickConfigValToAttribute, L10N.RECONFIGURE_AUTO_CLOSE)
+]]
 
 function Germ:setToolTip()
     local btn = self:getPrimeBtn()
@@ -864,20 +869,22 @@ function Germ:initializeSecEnv(event)
 
     -- set attributes used inside the secure scripts
     self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
-    self:setSecEnvAttribute("UFO_NAME", self:getLabel())
+    self:setSecEnvAttribute("UFO_NAME", self:getUfoLabel())
     self:setSecEnvAttribute(SecEnvAttribute.flyoutDirection, self:getDirection(event))
     self:setSecEnvAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
     self:SetFrameRef("flyoutMenu", self.flyoutMenu)
+    self:SetFrameRef("UFO_DUM_DUM", _G["UFO_DUM_DUM"])
 
     -- set global variables inside the restricted environment of the germ
     self:Execute([=[
         germ       = self
-        flyoutMenu = germ:GetFrameRef("flyoutMenu")
+        flyoutMenu = self:GetFrameRef("flyoutMenu")
+        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
         myName     = self:GetAttribute("UFO_NAME")
         doDebug    = self:GetAttribute("DO_DEBUG") or false
     ]=])
 
-    self:installSecEnvScriptFor_Opener()
+    SecEnv:installSecEnvScriptFor_OpenMyFlyout(self)
     self:installSecEnvScriptFor_ON_CLICK()
 end
 
@@ -988,7 +995,7 @@ end
 function GermClickBehaviorAssignmentFunction:OPEN(mouseClick, event)
     zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick)
     self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, SecEnv.OPENER_NAME)
+    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, SecEnv.OPENER_SCRIPT_REF_NAME)
 end
 
 ---@param mouseClick MouseClick
@@ -1014,12 +1021,6 @@ end
 -- SecEnv Scripts
 --
 -------------------------------------------------------------------------------
-
-function Germ:installSecEnvScriptFor_Opener()
-    assert(not self.isOpenerScriptInitialized, "Wut?  The OPENER script is already installed.  Why you call again?")
-    self.isOpenerScriptInitialized = true
-    self:setSecEnvAttribute("_".. SecEnv.OPENER_NAME, SecEnv:getSecEnvScriptFor_Opener())
-end
 
 function Germ:installSecEnvScriptFor_ON_CLICK()
     assert(not self.onClickScriptInitialized, "Wut?  The ON_CLICK_SCRIPT is already installed.  Why you call again?")
@@ -1267,7 +1268,7 @@ function Germ:toString()
         result = self.isUserFacing and "<UFO: EMPTY>" or "<Germ: EMPTY>"
     else
         local icon = self:getIcon()
-        local label = self.isUserFacing and self.label or self:getLabel() or shortName(self.label or self:getLabel() )
+        local label = self.isUserFacing and self.label or self:getUfoLabel() or shortName(self.label or self:getUfoLabel() )
         result = self.isUserFacing
                 and string.format("<UFO: |T%d:0|t %s>", icon, label or "UnKnOwN")
                 or string.format("<Germ: |T%d:0|t %s>", icon, label or "UnKnOwN")

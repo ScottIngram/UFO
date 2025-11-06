@@ -2,6 +2,15 @@
 
     <!--
     ============================================================================
+    ===== UFO_DUM_DUM - just a dummy frame to hold shared SEC-ENV bullshit
+    ============================================================================
+    -->
+
+    <Frame name="UFO_DUM_DUM" inherits="SecureFrameTemplate" mixin="GLOBAL_UFO_MIXIN_FOR_UfoMixin" hidden="true">
+    </Frame>
+
+    <!--
+    ============================================================================
     ===== Germ - the button on the action bars that controls the flyouts
     ============================================================================
     -->
@@ -327,9 +336,6 @@
     ===== Catalog of UFOs
     ============================================================================
     -->
-
-    <Frame name="UFO_DUM_DUM" hidden="true">
-    </Frame>
 
     <Frame name="UFO_Catalog" parent="UFO_DUM_DUM" frameStrata="MEDIUM" inherits="TranslucentFrameTemplate" hidden="true">
         <Size>

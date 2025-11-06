@@ -39,7 +39,7 @@ local ScriptHandlers = {}
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
-function FlyoutMenu:new(germ)
+function FlyoutMenu:new(germ, event)
     local germName = germ:GetName()
     local myName = germName .. FlyoutMenu.nameSuffix
     zebug.info:owner(germ):mark(Mark.HORDE):print("germ",germ, "germName",germName, "myName",myName)
@@ -57,7 +57,12 @@ function FlyoutMenu:new(germ)
     self.isForGerm = true
     self:setId(germ:getFlyoutId())
     self:installMyToString()
-    self:installSecEnvScriptForCloseOnClick()
+
+
+    self:installSecEnvBullshit(event)
+
+
+    self:installSecEnvScriptIntoBtnKidsForCloseOnClick()
     self:HookScript(Script.ON_SHOW, ScriptHandlers.ON_SHOW)
     self:HookScript(Script.ON_HIDE, ScriptHandlers.ON_HIDE)
 
@@ -68,14 +73,16 @@ function FlyoutMenu:toString()
     if not self.flyoutId then
         return "<FM: EMPTY>"
     else
-        return string.format("<FM: %s>", self:getLabel())
+        return string.format("<FM: %s>", self:getUfoLabel())
     end
 end
 
+--[[
 function FlyoutMenu:getLabel()
     self.label = self:getDef().name
     return self.label
 end
+]]
 
 ---@return BOFM_TYPE
 function FlyoutMenu:getButtonFrame(i)
@@ -125,6 +132,8 @@ function FlyoutMenu:getBtn(n)
     return self:getBtnKids()[n]
 end
 
+-- TODO move to SecEnvDrugMule
+
 -- use non-local "global" variables to save values between executions
 -- because GetParent() returns nil during combat lockdown
 local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
@@ -146,14 +155,17 @@ local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
         germ = flyoutMenu:GetParent() or self:GetFrameRef("germ")
     end
 
+        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
+
     local doClose = germ:GetAttribute("doCloseOnClick")
     local doClose2 = flyoutMenu:GetAttribute("doCloseOnClick")
+    local doClose3 = UFO_DUM_DUM:GetAttribute("doCloseOnClick")
 
     --[[DEBUG]] if doDebug then
-    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "doClose:", doClose, "doClose2",doClose2)
+    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "doClose:", doClose, "doClose2",doClose2 "doClose3",doClose3)
     --[[DEBUG]] end
 
-    if doClose or doClose2 then
+    if doClose or doClose2 or doClose3 then
         --[[DEBUG]] if doDebug then
         --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "CLOSING!  doClose:", doClose, "doClose2:",doClose2)
         --[[DEBUG]] end
@@ -164,20 +176,22 @@ local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
     end
 ]=]
 
-function FlyoutMenu:installSecEnvScriptForCloseOnClick()
+function FlyoutMenu:installSecEnvScriptIntoBtnKidsForCloseOnClick()
     if self.isCloserInitialized or not self.isForGerm then return end
 
     -- values used inside the secure environment code
-    self:SetAttribute("DO_DEBUG", not zebug.info:isMute() )
-    self:SetAttribute("UFO_NAME", self:getLabel())
+    -- self:SetAttribute("DO_DEBUG", not zebug.info:isMute() )
+    -- self:SetAttribute("UFO_NAME", self:getUfoLabel())
 
     local germ = self:GetParent()
     zebug.info:owner(self):print("germ", germ)
 
     ---@param btnFrame BOFM_TYPE
     self:forEachButton(function(btnFrame)
+        -- move ALL of this into btnFrame:initializeSecEnv()
         btnFrame:SetFrameRef("flyoutMenu", self)
         btnFrame:SetFrameRef("germ", germ)
+        btnFrame:SetFrameRef("UFO_DUM_DUM", _G["UFO_DUM_DUM"])
         btnFrame:WrapScript(btnFrame, "PostClick", CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- This threw: "Header frame must be explicitly protected" after combat.  I had managed to move a UFO during combat(?)
         btnFrame:Execute(CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- initialize the scriptlet's "global" vars
         btnFrame:initializeSecEnv()
@@ -186,7 +200,85 @@ function FlyoutMenu:installSecEnvScriptForCloseOnClick()
     self.isCloserInitialized = true
 end
 
-FlyoutMenu.installSecEnvScriptForCloseOnClick = Pacifier:wrap(FlyoutMenu.installSecEnvScriptForCloseOnClick)
+FlyoutMenu.installSecEnvScriptIntoBtnKidsForCloseOnClick = Pacifier:wrap(FlyoutMenu.installSecEnvScriptIntoBtnKidsForCloseOnClick)
+
+function FlyoutMenu:installSecEnvBullshit(event)
+    zebug.warn:owner(self):print("blah blah")
+    SecureHandler_OnLoad(self) -- install self:SetFrameRef()
+
+    -- set attributes used inside the secure scripts
+    -- set attributes used inside the secure scripts
+    self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
+    self:setSecEnvAttribute("UFO_NAME", self:getUfoLabel())
+    self:setSecEnvAttribute(SecEnvAttribute.flyoutDirection, self:getDirection(event))
+    print("UFO_DUM_DUM 1",_G["UFO_DUM_DUM"])
+    self:SetFrameRef("UFO_DUM_DUM", _G["UFO_DUM_DUM"])
+    print("UFO_DUM_DUM 2",_G["UFO_DUM_DUM"])
+    self:SetFrameRef("flyoutMenu", self)
+    local germ = self:getParent()
+    if germ then
+        self:SetFrameRef("germ", self:getParent())
+    end
+
+    -- set global variables inside the restricted environment
+    self:Execute([=[
+        flyoutMenu = self
+        germ       = self:GetFrameRef("germ")
+        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
+        -- catalogEntry = self:GetFrameRef("catalogEntry") -- to be set on-demand by CatalogEntry
+        myName     = self:GetAttribute("UFO_NAME")
+        doDebug    = self:GetAttribute("DO_DEBUG") or false
+    ]=])
+
+    SecEnv:installEnumsAndConstants(self)
+
+    self:installSecEnvScriptsTo_Open()
+
+end
+
+function FlyoutMenu:setSecEnvCatalogEntry(catalogEntry)
+    zebug.warn:owner(self):print("blah blah")
+
+    -- set attributes used inside the secure scripts
+    self:setSecEnvAttribute("UFO_NAME", self:getUfoLabel())
+    self:SetFrameRef("catalogEntry", catalogEntry)
+
+    -- set global variables inside the restricted environment of the germ
+    self:Execute([=[
+        myName       = self:GetAttribute("UFO_NAME")
+        catalogEntry = self:GetFrameRef("catalogEntry")
+    ]=])
+end
+
+
+function FlyoutMenu:getDirection()
+    ---@type GERM_TYPE
+    local p = self:getParent()
+    if not p then
+        if self.isForCatalog then
+            return DIRECTION_FOR_CATALOG
+        else
+            error("no parent")
+        end
+    end
+
+    local func = p.getDirection
+    zebug.warn:owner(p):print("wtf is my daddy?!",p, p:GetName(), "func", func, func)
+    assert(func, "parent has no method named 'getDirection'")
+    local dir = func(p)
+    zebug.warn:owner(p):print("dir", dir)
+    return dir
+end
+
+
+function FlyoutMenu:installSecEnvScriptsTo_Open()
+    assert(not self.isOpenerScriptInitialized, "Wut?  The OPENER script is already installed.  Why you call again?")
+    self.isOpenerScriptInitialized = true
+    self:setSecEnvAttribute("_".. SecEnv.FLYOUT_OPENER_AND_LAYOUT_SCRIPT_NAME, SecEnv:getSecEnvScriptFor_Opener())
+    self:setSecEnvAttribute("_".. SecEnv.FLYOUT_LAYOUT_SCRIPT_NAME, SecEnv:getSecEnvScriptFor_Layout())
+    --self:setSecEnvAttribute("_".. SecEnv.FLYOUT_KEY_BINDING_SCRIPT_NAME, SecEnv:getSecEnvScriptFor_KeyBinding())
+end
+
 
 function FlyoutMenu:getId()
     return self.id or self.flyoutId
@@ -202,23 +294,76 @@ function FlyoutMenu:getDef()
     return FlyoutDefsDb:get(self.flyoutId)
 end
 
+function FlyoutMenu:attach(parent)
+    self.parent = parent
+    self:ClearAllPoints() -- remove myself from any previous position
+    self:SetPoint(Anchor.LEFT, self.parent, Anchor.RIGHT)
+end
+
 ---@param flyoutId string
-function FlyoutMenu:updateForCatalog(flyoutId, event)
+function FlyoutMenu:applyConfigForCatalog(flyoutId, event)
+    self:ClearAllPoints() -- remove myself from any previous position
+    self:SetPoint(Anchor.LEFT, self.parent, Anchor.RIGHT)
     self.enableTwinkle = true
     self:setId(flyoutId)
-    local dir = "RIGHT"
-    self.direction = dir
+    self.direction = "RIGHT"
 
-    local prevButton = nil;
-    local numButtons = 0;
+    local flyoutDef = self:getDef()
+    local numButtons = flyoutDef:howManyButtons() + 1
+    self:SetAttribute("IN_USE_BTN_COUNT", numButtons)
+
+    --self:OLD_updateButtonLayout(event)
+
+    -- populate the buttons
+    self:NEW_populateButtons(event)
+
+    -- arrange all of the buttons
+    self:NEW_updateButtonLayout(event)
+
+
+
+if true then return end
+
+    local anyBtn = self:getButtonFrame(1)
+
+    -- anchor to the parent
+    self:SetHeight(anyBtn:GetHeight())
+    self:SetWidth((anyBtn:GetWidth()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
+
+    self:setBorderFrameGeometry()
+end
+
+function FlyoutMenu:offsetAndUpdateButtonLayout(displaceBtnsHere, event)
+    -- zebug.error:event(event):owner(self):print("param displaceBtnsHere",displaceBtnsHere)
+    self.displaceBtnsHere = displaceBtnsHere
+    self:NEW_populateButtons(event)
+    self:NEW_updateButtonLayout(event)
+    self.displaceBtnsHere = nil
+end
+
+function FlyoutMenu:NEW_updateButtonLayout(event)
+    local flyoutDef = self:getDef()
+    local extraButton = self.isForCatalog and 1 or 0 -- this will always be for catalog
+    local numButtons = flyoutDef:howManyButtons() + extraButton
+    numButtons = math.min(numButtons, MAX_FLYOUT_SIZE)
+    --self:RunAttribute(SecEnv.FLYOUT_LAYOUT_ATTR_NAME, numButtons, self.direction, self)
+    --zebug.error:event(event):owner(self):print("self.displaceBtnsHere",self.displaceBtnsHere)
+    SecEnv:executeFromNonSecEnv_Layout(self, numButtons, self.direction, self.displaceBtnsHere)
+end
+
+function FlyoutMenu:NEW_populateButtons(event)
     local flyoutDef = self:getDef()
     zebug.trace:event(event):dumpy("flyoutDef",flyoutDef)
+    zebug.warn:owner(self):event(event):print("do do do")
     local n = flyoutDef:howManyButtons()
     local rows = n+1 -- one extra for an empty space
+    local prevButton = nil
+    local numButtons = 0
 
     for i=1, math.min(rows, MAX_FLYOUT_SIZE) do
         local btnFrame = self:getButtonFrame(i)
         local btnDef = flyoutDef:getButtonDef(i)
+
 
         if self.displaceBtnsHere then
             if i == self.displaceBtnsHere then
@@ -227,13 +372,82 @@ function FlyoutMenu:updateForCatalog(flyoutId, event)
                 btnDef = flyoutDef:getButtonDef(i - 1)
             end
         else
-             btnDef = flyoutDef:getButtonDef(i)
+            btnDef = flyoutDef:getButtonDef(i)
         end
 
         if btnDef then
             btnFrame:setDef(btnDef, event)
             local icon = self:getIcon(btnDef)
             btnFrame:setIcon(icon, event)
+            -- NEW!
+            btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
+        else
+            -- the empty slot on the end
+            btnFrame:setDef(nil, event)
+            btnFrame:setIcon(nil, event)
+            btnFrame:SetAttribute("UFO_NAME"," ") -- NEW!!! SecEnv TEMPLATE
+            btnFrame:setExcluderVisibility(nil)
+        end
+
+        --btnFrame:setGeometry(self.direction, prevButton)
+
+        prevButton = btnFrame
+        numButtons = i
+    end
+
+    -- Hide unused buttons
+    local unusedButtonIndex = numButtons+1
+    local btnFrame = self:getButtonFrame(unusedButtonIndex)
+    while btnFrame do
+        --zebug.error:event(event):owner(btnFrame):print("===== unusedButtonIndex",unusedButtonIndex)
+        btnFrame:setDef(nil, event)
+        btnFrame:setIcon(nil, event)
+        btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE - required flag used to indicate "inUse"
+        btnFrame:Hide()
+        unusedButtonIndex = unusedButtonIndex+1
+        btnFrame = self:getButtonFrame(unusedButtonIndex)
+    end
+
+    if numButtons == 0 then
+        self:Hide()
+        --return
+    end
+
+    return prevButton, numButtons
+end
+
+
+
+function FlyoutMenu:OLD_updateButtonLayout(event)
+    local flyoutDef = self:getDef()
+    zebug.trace:event(event):dumpy("flyoutDef",flyoutDef)
+    zebug.warn:owner(self):event(event):print("do do do")
+    local n = flyoutDef:howManyButtons()
+    local rows = n+1 -- one extra for an empty space
+    local prevButton = nil
+    local numButtons = 0
+
+    for i=1, math.min(rows, MAX_FLYOUT_SIZE) do
+        local btnFrame = self:getButtonFrame(i)
+        local btnDef = flyoutDef:getButtonDef(i)
+
+
+        if self.displaceBtnsHere then
+            if i == self.displaceBtnsHere then
+                btnDef = nil -- force it to be the empty slot
+            elseif i > self.displaceBtnsHere then
+                btnDef = flyoutDef:getButtonDef(i - 1)
+            end
+        else
+            btnDef = flyoutDef:getButtonDef(i)
+        end
+
+        if btnDef then
+            btnFrame:setDef(btnDef, event)
+            local icon = self:getIcon(btnDef)
+            btnFrame:setIcon(icon, event)
+            -- NEW!
+            btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
         else
             -- the empty slot on the end
             btnFrame:setDef(nil, event)
@@ -241,7 +455,7 @@ function FlyoutMenu:updateForCatalog(flyoutId, event)
             btnFrame:setExcluderVisibility(nil)
         end
 
-        btnFrame:setGeometry(dir, prevButton)
+        btnFrame:setGeometry(self.direction, prevButton)
 
         prevButton = btnFrame
         numButtons = i
@@ -258,22 +472,12 @@ function FlyoutMenu:updateForCatalog(flyoutId, event)
 
     if numButtons == 0 then
         self:Hide()
-        return
+        --return
     end
 
-    self:ClearAllPoints()
-
-    -- assuming dir == RIGHT
-    self:SetPoint(Anchor.LEFT, self.parent, Anchor.RIGHT);
-    self:SetHeight(prevButton:GetHeight())
-    self:SetWidth((prevButton:GetWidth()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
-
-    self:setBorderFrameGeometry()
+    return prevButton, numButtons
 end
 
--- TODO: split into
--- * initialize (changes to flyoutId or flyoutDef)
--- * doUpdate (changes to the game state -- cooldowns, item counts, etc.)
 
 ---@param btnDef ButtonDef
 function FlyoutMenu:getIcon(btnDef)
@@ -321,6 +525,9 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
             return
         end
     end)
+
+    --zebug.error:event("IN_USE_BTN_COUNT"):owner(self):print("btnNumber",btnNumber)
+    self:SetAttribute("IN_USE_BTN_COUNT", btnNumber)
 
     if not self.hasOnHide then
         zebug.info:event(event):owner(self):print("setting OnHide for",self:GetName())
@@ -404,38 +611,33 @@ function FlyoutMenu:setBorderFrameGeometry()
 end
 
 function FlyoutMenu:displaceButtonsOnHover(index)
+    zebug.error:event("FlyoutMenu:displaceButtonsOnHover()"):owner(self):print("index",index)
+
     if not self.isForCatalog then
         return
     end
 
     if GetCursorInfo() then
+        -- convert to SEC-ENV
         self.displaceBtnsHere = index
-        self:updateForCatalog(self.flyoutId, "FlyoutMenu:displaceButtonsOnHover()")
+        --self:updateForCatalog(self.flyoutId, "FlyoutMenu:displaceButtonsOnHover()")
+        --self:NEW_updateButtonLayout("FlyoutMenu:displaceButtonsOnHover()")
+        self:offsetAndUpdateButtonLayout(index, "FlyoutMenu:displaceButtonsOnHover()")
     end
 end
 
 function FlyoutMenu:restoreButtonsAfterHover()
     ---@type FlyoutMenu
     if not self.displaceBtnsHere then
-        return
+        -- return -- remove ???
     end
 
     if self:isMouseOverMeOrKids() then
         return
     end
 
-    self.displaceBtnsHere = nil
-    self:updateForCatalog(self.flyoutId, "FlyoutMenu:restoreButtonsAfterHover()" )
-end
-
--- currently unused -- TODO use it
----@param btnDef ButtonDef
----@param btnIndex number
-function FlyoutMenu:addBtnAt(btnDef, btnIndex)
-    local flyoutDef = self:getDef()
-    flyoutDef:replaceButton(btnIndex, btnDef) -- TODO - respects displace
-    self:updateForCatalog(self.flyoutId, "FlyoutMenu:addBtnAt()")
-    GermCommander:notifyOfChangeToFlyoutDef(self.flyoutId, "FlyoutMenu:addBtnAt")
+    self.displaceBtnsHere = nil -- redundant with the nil param below
+    self:offsetAndUpdateButtonLayout(nil, "FlyoutMenu:restoreButtonsAfterHover()")
 end
 
 function FlyoutMenu:isMouseOverMeOrKids()
@@ -483,10 +685,14 @@ function FlyoutMenu:onLoadForCatalog()
     -- initialize fields
     Catalog.flyoutMenu = self
     self.isForCatalog = true
+    self.isForGerm = false
+    self:SetParent(nil)
 
     zebug.trace:name("ForCatalog_OnLoad"):newEvent("FlyoutMenu", "on-load-for-catalog"):run(function(event)
         self:forEachButton(ButtonOnFlyoutMenu.installExcluder, event)
     end)
+
+    self:installSecEnvBullshit("FlyoutMenu:onLoadForCatalog")
 end
 
 function FlyoutMenu:renderAllBtnCooldownsEtc(event)

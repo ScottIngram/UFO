@@ -15,6 +15,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.TRACE)
 ---@class UfoMixIn
 ---@field UfoType string The classname
 UfoMixIn = { }
+GLOBAL_UFO_MIXIN_FOR_UfoMixin = UfoMixIn
 
 -------------------------------------------------------------------------------
 -- Data
@@ -157,5 +158,13 @@ end
 function UfoMixIn:getParentAndName()
     local p = self:GetParent()
     return p, p and p.GetName and p:GetName()
+end
+
+function UfoMixIn:getUfoLabel()
+    local defGetter = self.getFlyoutDef or self.getDef
+    if defGetter then
+        self.label = self.flyoutId and defGetter(self).name
+    end
+    return self.label
 end
 

@@ -276,8 +276,14 @@ function Catalog:update(event)
                 -- Highlight the selected Flyout
                 if selectedIdx and (row == selectedIdx) then
                     btnFrame.SelectedBar:Show()
-                    flyoutMenu.parent = btnFrame
-                    flyoutMenu:updateForCatalog(flyoutId, event)
+                    --flyoutMenu.parent = btnFrame
+                    if self.renderedFlyoutId ~= flyoutId then
+                        flyoutMenu:attach(btnFrame)
+                        flyoutMenu:applyConfigForCatalog(flyoutId, event)
+                        self.renderedFlyoutId = flyoutId
+                    else
+                        flyoutMenu:attach(btnFrame)
+                    end
                     if IconPicker:IsShown() then
                         flyoutMenu:Hide()
                         btnFrame.Arrow:Hide()
@@ -352,8 +358,10 @@ end
 
 function Catalog:selectRow(row, event)
     zebug.info:event(event):print("row", row)
-    UFO_CatalogScrollPane.selectedIdx = row
-    Catalog:update(event)
+    if row ~= UFO_CatalogScrollPane.selectedIdx then
+        UFO_CatalogScrollPane.selectedIdx = row
+        Catalog:update(event)
+    end
 end
 
 function Catalog:setToolTip(btnInCatalog)
@@ -385,7 +393,7 @@ end
 function GLOBAL_UFO_CatalogScrollPane_OnLoad(scrollPane)
     HybridScrollFrame_OnLoad(scrollPane)
     scrollPane.update = function()
-        Catalog.update("Bliz_CatalogScrollPane_OnUpdate")
+        Catalog:update("Bliz_CatalogScrollPane_OnUpdate")
     end
     HybridScrollFrame_CreateButtons(scrollPane, "UFO_CatalogEntry")
 end
@@ -485,7 +493,37 @@ function CatalogEntry:OnLoad()
     self:RegisterForDrag("LeftButton");
     SetClampedTextureRotation(self.BgBottom, 180);
     SetClampedTextureRotation(self.Arrow, 90);
+
+    self.flyoutMenu = self:initFlyoutMenu(event)
+
+    --- SEC ENV BULLSHIT
+
+if true then return end -- temp disable
+
+    -- Secure Shenanigans required before initFlyoutMenu() -- here
+    SecureHandler_OnLoad(self) -- install self:SetFrameRef()
+    self:assignSecEnvMouseClickBehaviorVia_Attribute(MouseClick.ANY, SecEnv.FLYOUT_OPENER_AND_LAYOUT_SCRIPT_NAME)
+
+    -- FlyoutMenu
+    self:initializeSecEnv(event)       -- depends on initFlyoutMenu() above
+    self:assignAllMouseClickers(event) -- depends on initializeSecureClickers() above
+
 end
+
+function CatalogEntry:initFlyoutMenu(event)
+    self.flyoutMenu = UFO_FlyoutMenuForCatalog
+    self.flyoutMenu:SetParent(self)
+    --self.flyoutMenu:applyConfigForGerm(self, event)
+    --self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
+    self.flyoutMenu.isForGerm = false
+    self.flyoutMenu.isForCatalog = true
+    return self.flyoutMenu
+end
+
+function CatalogEntry:getDirection()
+    return "RIGHT"
+end
+
 
 function CatalogEntry:OnLeave()
     local event = Event:new(self, "CatalogEntry_OnLeave")
@@ -566,6 +604,9 @@ function CatalogEntry:OnClick(mouseClick, down)
         else
             -- select the row
             row = self.flyoutIndex
+        end
+        if row then
+            self.flyoutMenu:SetFrameRef("catalogEntry", self)
         end
         IconPicker:close()
         Catalog:selectRow(row, "CatalogEntry:OnClick")

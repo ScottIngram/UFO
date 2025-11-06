@@ -179,7 +179,8 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     Cursor:clear(event)
     GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
     flyoutMenu.displaceBtnsHere = nil
-    flyoutMenu:updateForCatalog(flyoutId, event)
+    --flyoutMenu:updateForCatalog(flyoutId, event)
+    flyoutMenu:NEW_updateButtonLayout(event)
     Ufo.pickedUpBtn = nil
 end
 
@@ -255,7 +256,7 @@ function ButtonOnFlyoutMenu:setTooltip()
 
     local name = btnDef:getName()
     if not name then
-        msgUser(L10N.UNKNOWN, "button on", self:getFlyoutMenu():getLabel())
+        msgUser(L10N.UNKNOWN, "button on", self:getFlyoutMenu():getUfoLabel())
         name = L10N.UNKNOWN
     end
 
@@ -299,6 +300,7 @@ function ButtonOnFlyoutMenu:initializeSecEnv()
     self:Execute([=[
         germ       = self:GetFrameRef("germ")
         flyoutMenu = self:GetFrameRef("flyoutMenu")
+        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
         doDebug    = self:GetAttribute("DO_DEBUG") or false
      ]=])
 
@@ -406,10 +408,13 @@ function ButtonOnFlyoutMenu:onLoad()
     -- purely for easier UI layout, I include an ornamental Frame with a phat margin
     local bumper = self.bumper
     self:SetPoint(Anchor.CENTER, bumper, Anchor.CENTER)
+
+    self:SetFrameRef("bumper", bumper)
 end
 
 ---@param self ButtonOnFlyoutMenu
 function ButtonOnFlyoutMenu:onEnter()
+    --zebug.error:event("ButtonOnFlyoutMenu:onEnter()"):owner(self):print("self:getId()",self:getId())
     self:setTooltip()
     self:warnIfUnusable()
 
@@ -488,7 +493,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     end
 ]]
 
-    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-dragged-away"):run(function(event)
+    zebug.warn:mTriangle():owner(self):newEvent(self, "bofm-dragged-away"):run(function(event)
         local isOk, err = btnDef:pickupToCursor(event)
         if not isOk then
             zebug.error:event(event):owner(self):print("FAILED to drag! err",err)
@@ -499,7 +504,8 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
         flyoutDef:removeButton(self:getId())
         self:setDef(nil, event)
-        flyoutMenu:updateForCatalog(flyoutId, event)
+        --flyoutMenu:updateForCatalog(flyoutId, event)
+        flyoutMenu:NEW_updateButtonLayout(event)
         GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
     end)
 end

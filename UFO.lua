@@ -340,6 +340,8 @@ function initalizeAddonStuff(event)
     Config:migrateToCurrentVersion()
     Config:initializeOptionsMenu()
 
+    SecEnv:loadConfigOptions()
+
     MacroShitShow:init()
     UfoProxy:deleteProxyMacro("Ufo:initalizeAddonStuff()")
     ThirdPartyAddonSupport:detectSupportedAddons()
