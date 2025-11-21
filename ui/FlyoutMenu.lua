@@ -203,7 +203,6 @@ end
 FlyoutMenu.installSecEnvScriptIntoBtnKidsForCloseOnClick = Pacifier:wrap(FlyoutMenu.installSecEnvScriptIntoBtnKidsForCloseOnClick)
 
 function FlyoutMenu:installSecEnvBullshit(event)
-    zebug.warn:owner(self):print("blah blah")
     SecureHandler_OnLoad(self) -- install self:SetFrameRef()
 
     -- set attributes used inside the secure scripts
@@ -211,9 +210,7 @@ function FlyoutMenu:installSecEnvBullshit(event)
     self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:setSecEnvAttribute("UFO_NAME", self:getUfoLabel())
     self:setSecEnvAttribute(SecEnvAttribute.flyoutDirection, self:getDirection(event))
-    print("UFO_DUM_DUM 1",_G["UFO_DUM_DUM"])
     self:SetFrameRef("UFO_DUM_DUM", _G["UFO_DUM_DUM"])
-    print("UFO_DUM_DUM 2",_G["UFO_DUM_DUM"])
     self:SetFrameRef("flyoutMenu", self)
     local germ = self:getParent()
     if germ then
@@ -237,8 +234,6 @@ function FlyoutMenu:installSecEnvBullshit(event)
 end
 
 function FlyoutMenu:setSecEnvCatalogEntry(catalogEntry)
-    zebug.warn:owner(self):print("blah blah")
-
     -- set attributes used inside the secure scripts
     self:setSecEnvAttribute("UFO_NAME", self:getUfoLabel())
     self:SetFrameRef("catalogEntry", catalogEntry)
@@ -263,10 +258,8 @@ function FlyoutMenu:getDirection()
     end
 
     local func = p.getDirection
-    zebug.warn:owner(p):print("wtf is my daddy?!",p, p:GetName(), "func", func, func)
     assert(func, "parent has no method named 'getDirection'")
     local dir = func(p)
-    zebug.warn:owner(p):print("dir", dir)
     return dir
 end
 
@@ -312,25 +305,11 @@ function FlyoutMenu:applyConfigForCatalog(flyoutId, event)
     local numButtons = flyoutDef:howManyButtons() + 1
     self:SetAttribute("IN_USE_BTN_COUNT", numButtons)
 
-    --self:OLD_updateButtonLayout(event)
-
     -- populate the buttons
     self:NEW_populateButtons(event)
 
     -- arrange all of the buttons
     self:NEW_updateButtonLayout(event)
-
-
-
-if true then return end
-
-    local anyBtn = self:getButtonFrame(1)
-
-    -- anchor to the parent
-    self:SetHeight(anyBtn:GetHeight())
-    self:SetWidth((anyBtn:GetWidth()+SPELLFLYOUT_DEFAULT_SPACING) * numButtons - SPELLFLYOUT_DEFAULT_SPACING + SPELLFLYOUT_INITIAL_SPACING + SPELLFLYOUT_FINAL_SPACING)
-
-    self:setBorderFrameGeometry()
 end
 
 function FlyoutMenu:offsetAndUpdateButtonLayout(displaceBtnsHere, event)
@@ -342,6 +321,7 @@ function FlyoutMenu:offsetAndUpdateButtonLayout(displaceBtnsHere, event)
 end
 
 function FlyoutMenu:NEW_updateButtonLayout(event)
+    zebug.info:event(event):owner(self):print("self.isForCatalog",self.isForCatalog)
     local flyoutDef = self:getDef()
     local extraButton = self.isForCatalog and 1 or 0 -- this will always be for catalog
     local numButtons = flyoutDef:howManyButtons() + extraButton
@@ -354,7 +334,6 @@ end
 function FlyoutMenu:NEW_populateButtons(event)
     local flyoutDef = self:getDef()
     zebug.trace:event(event):dumpy("flyoutDef",flyoutDef)
-    zebug.warn:owner(self):event(event):print("do do do")
     local n = flyoutDef:howManyButtons()
     local rows = n+1 -- one extra for an empty space
     local prevButton = nil
@@ -416,69 +395,6 @@ function FlyoutMenu:NEW_populateButtons(event)
     return prevButton, numButtons
 end
 
-
-
-function FlyoutMenu:OLD_updateButtonLayout(event)
-    local flyoutDef = self:getDef()
-    zebug.trace:event(event):dumpy("flyoutDef",flyoutDef)
-    zebug.warn:owner(self):event(event):print("do do do")
-    local n = flyoutDef:howManyButtons()
-    local rows = n+1 -- one extra for an empty space
-    local prevButton = nil
-    local numButtons = 0
-
-    for i=1, math.min(rows, MAX_FLYOUT_SIZE) do
-        local btnFrame = self:getButtonFrame(i)
-        local btnDef = flyoutDef:getButtonDef(i)
-
-
-        if self.displaceBtnsHere then
-            if i == self.displaceBtnsHere then
-                btnDef = nil -- force it to be the empty slot
-            elseif i > self.displaceBtnsHere then
-                btnDef = flyoutDef:getButtonDef(i - 1)
-            end
-        else
-            btnDef = flyoutDef:getButtonDef(i)
-        end
-
-        if btnDef then
-            btnFrame:setDef(btnDef, event)
-            local icon = self:getIcon(btnDef)
-            btnFrame:setIcon(icon, event)
-            -- NEW!
-            btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
-        else
-            -- the empty slot on the end
-            btnFrame:setDef(nil, event)
-            btnFrame:setIcon(nil, event)
-            btnFrame:setExcluderVisibility(nil)
-        end
-
-        btnFrame:setGeometry(self.direction, prevButton)
-
-        prevButton = btnFrame
-        numButtons = i
-    end
-
-    -- Hide unused buttons
-    local unusedButtonIndex = numButtons+1
-    local btnFrame = self:getButtonFrame(unusedButtonIndex)
-    while btnFrame do
-        btnFrame:Hide()
-        unusedButtonIndex = unusedButtonIndex+1
-        btnFrame = self:getButtonFrame(unusedButtonIndex)
-    end
-
-    if numButtons == 0 then
-        self:Hide()
-        --return
-    end
-
-    return prevButton, numButtons
-end
-
-
 ---@param btnDef ButtonDef
 function FlyoutMenu:getIcon(btnDef)
     local icon = DEFAULT_ICON_FULL
@@ -538,7 +454,6 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
     end
 
     germ:SetAttribute("UFO_FLYOUT_MOD_TIME", flyoutDef:getModStamp())
-    self:setBorderFrameGeometry()
 end
 
 function updateHotKeyLabel(btnFrame, btnNumber)
@@ -551,77 +466,10 @@ function updateHotKeyLabel(btnFrame, btnNumber)
     btnFrame.HotKey:SetText(hotKeyLabel)
 end
 
-function FlyoutMenu:setBorderFrameGeometry()
-    local bg = self.Background
-    local distance = 3
-    local dir = self.direction
-
-    bg.End:ClearAllPoints()
-    bg.Start:ClearAllPoints()
-    bg.VerticalMiddle:ClearAllPoints()
-    bg.HorizontalMiddle:ClearAllPoints()
-
-    if (dir == "UP") then
-        bg.End:SetPoint(Anchor.TOP, 0, SPELLFLYOUT_INITIAL_SPACING);
-        SetClampedTextureRotation(bg.End, 0);
-        SetClampedTextureRotation(bg.VerticalMiddle, 0);
-        bg.Start:SetPoint(Anchor.TOP, bg.VerticalMiddle, Anchor.BOTTOM);
-        SetClampedTextureRotation(bg.Start, 0);
-        bg.HorizontalMiddle:Hide();
-        bg.VerticalMiddle:Show();
-        --bg.VerticalMiddle:ClearAllPoints();
-        bg.VerticalMiddle:SetPoint(Anchor.TOP, bg.End, Anchor.BOTTOM);
-        bg.VerticalMiddle:SetPoint(Anchor.BOTTOM, 0, distance);
-    elseif (dir == "DOWN") then
-        bg.End:SetPoint(Anchor.BOTTOM, 0, -SPELLFLYOUT_INITIAL_SPACING);
-        SetClampedTextureRotation(bg.End, 180);
-        SetClampedTextureRotation(bg.VerticalMiddle, 180);
-        bg.Start:SetPoint(Anchor.BOTTOM, bg.VerticalMiddle, Anchor.TOP);
-        SetClampedTextureRotation(bg.Start, 180);
-        bg.HorizontalMiddle:Hide();
-        bg.VerticalMiddle:Show();
-        --bg.VerticalMiddle:ClearAllPoints();
-        bg.VerticalMiddle:SetPoint(Anchor.BOTTOM, bg.End, Anchor.TOP);
-        bg.VerticalMiddle:SetPoint(Anchor.TOP, 0, -distance);
-    elseif (dir == "LEFT") then
-        bg.End:SetPoint(Anchor.LEFT, -SPELLFLYOUT_INITIAL_SPACING, 0);
-        SetClampedTextureRotation(bg.End, 270);
-        SetClampedTextureRotation(bg.HorizontalMiddle, 180);
-        bg.Start:SetPoint(Anchor.LEFT, bg.HorizontalMiddle, Anchor.RIGHT);
-        SetClampedTextureRotation(bg.Start, 270);
-        bg.VerticalMiddle:Hide();
-        bg.HorizontalMiddle:Show();
-        --bg.HorizontalMiddle:ClearAllPoints();
-        bg.HorizontalMiddle:SetPoint(Anchor.LEFT, bg.End, Anchor.RIGHT);
-        bg.HorizontalMiddle:SetPoint(Anchor.RIGHT, -distance, 0);
-    elseif (dir == "RIGHT") then
-        bg.End:SetPoint(Anchor.RIGHT, SPELLFLYOUT_INITIAL_SPACING, 0);
-        SetClampedTextureRotation(bg.End, 90);
-        SetClampedTextureRotation(bg.HorizontalMiddle, 0);
-        bg.Start:SetPoint(Anchor.RIGHT, bg.HorizontalMiddle, Anchor.LEFT);
-        SetClampedTextureRotation(bg.Start, 90);
-        bg.VerticalMiddle:Hide();
-        bg.HorizontalMiddle:Show();
-        --bg.HorizontalMiddle:ClearAllPoints();
-        bg.HorizontalMiddle:SetPoint(Anchor.RIGHT, bg.End, Anchor.LEFT);
-        bg.HorizontalMiddle:SetPoint(Anchor.LEFT, distance, 0);
-    end
-    self:SetBorderColor(0.7, 0.7, 0.7);
-    --self:SetBorderSize(47);
-end
-
 function FlyoutMenu:displaceButtonsOnHover(index)
-    zebug.error:event("FlyoutMenu:displaceButtonsOnHover()"):owner(self):print("index",index)
-
-    if not self.isForCatalog then
-        return
-    end
+    if not self.isForCatalog then return end
 
     if GetCursorInfo() then
-        -- convert to SEC-ENV
-        self.displaceBtnsHere = index
-        --self:updateForCatalog(self.flyoutId, "FlyoutMenu:displaceButtonsOnHover()")
-        --self:NEW_updateButtonLayout("FlyoutMenu:displaceButtonsOnHover()")
         self:offsetAndUpdateButtonLayout(index, "FlyoutMenu:displaceButtonsOnHover()")
     end
 end
@@ -644,15 +492,20 @@ function FlyoutMenu:isMouseOverMeOrKids()
     return self:IsMouseOver() or self.mouseOverKid
 end
 
-function FlyoutMenu:setMouseOverKid(kid)
+function FlyoutMenu:startHover(kid)
+    if not self.isForCatalog then return end
     self.mouseOverKid = kid:GetName()
+    self:displaceButtonsOnHover(kid:getId())
 end
 
-function FlyoutMenu:clearMouseOverKid(kid)
+function FlyoutMenu:stopHover(kid)
+    if not self.isForCatalog then return end
     if self.mouseOverKid == kid:GetName() then
         self.mouseOverKid = nil
     end
+    self:restoreButtonsAfterHover()
 end
+
 
 -------------------------------------------------------------------------------
 -- Handlers

@@ -184,34 +184,6 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     Ufo.pickedUpBtn = nil
 end
 
--- only used by FlyoutMenu:updateForCatalog()
-function ButtonOnFlyoutMenu:setGeometry(direction, prevBtn)
-    self:ClearAllPoints()
-    if prevBtn then
-        if direction == "UP" then
-            self:SetPoint(Anchor.BOTTOM, prevBtn, Anchor.TOP, 0, SPELLFLYOUT_DEFAULT_SPACING)
-        elseif direction == "DOWN" then
-            self:SetPoint(Anchor.TOP, prevBtn, Anchor.BOTTOM, 0, -SPELLFLYOUT_DEFAULT_SPACING)
-        elseif direction == "LEFT" then
-            self:SetPoint(Anchor.RIGHT, prevBtn, Anchor.LEFT, -SPELLFLYOUT_DEFAULT_SPACING, 0)
-        elseif direction == "RIGHT" then
-            self:SetPoint(Anchor.LEFT, prevBtn, Anchor.RIGHT, SPELLFLYOUT_DEFAULT_SPACING, 0)
-        end
-    else
-        if direction == "UP" then
-            self:SetPoint(Anchor.BOTTOM, 0, SPELLFLYOUT_INITIAL_SPACING)
-        elseif direction == "DOWN" then
-            self:SetPoint(Anchor.TOP, 0, -SPELLFLYOUT_INITIAL_SPACING)
-        elseif direction == "LEFT" then
-            self:SetPoint(Anchor.RIGHT, -SPELLFLYOUT_INITIAL_SPACING, 0)
-        elseif direction == "RIGHT" then
-            self:SetPoint(Anchor.LEFT, SPELLFLYOUT_INITIAL_SPACING, 0)
-        end
-    end
-
-    self:Show()
-end
-
 function ButtonOnFlyoutMenu:installExcluder(event)
     local i = self:GetID()
     zebug.trace:event(event):owner(self):print("i",i)
@@ -419,18 +391,12 @@ function ButtonOnFlyoutMenu:onEnter()
     self:warnIfUnusable()
 
     -- push catalog buttons out of the way for easier btn relocation
-    ---@type FlyoutMenu
-    local flyoutMenu = self:getFlyoutMenu()
-    flyoutMenu:setMouseOverKid(self)
-    flyoutMenu:displaceButtonsOnHover(self:getId())
+    self:getFlyoutMenu():startHover(self)
 end
 
 function ButtonOnFlyoutMenu:onLeave()
     GameTooltip:Hide()
-    ---@type FlyoutMenu
-    local flyoutMenu = self:getFlyoutMenu()
-    flyoutMenu:clearMouseOverKid(self)
-    flyoutMenu:restoreButtonsAfterHover()
+    self:getFlyoutMenu():stopHover(self)
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation

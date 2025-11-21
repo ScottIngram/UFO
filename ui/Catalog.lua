@@ -489,7 +489,7 @@ GLOBAL_UFO_MIXIN_FOR_CatalogEntry = CatalogEntry -- export to global name space 
 
 function CatalogEntry:OnLoad()
     local event = Event:new(self, "CatalogEntry_OnLoad")
-    zebug.error:event(event):owner(self):print("load catalog entry", self:GetName())
+    zebug.info:event(event):owner(self):print("load catalog entry", self:GetName())
     self:RegisterForDrag("LeftButton");
     SetClampedTextureRotation(self.BgBottom, 180);
     SetClampedTextureRotation(self.Arrow, 90);
@@ -572,7 +572,7 @@ end
 
 function CatalogEntry:OnClick(mouseClick, down)
     local event = Event:new(self,"CatalogEntryButton_OnClick")
-    zebug.error:event(event):name("CatalogEntry:OnClick"):print("btnInCatalog.flyoutIndex", self.flyoutIndex,"btnInCatalog.name", self.name)
+    zebug.info:event(event):name("CatalogEntry:OnClick"):print("btnInCatalog.flyoutIndex", self.flyoutIndex,"btnInCatalog.name", self.name)
     local scrollPane = UFO_CatalogScrollPane
 
     if ADD_BUTTON_NAME == self.name then

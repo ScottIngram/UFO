@@ -108,8 +108,8 @@
     -->
 
     <Frame name="UFO_FlyoutMenuTemplate"
-           inherits="FlyoutPopupTemplate, SecureFrameTemplate"
-           mixin="GLOBAL_FlyoutMenu"
+           inherits="SecureFrameTemplate"
+           mixin="FlyoutPopupMixin, GLOBAL_FlyoutMenu"
            virtual="true"
            frameStrata="MEDIUM"
            frameLevel="1"
@@ -118,6 +118,21 @@
            hidden="true"
     >
         <Frames>
+            <Frame parentKey="bg" setAllPoints="true">
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture parentKey="snotwad" atlas="common-dropdown-bg" useAtlasSize="true" alpha="0.75">
+                            <Anchors>
+                                <Anchor point="TOPLEFT" x="-11" y="8"/>
+                                <Anchor point="BOTTOMRIGHT" x="11" y="-13"/>
+                            </Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <KeyValues>
+                    <KeyValue key="ignoreInlayout" value="true" type="boolean"/>
+                </KeyValues>
+            </Frame>
             <CheckButton parentKey="1" name="$parent_Button1" inherits="UFO_ButtonOnFlyoutMenu_Template" id="1" />
             <CheckButton parentKey="2" name="$parent_Button2" inherits="UFO_ButtonOnFlyoutMenu_Template" id="2" />
             <CheckButton parentKey="3" name="$parent_Button3" inherits="UFO_ButtonOnFlyoutMenu_Template" id="3" />

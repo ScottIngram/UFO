@@ -156,7 +156,7 @@ end
 
 ---@param flyoutMenuFrame FlyoutMenu
 function SecEnv:executeFromNonSecEnv_Layout(flyoutMenuFrame, numButtons, dir, displaceBtnsHere)
-    zebug.error:event("EXE"):owner(flyoutMenuFrame):print("numButtons",numButtons, "dir",dir, "displaceBtnsHere",displaceBtnsHere)
+    zebug.info:event("EXE"):owner(flyoutMenuFrame):print("numButtons",numButtons, "dir",dir, "displaceBtnsHere",displaceBtnsHere)
 
     -- replace the safely - pacify the whole func
     flyoutMenuFrame:safelySetSecEnvAttribute("FU_NUMBUTTONS", numButtons)
@@ -166,7 +166,7 @@ function SecEnv:executeFromNonSecEnv_Layout(flyoutMenuFrame, numButtons, dir, di
         local numButtons = flyoutMenu:GetAttribute("FU_NUMBUTTONS")
         local dir = flyoutMenu:GetAttribute("FU_DIR")
         local displaceBtnsHere = flyoutMenu:GetAttribute("FU_TARGET_INDEX")
-        print("EXE bridge - numButtons",numButtons, "dir",dir, "displaceBtnsHere",displaceBtnsHere)
+        --print("EXE bridge - numButtons",numButtons, "dir",dir, "displaceBtnsHere",displaceBtnsHere)
         flyoutMenu:RunAttribute("_]=] .. SecEnv.FLYOUT_LAYOUT_SCRIPT_NAME .. [=[", numButtons, dir, displaceBtnsHere)
      ]=])
 end
@@ -247,7 +247,7 @@ if btnCountForThisLine > maxBtnsPerLine then
     lineGirth = (btnSize + defaultSpacing)
     lineOff = lineGirth * (linesCount-1)
 
-    --[[DEBUG]] if true or doDebug then
+    --[[DEBUG]] if doDebug then
     --[[DEBUG]] print("=== BREAK === i",i, "btn",btn:GetName(), "anchorBuddy",anchorBuddy:GetName(), "maxBtnsPerLine",maxBtnsPerLine, "linesCount",linesCount, "btnCountForThisLine",btnCountForThisLine, "btnSize",btnSize, "lineGirth",lineGirth)
     --[[DEBUG]] end
     btnCountForThisLine = 1
