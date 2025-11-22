@@ -180,7 +180,7 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
     flyoutMenu.displaceBtnsHere = nil
     --flyoutMenu:updateForCatalog(flyoutId, event)
-    flyoutMenu:NEW_updateButtonLayout(event)
+    flyoutMenu:redraw(event)
     Ufo.pickedUpBtn = nil
 end
 
@@ -459,7 +459,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     end
 ]]
 
-    zebug.warn:mTriangle():owner(self):newEvent(self, "bofm-dragged-away"):run(function(event)
+    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-dragged-away"):run(function(event)
         local isOk, err = btnDef:pickupToCursor(event)
         if not isOk then
             zebug.error:event(event):owner(self):print("FAILED to drag! err",err)
@@ -470,8 +470,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
         flyoutDef:removeButton(self:getId())
         self:setDef(nil, event)
-        --flyoutMenu:updateForCatalog(flyoutId, event)
-        flyoutMenu:NEW_updateButtonLayout(event)
+        flyoutMenu:redraw(event)
         GermCommander:notifyOfChangeToFlyoutDef(flyoutId, event)
     end)
 end

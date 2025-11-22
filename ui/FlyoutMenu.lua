@@ -306,21 +306,25 @@ function FlyoutMenu:applyConfigForCatalog(flyoutId, event)
     self:SetAttribute("IN_USE_BTN_COUNT", numButtons)
 
     -- populate the buttons
-    self:NEW_populateButtons(event)
+    self:populateButtons(event)
 
     -- arrange all of the buttons
-    self:NEW_updateButtonLayout(event)
+    self:updateButtonLayout(event)
 end
 
 function FlyoutMenu:offsetAndUpdateButtonLayout(displaceBtnsHere, event)
     -- zebug.error:event(event):owner(self):print("param displaceBtnsHere",displaceBtnsHere)
     self.displaceBtnsHere = displaceBtnsHere
-    self:NEW_populateButtons(event)
-    self:NEW_updateButtonLayout(event)
+    self:redraw(event)
     self.displaceBtnsHere = nil
 end
 
-function FlyoutMenu:NEW_updateButtonLayout(event)
+function FlyoutMenu:redraw(event)
+    self:populateButtons(event)
+    self:updateButtonLayout(event)
+end
+
+function FlyoutMenu:updateButtonLayout(event)
     zebug.info:event(event):owner(self):print("self.isForCatalog",self.isForCatalog)
     local flyoutDef = self:getDef()
     local extraButton = self.isForCatalog and 1 or 0 -- this will always be for catalog
@@ -331,7 +335,7 @@ function FlyoutMenu:NEW_updateButtonLayout(event)
     SecEnv:executeFromNonSecEnv_Layout(self, numButtons, self.direction, self.displaceBtnsHere)
 end
 
-function FlyoutMenu:NEW_populateButtons(event)
+function FlyoutMenu:populateButtons(event)
     local flyoutDef = self:getDef()
     zebug.trace:event(event):dumpy("flyoutDef",flyoutDef)
     local n = flyoutDef:howManyButtons()
@@ -485,7 +489,7 @@ function FlyoutMenu:restoreButtonsAfterHover()
     end
 
     self.displaceBtnsHere = nil -- redundant with the nil param below
-    self:offsetAndUpdateButtonLayout(nil, "FlyoutMenu:restoreButtonsAfterHover()")
+    self:redraw("FlyoutMenu:restoreButtonsAfterHover()")
 end
 
 function FlyoutMenu:isMouseOverMeOrKids()
