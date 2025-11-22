@@ -102,19 +102,23 @@ function SecEnv:getSecEnvScriptFor_Opener()
 
     -- figure out if we need to layout the buttons BECAUSE
     -- it's never been done
-    -- or the the old layout needs to adjust to accomodate a different number of buttons
+    -- or the the old layout needs to adjust to accommodate a different number of buttons
+    -- OR BECAUSE
+    -- the max length config option has changed
 
-
-    -- leverage global variable numButtons
     local IN_USE_BTN_COUNT = flyoutMenu:GetAttribute("IN_USE_BTN_COUNT")
+    local OPTION_MAX_LEN   = UFO_DUM_DUM:GetAttribute("OPTION_MAX_LEN")
     local isNewLayoutNeeded = false
     if (not numButtons) or (numButtons ~= IN_USE_BTN_COUNT) then
         isNewLayoutNeeded = true
+    elseif (not optionMaxLen) or (optionMaxLen ~= OPTION_MAX_LEN) then
+        isNewLayoutNeeded = true
     end
 
-    --[[DEBUG]] if doDebug then print("numButtons",numButtons, "IN_USE_BTN_COUNT",IN_USE_BTN_COUNT, "isNewLayoutNeeded",isNewLayoutNeeded ) end
+    --[[DEBUG]] if doDebug then print("numButtons",numButtons, "IN_USE_BTN_COUNT",IN_USE_BTN_COUNT, "optionMaxLen",optionMaxLen,  "OPTION_MAX_LEN",OPTION_MAX_LEN,  "isNewLayoutNeeded",isNewLayoutNeeded ) end
 
     numButtons = IN_USE_BTN_COUNT
+    optionMaxLen = OPTION_MAX_LEN
 
     if isNewLayoutNeeded then
         --[[DEBUG]] if doDebug then
@@ -198,7 +202,7 @@ local isVert = dir == "UP" or dir == "DOWN"
     end
 
 -- calculate if the flyout is too long, then how many rows & columns
-local configMaxLen = 20
+local configMaxLen = UFO_DUM_DUM:GetAttribute("FLYOUT_MAX_LEN") or 100
 local vertLineWrapDir = "RIGHT"
 local horizLineWrapDir = "UP"
 local linesCountMax = math.ceil(numButtons / configMaxLen, 1)
@@ -364,6 +368,7 @@ end
 
 function SecEnv:loadConfigOptions()
     UFO_DUM_DUM:setSecEnvAttribute("doCloseOnClick", Config:get("doCloseOnClick"))
+    UFO_DUM_DUM:setSecEnvAttribute("FLYOUT_MAX_LEN", Config:get(Config.field.name.flyoutMaxSize))
 end
 
 function SecEnv:installSecEnvScriptFor_OpenMyFlyout(secFrame)

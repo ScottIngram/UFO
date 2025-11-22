@@ -283,6 +283,7 @@ function Catalog:update(event)
                         self.renderedFlyoutId = flyoutId
                     else
                         flyoutMenu:attach(btnFrame)
+                        flyoutMenu:redrawIfConfigChanged(event)
                     end
                     if IconPicker:IsShown() then
                         flyoutMenu:Hide()

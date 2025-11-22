@@ -102,7 +102,9 @@ FIRST_BUTTON = "First Button"
 MOST_RECENTLY_USED = "Most Recently Used"
 MOUSE_BUTTONS = "Mouse Buttons"
 YOU_CAN_CHOOSE_A_DIFFERENT = "You can choose a different action for each mouse button when it clicks on a UFO."
-TIP_IN_THE_CATALOG = [=[Tip: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions. ]=]
+ANY_BUTTON_CAN_BE_PROMOTED = 'TIP: any button can be promoted to "Primary" by holding a modifier key (shift, control, etc) while clicking the button.'
+MAX_LEN_HELP = "How many buttons can a flyout display on a single line before it splits itself into multiple lines?  A value of 15 means 16 buttons would be displayed as 2 lines of 8."
+TIP_IN_THE_CATALOG = [=[TIP: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions. ]=]
 KEYBINDING_BEHAVIOR = "Keybinding Behavior"
 UFOS_ON_THE_ACTION_BARS = [=[ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured to also have keybindings. ]=]
 HOT_KEY_THE_BUTTONS_ON_A_UFO = "Hot Key the Buttons on a UFO"

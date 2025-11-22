@@ -13,7 +13,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@type MouseClick
 MouseClick = Ufo.MouseClick
 
----@class Options -- IntelliJ-EmmyLua annotation
+---@class ConfigOption -- IntelliJ-EmmyLua annotation
 ---@field doCloseOnClick boolean close the flyout after the user clicks one of its buttons
 ---@field usePlaceHolders boolean eliminate the need for "Always Show Buttons" in Bliz UI "Edit Mode" config option for action bars
 ---@field clickers table germ behavior for various mouse clicks
@@ -25,22 +25,40 @@ MouseClick = Ufo.MouseClick
 ---@field muteLogin boolean don't print out status messages on log in
 ---@field showLabels boolean display a UFO's name on the action bar button
 ---@field primaryButtonIs PrimaryButtonIs which button is considered "primary"
+---@field flyoutMaxSize number how wide is a flyout allowed to be
 ---@field version number identifies the config data's format. determines when the config is (in)compatible with the addon code's version
 Options = { }
 
+---@class ConfigField
+---@field name ConfigOption
+ConfigField = {
+    name = {
+        muteLogin = "muteLogin",
+        showLabels = "showLabels",
+        doCloseOnClick = "doCloseOnClick",
+        usePlaceHolders = "usePlaceHolders",
+        clickers = "clickers",
+        keybindBehavior = "keybindBehavior",
+        doKeybindTheButtonsOnTheFlyout = "doKeybindTheButtonsOnTheFlyout",
+        enableBonusModifierKeys = "enableBonusModifierKeys",
+        doNotOverwriteExistingKeybindings = "doNotOverwriteExistingKeybindings",
+        bonusModifierKeys = "bonusModifierKeys",
+        muteLogin = "muteLogin",
+        primaryButtonIs = "primaryButtonIs",
+        flyoutMaxSize = "flyoutMaxSize",
+        version = "version",
+    }
+}
+
 ---@class Config -- IntelliJ-EmmyLua annotation
----@field opts Options
----@field optDefaults Options
-Config = { }
+---@field opts ConfigOption
+---@field optDefaults ConfigOption
+---@field field ConfigField
+Config = { field = ConfigField }
 
 -------------------------------------------------------------------------------
 -- Enums
 -------------------------------------------------------------------------------
-
----@class Option
-Option = {
-
-}
 
 ---@class PrimaryButtonIs
 PrimaryButtonIs = {
@@ -56,12 +74,12 @@ local KEY_MOD_NA = "KEY_MOD_NA"
 
 -------------------------------------------------------------------------------
 -- Data
--------------------------------
+-------------------------------------------------------------------------------
 local keymodOptsOrder = 0
 
----@return Options
+---@return ConfigOption
 function Config:getOptionDefaults()
-    ---@type Options
+    ---@type ConfigOption
     local defaults = {
         doCloseOnClick  = true,
         usePlaceHolders = true,
@@ -72,6 +90,7 @@ function Config:getOptionDefaults()
         enableBonusModifierKeys = false,
         doKeybindTheButtonsOnTheFlyout = true,
         primaryButtonIs = PrimaryButtonIs.FIRST,
+        flyoutMaxSize = 20,
         clickers = {
             flyouts = {
                 default = {
@@ -154,7 +173,7 @@ local function initializeOptionsMenu()
                 end,
             },
             showLabels = {
-                order = 120,
+                order = 130,
                 name = L10N.cfg.SHOW_LABELS, -- "Show Labels",
                 desc = L10N.cfg.ADD_A_LABEL, -- "Add a label to the action bar button displaying the UFO's name.",
                 width = "medium",
@@ -167,22 +186,77 @@ local function initializeOptionsMenu()
                     return Config:get("showLabels")
                 end,
             },
+            spacer = {
+                order = 140,
+                type = 'description',
+                name = EOLx2
+            },
 
+
+
+            -------------------------------------------------------------------------------
+            -- Max Flyout Size
+            -------------------------------------------------------------------------------
+
+            maxFlyoutSizeDiv = {
+                order = 150,
+                name = "Maximum Flyout Length",
+                type = 'header',
+            },
+
+            maxFlyoutSizeGroup = {
+                order = 160,
+                name = "", -- L10N.cfg.THE_PRIMARY_BUTTON, -- 'The "Primary Button"',
+                type = "group",
+                inline = true,
+                args = {
+                    maxSizeHelp = {
+                        order = 10,
+                        type = 'description',
+                        name = L10N.cfg.MAX_LEN_HELP, -- "How many buttons can a flyout display on a single line before it splits itself into multiple lines?  A value of 15 means 16 buttons would be displayed as 2 lines of 8."
+                    },
+
+                    chooseMaxSize = {
+                        order = 20,
+                        name = "", -- L10N.cfg.THE_PRIMARY_BUTTON_IS_THE, --'The "Primary" Button is the:',
+                        desc = "Button count", -- L10N.cfg.WHICH_BUTTON_OF_THE_FLYOUT, --'Which button of the flyout should be considered its "Primary" button?',
+                        width = "double",
+                        type = "range",
+                        min = 10,
+                        max = MAX_FLYOUT_SIZE,
+                        step = 1,
+                        set = function(optionsMenu, val)
+                            opts.flyoutMaxSize = val
+                            zebug.info:name("opt:flyoutMaxSize()"):print("new val",val)
+                            UFO_DUM_DUM:setSecEnvAttribute("FLYOUT_MAX_LEN", val)
+                        end,
+                        get = function()
+                            return Config:get(Config.field.name.flyoutMaxSize)
+                        end,
+                    },
+
+                    maxSizeFooter = {
+                        order = 30,
+                        type = 'description',
+                        name = EOLx2,
+                    },
+                },
+            },
 
 
             -------------------------------------------------------------------------------
             -- Define Primary
             -------------------------------------------------------------------------------
 
-            divHeader = {
+            primaryButtonIsDiv = {
                 order = 200,
-                name = "",
+                name =  L10N.cfg.THE_PRIMARY_BUTTON, -- 'The "Primary Button"',
                 type = 'header',
             },
 
             primaryButtonIsGroup = {
                 order = 210,
-                name = L10N.cfg.THE_PRIMARY_BUTTON, -- 'The "Primary Button"',
+                name = "",
                 type = "group",
                 inline = true,
                 args = {
@@ -219,7 +293,9 @@ local function initializeOptionsMenu()
                         -- hidden = function() return Config:get("primaryButtonIs") ~= PrimaryButtonIs.FIRST end,
                         type = 'description',
                         -- fontSize = "small",
-                        name = EOLx2 .. 'Also, any button can be promoted to "Primary" by holding a modifier key (shift, control, etc) while clicking the button.'
+                        name = EOL
+                                .. L10N.cfg.ANY_BUTTON_CAN_BE_PROMOTED -- 'Also, any button can be promoted to "Primary" by holding a modifier key (shift, control, etc) while clicking the button.'
+                                .. EOLx3
                     },
 
                 },
@@ -232,31 +308,38 @@ local function initializeOptionsMenu()
             -- Mouse Click opts
             -------------------------------------------------------------------------------
 
+            mouseClickDiv = {
+                order = 300,
+                name =L10N.cfg.MOUSE_BUTTONS, --"Mouse Buttons",
+                type = 'header',
+            },
+
+            mouseClickHelp = {
+                order = 310,
+                type = 'description',
+                name = L10N.cfg.YOU_CAN_CHOOSE_A_DIFFERENT, -- You can choose a different action for each mouse button when it clicks on a UFO.
+            },
+
             mouseClickGroup = {
                 order = 320,
-                name = L10N.cfg.MOUSE_BUTTONS, --"Mouse Buttons",
+                name = " ",
                 type = "group",
                 inline = true, -- set this to false to enable multiple configs, one per flyout.
                 args = {
-                    mouseClickGroupHelp = {
-                        order = 1,
-                        type = 'description',
-                        name = L10N.cfg.YOU_CAN_CHOOSE_A_DIFFERENT .. EOLx2, -- You can choose a different action for each mouse button when it clicks on a UFO.
-                    },
 
                     leftBtn   = includeMouseButtonOpts(MouseClick.LEFT),
                     middleBtn = includeMouseButtonOpts(MouseClick.MIDDLE),
                     rightBtn  = includeMouseButtonOpts(MouseClick.RIGHT),
                     fourBtn   = includeMouseButtonOpts(MouseClick.FOUR),
                     fiveBtn   = includeMouseButtonOpts(MouseClick.FIVE),
-
-                    excluderHelpText = {
-                        order = 100,
-                        type = 'description',
-                        fontSize = "small",
-                        name = EOLx2 .. L10N.cfg.TIP_IN_THE_CATALOG, --Tip: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions.
-                    },
                 },
+            },
+
+            excluderHelpText = {
+                order = 330,
+                type = 'description',
+                fontSize = "small",
+                name = EOL .. L10N.cfg.TIP_IN_THE_CATALOG .. EOLx3, --Tip: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions.
             },
 
 
@@ -641,6 +724,13 @@ function Config:initializeOptionsMenu()
 end
 
 function Config:get(key)
+    if not key then
+        error("NiL provided as config field name.")
+    end
+    if not Config.field.name[key] then
+        error("No such config field exists with a name of "..key)
+    end
+
     if Config.opts[key] == nil then
         return Config.optDefaults[key]
     else

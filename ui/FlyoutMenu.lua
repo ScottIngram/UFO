@@ -304,12 +304,7 @@ function FlyoutMenu:applyConfigForCatalog(flyoutId, event)
     local flyoutDef = self:getDef()
     local numButtons = flyoutDef:howManyButtons() + 1
     self:SetAttribute("IN_USE_BTN_COUNT", numButtons)
-
-    -- populate the buttons
-    self:populateButtons(event)
-
-    -- arrange all of the buttons
-    self:updateButtonLayout(event)
+    self:redraw(event)
 end
 
 function FlyoutMenu:offsetAndUpdateButtonLayout(displaceBtnsHere, event)
@@ -317,6 +312,16 @@ function FlyoutMenu:offsetAndUpdateButtonLayout(displaceBtnsHere, event)
     self.displaceBtnsHere = displaceBtnsHere
     self:redraw(event)
     self.displaceBtnsHere = nil
+end
+
+local maxyFly
+
+function FlyoutMenu:redrawIfConfigChanged(event)
+    local flyoutMaxSize = Config:get(Config.field.name.flyoutMaxSize)
+    if not maxyFly or maxyFly ~= flyoutMaxSize then
+        maxyFly = flyoutMaxSize
+        self:redraw(event)
+    end
 end
 
 function FlyoutMenu:redraw(event)
