@@ -320,6 +320,7 @@ function Germ:clearAndDisable(event)
     self:clearKeybinding()
     self:setVisibilityDriver(nil) -- must be restored if Germ comes back -- TODO: move into registerForBlizUiActions() ?
     self:unregisterForBlizUiActions()
+    self:invalidateFlyoutCache() -- provides a workaround for when the API lies to isUsable() -- drag & drop a germ to re-init
     self:Disable() -- replaces all (well, most) of the above?
     self.flyoutId = nil
     self.label = nil

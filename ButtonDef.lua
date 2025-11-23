@@ -252,14 +252,16 @@ function ButtonDef:isUsable()
     if t == ButtonType.MOUNT then
         local mountId = self.mountId
         isUsable, err = C_MountJournal.GetMountUsabilityByID(mountId, false --[[checkIndoors]])
-        -- local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountId)
-        -- zebug.warn:owner(self):mTriangle():print("mountId",self.mountId, "isUsable",isUsable, "err", err)
-        -- zebug.warn:owner(self):mCircle():print("name",name, "spellID",spellID, "isUsable",isUsable, "isFactionSpecific",isFactionSpecific, "faction",faction, "shouldHideOnChar",shouldHideOnChar, "mountID",mountID)
+        local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountId)
+        --zebug.warn:owner(self):mTriangle():print("mountId",self.mountId, "isUsable",isUsable, "err", err)
+        --zebug.warn:owner(self):mCircle():print("name",name, "spellID",spellID, "isUsable",isUsable, "isFactionSpecific",isFactionSpecific, "faction",faction, "shouldHideOnChar",shouldHideOnChar, "mountID",mountID)
+        isUsable = not shouldHideOnChar
         return isUsable, (err or "Bliz API provided no explanation why not.")
     elseif t == ButtonType.PET then
         -- TODO: figure out how to find a mount
         return true -- GetMountInfoByID(mountId)
     elseif t == ButtonType.TOY then
+        -- TODO: solve faction specific bug
         return  PlayerHasToy(id) -- and C_ToyBox.IsToyUsable(id) -- nope, unreliable and overreaching
     elseif t == ButtonType.SPELL then
         --zebug.trace:print("IsSpellKnownOrOverridesKnown",IsSpellKnownOrOverridesKnown(id))
