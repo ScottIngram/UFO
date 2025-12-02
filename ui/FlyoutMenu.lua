@@ -297,6 +297,7 @@ end
 function FlyoutMenu:applyConfigForCatalog(flyoutId, event)
     self:ClearAllPoints() -- remove myself from any previous position
     self:SetPoint(Anchor.LEFT, self.parent, Anchor.RIGHT)
+    self:SetFrameLevel(self.parent:GetFrameLevel()+10 )
     self.enableTwinkle = true
     self:setId(flyoutId)
     self.direction = "RIGHT"
