@@ -327,7 +327,7 @@
         </Frames>
         <Scripts>
             <OnLoad method="OnLoad"/>
-            <OnEnter method="OnLeave"/>
+            <OnEnter method="OnEnter"/>
             <OnLeave method="OnLeave"/>
             <OnClick method="OnClick"/>
             <OnDragStart method="OnDragStart"/>
