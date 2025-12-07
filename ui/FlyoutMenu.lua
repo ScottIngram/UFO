@@ -210,6 +210,7 @@ function FlyoutMenu:installSecEnvBullshit(event)
     self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:setSecEnvAttribute("UFO_NAME", self:getUfoLabel())
     self:setSecEnvAttribute(SecEnvAttribute.flyoutDirection, self:getDirection(event))
+    self:setSecEnvAttribute("IS_FOR_CATALOG", self.isForCatalog)
     self:SetFrameRef("UFO_DUM_DUM", _G["UFO_DUM_DUM"])
     self:SetFrameRef("flyoutMenu", self)
     local germ = self:getParent()
@@ -225,6 +226,7 @@ function FlyoutMenu:installSecEnvBullshit(event)
         -- catalogEntry = self:GetFrameRef("catalogEntry") -- to be set on-demand by CatalogEntry
         myName     = self:GetAttribute("UFO_NAME")
         doDebug    = self:GetAttribute("DO_DEBUG") or false
+        MAX_FLYOUT_SIZE = ]=] .. MAX_FLYOUT_SIZE .. [=[
     ]=])
 
     SecEnv:installEnumsAndConstants(self)

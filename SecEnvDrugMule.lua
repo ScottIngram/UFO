@@ -203,11 +203,12 @@ local isVert = dir == "UP" or dir == "DOWN"
 
 -- calculate if the flyout is too long, then how many rows & columns
 local configMaxLen = UFO_DUM_DUM:GetAttribute("FLYOUT_MAX_LEN") or 100
+local isForCatalog = flyoutMenu:GetAttribute("IS_FOR_CATALOG")
 local vertLineWrapDir = "RIGHT"
 local horizLineWrapDir = "UP"
 local linesCountMax = math.ceil(numButtons / configMaxLen, 1)
-local maxBtnsPerLine = math.ceil(numButtons / linesCountMax)
---[[DEBUG]] -- print("configMaxLen",configMaxLen, "numButtons =",numButtons, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax)
+local maxBtnsPerLine = isForCatalog and 15 or math.ceil(numButtons / linesCountMax)
+--[[DEBUG]] -- print("isForCatalog",isForCatalog, "configMaxLen",configMaxLen, "numButtons =",numButtons, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax)
 if linesCountMax > configMaxLen then
     linesCountMax = math.floor( math.sqrt(numButtons) )
 	    --[[DEBUG]] if doDebug then
