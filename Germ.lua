@@ -314,6 +314,7 @@ function Germ:hide(event)
 end
 
 function Germ:clearAndDisable(event)
+    if self:isInactive(event) then return end
     zebug.info:event(event):owner(self):print("DISABLE GERM :-(")
     self:closeFlyout()
     self:hide(event)

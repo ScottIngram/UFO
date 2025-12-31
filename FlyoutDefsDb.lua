@@ -109,10 +109,11 @@ end
 ---@param flyoutId number
 function FlyoutDefsDb:getName(flyoutId)
     local conf = self:trustedGet(flyoutId)
-    if not conf.getName then
+    if not (conf and conf.getName) then
         zebug.info:dumpy(flyoutId, conf)
+        return
     end
-    return conf and conf:getName()
+    return conf:getName()
 end
 
 ---@param flyoutId string
