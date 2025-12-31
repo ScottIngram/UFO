@@ -110,8 +110,9 @@ function GermCommander:forEachPlacement(func, event)
         -- go backwards so that the index doesn't change as we do it
         for i = #dead, 1, -1 do
             local btnSlotIndex = dead[i]
-            zebug.warn:print("removing bad flyoutId from button slot #", btnSlotIndex)
-            table.remove(placements, btnSlotIndex)
+            zebug.warn:print("removing bad flyoutId from button slot #", btnSlotIndex, "fId", placements[btnSlotIndex])
+            -- table.remove(placements, btnSlotIndex) -- this fails
+            Spec:getCurrentSpecPlacementConfig()[btnSlotIndex] = nil
         end
     end
 end
