@@ -132,6 +132,8 @@ function Button_Mixin:updateUsable(event)
         end
 
         zebug.trace:event(event):owner(self):print("isItem", itemId, "itemID",self.itemID, "spellID", spellId, "isUsable",isUsable)
+    else
+        isUsable = false
     end
 
     local iconFrame = self:getIconFrame();
@@ -197,7 +199,7 @@ function Button_Mixin:updateCooldown(event)
         end
     end
 
-    zebug.trace:event(event):owner(self):print("type",type, "start",start, "duration",duration, "enable",enable )
+    zebug.trace:event("event"):owner(self):print("id",id, "type",type, "start",start, "duration",duration, "enable",enable )
 
 end
 

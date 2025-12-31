@@ -200,7 +200,7 @@ function ButtonOnFlyoutMenu:installExcluder(event)
 end
 
 function ButtonOnFlyoutMenu:renderCooldownsAndCountsAndStatesEtcEtc(event)
-    self:renderCooldownsAndCountsAndStatesEtc(self,event)
+    self:renderCooldownsAndCountsAndStatesEtc(event)
 end
 
 -- taken from SpellFlyoutButton_SetTooltip in bliz API SpellFlyout.lua
