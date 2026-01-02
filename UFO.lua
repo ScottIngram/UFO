@@ -317,6 +317,14 @@ local slashFuncs = {
         desc = L10N.SLASH_DESC_OPEN,
         fnc = Catalog.open,
     },
+    [L10N.SLASH_CMD_SNAPSHOT_SAVE] = {
+        desc = L10N.SLASH_DESC_SNAPSHOT_SAVE,
+        fnc = DB.snapshotSave,
+    },
+    [L10N.SLASH_CMD_SNAPSHOT_LOAD] = {
+        desc = L10N.SLASH_DESC_SNAPSHOT_LOAD,
+        fnc = DB.snapshotLoad,
+    },
     debug = {
         desc = "examine the UFO under the mouse pointer",
         fnc = dumpIfUnderMousePointer,

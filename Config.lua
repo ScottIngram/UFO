@@ -514,6 +514,39 @@ local function initializeOptionsMenu()
                     return opts.usePlaceHolders
                 end,
             },
+
+
+
+            -------------------------------------------------------------------------------
+            -- Snapshot
+            -------------------------------------------------------------------------------
+
+            snapshotHeader = {
+                order = 700,
+                name = L10N.cfg.SNAPSHOT,
+                type = 'header',
+            },
+            helpTextForSnapshot = {
+                order = 710,
+                type = 'description',
+                name = L10N.cfg.SNAPSHOT_HELP,
+            },
+            snapshotSave = {
+                order = 720,
+                name = L10N.cfg.SNAPSHOT_SAVE_BTN,
+                desc = L10N.SLASH_DESC_SNAPSHOT_SAVE,
+                --width = "full",
+                type = "execute",
+                func = DB.snapshotSave,
+            },
+            snapshotLoad = {
+                order = 730,
+                name = L10N.cfg.SNAPSHOT_LOAD_BTN,
+                desc = L10N.SLASH_DESC_SNAPSHOT_LOAD,
+                type = "execute",
+                func = DB.snapshotLoad,
+                hidden = DB.isNoSnapshot
+            },
         },
     }
 

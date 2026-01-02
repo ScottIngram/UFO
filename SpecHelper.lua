@@ -82,6 +82,12 @@ function Spec:getCurrentSpecPlacementConfig()
     return self:getPlacementConfig(specId)
 end
 
+function Spec:replaceCurrentSpecPlacementConfig(newConfig)
+    local specId = self:getSpecId()
+    local placementsForAllSpecs = DB:getAllSpecsPlacementsConfig()
+    placementsForAllSpecs[specId] = newConfig
+end
+
 ---@return Placements
 function Spec:getPlacementConfig(specId)
     if specId == nil then

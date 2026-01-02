@@ -15,6 +15,8 @@ local DB = {}
 local ADDON_NAME, Ufo = ...
 Ufo.DB = DB
 
+local L10N = Ufo.L10N
+
 ---@alias SpecId number
 ---@alias FlyoutId string
 ---@alias Placements table<BtnSlotIndex,FlyoutId>
@@ -60,6 +62,40 @@ function DB:getAllSpecsPlacementsConfig()
     ---@type PlacementsForAllSpecs
     return UFO_SV_TOON.placementsForAllSpecs
 end
+
+function DB:snapshotSave()
+    local placements = Ufo.Spec:getCurrentSpecPlacementConfig()
+    if Ufo.isEmpty(placements) then
+        Ufo.zebug.error:print("Current config is empty.  ABORT snapshot")
+        return
+    end
+
+    UFO_SV_ACCOUNT.placementsDefaultSnapshot = placements
+    Ufo.msgUser(Ufo.L10N.SAVED_SNAPSHOT)
+end
+
+function DB:snapshotLoad()
+    local placements = UFO_SV_ACCOUNT.placementsDefaultSnapshot
+    if Ufo.isEmpty(placements) then
+        Ufo.zebug.error:print("Snapshot is empty.  ABORT load snapshot")
+        return
+    end
+
+    Ufo.Spec:replaceCurrentSpecPlacementConfig(placements)
+    Ufo.GermCommander:initializeAllSlots("Load_Snapshot")
+    Ufo.msgUser(Ufo.L10N.LOADED_SNAPSHOT)
+end
+
+function DB:isThereUhSnapshot()
+    local placements = UFO_SV_ACCOUNT.placementsDefaultSnapshot
+    return not Ufo.isEmpty(placements)
+end
+
+function DB:isNoSnapshot()
+    return not DB:isThereUhSnapshot()
+end
+
+
 
 function DB:canHazPet(arg)
     local specId = GetSpecialization()
