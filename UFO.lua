@@ -311,7 +311,7 @@ end
 local slashFuncs = {
     [L10N.SLASH_CMD_CONFIG] = {
         desc = L10N.SLASH_DESC_CONFIG,
-        fnc = function() Settings.OpenToCategory(Ufo.myTitle)  end,
+        fnc = Config.open,
     },
     [L10N.SLASH_CMD_OPEN] = {
         desc = L10N.SLASH_DESC_OPEN,

@@ -111,13 +111,17 @@ function Catalog:ON_ENTER()
 end
 
 ---@param mouseClick MouseClick
-function Catalog:clickUfoButton(mouseClick, isDown)
-    zebug.info:print("ufoBtn", self:GetName(), "mouseClick",mouseClick, "isDown",isDown)
+function Catalog:clickUfoButton(mouseClick, force)
+    zebug.info:print("ufoBtn", self.GetName and self:GetName(), "mouseClick",mouseClick, "force", force)
 
     if mouseClick == MouseClick.LEFT then
-        Catalog:toggle(self)
+        if force then
+            Catalog:open()
+        else
+            Catalog:toggle(self)
+        end
     else
-        Settings.OpenToCategory(Ufo.myTitle)
+        Config:open()
     end
 end
 
@@ -411,13 +415,7 @@ end
 
 ---@param mouseClick MouseClick
 function GLOBAL_UFO_BlizCompartment_OnClick(addonName, mouseClick)
-    zebug.trace:print("addonName",addonName, "mouseClick", mouseClick, "SpellBookFrame",SpellBookFrame)
-
-    if mouseClick == MouseClick.LEFT then
-        Catalog:open()
-    else
-        Settings.OpenToCategory(Ufo.myTitle)
-    end
+    Catalog:clickUfoButton(mouseClick, true)
 end
 
 local muhToolTip

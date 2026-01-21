@@ -1,8 +1,8 @@
 ## Title: UFO - Universal FlyOuts
 ## Author: Scott Ingram
-## Version: 11.2.7.c
+## Version: 12.0.0.pre-patch.00
 ## X-Config-Version: 3
-## Interface: 110207
+## Interface: 120000
 ## AddonCompartmentFunc: GLOBAL_UFO_BlizCompartment_OnClick
 ## AddonCompartmentFuncOnEnter: GLOBAL_UFO_BlizCompartment_OnEnter
 ## AddonCompartmentFuncOnLeave: GLOBAL_UFO_BlizCompartment_OnLeave
@@ -10,7 +10,7 @@
 ## SavedVariables: UFO_SV_ACCOUNT
 ## SavedVariablesPerCharacter: UFO_SV_TOON
 ## Notes: custom actionbar flyout menus
-## Category: Action Bars
+## X-Category: Action Bars
 ## X-License: Mozilla Public License Version 2.0
 ## X-Curse-Project-ID: 904467
 
