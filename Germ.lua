@@ -180,7 +180,7 @@ end
 function Germ:applyConfigFromFlyoutDef(event)
     self:doIcon(event)
     self:applyConfigForShowLabel(event)
-    self:updateClickerForBtn1(event)
+    self:updateClickerForPrimaryButton(event)
     self:closeFlyout() -- in case the buttons' number/ordering changes
     self.flyoutMenu:applyConfigForGerm(self, event)
 end
@@ -343,7 +343,7 @@ function Germ:changeFlyoutIdAndEnable(flyoutId, event)
     self:clearKeybinding()
     self:doMyKeybindings(event)
     self:Show()
-    self:updateClickerForBtn1(event)
+    self:updateClickerForPrimaryButton(event)
     self:Enable()
 end
 
@@ -933,10 +933,10 @@ function Germ:assignTheMouseClicker(mouseClick, behaviorName, event)
     self:SetAttribute("IS_A_PRIME_BTN_"..n, isPrime) -- assume earlier code blocked exe during combat
 end
 
--- the secEnv handler for "click the first button of the flyout" is special.
+-- the secEnv handler for Primary Button is special.
 -- it won't automatically accommodate changes to the flyout buttons and must be re-applied for any changes to flyoutDef
 -- TODO: consider folding it into the ON_CLICK script along with the RANDOM_BTN and CYCLE_ALL_BTNS
-function Germ:updateClickerForBtn1(event)
+function Germ:updateClickerForPrimaryButton(event)
     -- loop over all mouse buttons
     for _, mouseClick in ipairs(MOUSE_BUTTONS) do
         local behaviorName = Config:getGermClickBehavior(self.flyoutId, mouseClick)
@@ -1003,7 +1003,10 @@ end
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:PRIME_BTN(mouseClick, event)
     self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(mouseClick, event) -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
+    self:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(mouseClick, "Germ's PRIME") -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
+
+    -- temp fix - this ignores the config
+    self:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(MouseClick.RESERVED_FOR_KEYBIND, "Germ's P Key") -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
 end
 
 ---@param mouseClick MouseClick

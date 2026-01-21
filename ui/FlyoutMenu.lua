@@ -91,6 +91,7 @@ end
 
 function FlyoutMenu:close()
     -- TAINT / not secure ?
+    ClearOverrideBindings(self)
     self:Hide() -- does this trigger ON_HIDE ?
 end
 
