@@ -121,7 +121,7 @@ function Catalog:clickUfoButton(mouseClick, force)
             Catalog:toggle(self)
         end
     else
-        Config:open()
+        Config:toggle()
     end
 end
 

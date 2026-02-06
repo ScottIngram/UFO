@@ -750,14 +750,23 @@ end
 
 function Config:initializeOptionsMenu()
     initializeOptionsMenu()
-    --local db = LibStub("AceDB-3.0"):New(ADDON_NAME, defaults)
-    --options.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(db)
+    Config.AceConfigDialog = LibStub("AceConfigDialog-3.0");
     LibStub("AceConfig-3.0"):RegisterOptionsTable(ADDON_NAME, optionsMenu)
-    _, Config.myBlizUiId = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(ADDON_NAME, Ufo.myTitle)
+    LibStub("AceConfigDialog-3.0"):AddToBlizOptions(ADDON_NAME, Ufo.myTitle)
 end
 
-function Config:open()
-    Settings.OpenToCategory(Config.myBlizUiId)
+function Config:toggle()
+    local myName = ADDON_NAME
+    local acd = Config.AceConfigDialog
+    local frames = acd.OpenFrames
+    if frames[myName] == nil then
+        acd:Open(myName)
+        if frames[myName] then
+            frames[myName]:SetStatusText(Ufo.versionMsg)
+        end
+    else
+        acd:Close(myName)
+    end
 end
 
 function Config:get(key)

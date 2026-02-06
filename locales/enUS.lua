@@ -66,6 +66,7 @@ THIS_TOON_HAS_NONE = "This toon has none."
 NOT_MACRO_OWNER = "It can only be used by"
 UNSUPPORTED_TYPE = "Sorry, unsupported type"
 UFO_ICON_PROMOTE = "update the UFO icon to reflect the most recently used member."
+VERSION = "Version"
 
 -------------------------------------------------------------------------------
 -- Configuration Screen

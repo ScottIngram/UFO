@@ -311,7 +311,7 @@ end
 local slashFuncs = {
     [L10N.SLASH_CMD_CONFIG] = {
         desc = L10N.SLASH_DESC_CONFIG,
-        fnc = Config.open,
+        fnc = Config.toggle,
     },
     [L10N.SLASH_CMD_OPEN] = {
         desc = L10N.SLASH_DESC_OPEN,
@@ -341,6 +341,8 @@ function initalizeAddonStuff(event)
 
     Ufo.myTitle = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Title")
     Ufo.iconTexture = C_AddOns.GetAddOnMetadata(ADDON_NAME, "IconTexture")
+    Ufo.version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
+    Ufo.versionMsg = L10N.VERSION .. ": " .. Ufo.version
 
     DB:initializeFlyouts()
     DB:initializePlacements()
@@ -366,8 +368,7 @@ function initalizeAddonStuff(event)
 
     IconPicker:init()
 
-    local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
-    msgUserOrNot(L10N.LOADED, "v"..version)
+    msgUserOrNot(L10N.LOADED, Ufo.versionMsg)
 
     -- flags to wait out the chaos happening when the UI first loads / reloads.
     isUfoInitialized = true
