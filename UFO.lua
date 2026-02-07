@@ -69,13 +69,19 @@ function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, arg2, arg3, arg4)
     end)
 end
 
--- respond to the user dragging and dropping:
--- UFOs onto action bars;
--- spells/items/etc onto UFOs already on the action bars;
--- UFOs onto other UFOs already on the action bars.
--- We don't care any other action bar events.
-function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, eName, n, z1, z2)
+local ASSISTED_COMBAT = "assistedcombat"
+-- respond to the user dragging and dropping UFO proxies onto action bars.
+-- We don't care about any other action bar events.
+-- Germ:handleReceiveDrag() handles: spells/items/etc/UFOs onto UFOs already on the action bars
+function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
+
+    -- ignore all Single Button Assist SPAM.  bugfix #72
+    local _, _, subType = GetActionInfo(btnSlotIndex)
+    if subType == ASSISTED_COMBAT then
+        -- zebug.warn:event(eName):name("handler"):print("ignoring ASSISTED_COMBAT")
+        return Throttler.RUN_IMMEDIATELY
+    end
 
     if Ufo.germLock then
         local btnInSlot = BlizActionBarButtonHelper:get(btnSlotIndex, eName)
