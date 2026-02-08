@@ -137,6 +137,49 @@ local function initializeOptionsMenu()
             -- General Options
             -------------------------------------------------------------------------------
 
+            debuggerOpts = {
+                order = 10,
+                type = "group",
+                name = "Developer Tools",
+                inline = true,
+                hidden = function() return not Ufo.devMode end,
+                args = {
+
+                    help1 = {
+                        order = 5,
+                        type = 'description',
+                        name = "You got here because you type /ufo debug"
+                    },
+
+                    header = {
+                        order = 10,
+                        name = "Events",
+                        type = 'header',
+                    },
+
+                    help = {
+                        order = 20,
+                        type = 'description',
+                        name = "Dis/Enable reporting for various WoW generated Events"
+                    },
+
+                    eventVolumeGroup = {
+                        order = 30,
+                        name = " ",
+                        type = "group",
+                        --inline = true, -- set this to false to enable multiple configs, one per flyout.
+                        args = generateMenusForEventHandlers(),
+                    },
+
+                },
+            },
+
+
+
+            -------------------------------------------------------------------------------
+            -- General Options
+            -------------------------------------------------------------------------------
+
             helpText = {
                 order = 100,
                 type = 'description',
@@ -554,6 +597,61 @@ local function initializeOptionsMenu()
 end
 
 -------------------------------------------------------------------------------
+-- Debugger opt maker
+-------------------------------------------------------------------------------
+
+local eventMenusArgs = {}
+local debuggerOpts = {}
+local debuggerEventOptsOrder = 0
+
+function generateMenusForEventHandlers()
+    if not (debuggerOpts and debuggerOpts.eventHandlers) then return eventMenusArgs end
+
+    for eventName, _ in pairs(debuggerOpts.eventHandlers) do
+        eventMenusArgs[eventName] = includeDebuggerEventOpts(eventName)
+    end
+
+    return eventMenusArgs
+end
+
+function includeDebuggerEventOpts(eventName)
+    debuggerEventOptsOrder = debuggerEventOptsOrder + 1
+    return {
+        order = debuggerEventOptsOrder,
+        name = eventName,
+        desc = "enable debugging output associated with this event",
+        --width = "double",
+        type = "select",
+        style = "dropdown",
+        values = {
+            [Zebug.TRACE] = ZebugVolumesNames[Zebug.TRACE],
+            [Zebug.INFO ] = ZebugVolumesNames[Zebug.INFO],
+            [Zebug.WARN ] = ZebugVolumesNames[Zebug.WARN],
+            [Zebug.ERROR] = ZebugVolumesNames[Zebug.ERROR],
+        },
+--[[
+        sorting = {
+            ZebugVolumesNames[Zebug.TRACE],
+            ZebugVolumesNames[Zebug.INFO] ,
+            ZebugVolumesNames[Zebug.WARN] ,
+            ZebugVolumesNames[Zebug.ERROR],
+        },
+]]
+        ---@param volume ZebugSpeakingVolume
+        set = function(zelf, volume)
+            Ufo:setEventVolume(eventName, volume)
+            msgUser(eventName, "set to", volume)
+        end,
+        ---@param ZebugSpeakingVolume
+        get = function()
+            local volume = Ufo:getEventVolume(eventName)
+            msgUser(eventName, "has volume", volume)
+            return volume
+        end,
+    }
+end
+
+-------------------------------------------------------------------------------
 -- Mouse Button opt maker
 -------------------------------------------------------------------------------
 
@@ -599,6 +697,10 @@ function includeMouseButtonOpts(mouseClick)
     }
 end
 
+-------------------------------------------------------------------------------
+-- Key Modifier opt maker
+-------------------------------------------------------------------------------
+
 ---@param click ModifierKey
 function includeKeyModOpts(modifierKey, mk2)
     local opts = Config.opts
@@ -628,6 +730,10 @@ function includeKeyModOpts(modifierKey, mk2)
         end,
     }
 end
+
+-------------------------------------------------------------------------------
+-- Germ Clicker opt maker
+-------------------------------------------------------------------------------
 
 local INCLUDE_GERM_CLICK_BEHAVIORS
 local INCLUDE_GERM_CLICK_BEHAVIORS_PLUS_NA
@@ -748,7 +854,8 @@ function Config:getPrimeClickers(flyoutId)
     return primeClickers
 end
 
-function Config:initializeOptionsMenu()
+function Config:initializeOptionsMenu(eventHandlers)
+    debuggerOpts.eventHandlers = eventHandlers
     initializeOptionsMenu()
     Config.AceConfigDialog = LibStub("AceConfigDialog-3.0");
     LibStub("AceConfig-3.0"):RegisterOptionsTable(ADDON_NAME, optionsMenu)

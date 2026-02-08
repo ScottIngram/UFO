@@ -163,7 +163,7 @@ local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
     local doClose3 = UFO_DUM_DUM:GetAttribute("doCloseOnClick")
 
     --[[DEBUG]] if doDebug then
-    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "doClose:", doClose, "doClose2",doClose2 "doClose3",doClose3)
+    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "doClose:", doClose, "doClose2",doClose2, "doClose3",doClose3)
     --[[DEBUG]] end
 
     if doClose or doClose2 or doClose3 then

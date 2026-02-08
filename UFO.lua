@@ -8,6 +8,7 @@
 ---@class Ufo -- IntelliJ-EmmyLua annotation
 ---@field myTitle string Ufo.toc Title
 ---@field iconTexture string Ufo.toc IconTexture
+---@field devMode boolean unlocks developer switches and levers for debugging
 ---@field thatWasMeThatDidThatMacro boolean flag used to stop event handler responses to UFO actions related to macros
 ---@field droppedPlaceholderOntoActionBar boolean flag used to stop event handler responses to UFO actions related to drag and drop
 ---@field pickedUpBtn ButtonDef data for the UFO button on the mouse cursor
@@ -89,7 +90,9 @@ function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, eName, n)
         return
     end
 
-    zebug.info:mSquare():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+    local myVolume = Ufo:getEventVolume(eName)
+
+    zebug.info:mSquare():name("handler"):newEvent("Ufo", eName, n, myVolume):run(function(event)
         Ufo.germLock = event
         GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlotIndex, event)
         Ufo.germLock = nil
@@ -233,6 +236,15 @@ EventHandlers.SPELL_UPDATE_CHARGES = EventHandlers.SPELL_UPDATE_USABLE
 -- Event related methods - TODO: use these?
 -------------------------------------------------------------------------------
 
+-- support dynamically (de)activating DEBUG output in real time for individual events
+function Ufo:getEventVolume(eventName)
+    return Ufo.devMode and Config.opts.devTool.eventVolume[eventName] or nil
+end
+
+function Ufo:setEventVolume(eventName, volume)
+    Config.opts.devTool.eventVolume[eventName] = volume or nil
+end
+
 -- set a semaphore so other code can decide to respond to the resulting UPDATE_MACROS event
 -- TODO: if set during a Zebug:runEvent() AND the provided event arg is the same one being used by runEvent() then it will auto-erase it at the end of runEvent() ... todo: move to Zebug?
 function Ufo:setEventSemaphore(semaphoreName, event)
@@ -292,6 +304,7 @@ end
 -------------------------------------------------------------------------------
 
 function dumpIfUnderMousePointer()
+    Ufo.devMode = true
     local didOutput
     zebug.warn:mark(Mark.QUEST):newEvent("Ufo","debug"):run(function(event)
         local foci  = GetMouseFoci()
@@ -305,7 +318,8 @@ function dumpIfUnderMousePointer()
         end
 
         if not didOutput then
-            zebug.warn:event(event):print("Point at a UFO first then issue this command.")
+            zebug.warn:event(event):print("Point at a UFO first then issue this command.  Dev Mode now disabled.")
+            Ufo.devMode = false
         end
     end)
 end
@@ -354,12 +368,12 @@ function initalizeAddonStuff(event)
     DB:initializePlacements()
     DB:initializeOptsMemory()
     Config:migrateToCurrentVersion()
-    Config:initializeOptionsMenu()
+    Config:initializeOptionsMenu(EventHandlers)
 
     SecEnv:loadConfigOptions()
 
     MacroShitShow:init()
-    UfoProxy:deleteProxyMacro("Ufo:initalizeAddonStuff()")
+    UfoProxy:init()
     ThirdPartyAddonSupport:detectSupportedAddons()
     registerSlashCmd("ufo", slashFuncs)
     Catalog:definePopupDialogWindow()

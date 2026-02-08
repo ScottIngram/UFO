@@ -133,4 +133,11 @@ function DB:initializeOptsMemory()
     if not Config.opts.bonusModifierKeys then
         Config.opts.bonusModifierKeys = {}
     end
+
+    -- new opt introduced by UFO 12.0.0
+    if not Config.opts.devTool then
+        Config.opts.devTool = {
+            eventVolume = {},
+        }
+    end
 end

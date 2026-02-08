@@ -278,4 +278,7 @@ function UfoProxy:toString()
     return string.format("<UfoProxy: %s>", name)
 end
 
-UfoMixIn.installMyToString(UfoProxy)
+function UfoProxy:init()
+    UfoMixIn.installMyToString(UfoProxy)
+    UfoProxy:deleteProxyMacro("init4proxy")
+end
