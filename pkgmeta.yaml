@@ -1,4 +1,4 @@
 package-as: UFO
-
+enable-nolib-creation: no
 externals:
   ScottFreeWowLibs: https://github.com/ScottIngram/ScottFreeWowLibs.git
