@@ -842,8 +842,16 @@ function ScriptHandlers:ON_RECEIVE_DRAG()
 end
 
 function ScriptHandlers:ON_DRAG_START()
-    if _G.LOCK_ACTIONBAR then return end
-    if not IsShiftKeyDown() then return end
+    local cvarLockActionBars = C_CVar.GetCVar("lockActionBars")
+    if isTrueEnough(cvarLockActionBars) then
+        zebug.info:owner(self):print("lockActionBars", cvarLockActionBars, "IsModifierKeyDown() ",IsModifierKeyDown() )
+        -- only permit pickup when shift/control/alt/etc is pressed -- originally was IsShiftKeyDown()
+        if not IsModifierKeyDown() then
+            msgUser(L10N.YOUR_ACTION_BARS_ARE_LOCKED)
+            return
+        end
+    end
+
     if isInCombatLockdown("Drag and drop") then return end
     self:OnDragStart() -- Call Bliz super()
 
