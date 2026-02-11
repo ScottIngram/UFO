@@ -15,7 +15,7 @@
 ## X-Curse-Project-ID: 904467
 
 # external 3rd-party libs
-libs\libs.xml
+libs\index.xml
 
 # libs common to my various projects
 ScottFreeWowLibs\index.xml
