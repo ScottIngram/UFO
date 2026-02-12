@@ -1,0 +1,8 @@
+<Ui xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+
+    <Script file="ButtonDefRegistry.lua"/>
+
+    <!-- types (as returned by the Bliz API GetCursorInfo()) of WoW "objects" that can be placed onto the mouse pointer and action bars -->
+    <Script file="MrFlyout.lua"/>
+
+</Ui>
