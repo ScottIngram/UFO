@@ -1,8 +1,22 @@
 <Ui xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
 
-    <Script file="ButtonDefRegistry.lua"/>
+    <Script file="MouseRat.lua"/>
+    <Script file="MouseRatRegistry.lua"/>
 
     <!-- types (as returned by the Bliz API GetCursorInfo()) of WoW "objects" that can be placed onto the mouse pointer and action bars -->
+    <Script file="MrEmpty.lua"/>
+    <Script file="MrUnsupported.lua"/>
+    <Script file="MrSpell.lua"/>
+    <Script file="MrMount.lua"/>
+    <!--
+    <Script file="MrItem.lua"/>
+    <Script file="MrToy.lua"/>
+    <Script file="MrPet.lua"/>
+    <Script file="MrMacro.lua"/>
+    <Script file="MrPetAction.lua"/>
     <Script file="MrFlyout.lua"/>
+    <Script file="MrUfoButton.lua"/>
+    <Script file="MrUfoFlyout.lua"/>
+    -->
 
 </Ui>

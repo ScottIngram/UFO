@@ -388,6 +388,8 @@ function initalizeAddonStuff(event)
 
     IconPicker:init()
 
+    if MouseRatRegistry then MouseRatRegistry:init() end
+
     msgUserOrNot(L10N.LOADED, Ufo.versionMsg)
 
     -- flags to wait out the chaos happening when the UI first loads / reloads.

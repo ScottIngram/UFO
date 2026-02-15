@@ -33,6 +33,9 @@ Cursor.lua
 ThirdPartyAddonSupport.lua
 PetShitShow.lua
 ProfessionShitShow.lua
+
+MouseRat\index.xml
+
 FlyoutDefsDb.lua
 FlyoutDef.lua
 ButtonDef.lua
