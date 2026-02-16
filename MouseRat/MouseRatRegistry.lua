@@ -74,11 +74,11 @@ local CGCI = "consumeGetCursorInfo"
 function MouseRatRegistry:validateKids()
     local invalids
     MouseRatRegistry:forEachKid(function(kid)
+        if kid == MrEmpty or kid == MrUnsupported then return end
+
         if (kid[CGCI] == nil) or (kid[CGCI] == MouseRat.consumeGetCursorInfo) then
             zebug.warn:owner(kid):print("the method",CGCI, "is mandatory and MUST be implemented by the subclass")
         end
-
-        if kid == MrEmpty or kid == MrUnsupported then return end
 
         for methodName, helpers in pairs(MouseRatSubClassContract) do
             local valid
@@ -107,7 +107,7 @@ function MouseRatRegistry:validateKids()
                 if not invalids then invalids = {} end
                 invalids[#invalids] = kid.mrType
             else
-                zebug.warn:owner(kid):print("mrType",kid.mrType, methodName,kid[methodName], "apiName", helpers.helperApi,kid[helpers.helperApi], "valid",valid)
+                zebug.warn:owner(kid):print("mrType",kid.mrType, methodName,exists(kid[methodName])and"ok", helpers.helperApi,exists(kid[helpers.helperApi])and"ok", "valid",valid)
             end
         end
     end)
@@ -161,7 +161,7 @@ function MouseRatRegistry:forEachKid(func)
     end
 
     for mrType, kid in pairs(self.kids) do
-        zebug.warn:print("mrType", mrType, "kid", kid)
+        --zebug.warn:print("mrType", mrType, "kid", kid)
         func(kid)
     end
 end

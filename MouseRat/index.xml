@@ -8,15 +8,15 @@
     <Script file="MrUnsupported.lua"/>
     <Script file="MrSpell.lua"/>
     <Script file="MrMount.lua"/>
-    <!--
     <Script file="MrItem.lua"/>
-    <Script file="MrToy.lua"/>
     <Script file="MrPet.lua"/>
     <Script file="MrMacro.lua"/>
-    <Script file="MrPetAction.lua"/>
-    <Script file="MrFlyout.lua"/>
-    <Script file="MrUfoButton.lua"/>
-    <Script file="MrUfoFlyout.lua"/>
+    <!--
+    <Script file="MrToy.lua"/> MrItem subclass
+    <Script file="MrPetAction.lua"/> MrSpell subclass
+    <Script file="MrSummonMount.lua"/> MrMount subclass
+    <Script file="MrUfoButton.lua"/> MrMacro subclass
+    <Script file="MrUfoFlyout.lua"/> MrMacro subclass
     -->
 
 </Ui>

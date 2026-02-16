@@ -3,7 +3,9 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole()
 local zebug = Zebug:new(--[[Z_VOLUME_GLOBAL_OVERRIDE or]] Zebug.TRACE)
 
--- create a mapping from Bliz's Enum to their corresponding "type" result from GetCursorInfo()
+-- The Bliz Enum.UICursorType lists all possible values given to the CURSOR_CHANGED even handler.
+-- It's only slightly related to the values returned by the Bliz API _G.GetCursorInfo()
+-- Let's create a mapping from the Enum to their corresponding "type" result from GetCursorInfo()
 -- see also https://github.com/Ketho/vscode-wow-api/blob/master/Annotations/Core/Data/Enum.lua
 -- see also https://warcraft.wiki.gg/wiki/API_GetCursorInfo
 ---@class BlizCursorType
@@ -113,11 +115,11 @@ MouseRatContractMethods = {
 MouseRatSubClassContract = {
     -- the following methods (or their corresponding helper) are expected to be implemented by subclasses of MouseRat
     -- a "helper field" is a function that provides some return data, usually an explicit ref to a Bliz API func
-    getId            = { helperField = "primaryKey" },
-    getIcon          = { helperApi   = "apiForIcon" },
-    isUsable         = { helperApi   = "apiForUsable" },
-    pickupToCursor   = { helperApi   = "apiForPickup" },
-    getToolTipSetter = { helperApi   = "apiForToolTip" },
+    getId          = { helperField = "primaryKey" },
+    getIcon        = { helperApi   = "apiForIcon" },
+    isUsable       = { helperApi   = "apiForUsable" },
+    setToolTip     = { helperApi   = "apiForToolTip" },
+    pickupToCursor = { helperApi   = "apiForPickup" },
 
     -- these are optional but available if you need them
     -- getName = { helperApi =  "apiForName" },
@@ -156,11 +158,11 @@ function MouseRat:oneOfUs(target, type)
     local type = target.type or type
     assert(type, "a type must be provided")
     local subClass = MouseRatRegistry:getSubClass(type) -- is it bad OOD for MouseRat to call MouseRatRegistry?
-    zebug.warn:event("event"):owner(subClass):print("yay")
+    --zebug.warn:event("event"):owner(subClass):print("yay")
 
     -- TODO: consider MouseRatRegistry.customizedCursorTypes[type] - the  subClass needs to know if it qualifies to become a "customized" MouseRat
 
-    -- create a table to store stuff that we do NOT want persisted out to SAVED_VARIABLES
+    -- create a table to store stuff that we do NOT want persisted out to SavedVariables
     local private = { isInstance = true }
     function private:setPvar(key, val) private[key] = val end
     -- grant the "private" table access to the fields and methods of the MouseRat subClass
@@ -171,7 +173,7 @@ function MouseRat:oneOfUs(target, type)
     target:installMyToString()
 
     --zebug.warn:event("event"):owner(target):print("<-- target -->",target)
-print("oneOfUs -> target.getName", target.getName)
+    --print("oneOfUs -> target.getName", target.getName)
     return target
 end
 
@@ -265,8 +267,6 @@ function MouseRat:getIcon()
     if not self.apiForIcon then return nil end
     zebug.warn:owner("self"):print("iconKey",self[self.iconKey], "primaryKey",self.primaryKey)
     return self.apiForIcon(self:getId(self.iconKey))
-    --return self.apiForIcon(self[self.iconKey] or self:getId(self.iconKey))
-    --return self.apiForIcon(self:getId())
 end
 
 ---@return boolean true if the spell is known / the class can operate the item or toy / the faction can ride the mount / etc
@@ -274,6 +274,11 @@ function MouseRat:isUsable()
     assert(self.isInstance, "instance method called from a class context")
     assert(self.apiForUsable, "The MouseRat subclass must either implement this method or provide the field 'apiForUsable'")
     return self.apiForUsable(self:getId()) or false
+end
+
+function MouseRat:setToolTip()
+    assert(self.isInstance, "instance method called from a class context")
+    self.apiForToolTip(_G.GameTooltip, self:getId())
 end
 
 ---@return boolean true if the WoW client will allow this toon to put this thing onto the cursor
@@ -314,11 +319,6 @@ function MouseRat:pickupToCursor()
     return isOk
 end
 
-function MouseRat:getToolTipSetter()
-    assert(self.isInstance, "instance method called from a class context")
-    return self.apiForToolTip
-end
-
 -- generic handler that is good enough for some simpler MouseRatTypes
 -- TODO auto handle sub-types: Macro -> UfoFlyout, Spell -> ProfessionShitShow
 ---@return MouseRatType type
@@ -351,13 +351,13 @@ I've implemented these methods in the base class, thus, they always exist
     else
         local icon = self:getIcon()
         if icon then
-            icon =  string.format(' |T%d:0|t', icon)
+            icon =  string.format(' |T%d:0|t ', icon)
         end
-        return string.format('<MouseRat: %s%s %s canUse=%s>',
-                toStr(self.mrType),
+        return string.format('<MouseRat:%s%s:%s - %s>',
                 icon or '',
+                toStr(self.mrType),
                 toStr(self:getName() or self:getId()),
-                toStr(self:isUsable())-- and true or false) -- compensate for any subclasses that fail to return boolean
+                self:isUsable() and "CAN use" or "NO can use"
         )
     end
 end
