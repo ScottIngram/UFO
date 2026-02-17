@@ -65,7 +65,7 @@ MouseRatType = {
     -- it is used here to accommodate the various kinds of PSPELL / petaction
     -- that the WoW APIs do not handle correctly.  What?!  No way!
     -- the PSPELL handler has special logic to morph into this type as needed
-    BROKENP = "brokenPetCommand",
+    BROKEN_PET_ACTION = "brokenPetCommand",
 
     -- MOUNT variant, an abnormal result containing a useless ID
     -- which isn't accepted by any API. is returned by PickupSpell(spellIdOfSomeMount)
