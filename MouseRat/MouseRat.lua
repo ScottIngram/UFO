@@ -53,8 +53,8 @@ MouseRatType = {
     TOY     = BlizCursorType[Enum.UICursorType.Toy], -- "toy",
     PET     = BlizCursorType[Enum.UICursorType.BattlePet], -- "battlepet",
     MACRO   = BlizCursorType[Enum.UICursorType.Macro], -- "macro",
-    PSPELL  = BlizCursorType[Enum.UICursorType.PetAction], -- "petaction",
     FLYOUT  = BlizCursorType[Enum.UICursorType.Flyout], -- "flyout",
+    PETACTION = BlizCursorType[Enum.UICursorType.PetAction], -- "petaction",
 
     -- ------------------------
     -- not in Enum.UICursorType
