@@ -93,6 +93,7 @@ MouseRatType = {
 ---@field cursorType MouseRatType -- only required if different from mrType
 ---@field disambiguator function required only if a custom mrType and a standard MouseRatType share a cursorType
 ---@field primaryKey string "spellId", "mountId", etc.
+---@field setPvar function stores data on self but hides it from SavedVariables
 ---@field apiForPickup function will place it onto the mouse pointer / cursor
 ---@field consumeGetCursorInfo function transforms the wtf _G.GetCursorInfo() results into plain and simple type and id
 MouseRat = {
@@ -143,32 +144,51 @@ function MouseRat:mixInto(kid)
     Mixin(kid, self) -- shallow copy
 end
 
--- coerce a table into becoming an instance of a MouseRat subclass.
--- Polymorphism, baby!
----@param target table either a btn from SAVED_VARS that needs to be vivified, or, a junk from GetCursorInfo()
----@param type MouseRatType|nil (optional) if
+-- coerce a table into becoming an instance of a MouseRat subclass. Polymorphism, baby!
+---@param target table either a pre-populated btn from SAVED_VARS or an empty {}
+---@param type MouseRatType|string|nil (optional) as returned by _G.GetCursorInfo()
+---@param c1 number|string|nil (optional) as returned by _G.GetCursorInfo()
+---@param c2 number|string|nil (optional) as returned by _G.GetCursorInfo()
+---@param c3 number|string|nil (optional) as returned by _G.GetCursorInfo()
 ---@return MouseRat
-function MouseRat:oneOfUs(target, type)
+function MouseRat:oneOfUs(target, type, c1, c2, c3)
     assert(target, "the 'target' arg must be a table")
     if target.mrType then
         -- it's already "one of us" so nothing needs to be done.
         return target
     end
 
-    local type = target.type or type
+    type = target.type or type
     assert(type, "a type must be provided")
-    local subClass = MouseRatRegistry:getSubClass(type) -- is it bad OOD for MouseRat to call MouseRatRegistry?
+    local subClass = MouseRatRegistry:getSubClass(type) or MrUnsupported -- TODO: consider merging MouseRatRegistry and MouseRat
     --zebug.warn:event("event"):owner(subClass):print("yay")
 
-    -- TODO: consider MouseRatRegistry.customizedCursorTypes[type] - the  subClass needs to know if it qualifies to become a "customized" MouseRat
+    -- does the subClass qualify to become a "customized" sub-subClass
+    local customMouseRatsForThisType = MouseRatRegistry.customizedCursorTypes[type]
+    if customMouseRatsForThisType then
+        --zebug.warn:event("event"):owner(subClass):dumpKeys(customMouseRatsForThisType)
+        ---@param customSubMr MouseRat
+        for i, customSubMr in ipairs(customMouseRatsForThisType) do
+            local isQualified = customSubMr:disambiguator(type, c1, c2, c3)
+            zebug.warn:event("event"):owner(subClass):print("disambiguator! mrType", customSubMr.mrType,"cursorType", customSubMr.cursorType, "isQualified",isQualified)
+            if isQualified then
+                -- first one wins!  assume only one custom class will qualify
+                -- replace the previous subClass with the custom one we found
+                subClass = customSubMr
+                break
+            end
+        end
+    end
 
-    -- create a table to store stuff that we do NOT want persisted out to SavedVariables
-    local private = { isInstance = true }
-    function private:setPvar(key, val) private[key] = val end
-    -- grant the "private" table access to the fields and methods of the MouseRat subClass
-    setmetatable(private, { __index = subClass })
-    -- grant the target instance access to the "private" table
-    setmetatable(target, { __index = private })
+    local privateData = { isInstance = true } -- storage but it's NOT persisted to SavedVariables
+
+    -- create an inheritance tree using setmetatable()
+    -- From the top down, the tree is: subClass / privateData / target
+    setmetatable(privateData, { __index = subClass    }) -- subClass is now PD's parent
+    setmetatable(target,      { __index = privateData }) -- PD is now target's parent
+
+    -- provide an accessor to the private data
+    function privateData:setPvar(key, val) privateData[key] = val end
 
     target:installMyToString()
 
@@ -242,7 +262,7 @@ function MouseRat:getName()
     local api = self.apiForName
     --assert(api, "The MouseRat subclass must either implement this method or provide the field 'apiForName'")
     if not api then
-        zebug.warn:event("event"):owner("self"):print("the subclass does not define the field 'apiForName' so the name defaults to 'nil'")
+        zebug.error:event("event"):owner("self"):print("the subclass does not define the field 'apiForName' so the name defaults to 'nil'")
         return nil
     end
 
@@ -257,7 +277,7 @@ function MouseRat:getName()
     end
 
     self.name = stripEol(self.name) or "WoW API DuzntKnow"
-    zebug.warn:owner("self"):print("name",self.name)
+    --zebug.warn:owner("self"):print("name",self.name)
     return self.name
 end
 
@@ -265,7 +285,7 @@ end
 function MouseRat:getIcon()
     assert(self.isInstance, "instance method called from a class context")
     if not self.apiForIcon then return nil end
-    zebug.warn:owner("self"):print("iconKey",self[self.iconKey], "primaryKey",self.primaryKey)
+    --zebug.warn:owner("self"):print("iconKey",self[self.iconKey], "primaryKey",self.primaryKey)
     return self.apiForIcon(self:getId(self.iconKey))
 end
 

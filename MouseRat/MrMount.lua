@@ -41,10 +41,12 @@ end
 ---@param mountIndex number the 3rd arg from GetCursorInfo
 ---@param _ any don't care
 function MrMount:consumeGetCursorInfo(type, mountId, mountIndex, _)
-    local name, spellId = C_MountJournal.GetMountInfoByID(mountId)
     self:setId(mountId)
+    local name, spellId = C_MountJournal.GetMountInfoByID(mountId)
+    self.name = name
     self.spellId = spellId -- store for use by getIcon() (and others?)
 
+    -- TODO: implement MrSummonFaveMount
     -- the Bliz API reports SUMMON_RANDOM_FAVORITE_MOUNT as type = "mount" but isn't
     if mountIndex == 0 then
         -- transform into a different "subclass"

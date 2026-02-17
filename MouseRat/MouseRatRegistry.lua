@@ -33,25 +33,10 @@ function MouseRatRegistry:register(kid)
         error("This MouseRat has already been registered: " .. kid.mrType)
     end
 
-    -- subclasses are considered "custom" when their mrType is a MouseRatType but is NOT a standard BlizCursorType
-    local isCustom = not BLIZ_CURSOR_TYPE_BY_NAME[kid.mrType]
-    local isMrUnsupported = (kid.mrType == MouseRatType.UNSUPPORTED)
-    if isCustom and not isMrUnsupported then
-        -- custom types must provide the "cursorType" field and it must specify a standard BlizCursorType
-        assert(kid.cursorType, "bad config: The custom MouseRat for "..kid.mrType.." has not specified a 'cursorType' field")
-        assert(BLIZ_CURSOR_TYPE_BY_NAME[kid.cursorType], "bad config: The custom cursorType for "..kid.mrType.." is not a standard BlizCursorType")
-
-        -- custom types are expected handle specific instances of BlizCursorType
+    -- subclasses are considered "custom" when their mrType is different from their cursorType (if specified)
+    local isCustom = kid.cursorType and (kid.cursorType ~= kid.mrType)
+    if isCustom then
         self:addMouseRatForCustomizedCursorType(kid)
-    else
-        -- standard types are not expected to provide "cursorType" field
-        if kid.cursorType then
-            -- but if they do, it can't be different from their "mrType"
-            assert(kid.mrType == kid.cursorType, "bad config: The MouseRat for the standard '"..kid.mrType.."' has also specified cursorType of '"..kid.cursorType.."'")
-        else
-            -- TODO: do I actually need to do this?
-            --kid.cursorType = kid.mrType
-        end
     end
 
     if not kid.ufoType then
@@ -120,27 +105,19 @@ function MouseRatRegistry:validateKids()
 end
 
 ---@param type MouseRatType
----@return MouseRat
+---@return MouseRat|nil will be nil if the given type has no registered subclass
 function MouseRatRegistry:getSubClass(type)
     assert(type, "bad arg: 'type' is nil")
-
     local subClass = self.kids[type]
-    if not subClass then
-        subClass =  self.kids[MouseRatType.UNSUPPORTED]
-    end
-
-    -- TODO: consider self.customizedCursorTypes[type] - the  subClass needs to know if it qualifies to become a "customized" MouseRat... maybe add logic to MouseRat:oneOfUs() ?
-
     return subClass
 end
 
--- customizedCursorTypes
 ---@param mr MouseRat
 function MouseRatRegistry:addMouseRatForCustomizedCursorType(kid)
     -- custom types must provide the "cursorType" field and it must specify a standard BlizCursorType
     assert(kid.cursorType, "bad config: The custom MouseRat for "..kid.mrType.." has not specified a 'cursorType' field")
-    assert(BLIZ_CURSOR_TYPE_BY_NAME[kid.cursorType], "bad config: The custom cursorType for "..kid.mrType.." is not a standard BlizCursorType")
-    assert(kid.disambiguator, "bad config: The custom MouseRat for "..kid.mrType.." has not specified a 'disambiguator' method")
+    assert(BLIZ_CURSOR_TYPE_BY_NAME[kid.cursorType], "bad config: The custom '"..kid.mrType.."' -> '"..kid.cursorType.."' cursorType is not a standard BlizCursorType")
+    assert(kid.disambiguator, "bad config: The custom MouseRat for "..kid.mrType.." -> "..kid.cursorType.." has not specified a 'disambiguator' method")
 
     local cct = self.customizedCursorTypes[kid.cursorType]
     if not cct then
