@@ -36,6 +36,7 @@ BrokenPetCommand = {
 -------------------------------------------------------------------------------
 ---@class PetShitShow -- IntelliJ-EmmyLua annotation
 PetShitShow = {
+    BrokenPetCommand = BrokenPetCommand
 }
 
 ---@type table key=fubarIdProvidedByBlizAPI -> array or corresponding BrokenPetCommands

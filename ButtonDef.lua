@@ -550,7 +550,7 @@ function ButtonDef:getFromCursor(event, silenceWarnings)
         if c1 < 10 then
             --zebug.error:print("BROKENP !!! ",GetCursorInfo() )
             btnDef.type = ButtonType.BROKENP
-            local brokenPetCommandId, alsoCommand = PetShitShow:get(c1)
+            local brokenPetCommandId, alsoCommand = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(c1)
             btnDef.brokenPetCommandId = brokenPetCommandId
             btnDef.brokenPetCommandId2 = alsoCommand
             --zebug.error:dumpy("BROKENP btnDef",btnDef)
