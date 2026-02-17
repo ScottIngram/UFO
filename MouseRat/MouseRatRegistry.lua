@@ -72,12 +72,11 @@ function MouseRatRegistry:validateKids()
             if isImplemented then
                 valid = true
             else
-                local apiName = helpers.helperApi
-                local api = kid[apiName]
+                local api = helpers.helperApi and kid[helpers.helperApi]
                 if (isFunction(api)) then
                     valid = true
                 else
-                    if kid[helpers.helperField] then
+                    if helpers.helperField and kid[helpers.helperField] then
                         valid = true
                     end
                 end

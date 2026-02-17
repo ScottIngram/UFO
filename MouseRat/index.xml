@@ -11,10 +11,10 @@
     <Script file="MrItem.lua"/>
     <Script file="MrPet.lua"/>
     <Script file="MrMacro.lua"/>
-    <Script file="MrToy.lua"/> <!-- MrItem subclass -->
+    <Script file="MrToy.lua"/>         <!-- MrItem subclass -->
+    <Script file="MrSummonRandomFavoriteMount.lua"/> <!-- MrMount subclass -->
     <!--
     <Script file="MrPetAction.lua"/> MrSpell subclass
-    <Script file="MrSummonMount.lua"/> MrMount subclass
     <Script file="MrUfoButton.lua"/> MrMacro subclass
     <Script file="MrUfoFlyout.lua"/> MrMacro subclass
     -->

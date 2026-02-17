@@ -208,7 +208,8 @@ function MouseRat:new(type, c1, c2, c3)
         return MouseRatType.EMPTY
     end
 
-    local instance = self:oneOfUs({}, type)
+    --zebug.warn:event("event"):owner(self):print("type",type, "c1",c1, "c2",c2, "c3",c3)
+    local instance = self:oneOfUs({}, type, c1, c2, c3)
     instance:consumeGetCursorInfo(type, c1, c2, c3)
     return instance
 end

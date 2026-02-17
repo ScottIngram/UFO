@@ -41,21 +41,16 @@ end
 ---@param mountIndex number the 3rd arg from GetCursorInfo
 ---@param _ any don't care
 function MrMount:consumeGetCursorInfo(type, mountId, mountIndex, _)
+    if mountIndex == 0 then
+        -- the Bliz API is shite.  This isn't a mount.  It's actually the "summon random favorite mount" button
+        -- compensate by defaulting to some other arbitrary actual mount and hope MrSummonRandomFavoriteMount kicks in.
+        mountId = 1587
+    end
+
     self:setId(mountId)
     local name, spellId = C_MountJournal.GetMountInfoByID(mountId)
     self.name = name
     self.spellId = spellId -- store for use by getIcon() (and others?)
-
-    -- TODO: implement MrSummonFaveMount
-    -- the Bliz API reports SUMMON_RANDOM_FAVORITE_MOUNT as type = "mount" but isn't
-    if mountIndex == 0 then
-        -- transform into a different "subclass"
-        -- implement via an actual subclass ?
-        -- if so, its disambiguator would essentially be this code here
-        self.cursorType = MouseRatType.MOUNT
-        self.mrType = MouseRatType.SUMMON_RANDOM_FAVORITE_MOUNT
-        self.id = MouseRatType.SUMMON_RANDOM_FAVORITE_MOUNT
-    end
 end
 
 -------------------------------------------------------------------------------
