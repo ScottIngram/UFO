@@ -11,6 +11,7 @@
     <Script file="MrItem.lua"/>
     <Script file="MrPet.lua"/>
     <Script file="MrMacro.lua"/>
+    <Script file="MrFlyout.lua"/>
     <Script file="MrToy.lua"/>       <!-- MrItem subclass -->
     <Script file="MrPetAction.lua"/> <!-- MrSpell subclass -->
     <Script file="MrBrokenPetAction.lua"/> <!-- MrPetAction subclass -->

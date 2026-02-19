@@ -89,7 +89,7 @@ function MouseRatRegistry:validateKids()
 
                 -- prolly need to either accumulate all errs, or, just fail immediately above
                 if not invalids then invalids = {} end
-                invalids[#invalids] = kid.mrType
+                invalids[#invalids+1] = kid.mrType
             else
                 zebug.warn:owner(kid):print("mrType",kid.mrType, methodName,exists(kid[methodName])and"ok", helpers.helperApi,exists(kid[helpers.helperApi])and"ok", "valid",valid)
             end
