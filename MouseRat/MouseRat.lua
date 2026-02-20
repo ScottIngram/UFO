@@ -168,7 +168,12 @@ function MouseRat:oneOfUs(target, type, c1, c2, c3)
     type = target.type or type
     assert(type, "a type must be provided")
     local subClass = MouseRatRegistry:getSubClass(type) or MrUnsupported -- TODO: consider merging MouseRatRegistry and MouseRat
-    --zebug.warn:event("event"):owner(subClass):print("yay")
+    --zebug.warn:event("event"):owner(subClass):print("type",type, "c1",c1, "c2",c2, "c3",c3)
+
+    if subClass.transformAndAbort then
+        local mr = subClass:transformAndAbort(type, c1, c2, c3)
+        if mr then return mr end
+    end
 
     -- does the subClass qualify to become a "customized" sub-subClass
     local customMouseRatsForThisType = MouseRatRegistry.customizedCursorTypes[type]
@@ -306,11 +311,15 @@ function MouseRat:canThisToonPickup()
     return canPickup
 end
 
+function MouseRat:getMostRecentlyPickedUpMr()
+    return MouseRat.pickedUpMouseRat or Ufo.pickedUpBtn
+end
+
 function MouseRat:pickupToCursor()
     assert(self.isInstance, "instance method called from a class context")
     assert(self[helperNames.pickupToCursor], "The MouseRat subclass must either implement this method or provide the field 'apiForPickup'")
 
-    Ufo.pickedUpMouseRat = self
+    MouseRat.pickedUpMouseRat = self
 
     local event = "event"
     zebug.warn:event(event):owner(self):print("pick me up!")

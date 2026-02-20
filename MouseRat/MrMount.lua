@@ -41,6 +41,8 @@ end
 ---@param mountIndex number the 3rd arg from GetCursorInfo
 ---@param _ any don't care
 function MrMount:consumeGetCursorInfo(type, mountId, mountIndex, _)
+    if type ~= self.mrType then return end -- compensate for MrCompanion
+
     if mountIndex == 0 then
         -- the Bliz API is shite.  This isn't a mount.  It's actually the "summon random favorite mount" button
         -- compensate by defaulting to some other arbitrary actual mount and hope MrSummonRandomFavoriteMount kicks in.
