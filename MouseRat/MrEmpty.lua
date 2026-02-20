@@ -6,7 +6,7 @@ Ufo.Wormhole()
 MrEmpty = {
     mrType         = MouseRatType.EMPTY,
     primaryKey = nil,
-    apiForPickup    = ClearCursor,
+    pickupToCursor_helper = ClearCursor,
     consumeGetCursorInfo= function(type, _, _, _) return nil  end,
 }
 

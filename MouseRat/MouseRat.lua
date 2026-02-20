@@ -95,7 +95,7 @@ MouseRatType = {
 ---@field disambiguator function required only if a custom mrType and a standard MouseRatType share a cursorType
 ---@field primaryKey string "spellId", "mountId", etc.
 ---@field setPvar function stores data on self but hides it from SavedVariables
----@field apiForPickup function will place it onto the mouse pointer / cursor
+---@field pickupToCursor_helper function will place it onto the mouse pointer / cursor
 ---@field consumeGetCursorInfo function transforms the wtf _G.GetCursorInfo() results into plain and simple type and id
 MouseRat = {
     ufoType = "MouseRat",
@@ -112,11 +112,11 @@ MouseRatSubClassContractualMethodsAndHelpers = {
     -- The helper will used by the MouseRat default implementation
     -- methodName = "helperFieldName"
     getId      = "primaryKey",
-    getIcon    = "apiForIcon",
-    isUsable   = "apiForUsable",
-    getName    = "apiForName", -- optional
-    setToolTip = "apiForToolTip",
-    pickupToCursor = "apiForPickup",
+    getIcon    = "getIcon_helper",
+    isUsable   = "isUsable_helper",
+    getName    = "getName_helper", -- optional
+    setToolTip = "setToolTip_helper",
+    pickupToCursor = "pickupToCursor_helper",
 
     -- these are optional but available if you need them
     -- asSecureClickHandlerAttributes = { no helpers recognized },
@@ -295,7 +295,7 @@ end
 ---@return boolean true if the spell is known / the class can operate the item or toy / the faction can ride the mount / etc
 function MouseRat:isUsable()
     assert(self.isInstance, "instance method called from a class context")
-    assert(self[helperNames.isUsable], "The MouseRat subclass must either implement this method or provide the field 'apiForUsable'")
+    assert(self[helperNames.isUsable], "The MouseRat subclass must either implement this method or provide the field 'isUsable_helper'")
     return self[helperNames.isUsable](self:getId()) or false
 end
 
@@ -317,7 +317,7 @@ end
 
 function MouseRat:pickupToCursor()
     assert(self.isInstance, "instance method called from a class context")
-    assert(self[helperNames.pickupToCursor], "The MouseRat subclass must either implement this method or provide the field 'apiForPickup'")
+    assert(self[helperNames.pickupToCursor], "The MouseRat subclass must either implement this method or provide the field 'pickupToCursor_helper'")
 
     MouseRat.pickedUpMouseRat = self
 

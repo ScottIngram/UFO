@@ -6,11 +6,11 @@ Ufo.Wormhole()
 local MrPet = {
     mrType     = MouseRatType.PET,
     primaryKey = "petGuid",
-    --apiForName = getPetNameAndIcon, -- replaced by getName() defined below
-    --apiForIcon = getPetNameAndIcon, -- replaced by getIcon() defined below
-    apiForPickup = C_PetJournal.PickupPet,
-    apiForToolTip = GameTooltip.SetCompanionPet,
-    --apiForUsable = ???, -- replaced by isUsable() defined below
+    isUsable_helper = true,
+    setToolTip_helper = GameTooltip.SetCompanionPet,
+    pickupToCursor_helper = C_PetJournal.PickupPet,
+    --getName_helper = getPetNameAndIcon, -- replaced by getName() defined below
+    --getIcon_helper = getPetNameAndIcon, -- replaced by getIcon() defined below
 }
 
 MouseRat:mixInto(MrPet)
@@ -18,10 +18,6 @@ MouseRat:mixInto(MrPet)
 -------------------------------------------------------------------------------
 -- Instance Methods
 -------------------------------------------------------------------------------
-
-function MrPet:isUsable()
-    return true
-end
 
 -- will the real petGuid please stand up!
 ---@param type BlizCursorType the 1st arg from GetCursorInfo

@@ -6,11 +6,11 @@ Ufo.Wormhole()
 local MrMacro = {
     mrType     = MouseRatType.MACRO,
     primaryKey = "macroId",
-    apiForName = C_Macro.GetMacroName, -- maybe GetMacroInfo
-    --apiForIcon = C_Macro.GetSelectedMacroIcon, -- replaced by getIcon() below
-    apiForPickup = PickupMacro,
-    --apiForToolTip = ????, -- replaced by getToolTipSetter() below
-    --apiForUsable = ???, -- replaced by isUsable() defined below
+    getName_helper = C_Macro.GetMacroName, -- maybe GetMacroInfo
+    pickupToCursor_helper = PickupMacro,
+    --getIcon_helper = C_Macro.GetSelectedMacroIcon, -- replaced by getIcon() below
+    --isUsable_helper = ???, -- replaced by isUsable() defined below
+    --setToolTip_helper = ????, -- replaced by getToolTipSetter() below
 }
 
 MouseRat:mixInto(MrMacro)

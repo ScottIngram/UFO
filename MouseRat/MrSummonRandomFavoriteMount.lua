@@ -9,8 +9,10 @@ local MrSummonRandomFavoriteMount = {
     mrType     = MouseRatType.SUMMON_RANDOM_FAVORITE_MOUNT,
     cursorType = MouseRatType.MOUNT,
     primaryKey = "id",
-    apiForIcon = function() return 413588 end,
-    apiForPickup = function() C_MountJournal.Pickup(0) end,
+    getName_helper = _G.MOUNT_JOURNAL_SUMMON_RANDOM_FAVORITE_MOUNT,
+    getIcon_helper = 413588,
+    isUsable_helper = true,
+    pickupToCursor_helper = function() C_MountJournal.Pickup(0) end,
 }
 
 MouseRat:mixInto(MrSummonRandomFavoriteMount)
@@ -32,20 +34,6 @@ end
 -------------------------------------------------------------------------------
 -- Instance Methods -- operate as self = {} with its metatable linked to MrToy
 -------------------------------------------------------------------------------
-
----@return number texture ID
-function MrSummonRandomFavoriteMount:getIcon()
-    return 413588
-end
-
----@return string
-function MrSummonRandomFavoriteMount:getName()
-    return _G.MOUNT_JOURNAL_SUMMON_RANDOM_FAVORITE_MOUNT -- L10N global defined by Bliz
-end
-
-function MrSummonRandomFavoriteMount:isUsable()
-    return true
-end
 
 function MrSummonRandomFavoriteMount:setToolTip()
     _G.GameTooltip:SetText(self:getName())

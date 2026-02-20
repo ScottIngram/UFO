@@ -9,11 +9,11 @@ local MrToy = {
     mrType     = MouseRatType.TOY,
     cursorType = MouseRatType.ITEM, -- _G.GetCursorInfo() reports "item" for toys
     primaryKey = "itemId",
-    apiForName = C_Item.GetItemInfo,
-    apiForIcon = C_Item.GetItemIconByID,
-    apiForPickup = C_Item.PickupItem, -- C_ToyBox.PickupToyBoxItem ?
-    apiForToolTip = GameTooltip.SetToyByItemID,
-    apiForUsable = _G.PlayerHasToy, -- TODO: solve faction specific bug via isUsable()
+    getName_helper = C_Item.GetItemInfo,
+    getIcon_helper = C_Item.GetItemIconByID,
+    isUsable_helper = _G.PlayerHasToy, -- TODO: solve faction specific bug via isUsable()
+    setToolTip_helper = GameTooltip.SetToyByItemID,
+    pickupToCursor_helper = C_Item.PickupItem, -- C_ToyBox.PickupToyBoxItem ?
 }
 
 MouseRat:mixInto(MrToy)

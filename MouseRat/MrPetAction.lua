@@ -6,11 +6,11 @@ Ufo.Wormhole()
 local MrPetAction = {
     mrType     = MouseRatType.PETACTION,
     primaryKey = "petSpellId",
-    apiForName = C_Spell.GetSpellInfo,
-    apiForIcon = C_Spell.GetSpellTexture,
-    apiForPickup = _G.PickupPetSpell,
-    apiForToolTip = GameTooltip.SetSpellByID,
-    --apiForUsable = C_SpellBook.IsSpellInSpellBook, -- replaced by isUsable() defined below
+    getName_helper = C_Spell.GetSpellInfo,
+    getIcon_helper = C_Spell.GetSpellTexture,
+    setToolTip_helper = GameTooltip.SetSpellByID,
+    pickupToCursor_helper = _G.PickupPetSpell,
+    --isUsable_helper = C_SpellBook.IsSpellInSpellBook, -- replaced by isUsable() defined below
 }
 
 MouseRat:mixInto(MrPetAction)

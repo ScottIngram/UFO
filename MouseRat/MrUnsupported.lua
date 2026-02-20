@@ -6,11 +6,11 @@ Ufo.Wormhole()
 MrUnsupported = {
     mrType     = MouseRatType.UNSUPPORTED,
     primaryKey = "id",
-    apiForName = nil,
-    apiForIcon = nil,
-    apiForUsable = MouseRat.nop,
-    apiForPickup = ClearCursor,
-    apiForToolTip = GameTooltip.SetSpellByID,
+    getName_helper = nil,
+    getIcon_helper = nil,
+    isUsable_helper = MouseRat.nop,
+    setToolTip_helper = GameTooltip.SetSpellByID,
+    pickupToCursor_helper = ClearCursor,
 }
 
 MouseRatRegistry:register(MrUnsupported)

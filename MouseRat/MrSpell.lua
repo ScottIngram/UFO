@@ -6,11 +6,11 @@ Ufo.Wormhole()
 local MrSpell = {
     mrType     = MouseRatType.SPELL,
     primaryKey = "spellId",
-    apiForName = C_Spell.GetSpellInfo,
-    apiForIcon = C_Spell.GetSpellTexture,
-    apiForUsable = C_SpellBook.IsSpellInSpellBook,
-    apiForPickup = C_Spell.PickupSpell,
-    apiForToolTip = GameTooltip.SetSpellByID,
+    getName_helper = C_Spell.GetSpellInfo,
+    getIcon_helper = C_Spell.GetSpellTexture,
+    isUsable_helper = C_SpellBook.IsSpellInSpellBook,
+    setToolTip_helper = GameTooltip.SetSpellByID,
+    pickupToCursor_helper = C_Spell.PickupSpell,
 }
 
 MouseRat:mixInto(MrSpell)

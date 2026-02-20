@@ -8,11 +8,11 @@ local MrMount = {
     primaryKey = "mountId",
     iconKey    = "spellId",
     -- many APIs in C_Spell also accept mountId
-    apiForName = C_MountJournal.GetMountInfoByID,
-    apiForIcon = C_Spell.GetSpellTexture, -- C_MountJournal.GetMountInfoByID(mountID) result[3]
-    apiForPickup = C_Spell.PickupSpell,
-    apiForToolTip = GameTooltip.SetSpellByID,
-    --apiForUsable = C_MountJournal.GetMountUsabilityByID, -- replaced by isUsable() defined below
+    getName_helper = C_MountJournal.GetMountInfoByID,
+    getIcon_helper = C_Spell.GetSpellTexture, -- C_MountJournal.GetMountInfoByID(mountID) result[3]
+    setToolTip_helper = GameTooltip.SetSpellByID,
+    pickupToCursor_helper = C_Spell.PickupSpell,
+    --isUsable_helper = C_MountJournal.GetMountUsabilityByID, -- replaced by isUsable() defined below
 }
 
 MouseRat:mixInto(MrMount)

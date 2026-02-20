@@ -6,11 +6,11 @@ Ufo.Wormhole()
 local MrItem = {
     mrType     = MouseRatType.ITEM,
     primaryKey = "itemId",
-    apiForName = C_Item.GetItemInfo,
-    apiForIcon = C_Item.GetItemIconByID,
-    apiForPickup = C_Item.PickupItem,
-    apiForToolTip = GameTooltip.SetItemByID,
-    --apiForUsable = C_PlayerInfo.CanUseItem, -- replaced by isUsable() defined below
+    getName_helper = C_Item.GetItemInfo,
+    getIcon_helper = C_Item.GetItemIconByID,
+    setToolTip_helper = GameTooltip.SetItemByID,
+    pickupToCursor_helper = C_Item.PickupItem,
+    --isUsable_helper = C_PlayerInfo.CanUseItem, -- replaced by isUsable() defined below
 }
 
 MouseRat:mixInto(MrItem)

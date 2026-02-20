@@ -6,11 +6,11 @@ Ufo.Wormhole()
 local MrFlyout = {
     mrType     = MouseRatType.FLYOUT,
     primaryKey = "flyoutId", -- 2nd return value of _G.GetCursorInfo()
-    --apiForName = GetFlyoutInfo, -- initialized by consumeGetCursorInfo() and used by MouseRat:getName()
-    --apiForIcon = xxx, -- no such api. see getIcon() below
-    --apiForPickup = xxx, -- no such api. see pickupToCursor() below
-    --apiForToolTip = xxx, -- no such api. see setToolTip() below,
-    --apiForUsable = xxx, -- implemented isUsable()
+    --getName_helper = GetFlyoutInfo, -- initialized by consumeGetCursorInfo() and used by MouseRat:getName()
+    --getIcon_helper = xxx, -- no such api. see getIcon() below
+    --pickupToCursor_helper = xxx, -- no such api. see pickupToCursor() below
+    --setToolTip_helper = xxx, -- no such api. see setToolTip() below,
+    --isUsable_helper = xxx, -- implemented isUsable()
 }
 
 -- TODO: why does leaving out this line result in failure to find
