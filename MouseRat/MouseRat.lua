@@ -38,6 +38,11 @@ BlizCursorType = {
 BLIZ_CURSOR_TYPE_BY_NAME = tInvert(BlizCursorType)
 --zebug.error:dumpy("BLIZ_CURSOR_TYPE_BY_NAME",BLIZ_CURSOR_TYPE_BY_NAME)
 
+-- because Bliz loves when their different APIs disagree with each other
+TYPES_REPORTED_BY_GET_CURSOR_INFO = {
+    -- do I need to enumerate these?  Evidently yes, because some MouseRatTypes never show up from GetCursorInfo
+}
+
 -------------------------------------------------------------------------------
 -- MouseRatType
 -- the kinds of stuff WoW lets you put on the mouse and thus the action bars
@@ -60,6 +65,9 @@ MouseRatType = {
     -- not in Enum.UICursorType
     -- ------------------------
 
+    -- MOUNT variant, an abnormal result containing a useless ID
+    -- which isn't accepted by any API. It is returned by PickupSpell(spellIdOfSomeMount)
+    COMPANION = "companion",
 
     -- an imaginary type that will never be returned by _G.GetCursorInfo()
     -- it is used here to accommodate the various kinds of PSPELL / petaction
@@ -67,19 +75,12 @@ MouseRatType = {
     -- the PSPELL handler has special logic to morph into this type as needed
     BROKEN_PET_ACTION = "brokenPetCommand",
 
-    -- MOUNT variant, an abnormal result containing a useless ID
-    -- which isn't accepted by any API. is returned by PickupSpell(spellIdOfSomeMount)
-    -- I found a reference in SecureHandlers.lua
-    -- elseif kind == 'companion' then
-    -- PickupCompanion(target, detail)
-    BRUNDLEFLY = "companion",
-
     -- duh
     SUMMON_RANDOM_FAVORITE_MOUNT = "summonmount",
 
     -- custom UFO types
-    UFO_BUTTON = "macro",
-    UFO_FLYOUT = "macro",
+    UFO_BUTTON = "ufobutton",
+    UFO_FLYOUT = "ufoflyout",
 }
 
 -------------------------------------------------------------------------------
@@ -102,30 +103,26 @@ MouseRat = {
 
 UfoMixIn:mixInto(MouseRat)
 
-MouseRatContractMethods = {
-    -- these are expected to be implemented by subclasses of BtnDef
-    -- I prolly need to rethink these now that I'm going with a service provider approach
-    "getName", -- or apiForName or nil - optional
-    "getIcon", -- or apiForIcon - MANDATORY
-    "isUsable", -- or apiForUsable - MANDATORY
-    "pickupToCursor", -- or apiForPickup - MANDATORY
-    "getToolTipSetter", -- apiForToolTip - MANDATORY
-    "asSecureClickHandlerAttributes", -- optional
-}
-
-MouseRatSubClassContract = {
-    -- the following methods (or their corresponding helper) are expected to be implemented by subclasses of MouseRat
-    -- a "helper field" is a function that provides some return data, usually an explicit ref to a Bliz API func
-    getId          = { helperField = "primaryKey" },
-    getIcon        = { helperApi   = "apiForIcon" },
-    isUsable       = { helperApi   = "apiForUsable" },
-    setToolTip     = { helperApi   = "apiForToolTip" },
-    pickupToCursor = { helperApi   = "apiForPickup" },
+---@type table<string,string> key = methodName.  value = helperFieldName
+MouseRatSubClassContractualMethodsAndHelpers = {
+    -- the following methods are expected to be implemented by all subclasses of MouseRat.
+    -- In the absence of such a method implementation in the subclass, then, the named "helper" is a field on the subclass.
+    -- It must contain either a hardcoded value (e.g. an ID, a name, etc)
+    -- or a function (usually an explicit ref to a Bliz API func.) which will return such a value.
+    -- The helper will used by the MouseRat default implementation
+    -- methodName = "helperFieldName"
+    getId      = "primaryKey",
+    getIcon    = "apiForIcon",
+    isUsable   = "apiForUsable",
+    getName    = "apiForName", -- optional
+    setToolTip = "apiForToolTip",
+    pickupToCursor = "apiForPickup",
 
     -- these are optional but available if you need them
-    -- getName = { helperApi =  "apiForName" },
     -- asSecureClickHandlerAttributes = { no helpers recognized },
 }
+
+local helperNames = MouseRatSubClassContractualMethodsAndHelpers
 
 -------------------------------------------------------------------------------
 -- CLASS Methods - operate on the singleton MouseRat
@@ -140,8 +137,18 @@ function MouseRat:init()
     self:installMyToString()
 end
 
-function MouseRat:mixInto(kid)
-    Mixin(kid, self) -- shallow copy
+function MouseRat:mixInto(kid, ...)
+    -- shallow copy
+    for k, v in pairs(self) do
+        -- don't clobber existing fields
+        if kid[k] == nil then
+            kid[k] = v
+        else
+            print("skipping",k)
+        end
+    end
+
+    return kid
 end
 
 -- coerce a table into becoming an instance of a MouseRat subclass. Polymorphism, baby!
@@ -238,12 +245,12 @@ end
 
 function MouseRat:getId(altKey)
     assert(self.isInstance, "instance method called from a class context")
-    return self[altKey or self.primaryKey]
+    return self[altKey or self.primaryKey()]
 end
 
 function MouseRat:setId(id)
     assert(self.isInstance, "instance method called from a class context")
-    self[self.primaryKey or "id"] = id
+    self[self:primaryKey() or "id"] = id
 end
 
 -- this method is mandatory and MUST be implemented by the subclass
@@ -260,46 +267,36 @@ function MouseRat:getName()
         return self.name
     end
 
-    local api = self.apiForName
-    --assert(api, "The MouseRat subclass must either implement this method or provide the field 'apiForName'")
-    if not api then
-        zebug.error:event("event"):owner("self"):print("the subclass does not define the field 'apiForName' so the name defaults to 'nil'")
-        return nil
-    end
-
     -- Bliz APIs are all over the goddamn place and follow no consistency whatsofuckingever.
-    local foo = api(self:getId())
-    --zebug.warn:event("event"):owner("self"):print("mrType", self.mrType, "id",self:getId() )
-    --zebug.warn:event("event"):owner("self"):dumpy("MouseRat:getName api()",foo)
-    if isTable(foo) then
-        self.name = foo.name
-    elseif isString(foo) then
-        self.name = foo
+    local blizNameApiResults = self[helperNames.getName](self:getId())
+    if isTable(blizNameApiResults) then
+        self.name = blizNameApiResults.name
+    elseif isString(blizNameApiResults) then
+        self.name = blizNameApiResults
     end
 
-    self.name = stripEol(self.name) or "WoW API DuzntKnow"
-    --zebug.warn:owner("self"):print("name",self.name)
+    self.name = stripEol(self.name) or "uNkNoWn?"
     return self.name
 end
 
 ---@return number texture ID
 function MouseRat:getIcon()
     assert(self.isInstance, "instance method called from a class context")
-    if not self.apiForIcon then return nil end
+    if not self[helperNames.getIcon] then return nil end
     --zebug.warn:owner("self"):print("iconKey",self[self.iconKey], "primaryKey",self.primaryKey)
-    return self.apiForIcon(self:getId(self.iconKey))
+    return self[helperNames.getIcon](self:getId(self.iconKey))
 end
 
 ---@return boolean true if the spell is known / the class can operate the item or toy / the faction can ride the mount / etc
 function MouseRat:isUsable()
     assert(self.isInstance, "instance method called from a class context")
-    assert(self.apiForUsable, "The MouseRat subclass must either implement this method or provide the field 'apiForUsable'")
-    return self.apiForUsable(self:getId()) or false
+    assert(self[helperNames.isUsable], "The MouseRat subclass must either implement this method or provide the field 'apiForUsable'")
+    return self[helperNames.isUsable](self:getId()) or false
 end
 
 function MouseRat:setToolTip()
     assert(self.isInstance, "instance method called from a class context")
-    self.apiForToolTip(_G.GameTooltip, self:getId())
+    self.self[helperNames.setToolTip](_G.GameTooltip, self:getId())
 end
 
 ---@return boolean true if the WoW client will allow this toon to put this thing onto the cursor
@@ -311,7 +308,7 @@ end
 
 function MouseRat:pickupToCursor()
     assert(self.isInstance, "instance method called from a class context")
-    assert(self.apiForPickup, "The MouseRat subclass must either implement this method or provide the field 'apiForPickup'")
+    assert(self[helperNames.pickupToCursor], "The MouseRat subclass must either implement this method or provide the field 'apiForPickup'")
 
     Ufo.pickedUpMouseRat = self
 
@@ -320,7 +317,7 @@ function MouseRat:pickupToCursor()
 
     local cursor, isOk, err
     if self:canThisToonPickup() then
-        isOk, err = pcall(function() self.apiForPickup(self:getId()) end)
+        isOk, err = pcall(function() self[helperNames.getName](self:getId()) end)
     else
         zebug.error:event("event"):owner(self):print("haven't implemented this yet :-(")
         if true then return true end

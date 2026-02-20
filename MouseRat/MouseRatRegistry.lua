@@ -60,43 +60,64 @@ function MouseRatRegistry:validateKids()
     local invalids
     MouseRatRegistry:forEachKid(function(kid)
         if kid == MrEmpty or kid == MrUnsupported then return end
+        local isExempt = (kid.become ~= nil) -- any subclass that simply becomes a different one is exempt from providing the full contract
 
-        if (kid[CGCI] == nil) or (kid[CGCI] == MouseRat.consumeGetCursorInfo) then
+        if ((kid[CGCI] == nil) or (kid[CGCI] == MouseRat.consumeGetCursorInfo)) and not isExempt then
             zebug.warn:owner(kid):print("the method",CGCI, "is mandatory and MUST be implemented by the subclass")
         end
 
-        for methodName, helpers in pairs(MouseRatSubClassContract) do
+        for methodName, helperName in pairs(MouseRatSubClassContractualMethodsAndHelpers) do
             local valid
             local method = kid[methodName]
-            local isImplemented = method and (method ~= MouseRat[methodName])
-            if isImplemented then
-                valid = true
-            else
-                local api = helpers.helperApi and kid[helpers.helperApi]
-                if (isFunction(api)) then
+            local helper = (helperName ~= nil) and kid[helperName]
+            local isTheHelperThere = (helper ~= nil) -- permit false but not nil
+            local isMethodDefaultBaseImpl = (method == MouseRat[methodName])
+            local isDefaultGoodEnoughByItself = (methodName == "getName")
+            -- local isItThere = (method ~= nil) -- all methods have been implemented in the baseclass, so this is always true
+
+            -- validate that the required methods are implemented by the subclass, or if not, then their helpers have.
+            if isMethodDefaultBaseImpl then
+                if isDefaultGoodEnoughByItself then
                     valid = true
                 else
-                    if helpers.helperField and kid[helpers.helperField] then
+                    if isTheHelperThere then
                         valid = true
+                    else
+                        valid = false
                     end
                 end
+            else
+                valid = true
             end
 
-            --zebug.warn:owner(kid):print("mrType",kid.mrType, methodName,kid[methodName], "apiName", helpers.helperApi,kid[helpers.helperApi], "valid",valid)
+            -- go above and beyond mere validation.
+            -- enable subclasses to specify methods as static values which we will wrap inside a function
+            if valid then
+                if not isMethodDefaultBaseImpl then
+                    if not isFunction(method) then
+                        -- the "method" is actually just a string, number, etc.  So convert it into a function.
+                        kid[methodName] = function() return method end
+                    end
+                end
 
-            if not valid then
-                zebug.error:owner(kid):print("mrType",kid.mrType, "must implement a method",methodName, "or define a field",helpers.helperApi or helpers.helperField)
-
-                -- prolly need to either accumulate all errs, or, just fail immediately above
+                if isTheHelperThere then
+                    if not isFunction(helper) then
+                        -- the helper "method" is actually just a string, number, etc.  So convert it into a function.
+                        kid[helperName] = function() return helper end
+                    end
+                else
+                    -- failsafe
+                    kid[helperName] = function() zebug.error:print(helperName,"is missing.  Defaulting to nil") return nil end
+                end
+            else
+                zebug.error:owner(kid):print("mrType",kid.mrType, "must implement a method",methodName, "or define a helper method/field", helperName)
                 if not invalids then invalids = {} end
                 invalids[#invalids+1] = kid.mrType
-            else
-                zebug.warn:owner(kid):print("mrType",kid.mrType, methodName,exists(kid[methodName])and"ok", helpers.helperApi,exists(kid[helpers.helperApi])and"ok", "valid",valid)
             end
         end
     end)
 
-    if not invalids then
+    if invalids then
         -- prolly need to either accumulate all errs, or, just fail immediately above
         -- error("blah blah")
     end
