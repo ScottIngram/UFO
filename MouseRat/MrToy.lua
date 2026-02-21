@@ -27,7 +27,7 @@ MouseRat:mixInto(MrToy)
 ---@param maybeItemId any could be an itemId
 function MrToy:disambiguator(type, maybeItemId)
     --zebug.warn:print("type", type, "maybeItemId",maybeItemId)
-    if not type == MouseRatType.SPELL then return false end
+    --zebug.warn:print("C_Item.GetItemInfo ->", C_Item.GetItemInfo(maybeItemId)) -- this seems to always provide accurate info. but no indicator of being a toy.
     return PlayerHasToy(maybeItemId)
 end
 
