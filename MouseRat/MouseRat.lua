@@ -182,7 +182,7 @@ function MouseRat:oneOfUs(target, type, c1, c2, c3)
         ---@param customSubMr MouseRat
         for i, customSubMr in ipairs(customMouseRatsForThisType) do
             local isQualified = customSubMr:disambiguator(type, c1, c2, c3)
-            zebug.warn:event("event"):owner(subClass):print("disambiguator! type", customSubMr.type,"cursorType", customSubMr.cursorType, "isQualified",isQualified)
+            zebug.warn:event("event"):owner(subClass):print("disambiguator! is this type", type," actually", customSubMr.type, "?",isQualified)
             if isQualified then
                 -- first one wins!  assume only one custom class will qualify
                 -- replace the previous subClass with the custom one we found
