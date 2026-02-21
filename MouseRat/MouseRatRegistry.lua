@@ -20,6 +20,17 @@ MouseRatRegistry = {
 UfoMixIn:mixInto(MouseRatRegistry)
 
 -------------------------------------------------------------------------------
+-- Utility Functions
+-------------------------------------------------------------------------------
+
+local _HELPER = "_helper"
+local _HELPER_LEN = string.len(_HELPER)
+
+function endsWithHelper(str)
+    return string.sub(str,-_HELPER_LEN) == _HELPER
+end
+
+-------------------------------------------------------------------------------
 -- Methods
 -------------------------------------------------------------------------------
 
@@ -59,8 +70,7 @@ local CGCI = "consumeGetCursorInfo"
 function MouseRatRegistry:validateKids()
     local invalids
     MouseRatRegistry:forEachKid(function(kid)
-        if kid == MrEmpty or kid == MrUnsupported then return end
-        local isExempt = (kid.become ~= nil) -- any subclass that simply becomes a different one is exempt from providing the full contract
+        local isExempt = (kid == MrUnsupported) or (kid.become ~= nil) -- any subclass that simply becomes a different one is exempt from providing the full contract
 
         if ((kid[CGCI] == nil) or (kid[CGCI] == MouseRat.consumeGetCursorInfo)) and not isExempt then
             zebug.warn:owner(kid):print("the method",CGCI, "is mandatory and MUST be implemented by the subclass")
@@ -91,19 +101,13 @@ function MouseRatRegistry:validateKids()
             end
 
             -- go above and beyond mere validation.
-            -- enable subclasses to specify methods as static values which we will wrap inside a function
+            -- enable subclasses to specify helpers as static values which we will wrap inside a function
             if valid then
-                if not isMethodDefaultBaseImpl then
-                    if not isFunction(method) then
-                        -- the "method" is actually just a string, number, etc.  So convert it into a function.
-                        kid[methodName] = function() return method end
-                    end
-                end
-
                 if isTheHelperThere then
-                    if not isFunction(helper) then
+                    if not isFunction(helper) and endsWithHelper(helperName) then
+                        --print("WRAPPING",kid.type, "helper", helperName, helper)
                         -- the helper "method" is actually just a string, number, etc.  So convert it into a function.
-                        kid[helperName] = function() return helper end
+                        kid[helperName] = function() return helper end -- this snapshots the current value.  bug?
                     end
                 else
                     -- failsafe

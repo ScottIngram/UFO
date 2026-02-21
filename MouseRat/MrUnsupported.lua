@@ -22,6 +22,6 @@ MouseRatRegistry:register(MrUnsupported)
 ---@param type BlizCursorType will the real spellId please stand up!
 function MrUnsupported:consumeGetCursorInfo(type, ...)
     self.type = type
-    self.name = strjoinnilsafe(", ", type, ...)
+    self.name = strjoinnilsafe(",", ...)
     self.cursorInfo = {...} -- in case we want to know later
 end

@@ -14,12 +14,10 @@ Ufo.Wormhole()
 local MrCompanion = {
     type           = MouseRatType.COMPANION,
     become         = MouseRatType.MOUNT,
-    getName        = "MyStErY",
-    getId          = 1,
-    getIcon        = DEFAULT_ICON,
-    isUsable       = false,
-    setToolTip     = nop,
-    pickupToCursor = nop, -- todo
+    primaryKey     = "id",
+    getName_helper = "MyStErY",
+    getIcon_helper = DEFAULT_ICON,
+    isUsable_helper = false,
 }
 
 MouseRat:mixInto(MrCompanion)
@@ -51,6 +49,20 @@ function MrCompanion:transformAndAbort(type, mysteryId, companionType, c3)
         return grabbedBtn
     end
     return nil
+end
+
+-------------------------------------------------------------------------------
+-- Instance Methods -- operate as self = {} with its metatable linked to MrToy
+-------------------------------------------------------------------------------
+
+function MrCompanion:getId()
+    return "NaN"
+end
+
+function MrCompanion:setToolTip()
+end
+
+function MrCompanion:pickupToCursor()
 end
 
 -------------------------------------------------------------------------------

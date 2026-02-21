@@ -250,12 +250,12 @@ end
 
 function MouseRat:getId(altKey)
     assert(self.isInstance, "instance method called from a class context")
-    return self[altKey or self.primaryKey()]
+    return self[altKey or self.primaryKey]
 end
 
 function MouseRat:setId(id)
     assert(self.isInstance, "instance method called from a class context")
-    self[self:primaryKey() or "id"] = id
+    self[self.primaryKey or "id"] = id
 end
 
 -- this method is mandatory and MUST be implemented by the subclass
@@ -373,11 +373,11 @@ function MouseRat:toString(arg)
         if icon then
             icon =  string.format(' |T%d:0|t ', icon)
         end
-        return string.format('<MouseRat:%s%s:%s - %s>',
+        return string.format('<MouseRat:%s%s:%s%s>',
                 icon or '',
                 toStr(self.type),
                 toStr(self:getName() or self:getId()),
-                self:isUsable() and "CAN use" or "NO can use"
+                MarkTexture[ self:isUsable() and Mark.CHECK or Mark.NO ]
         )
     end
 end
