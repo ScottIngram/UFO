@@ -6,7 +6,7 @@ Ufo.Wormhole()
 
 ---@class MrToy : MouseRat
 local MrToy = {
-    mrType     = MouseRatType.TOY,
+    type       = MouseRatType.TOY,
     cursorType = MouseRatType.ITEM, -- _G.GetCursorInfo() reports "item" for toys
     primaryKey = "itemId",
     getName_helper = C_Item.GetItemInfo,

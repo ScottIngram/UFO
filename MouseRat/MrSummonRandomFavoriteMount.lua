@@ -6,7 +6,7 @@ Ufo.Wormhole()
 
 ---@class MrSummonRandomFavoriteMount : MouseRat
 local MrSummonRandomFavoriteMount = {
-    mrType     = MouseRatType.SUMMON_RANDOM_FAVORITE_MOUNT,
+    type       = MouseRatType.SUMMON_RANDOM_FAVORITE_MOUNT,
     cursorType = MouseRatType.MOUNT,
     primaryKey = "id",
     getName_helper = _G.MOUNT_JOURNAL_SUMMON_RANDOM_FAVORITE_MOUNT,
@@ -45,7 +45,7 @@ end
 ---@param mountIndex number the 3rd arg from GetCursorInfo
 function MrSummonRandomFavoriteMount:consumeGetCursorInfo(type, mountId, mountIndex)
     assert(mountIndex == 0, "Um... wut?  mountIndex must be 0 for MrSummonRandomFavoriteMount")
-    self:setId(self.mrType)
+    self:setId(self.type)
 end
 
 -------------------------------------------------------------------------------

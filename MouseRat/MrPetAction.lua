@@ -4,7 +4,7 @@ Ufo.Wormhole()
 
 ---@class MrPetAction : MouseRat
 local MrPetAction = {
-    mrType     = MouseRatType.PETACTION,
+    type       = MouseRatType.PETACTION,
     primaryKey = "petSpellId",
     getName_helper = C_Spell.GetSpellInfo,
     getIcon_helper = C_Spell.GetSpellTexture,

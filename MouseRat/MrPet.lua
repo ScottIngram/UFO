@@ -4,7 +4,7 @@ Ufo.Wormhole()
 
 ---@class MrPet : MouseRat
 local MrPet = {
-    mrType     = MouseRatType.PET,
+    type       = MouseRatType.PET,
     primaryKey = "petGuid",
     isUsable_helper = true,
     setToolTip_helper = GameTooltip.SetCompanionPet,

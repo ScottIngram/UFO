@@ -4,7 +4,7 @@ Ufo.Wormhole()
 
 ---@class MrBrokenPetAction : MouseRat
 local MrBrokenPetAction = {
-    mrType     = MouseRatType.BROKEN_PET_ACTION,
+    type       = MouseRatType.BROKEN_PET_ACTION,
     cursorType = MouseRatType.PETACTION,
     primaryKey = "brokenPetCommandId",
     --getName_helper = xxx, -- replaced by getName() defined below

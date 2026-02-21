@@ -4,7 +4,7 @@ Ufo.Wormhole()
 
 ---@class MrFlyout : MouseRat
 local MrFlyout = {
-    mrType     = MouseRatType.FLYOUT,
+    type       = MouseRatType.FLYOUT,
     primaryKey = "flyoutId", -- 2nd return value of _G.GetCursorInfo()
     --getName_helper = GetFlyoutInfo, -- initialized by consumeGetCursorInfo() and used by MouseRat:getName()
     --getIcon_helper = xxx, -- no such api. see getIcon() below
@@ -82,7 +82,7 @@ function MrFlyout:getSpells()
         local spellId, overrideSpellId, isKnown, name, slotSpecId = GetFlyoutSlotInfo(self.flyoutId, i)
         if isKnown then
             spells[#spells+1] = {
-                type = self.mrType,
+                type = self.type,
                 spellId = spellId,
                 name = name,
                 overrideSpellId = overrideSpellId,

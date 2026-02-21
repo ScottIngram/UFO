@@ -4,7 +4,7 @@ Ufo.Wormhole()
 
 ---@class MrUnsupported : MouseRat
 MrUnsupported = {
-    mrType     = MouseRatType.UNSUPPORTED,
+    type       = MouseRatType.UNSUPPORTED,
     primaryKey = "id",
     getName_helper = nil,
     getIcon_helper = nil,

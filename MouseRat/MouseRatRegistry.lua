@@ -27,14 +27,14 @@ UfoMixIn:mixInto(MouseRatRegistry)
 function MouseRatRegistry:register(kid)
     assert(kid, "bad arg: 'kid' is nil")
     --zebug.warn:dumpy("kid", kid)
-    assert(kid.mrType, "the registered kid has no defined 'mrType'")
+    assert(kid.type, "the registered kid has no defined 'type'")
 
-    if self.kids[kid.mrType] then
-        error("This MouseRat has already been registered: " .. kid.mrType)
+    if self.kids[kid.type] then
+        error("This MouseRat has already been registered: " .. kid.type)
     end
 
-    -- subclasses are considered "custom" when their mrType is different from their cursorType (if specified)
-    local isCustom = kid.cursorType and (kid.cursorType ~= kid.mrType)
+    -- subclasses are considered "custom" when their type is different from their cursorType (if specified)
+    local isCustom = kid.cursorType and (kid.cursorType ~= kid.type)
     if isCustom then
         self:addMouseRatForCustomizedCursorType(kid)
     end
@@ -47,7 +47,7 @@ function MouseRatRegistry:register(kid)
         zebug.warn:event("event"):owner(kid):print("mixed it NOTHING coz it alread had ufoType",kid.ufoType)
     end
 
-    self.kids[kid.mrType] = kid
+    self.kids[kid.type] = kid
 end
 
 function MouseRatRegistry:init()
@@ -110,9 +110,9 @@ function MouseRatRegistry:validateKids()
                     kid[helperName] = function() zebug.error:print(helperName,"is missing.  Defaulting to nil") return nil end
                 end
             else
-                zebug.error:owner(kid):print("mrType",kid.mrType, "must implement a method",methodName, "or define a helper method/field", helperName)
+                zebug.error:owner(kid):print("type",kid.type, "must implement a method",methodName, "or define a helper method/field", helperName)
                 if not invalids then invalids = {} end
-                invalids[#invalids+1] = kid.mrType
+                invalids[#invalids+1] = kid.type
             end
         end
     end)
@@ -135,9 +135,9 @@ end
 ---@param mr MouseRat
 function MouseRatRegistry:addMouseRatForCustomizedCursorType(kid)
     -- custom types must provide the "cursorType" field and it must specify a standard BlizCursorType
-    assert(kid.cursorType, "bad config: The custom MouseRat for "..kid.mrType.." has not specified a 'cursorType' field")
-    assert(BLIZ_CURSOR_TYPE_BY_NAME[kid.cursorType], "bad config: The custom '"..kid.mrType.."' -> '"..kid.cursorType.."' cursorType is not a standard BlizCursorType")
-    assert(kid.disambiguator, "bad config: The custom MouseRat for "..kid.mrType.." -> "..kid.cursorType.." has not specified a 'disambiguator' method")
+    assert(kid.cursorType, "bad config: The custom MouseRat for "..kid.type.." has not specified a 'cursorType' field")
+    assert(BLIZ_CURSOR_TYPE_BY_NAME[kid.cursorType], "bad config: The custom '"..kid.type.."' -> '"..kid.cursorType.."' cursorType is not a standard BlizCursorType")
+    assert(kid.disambiguator, "bad config: The custom MouseRat for "..kid.type.." -> "..kid.cursorType.." has not specified a 'disambiguator' method")
 
     local cct = self.customizedCursorTypes[kid.cursorType]
     if not cct then
@@ -157,8 +157,8 @@ function MouseRatRegistry:forEachKid(func)
         error("MouseRatRegistry FAILED - no MouseRat children exist?")
     end
 
-    for mrType, kid in pairs(self.kids) do
-        --zebug.warn:print("mrType", mrType, "kid", kid)
+    for type, kid in pairs(self.kids) do
+        --zebug.warn:print("type", type, "kid", kid)
         func(kid)
     end
 end

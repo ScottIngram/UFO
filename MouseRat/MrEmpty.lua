@@ -4,7 +4,7 @@ Ufo.Wormhole()
 
 ---@class MrEmpty : MouseRat
 MrEmpty = {
-    mrType         = MouseRatType.EMPTY,
+    type       = MouseRatType.EMPTY,
     primaryKey = nil,
     pickupToCursor_helper = ClearCursor,
     consumeGetCursorInfo= function(type, _, _, _) return nil  end,

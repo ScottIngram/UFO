@@ -4,7 +4,7 @@ Ufo.Wormhole()
 
 ---@class MrMacro : MouseRat
 local MrMacro = {
-    mrType     = MouseRatType.MACRO,
+    type       = MouseRatType.MACRO,
     primaryKey = "macroId",
     getName_helper = C_Macro.GetMacroName, -- maybe GetMacroInfo
     pickupToCursor_helper = PickupMacro,

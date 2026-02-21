@@ -90,9 +90,9 @@ MouseRatType = {
 ---@class MouseRat : UfoMixIn
 ---@field ufoType string The classname
 ---@field isInstance boolean used to decide what data & methods can be expected
----@field mrType MouseRatType
----@field cursorType MouseRatType -- only required if different from mrType
----@field disambiguator function required only if a custom mrType and a standard MouseRatType share a cursorType
+---@field type MouseRatType
+---@field cursorType MouseRatType -- only required if different from type
+---@field disambiguator function required only if a custom type and a standard MouseRatType share a cursorType
 ---@field primaryKey string "spellId", "mountId", etc.
 ---@field setPvar function stores data on self but hides it from SavedVariables
 ---@field pickupToCursor_helper function will place it onto the mouse pointer / cursor
@@ -160,7 +160,7 @@ end
 ---@return MouseRat
 function MouseRat:oneOfUs(target, type, c1, c2, c3)
     assert(target, "the 'target' arg must be a table")
-    if target.mrType then
+    if target.type then
         -- it's already "one of us" so nothing needs to be done.
         return target
     end
@@ -182,7 +182,7 @@ function MouseRat:oneOfUs(target, type, c1, c2, c3)
         ---@param customSubMr MouseRat
         for i, customSubMr in ipairs(customMouseRatsForThisType) do
             local isQualified = customSubMr:disambiguator(type, c1, c2, c3)
-            zebug.warn:event("event"):owner(subClass):print("disambiguator! mrType", customSubMr.mrType,"cursorType", customSubMr.cursorType, "isQualified",isQualified)
+            zebug.warn:event("event"):owner(subClass):print("disambiguator! type", customSubMr.type,"cursorType", customSubMr.cursorType, "isQualified",isQualified)
             if isQualified then
                 -- first one wins!  assume only one custom class will qualify
                 -- replace the previous subClass with the custom one we found
@@ -353,8 +353,8 @@ end
 ---@return string name
 function MouseRat:asSecureClickHandlerAttributes()
     assert(self.isInstance, "instance method called from a class context")
-    zebug.info:event("event"):owner(self):print("blizType", self.mrType)
-    return self.mrType, self.mrType, self:getName()
+    zebug.info:event("event"):owner(self):print("blizType", self.type)
+    return self.type, self.type, self:getName()
 end
 
 -------------------------------------------------------------------------------
@@ -363,18 +363,11 @@ end
 
 function MouseRat:toString(arg)
     --assert(self.isInstance, "instance method called from a class context")
-    if not self.mrType then
+    if not self.type then
         return "<MouseRat: EMPTY>"
     elseif not self.isInstance then
-        local mrType = self.mrType-- (self.mrType == MouseRatType.UNSUPPORTED) and '"UNSUPPORTED"' or self.mrType
-        return string.format('<MouseRat base class: "%s">', nilStr(mrType))
---[[
-I've implemented these methods in the base class, thus, they always exist
-    elseif not self:getId() then
-        return string.format("<MouseRat: %s:???>", nilStr(self.mrType))
-    elseif not (self.getName and self:getName()) then
-        return string.format("<MouseRat: %s:ID%s>", nilStr(self.mrType), nilStr(self:getId()))
-]]
+        local type = self.type-- (self.type == MouseRatType.UNSUPPORTED) and '"UNSUPPORTED"' or self.type
+        return string.format('<MouseRat base class: "%s">', nilStr(type))
     else
         local icon = self:getIcon()
         if icon then
@@ -382,7 +375,7 @@ I've implemented these methods in the base class, thus, they always exist
         end
         return string.format('<MouseRat:%s%s:%s - %s>',
                 icon or '',
-                toStr(self.mrType),
+                toStr(self.type),
                 toStr(self:getName() or self:getId()),
                 self:isUsable() and "CAN use" or "NO can use"
         )

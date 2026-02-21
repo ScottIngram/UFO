@@ -4,7 +4,7 @@ Ufo.Wormhole()
 
 ---@class MrMount : MouseRat
 local MrMount = {
-    mrType     = MouseRatType.MOUNT,
+    type       = MouseRatType.MOUNT,
     primaryKey = "mountId",
     iconKey    = "spellId",
     -- many APIs in C_Spell also accept mountId
@@ -41,7 +41,7 @@ end
 ---@param mountIndex number the 3rd arg from GetCursorInfo
 ---@param _ any don't care
 function MrMount:consumeGetCursorInfo(type, mountId, mountIndex, _)
-    if type ~= self.mrType then return end -- compensate for MrCompanion
+    if type ~= self.type then return end -- compensate for MrCompanion
 
     if mountIndex == 0 then
         -- the Bliz API is shite.  This isn't a mount.  It's actually the "summon random favorite mount" button

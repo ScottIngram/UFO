@@ -4,7 +4,7 @@ Ufo.Wormhole()
 
 ---@class MrItem : MouseRat
 local MrItem = {
-    mrType     = MouseRatType.ITEM,
+    type       = MouseRatType.ITEM,
     primaryKey = "itemId",
     getName_helper = C_Item.GetItemInfo,
     getIcon_helper = C_Item.GetItemIconByID,

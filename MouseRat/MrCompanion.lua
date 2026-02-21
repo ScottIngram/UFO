@@ -12,7 +12,7 @@ Ufo.Wormhole()
 
 ---@class MrCompanion : MouseRat
 local MrCompanion = {
-    mrType = MouseRatType.COMPANION,
+    type           = MouseRatType.COMPANION,
     become         = MouseRatType.MOUNT,
     getName        = "MyStErY",
     getId          = 1,
@@ -46,7 +46,7 @@ function MrCompanion:transformAndAbort(type, mysteryId, companionType, c3)
     -- so, cross fingers and become whatever was last picked up
     local grabbedBtn = self:getMostRecentlyPickedUpMr()
     --zebug.warn:owner(grabbedBtn):dumpy("called getMostRecentlyPickedUpMr()", grabbedBtn)
-    if grabbedBtn and (grabbedBtn.mrType == self.become) then
+    if grabbedBtn and (grabbedBtn.type == self.become) then
         zebug.warn:owner(grabbedBtn):print("returning getMostRecentlyPickedUpMr()", grabbedBtn)
         return grabbedBtn
     end
