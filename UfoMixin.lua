@@ -26,11 +26,14 @@ GLOBAL_UFO_MIXIN_FOR_UfoMixin = UfoMixIn
 -- Methods
 -------------------------------------------------------------------------------
 
----@param class UfoMixIn
-function UfoMixIn:mixInto(class)
-    assert (class.ufoType, 'UfoMixIn: the provided class definition is missing its "ufoType" field.')
-    assert (not class.isA, 'UfoMixIn: the provided class already has self:isA()')
-    deepcopy(self, class)
+---@param target UfoMixIn
+function UfoMixIn:mixInto(target)
+    assert (isTable(target), 'UfoMixIn: the target arg must be a table.')
+    assert (target.ufoType, 'UfoMixIn: the provided class definition is missing its "ufoType" field.')
+    assert (not target.isA, 'UfoMixIn: the provided class already has self:isA()')
+    deepcopy(self, target) -- Question: do I *really* want a DEEPcopy?
+    --Mixin()
+    --CopyTable()
 end
 
 ---@param other any the object being evaluate for its UfoType. if any

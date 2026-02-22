@@ -68,14 +68,18 @@ function PetShitShow:forEach(fubarId, func)
     end
 end
 
-function PetShitShow:get(fubarId)
+-- fuck you Bliz.  All the fucks are for you.  Please try to enjoy each fuck equally.
+---@param fubarId number the second return val from GetCursorInfo().  It is a NON-unique "id" that refers to one or MORE different BrokenPetCommands
+---@return BrokenPetCommand one of potentially many that the Bliz dumbass devs mapped to the given "id"
+---@return BrokenPetCommand another one of potentially many that the Bliz dumbass devs mapped to the given "id"
+function PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(fubarId)
     local commands = self:getIndex()[fubarId]
     assert(commands, "Unknown fubarId " .. (fubarId or "NIL") )
     return unpack(commands)
 end
 
 function PetShitShow:canHazPet()
-    if DB:canHazPet() then
+    if DB:canHazPet() then -- I do not remember why I persisted this to DB
         return true
     end
 

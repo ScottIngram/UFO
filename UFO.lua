@@ -61,9 +61,7 @@ end
 
 local EventHandlers = { }
 
-function EventHandlers:PLAYER_ENTERING_WORLD(isInitialLogin, arg2, arg3, arg4)
-    local n = arg4 or arg3 -- because either warcraft.wiki.gg or Bliz is full of shit and nobody knows how many args are coming
-    local eName = (arg4 and arg3) or arg2 -- because either warcraft.wiki.gg or Bliz is full of shit and nobody knows how many args are coming
+function EventHandlers:PLAYER_ENTERING_WORLD(eName, n, isInitialLogin, isReloadingUi)
     zebug.info:mSkull():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         initalizeAddonStuff(event)
         GermCommander:initializeAllSlots(event)
@@ -74,7 +72,7 @@ local ASSISTED_COMBAT = "assistedcombat"
 -- respond to the user dragging and dropping UFO proxies onto action bars.
 -- We don't care about any other action bar events.
 -- Germ:handleReceiveDrag() handles: spells/items/etc/UFOs onto UFOs already on the action bars
-function EventHandlers:ACTIONBAR_SLOT_CHANGED(btnSlotIndex, eName, n)
+function EventHandlers:ACTIONBAR_SLOT_CHANGED(eName, n, btnSlotIndex)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
     -- ignore all Single Button Assist SPAM.  bugfix #72
@@ -101,7 +99,7 @@ end
 
 EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttleAndNoQueue(0.125, "Ufo:ACTIONBAR_SLOT_CHANGED", EventHandlers.ACTIONBAR_SLOT_CHANGED)
 
-function EventHandlers:ACTIVE_TALENT_GROUP_CHANGED(unreliableSpecId, eName, n)
+function EventHandlers:ACTIVE_TALENT_GROUP_CHANGED(eName, n, unreliableSpecId)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         local hasChanged = not Spec:hasCurrentSpecBeenApplied()
@@ -131,7 +129,7 @@ end
 EventHandlers.SPELLS_CHANGED = Throttler:throttle(1.5, "Ufo:SPELLS_CHANGED", EventHandlers.SPELLS_CHANGED)
 
 --[[
-function EventHandlers:EDIT_MODE_LAYOUTS_UPDATED(layoutInfo, eName, n)
+function EventHandlers:EDIT_MODE_LAYOUTS_UPDATED(eName, n, layoutInfo, reconcileLayouts)
     zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         --GermCommander:changeSpec(event)
         zebug:dumpy("layoutInfo",layoutInfo)
@@ -163,7 +161,7 @@ function EventHandlers:UPDATE_MACROS(eName, n)
     end)
 end
 
-function EventHandlers:UNIT_INVENTORY_CHANGED(id, eName, n)
+function EventHandlers:UNIT_INVENTORY_CHANGED(eName, n, id)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     -- only care about events that affect the player
     zebug.info:mDiamond():name("handler"):newEvent("Ufo", eName, n):run(function(event)
@@ -200,12 +198,18 @@ function EventHandlers:PLAYER_LOGIN(eName, n)
     zebug.trace:mMoon():newEvent("Ufo", eName, n):print("Welcome!")
 end
 
-function EventHandlers:CURSOR_CHANGED(isCursorEmpty, me, eventCounter)
-    eventCounter = eventCounter or "NO-EVENT-COUNTER"
+---@param eName string "CURSOR_CHANGED"
+---@param eCount number how many CURSOR_CHANGED events have happened
+---@param newCursorType number see Enum.UICursorType
+---@param oldCursorType number see Enum.UICursorType
+---@param oldCursorVirtualID any who the fuck knows
+function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorType, oldCursorType, oldCursorVirtualID)
+    --print("EventHandlers:CURSOR_CHANGED... isCursorEmpty",isCursorEmpty, "eName", eName, "eventCounter", eCount, "newCursorType",newCursorType, "oldCursorType",oldCursorType, "oldCursorVirtualID",oldCursorVirtualID )
+    eCount = eCount or "NO-EVENT-COUNTER"
 
     zebug.trace
         :name("handler")
-        :newEvent("Ufo", Cursor:nameMakerForCursorChanged(isCursorEmpty), eventCounter, Zebug.trace)
+        :newEvent("Ufo", Cursor:nameMakerForCursorChanged(isCursorEmpty), eCount, Zebug.trace)
         :run(function(event)
             GermCommander:forEachActiveGerm(Germ.maybeRegisterForClicksDependingOnCursorIsEmpty, event)
             Cursor:clearCache(event)
@@ -214,7 +218,7 @@ function EventHandlers:CURSOR_CHANGED(isCursorEmpty, me, eventCounter)
         end)
 end
 
-function EventHandlers:SPELL_UPDATE_COOLDOWN(spellID, --[[baseSpellID, ]]eName, n)
+function EventHandlers:SPELL_UPDATE_COOLDOWN(eName, n, spellID, baseSpellID, category, startRecoveryCategory)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     zebug.info:mark(Mark.DPS):name("SPELL_UPDATE_COOLDOWN"):newEvent("Ufo", eName, n):run(function(event)
         local spellInfo = spellID and C_Spell.GetSpellInfo(spellID)
@@ -227,7 +231,7 @@ end
 EventHandlers.SPELL_UPDATE_COOLDOWN = Throttler:throttleAndNoQueue(0.1, "Ufo:SPELL_UPDATE_COOLDOWN", EventHandlers.SPELL_UPDATE_COOLDOWN)
 
 function EventHandlers:SPELL_UPDATE_USABLE(eName, n)
-    EventHandlers:SPELL_UPDATE_COOLDOWN(nil, eName, n)
+    EventHandlers:SPELL_UPDATE_COOLDOWN(eName, n, nil)
 end
 
 EventHandlers.SPELL_UPDATE_CHARGES = EventHandlers.SPELL_UPDATE_USABLE
