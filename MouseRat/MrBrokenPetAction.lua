@@ -24,7 +24,9 @@ MouseRat:mixInto(MrBrokenPetAction)
 ---@param type MouseRatType must be MouseRatType.SPELL
 ---@param maybeSpellId any could be a spellId
 ---@param maybeSpellIndex any could be a spellIndex
-function MrBrokenPetAction:disambiguator(type, maybeSpellId, maybeSpellIndex, c4)
+function MrBrokenPetAction:disambiguator(protoMr, type, maybeSpellId, maybeSpellIndex, c4)
+    type = type or protoMr.type
+
     zebug.warn:print("type", type, "maybeSpellId",maybeSpellId, "maybeSpellIndex",maybeSpellIndex, "c4",c4)
     if not type == self.cursorType then return false end
     return (maybeSpellId and (maybeSpellId < 10)) or maybeSpellIndex == nil -- not 100% about checking maybeSpellIndex

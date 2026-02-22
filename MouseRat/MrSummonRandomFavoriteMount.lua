@@ -25,7 +25,7 @@ MouseRat:mixInto(MrSummonRandomFavoriteMount)
 ---@param type MouseRatType must be MouseRatType.MOUNT
 ---@param maybeMountId any do not care
 ---@param maybeMountIndex any must be 0
-function MrSummonRandomFavoriteMount:disambiguator(type, maybeMountId, maybeMountIndex)
+function MrSummonRandomFavoriteMount:disambiguator(protoMr, type, maybeMountId, maybeMountIndex)
     zebug.warn:print("type", type, "maybeMountId",maybeMountId, "maybeMountIndex",maybeMountIndex)
     if not type == MouseRatType.MOUNT then return false end
     return maybeMountIndex == 0

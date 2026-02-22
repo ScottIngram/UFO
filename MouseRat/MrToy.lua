@@ -25,8 +25,11 @@ MouseRat:mixInto(MrToy)
 -- examines the results of _G.GetCursorInfo() and decides if those results describe a Toy
 ---@param type MouseRatType must be MouseRatType.SPELL
 ---@param maybeItemId any could be an itemId
-function MrToy:disambiguator(type, maybeItemId)
-    --zebug.warn:print("type", type, "maybeItemId",maybeItemId)
+function MrToy:disambiguator(protoMr, type, maybeItemId)
+    type = type or protoMr.type
+    maybeItemId = maybeItemId or protoMr.itemId
+
+    zebug.warn:print("type", type, "maybeItemId",maybeItemId)
     --zebug.warn:print("C_Item.GetItemInfo ->", C_Item.GetItemInfo(maybeItemId)) -- this seems to always provide accurate info. but no indicator of being a toy.
     return PlayerHasToy(maybeItemId)
 end
