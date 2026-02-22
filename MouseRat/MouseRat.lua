@@ -300,7 +300,7 @@ end
 
 function MouseRat:setToolTip()
     assert(self.isInstance, "instance method called from a class context")
-    self.self[helperNames.setToolTip](_G.GameTooltip, self:getId())
+    self[helperNames.setToolTip](_G.GameTooltip, self:getId())
 end
 
 ---@return boolean true if the WoW client will allow this toon to put this thing onto the cursor
