@@ -51,7 +51,6 @@ TYPES_REPORTED_BY_GET_CURSOR_INFO = {
 MouseRatType = {
     --UNSUPPORTED = BlizCursorType[Enum.UICursorType.AmmoObsolete], -- nobody's got time for that
     UNSUPPORTED = "unsupported", -- nobody's got time for that
-    EMPTY   = BlizCursorType[Enum.UICursorType.Default], -- "default" - when nothing is on the cursor
     SPELL   = BlizCursorType[Enum.UICursorType.Spell], -- "spell"
     MOUNT   = BlizCursorType[Enum.UICursorType.Mount], -- "mount",
     ITEM    = BlizCursorType[Enum.UICursorType.Item], -- "item",

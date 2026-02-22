@@ -4,7 +4,6 @@
     <Script file="MouseRatRegistry.lua"/>
 
     <!-- types (as returned by the Bliz API GetCursorInfo()) of WoW "objects" that can be placed onto the mouse pointer and action bars -->
-    <Script file="MrEmpty.lua"/>
     <Script file="MrUnsupported.lua"/>
     <Script file="MrSpell.lua"/>
     <Script file="MrMount.lua"/>
