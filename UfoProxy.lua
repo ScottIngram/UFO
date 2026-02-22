@@ -22,7 +22,7 @@ UfoProxy = {
 UfoMixIn:mixInto(UfoProxy)
 
 -------------------------------------------------------------------------------
--- Methods
+-- Class Methods
 -------------------------------------------------------------------------------
 
 function getMacroIndexByNameOrNil(name)
@@ -30,6 +30,12 @@ function getMacroIndexByNameOrNil(name)
     local proxyExists = proxyMacroId and proxyMacroId > 0
     return proxyExists and proxyMacroId or nil
 end
+
+UfoProxy.getMacroIndexByNameOrNil = getMacroIndexByNameOrNil
+
+-------------------------------------------------------------------------------
+-- Instance Methods
+-------------------------------------------------------------------------------
 
 function UfoProxy:syncMyId()
     self.macroId = getMacroIndexByNameOrNil(self.name)
@@ -113,7 +119,7 @@ end
 
 ---@param cursor Cursor
 ---@return FlyoutDef
-function UfoProxy:isFlyoutOnCursor(cursor)
+function UfoProxy:isFlyoutOnCursor(cursor)  -- TODO: rename as isUfoFlyoutProxyOnCursor
     if not cursor then
         cursor = Cursor:get()
     end
@@ -123,9 +129,9 @@ end
 ---@return ButtonDef
 ---@param type string | nil
 ---@param macroId string | nil
-function UfoProxy:isButtonOnCursor(type, macroId)
+function UfoProxy:isButtonOnCursor(type, macroId) -- TODO: rename as isUfoButtonProxyOnCursor
     -- avoid potential ButtonDef -> Cursor -> ButtonDef
-    if not type or macroId then
+    if not (type or macroId) then
         type, macroId = GetCursorInfo()
     end
 
