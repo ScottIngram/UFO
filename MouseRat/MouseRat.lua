@@ -202,9 +202,18 @@ local function coerce(target, type, c2, c3, c4)
 
     target:installMyToString()
 
-    --zebug.warn:event("event"):owner(target):print("<-- target -->",target)
-    --print("oneOfUs -> target.getName", target.getName)
     return target
+end
+
+---@return MouseRat
+function MouseRat:oneOfUs(target)
+    assert(target, "the 'target' can't be nil")
+    assert(isTable(target), "the 'target' arg must be a table")
+    assert(target.type, "the 'target' table must first contain valid data before being converted into One of Us.")
+    local instance = coerce(target)
+    instance:setPvar("isInitialized",true)
+    zebug.warn:event("event"):owner(target):print("welcome to the club!")
+    return instance
 end
 
 ---@param type MouseRatType the 1st value returned by _G.GetCursorInfo()
@@ -218,6 +227,8 @@ function MouseRat:new(type, c2, c3, c4)
     zebug.warn:event("event"):owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
     local instance = coerce({}, type, c2, c3, c4)
     instance:consumeGetCursorInfo(type, c2, c3, c4)
+    instance:setPvar("isInitialized",true)
+    zebug.warn:event("event"):owner(instance):print("nu!")
     return instance
 end
 
