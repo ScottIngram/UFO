@@ -372,8 +372,9 @@ function MouseRat:toString(arg)
     if not self.type then
         return "<MouseRat: EMPTY>"
     elseif not self.isInstance then
-        local type = self.type-- (self.type == MouseRatType.UNSUPPORTED) and '"UNSUPPORTED"' or self.type
-        return string.format('<MouseRat base class: "%s">', nilStr(type))
+        return string.format('<MouseRat CLASS: "%s">', nilStr(self.type))
+    elseif not self.isInitialized then
+        return string.format('<MouseRat PROTO: "%s">', nilStr(self.type))
     else
         local icon = self:getIcon()
         if icon then
