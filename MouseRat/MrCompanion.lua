@@ -29,8 +29,8 @@ MouseRat:mixInto(MrCompanion)
 -- examines the results of _G.GetCursorInfo() and decides if those results describe a Toy
 ---@param type MouseRatType must be MouseRatType.SPELL
 ---@param maybeItemId any could be an itemId
-function MrCompanion:transformAndAbort(type, mysteryId, companionType, c3)
-    --zebug.warn:print("type", type, "mysteryId",mysteryId, "companionType",companionType, "c3",c3)
+function MrCompanion:transformAndAbort(type, mysteryId, companionType, c4)
+    --zebug.warn:print("type", type, "mysteryId",mysteryId, "companionType",companionType, "c4",c4)
 
     if not MouseRatType.MOUNT == self.become then
         error("was expecting the companion to be a mount but got ".. (companionType or "nil"))

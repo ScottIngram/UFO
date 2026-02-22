@@ -151,15 +151,14 @@ function MouseRat:mixInto(kid, ...)
 end
 
 -- coerce a table into becoming an instance of a MouseRat subclass. Polymorphism, baby!
----@param target table either a pre-populated btn from SAVED_VARS or an empty {}
----@param type MouseRatType|string|nil (optional) as returned by _G.GetCursorInfo()
----@param c1 number|string|nil (optional) as returned by _G.GetCursorInfo()
----@param c2 number|string|nil (optional) as returned by _G.GetCursorInfo()
----@param c3 number|string|nil (optional) as returned by _G.GetCursorInfo()
+---@param target table|nil (optional) either a pre-populated btn from SAVED_VARS or an empty {}
+---@param type MouseRatType|nil (optional) the 1st value returned by _G.GetCursorInfo()
+---@param c2 number|string|nil (optional) the 2nd value from _G.GetCursorInfo()
+---@param c3 number|string|nil (optional) the 3rd value from _G.GetCursorInfo()
+---@param c4 number|string|nil (optional) the 4th value from _G.GetCursorInfo()
 ---@return MouseRat
-function MouseRat:oneOfUs(target, type, c1, c2, c3)
-    assert(target, "the 'target' arg must be a table")
-    if target.type then
+local function coerce(target, type, c2, c3, c4)
+    if target.isInstance then
         -- it's already "one of us" so nothing needs to be done.
         return target
     end
@@ -167,10 +166,10 @@ function MouseRat:oneOfUs(target, type, c1, c2, c3)
     type = target.type or type
     assert(type, "a type must be provided")
     local subClass = MouseRatRegistry:getSubClass(type) or MrUnsupported -- TODO: consider merging MouseRatRegistry and MouseRat
-    --zebug.warn:event("event"):owner(subClass):print("type",type, "c1",c1, "c2",c2, "c3",c3)
+    zebug.warn:event("event"):owner(subClass):print("type",type, "c2",c2, "c3",c3, "c4",c4)
 
     if subClass.transformAndAbort then
-        local mr = subClass:transformAndAbort(type, c1, c2, c3)
+        local mr = subClass:transformAndAbort(type, c2, c3, c4)
         if mr then return mr end
     end
 
@@ -208,32 +207,29 @@ function MouseRat:oneOfUs(target, type, c1, c2, c3)
     return target
 end
 
----@param type MouseRatType
----@param c1 number|string|nil (optional) a value potentially returned by _G.GetCursorInfo()
----@param c2 number|string|nil (optional) a value potentially returned by _G.GetCursorInfo()
----@param c3 number|string|nil (optional) a value potentially returned by _G.GetCursorInfo()
+---@param type MouseRatType the 1st value returned by _G.GetCursorInfo()
+---@param c2 number|string|nil (optional) the 2nd value from _G.GetCursorInfo()
+---@param c3 number|string|nil (optional) the 3rd value from _G.GetCursorInfo()
+---@param c4 number|string|nil (optional) the 4th value from _G.GetCursorInfo()
 ---@return MouseRat
-function MouseRat:new(type, c1, c2, c3)
-    if not type then
-        assert(MouseRatType.EMPTY, "MouseRatType.EMPTY is missing / has not been registered")
-        return MouseRatType.EMPTY
-    end
+function MouseRat:new(type, c2, c3, c4)
+    assert(type, "the type arg can't be nil")
 
-    --zebug.warn:event("event"):owner(self):print("type",type, "c1",c1, "c2",c2, "c3",c3)
-    local instance = self:oneOfUs({}, type, c1, c2, c3)
-    instance:consumeGetCursorInfo(type, c1, c2, c3)
+    zebug.warn:event("event"):owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
+    local instance = coerce({}, type, c2, c3, c4)
+    instance:consumeGetCursorInfo(type, c2, c3, c4)
     return instance
 end
 
 function MouseRat:getFromCursor(event)
-    local type, c1, c2, c3 = GetCursorInfo()
---[[
+    local type, c2, c3, c4 = GetCursorInfo()
+
     if not type then
         assert(MouseRatType.EMPTY, "MouseRatType.EMPTY is missing / has not been registered")
         return self:new(MouseRatType.EMPTY)
     end
-]]
-    return self:new(type, c1, c2, c3)
+
+    return self:new(type, c2, c3, c4)
 end
 
 function MouseRat:nop()
