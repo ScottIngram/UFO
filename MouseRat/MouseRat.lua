@@ -254,7 +254,16 @@ end
 -- the specific APIs required for their MouseRatType.
 -------------------------------------------------------------------------------
 
-function MouseRat:getId(altKey)
+-- at the moment, this exists solely for MOUNT because all of its APIs are actually Spell APIs
+-- Bliz APIs are all over the goddamn place and follow no consistency whatsofuckingever.
+---@return number|string a unique identifier for this thing as expected by bliz APIs
+function MouseRat:getIdUsedByBlizApis()
+    assert(self.isInstance, "instance method called from a class context")
+    return self[self.keyForApis or self.primaryKey]
+end
+
+---@return number|string the unique identifier for this thing, its primaryKey
+function MouseRat:getId()
     assert(self.isInstance, "instance method called from a class context")
     return self[altKey or self.primaryKey]
 end
@@ -278,6 +287,8 @@ function MouseRat:getName()
         return self.name
     end
 
+    local blizNameApiResults = self[helperNames.getName](self:getIdUsedByBlizApis())
+
     -- Bliz APIs are all over the goddamn place and follow no consistency whatsofuckingever.
     local blizNameApiResults = self[helperNames.getName](self:getId())
     if isTable(blizNameApiResults) then
@@ -294,20 +305,20 @@ end
 function MouseRat:getIcon()
     assert(self.isInstance, "instance method called from a class context")
     if not self[helperNames.getIcon] then return nil end
-    --zebug.warn:owner("self"):print("iconKey",self[self.iconKey], "primaryKey",self.primaryKey)
-    return self[helperNames.getIcon](self:getId(self.iconKey))
+    --zebug.warn:event("event"):owner("self"):print("keyForApis",self[self.altKey], "primaryKey",self.primaryKey)
+    return self[helperNames.getIcon](self:getIdUsedByBlizApis())
 end
 
 ---@return boolean true if the spell is known / the class can operate the item or toy / the faction can ride the mount / etc
 function MouseRat:isUsable()
     assert(self.isInstance, "instance method called from a class context")
     assert(self[helperNames.isUsable], "The MouseRat subclass must either implement this method or provide the field 'isUsable_helper'")
-    return self[helperNames.isUsable](self:getId()) or false
+    return self[helperNames.isUsable](self:getIdUsedByBlizApis()) or false
 end
 
 function MouseRat:setToolTip()
     assert(self.isInstance, "instance method called from a class context")
-    self[helperNames.setToolTip](_G.GameTooltip, self:getId())
+    self[helperNames.setToolTip](_G.GameTooltip, self:getIdUsedByBlizApis())
 end
 
 ---@return boolean true if the WoW client will allow this toon to put this thing onto the cursor
@@ -332,7 +343,7 @@ function MouseRat:pickupToCursor()
 
     local cursor, isOk, err
     if self:canThisToonPickup() then
-        isOk, err = pcall(function() self[helperNames.getName](self:getId()) end)
+        isOk, err = pcall(function() self[helperNames.getName](self:getIdUsedByBlizApis()) end)
     else
         zebug.error:event("event"):owner(self):print("haven't implemented this yet :-(")
         if true then return true end
@@ -344,7 +355,7 @@ function MouseRat:pickupToCursor()
     end
 
     if isOk then
-        zebug.info:event(event):owner(self):print("grabbed id", self:getId())
+        zebug.info:event(event):owner(self):print("grabbed id", self:getIdUsedByBlizApis())
     else
         zebug.info:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
     end
@@ -390,3 +401,4 @@ function MouseRat:toString(arg)
 end
 
 
+MouseRat.getIdForBlizApi = MouseRat.getIdUsedByBlizApis

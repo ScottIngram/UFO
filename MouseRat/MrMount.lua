@@ -6,9 +6,8 @@ Ufo.Wormhole()
 local MrMount = {
     type       = MouseRatType.MOUNT,
     primaryKey = "mountId",
-    iconKey    = "spellId",
-    -- many APIs in C_Spell also accept mountId
-    getName_helper = C_MountJournal.GetMountInfoByID,
+    keyForApis = "spellId",
+    --getName_helper = C_MountJournal.GetMountInfoByID, -- self.name is populated via consumeGetCursorInfo() below
     getIcon_helper = C_Spell.GetSpellTexture, -- C_MountJournal.GetMountInfoByID(mountID) result[3]
     setToolTip_helper = GameTooltip.SetSpellByID,
     pickupToCursor_helper = C_Spell.PickupSpell,
@@ -20,14 +19,6 @@ MouseRat:mixInto(MrMount)
 -------------------------------------------------------------------------------
 -- Instance Methods
 -------------------------------------------------------------------------------
-
--- I wrote extra code into MouseRat:getIcon() to support the optional "iconKey" field.
--- Otherwise, I could have simply done the following.
----@return number texture ID
-function MrMount:getIcon_EXAMPLE()
-    local _, _, icon = C_MountJournal.GetMountInfoByID(self:getId())
-    return icon
-end
 
 function MrMount:isUsable()
     -- local isUsable, err = C_MountJournal.GetMountUsabilityByID(mountId, false --[[checkIndoors]])
