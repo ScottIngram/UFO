@@ -179,7 +179,7 @@ local function coerce(target, type, c2, c3, c4)
         --zebug.warn:event("event"):owner(subClass):dumpKeys(customMouseRatsForThisType)
         ---@param customSubMr MouseRat
         for i, customSubMr in ipairs(customMouseRatsForThisType) do
-            local isQualified = customSubMr:disambiguator(target, type, c2, c3, c4)
+            local isQualified = customSubMr:disambiguator(type, c2, c3, c4)
             zebug.warn:event("event"):owner(subClass):print("disambiguator! is this type", type," actually", customSubMr.type, "?",isQualified)
             if isQualified then
                 -- first one wins!  assume only one custom class will qualify
