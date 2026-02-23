@@ -390,14 +390,15 @@ function MouseRat:pickupToCursor()
     return isOk
 end
 
--- generic handler that is good enough for some simpler MouseRatTypes
+-- expresses the MouseRat in a way that can be executed in WoW's "secure environment" hellscape / action bar button.
+-- the following is a generic handler that is good enough for some simpler MouseRatTypes.
 -- TODO auto handle sub-types: Macro -> UfoFlyout, Spell -> ProfessionShitShow
----@return MouseRatType type
----@return MouseRatType redundant
----@return string name
+---@return string hardcoded value that will be assigned to the SecureActionButton's "type" attribute
+---@return string the name of some key recognized by SecureActionButton as an attribute related to the above "type" attribute (according to Bliz's convoluted rules)
+---@return string the actual fucking value assigned to whatever goddamn key was decided above
 function MouseRat:asSecureClickHandlerAttributes()
     assert(self.isInstance, "instance method called from a class context")
-    zebug.info:event("event"):owner(self):print("blizType", self.type)
+    --zebug.info:event("event"):owner(self):print("default asSecureClickHandlerAttributes")
     return self.type, self.type, self:getName()
 end
 

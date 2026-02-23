@@ -46,6 +46,15 @@ function MrMount:consumeGetCursorInfo(type, mountId, mountIndex, _)
     self.spellId = spellId -- store for use by getIcon() (and others?)
 end
 
+-- expresses the MrMount in a way that can be executed in WoW's "secure environment" hellscape / action bar button to mount the mount.
+---@return string hardcoded value that will be assigned to the SecureActionButton's "type" attribute
+---@return string hardcoded value that will be assigned to the SecureActionButton's attribute indicated (according to Bliz's fucking insane rules) by the above "type" attribute
+---@return string text of a dynamically generated macro that will summon the goddamn pet
+function MrMount:asSecureClickHandlerAttributes()
+    -- yep, spell.
+    return ButtonType.SPELL, ButtonType.SPELL, self:getName()
+end
+
 -------------------------------------------------------------------------------
 -- REGISTER NOW!
 -------------------------------------------------------------------------------

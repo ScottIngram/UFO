@@ -35,6 +35,18 @@ function MrPetAction:isUsable()
     return C_SpellBook.IsSpellInSpellBook(self:getId(), Enum.SpellBookSpellBank.Pet, true)
 end
 
+-- expresses the MouseRat in a way that can be executed in WoW's "secure environment" hellscape / action bar button.
+-- the following is a generic handler that is good enough for some simpler MouseRatTypes.
+---@return string hardcoded value that will be assigned to the SecureActionButton's "type" attribute
+---@return string the name of some key recognized by SecureActionButton as an attribute related to the above "type" attribute (according to Bliz's convoluted rules)
+---@return string the actual fucking value assigned to whatever goddamn key was decided above
+function MrPetAction:asSecureClickHandlerAttributes()
+    assert(self.isInstance, "instance method called from a class context")
+    --zebug.info:event("event"):owner(self):print("default asSecureClickHandlerAttributes")
+    return MouseRatType.SPELL, MouseRatType.SPELL, self:getId()
+end
+
+
 -------------------------------------------------------------------------------
 -- REGISTER NOW!
 -------------------------------------------------------------------------------

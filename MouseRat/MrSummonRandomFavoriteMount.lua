@@ -48,6 +48,14 @@ function MrSummonRandomFavoriteMount:consumeGetCursorInfo(type, mountId, mountIn
     self:setId(self.type)
 end
 
+-- expresses the MrSummonRandomFavoriteMount in a way that can be executed in WoW's "secure environment" hellscape / action bar button.
+---@return string hardcoded value that will be assigned to the SecureActionButton's "type" attribute
+---@return string the name of some key recognized by SecureActionButton as an attribute (according to Bliz's fucking insane rules) related to the above "type" attribute
+---@return string the actual fucking value assigned to whatever goddamn key was decided above
+function MrSummonRandomFavoriteMount:asSecureClickHandlerAttributes()
+    return ButtonType.MACRO, "macrotext", "/run C_AddOns.LoadAddOn('Blizzard_Collections'); C_MountJournal.SummonByID(0)"
+end
+
 -------------------------------------------------------------------------------
 -- REGISTER NOW!
 -------------------------------------------------------------------------------

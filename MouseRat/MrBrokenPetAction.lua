@@ -69,6 +69,15 @@ function MrBrokenPetAction:consumeGetCursorInfo(type, spellId, spellIndex)
     self:setPvar(self.primaryKey.."2", anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
 end
 
+-- expresses the MrBrokenPetAction in a way that can be executed in WoW's "secure environment" hellscape / action bar button.
+---@return string hardcoded value that will be assigned to the SecureActionButton's "type" attribute
+---@return string the name of some key recognized by SecureActionButton as an attribute (according to Bliz's fucking insane rules) related to the above "type" attribute
+---@return string the actual fucking value assigned to whatever goddamn key was decided above
+function MrBrokenPetAction:asSecureClickHandlerAttributes()
+    local macro = self:getMyPetCommandDefinition("macro")
+    return ButtonType.MACRO, "macrotext", macro
+end
+
 function MrBrokenPetAction:getMyPetCommandDefinition(key)
     local cfg = BrokenPetCommand[self:getId()]
     if not cfg then
