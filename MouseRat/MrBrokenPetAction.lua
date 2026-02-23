@@ -38,16 +38,16 @@ end
 
 ---@return string "Assist" or "Attack" or etc
 function MrBrokenPetAction:getName()
-    if false and self.brokenPetCommandId2 then
-        return PetShitShow.BrokenPetCommand[self.brokenPetCommandId].name .. " or maybe " .. PetShitShow.BrokenPetCommand[self.brokenPetCommandId2].name
-    else
-        return PetShitShow.BrokenPetCommand[self.brokenPetCommandId].name
-    end
+    self.name = self:getMyPetCommandDefinition("name")
+    return self.name
 end
 
 ---@return number texture ID
 function MrBrokenPetAction:getIcon()
-    return PetShitShow.BrokenPetCommand[self.brokenPetCommandId].icon
+    --zebug.error:dumpy("MrBrokenPetAction", self)
+    --zebug.error:print("self.brokenPetCommandId", self.brokenPetCommandId, "self:getId",self:getId())
+
+    return self:getMyPetCommandDefinition("icon")
 end
 
 function MrBrokenPetAction:setToolTip()
@@ -58,18 +58,23 @@ end
 ---@param type BlizCursorType the 1st arg from GetCursorInfo
 ---@param spellId number the 2nd arg from GetCursorInfo - Spell ID of the pet action on the cursor, or unknown 0-4 number if the spell is a shared pet control spell (Follow, Stay, Assist, Defensive, etc...)..
 ---@param spellIndex number the 3rd arg from GetCursorInfo - The index of the spell in the pet spell book, or nil if the spell is a shared pet control spell (Follow, Stay, Assist, Defensive, etc...).
----@param retVal3 any - unknown
-function MrBrokenPetAction:consumeGetCursorInfo(type, spellId, spellIndex, retVal3)
-    self:setId(spellId)
-
+function MrBrokenPetAction:consumeGetCursorInfo(type, spellId, spellIndex)
     -- holy fucking hell.  I had forgotten how abjectly terrible Bliz's pet API is until
     -- I looked at my old code that I wrote to mush it into some semblance of sanity.
     -- JFC.  To anyone who reads my comments and is taken aback by my unrestrained contempt for Bliz's WoW APIs,
     -- I invite you to read PetShitShow.lua to understand one of the worst examples of their fuckery.
-    --print("=-=-=-=-=- _G.GetCursorInfo() -->", _G.GetCursorInfo())
     local id, anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(spellId)
-    self.brokenPetCommandId = id
-    self:setPvar("brokenPetCommandId2", anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
+    self:setId(id)
+    self.name = self:getMyPetCommandDefinition("name")
+    self:setPvar(self.primaryKey.."2", anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
+end
+
+function MrBrokenPetAction:getMyPetCommandDefinition(key)
+    local cfg = BrokenPetCommand[self:getId()]
+    if not cfg then
+        error("bad id:" .. nilStr(self:getId()))
+    end
+    return cfg[key] or "bad key:"..nilStr(key)
 end
 
 -------------------------------------------------------------------------------
