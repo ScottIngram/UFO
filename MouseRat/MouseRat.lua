@@ -124,6 +124,89 @@ MouseRatSubClassContractualMethodsAndHelpers = {
 local helperNames = MouseRatSubClassContractualMethodsAndHelpers
 
 -------------------------------------------------------------------------------
+-- private functions
+-------------------------------------------------------------------------------
+
+-- is the type from _G.GetCursorInfo() a big fat fucking lie?
+-- analyze the API's data and decide if one of MouseRat's "customized" sub-subClass is a better fit for this type.
+---@return MouseRat|nil a different MouseRat subclass from what the "type" suggests, or nil if none exists
+local function morph(type, c2, c3, c4)
+    local customMouseRatsForThisType = MouseRatRegistry.customizedCursorTypes[type]
+    if not customMouseRatsForThisType then return end
+
+    --zebug.warn:event("event"):owner(subClass):dumpKeys(customMouseRatsForThisType)
+    ---@param customSubMr MouseRat
+    for i, customSubMr in ipairs(customMouseRatsForThisType) do
+        local isQualified = customSubMr:disambiguator(type, c2, c3, c4)
+        zebug.warn:event("event"):print("disambiguator! is this type", type," actually", customSubMr.type, "?",isQualified)
+        if isQualified then
+            -- first one wins!  assume only one custom class will qualify
+            -- replace the previous subClass with the custom one we found
+            return customSubMr
+        end
+    end
+
+    return nil
+end
+
+-- coerce a table into becoming an instance of a MouseRat subclass. Polymorphism, baby!
+---@param target table|nil (optional) either a pre-populated btn probably from SavedVariables or an empty {}
+---@param type MouseRatType|nil (optional) the 1st value returned by _G.GetCursorInfo()
+---@param c2 number|string|nil (optional) the 2nd value from _G.GetCursorInfo()
+---@param c3 number|string|nil (optional) the 3rd value from _G.GetCursorInfo()
+---@param c4 number|string|nil (optional) the 4th value from _G.GetCursorInfo()
+---@return MouseRat the target arg but now with metatable goodness
+local function coerce(target, type, c2, c3, c4)
+    if target.isInstance then
+        -- it's already "one of us" so nothing needs to be done.
+        return target
+    end
+
+    type = target.type or type
+    assert(type, "a type must be provided")
+
+    local subClass = MouseRatRegistry:getSubClass(type) or MrUnsupported -- TODO: consider merging MouseRatRegistry and MouseRat
+    zebug.warn:event("event"):owner(subClass):print("type",type, "c2",c2, "c3",c3, "c4",c4)
+
+    -- scrutinize the fucked up shit from GetCursorInfo.
+    -- assume anything from SavedVariables has already been analyzed and sanitized.
+    local untrustworthyBlizBullshit = (c2 or c3 or c4)
+    if untrustworthyBlizBullshit then
+
+        -- currently, this exists only to support the fucked up "companion" type
+        if subClass.transformAndAbort then
+            local mr = subClass:transformAndAbort(type, c2, c3, c4)
+            if mr then return mr end
+        end
+
+        -- does the subClass qualify to become a "customized" sub-subClass
+        local butterFly = morph(type, c2, c3, c4)
+        if butterFly then
+            subClass = butterFly
+        end
+
+        -- even though type is already in subClass,
+        -- that data will be hidden from SavedVariables. rectify.
+        target.type = subClass.type
+    end
+
+    local privateData = { isInstance = true } -- storage but it's NOT persisted to SavedVariables
+
+    -- create an inheritance tree using setmetatable()
+    -- From the top down, the tree is: subClass / privateData / target
+    setmetatable(privateData, { __index = subClass    }) -- subClass is now PD's parent
+    setmetatable(target,      { __index = privateData }) -- PD is now target's parent
+
+    -- provide an accessor to the private data
+    function privateData:setPvar(key, val) privateData[key] = val end
+
+    target:installMyToString()
+    target:setPvar("isInitialized",true)
+
+    return target
+end
+
+-------------------------------------------------------------------------------
 -- CLASS Methods - operate on the singleton MouseRat
 --
 -- SUPPORT instantiating from data found in:
@@ -150,68 +233,12 @@ function MouseRat:mixInto(kid, ...)
     return kid
 end
 
--- coerce a table into becoming an instance of a MouseRat subclass. Polymorphism, baby!
----@param target table|nil (optional) either a pre-populated btn from SAVED_VARS or an empty {}
----@param type MouseRatType|nil (optional) the 1st value returned by _G.GetCursorInfo()
----@param c2 number|string|nil (optional) the 2nd value from _G.GetCursorInfo()
----@param c3 number|string|nil (optional) the 3rd value from _G.GetCursorInfo()
----@param c4 number|string|nil (optional) the 4th value from _G.GetCursorInfo()
----@return MouseRat
-local function coerce(target, type, c2, c3, c4)
-    if target.isInstance then
-        -- it's already "one of us" so nothing needs to be done.
-        return target
-    end
-
-    type = target.type or type
-    assert(type, "a type must be provided")
-    local subClass = MouseRatRegistry:getSubClass(type) or MrUnsupported -- TODO: consider merging MouseRatRegistry and MouseRat
-    zebug.warn:event("event"):owner(subClass):print("type",type, "c2",c2, "c3",c3, "c4",c4)
-
-    if subClass.transformAndAbort then
-        local mr = subClass:transformAndAbort(type, c2, c3, c4)
-        if mr then return mr end
-    end
-
-    -- does the subClass qualify to become a "customized" sub-subClass
-    local customMouseRatsForThisType = MouseRatRegistry.customizedCursorTypes[type]
-    if customMouseRatsForThisType then
-        --zebug.warn:event("event"):owner(subClass):dumpKeys(customMouseRatsForThisType)
-        ---@param customSubMr MouseRat
-        for i, customSubMr in ipairs(customMouseRatsForThisType) do
-            local isQualified = customSubMr:disambiguator(type, c2, c3, c4)
-            zebug.warn:event("event"):owner(subClass):print("disambiguator! is this type", type," actually", customSubMr.type, "?",isQualified)
-            if isQualified then
-                -- first one wins!  assume only one custom class will qualify
-                -- replace the previous subClass with the custom one we found
-                subClass = customSubMr
-                break
-            end
-        end
-    end
-
-    local privateData = { isInstance = true } -- storage but it's NOT persisted to SavedVariables
-
-    -- create an inheritance tree using setmetatable()
-    -- From the top down, the tree is: subClass / privateData / target
-    setmetatable(privateData, { __index = subClass    }) -- subClass is now PD's parent
-    setmetatable(target,      { __index = privateData }) -- PD is now target's parent
-
-    -- provide an accessor to the private data
-    function privateData:setPvar(key, val) privateData[key] = val end
-
-    target:installMyToString()
-
-    return target
-end
-
 ---@return MouseRat
 function MouseRat:oneOfUs(target)
     assert(target, "the 'target' can't be nil")
     assert(isTable(target), "the 'target' arg must be a table")
     assert(target.type, "the 'target' table must first contain valid data before being converted into One of Us.")
     local instance = coerce(target)
-    instance:setPvar("isInitialized",true)
     zebug.warn:event("event"):owner(target):print("welcome to the club!")
     return instance
 end
@@ -227,7 +254,6 @@ function MouseRat:new(type, c2, c3, c4)
     zebug.warn:event("event"):owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
     local instance = coerce({}, type, c2, c3, c4)
     instance:consumeGetCursorInfo(type, c2, c3, c4)
-    instance:setPvar("isInitialized",true)
     zebug.warn:event("event"):owner(instance):print("nu!")
     return instance
 end
@@ -265,7 +291,7 @@ end
 ---@return number|string the unique identifier for this thing, its primaryKey
 function MouseRat:getId()
     assert(self.isInstance, "instance method called from a class context")
-    return self[altKey or self.primaryKey]
+    return self[self.primaryKey]
 end
 
 function MouseRat:setId(id)
@@ -290,11 +316,12 @@ function MouseRat:getName()
     local blizNameApiResults = self[helperNames.getName](self:getIdUsedByBlizApis())
 
     -- Bliz APIs are all over the goddamn place and follow no consistency whatsofuckingever.
-    local blizNameApiResults = self[helperNames.getName](self:getId())
     if isTable(blizNameApiResults) then
         self.name = blizNameApiResults.name
     elseif isString(blizNameApiResults) then
         self.name = blizNameApiResults
+    else
+        self.name = toStr(blizNameApiResults)
     end
 
     self.name = stripEol(self.name) or "uNkNoWn?"
@@ -381,7 +408,7 @@ end
 function MouseRat:toString(arg)
     --assert(self.isInstance, "instance method called from a class context")
     if not self.type then
-        return "<MouseRat: EMPTY>"
+        return "<MouseRat zombie>"
     elseif not self.isInstance then
         return string.format('<MouseRat CLASS: "%s">', nilStr(self.type))
     elseif not self.isInitialized then
@@ -391,14 +418,17 @@ function MouseRat:toString(arg)
         if icon then
             icon =  string.format(' |T%d:0|t ', icon)
         end
-        return string.format('<MouseRat:%s%s:%s%s>',
+        return string.format('<MouseRat:%s%s%s:%s>',
+                MarkTexture[ self:isUsable() and Mark.CHECK or Mark.NO ],
                 icon or '',
                 toStr(self.type),
-                toStr(self:getName() or self:getId()),
-                MarkTexture[ self:isUsable() and Mark.CHECK or Mark.NO ]
+                toStr(self:getName() or self:getId())
         )
     end
 end
 
+-------------------------------------------------------------------------------
+-- BRIDGE to satisfy ButtonDef "interface"
+-------------------------------------------------------------------------------
 
 MouseRat.getIdForBlizApi = MouseRat.getIdUsedByBlizApis
