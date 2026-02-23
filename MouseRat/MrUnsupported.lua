@@ -6,8 +6,7 @@ Ufo.Wormhole()
 MrUnsupported = {
     type       = MouseRatType.UNSUPPORTED,
     primaryKey = "id",
-    getName_helper = nil,
-    getIcon_helper = nil,
+    getIcon_helper = 134400, -- the question mark
     isUsable_helper = MouseRat.nop,
     setToolTip_helper = GameTooltip.SetSpellByID,
     pickupToCursor_helper = ClearCursor,
