@@ -15,12 +15,12 @@ local MrCompanion = {
     type           = MouseRatType.COMPANION,
     become         = MouseRatType.MOUNT,
     primaryKey     = "id",
-    getName_helper = "MyStErY",
-    getIcon_helper = DEFAULT_ICON,
-    isUsable_helper = false,
+    helpers = {
+        getName = "MyStErY",
+        getIcon = DEFAULT_ICON,
+        isUsable = false,
+    },
 }
-
-MouseRat:mixInto(MrCompanion)
 
 -------------------------------------------------------------------------------
 -- Class Methods -- operate as self = MrToy
@@ -63,6 +63,11 @@ function MrCompanion:setToolTip()
 end
 
 function MrCompanion:pickupToCursor()
+end
+
+---@param type BlizCursorType the 1st arg from GetCursorInfo
+---@param c2 number the 2nd arg from GetCursorInfo
+function MrCompanion:consumeGetCursorInfo(type, c1, c2, c3)
 end
 
 -------------------------------------------------------------------------------

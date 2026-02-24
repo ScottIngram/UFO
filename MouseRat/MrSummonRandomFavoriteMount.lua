@@ -9,10 +9,12 @@ local MrSummonRandomFavoriteMount = {
     type       = MouseRatType.SUMMON_RANDOM_FAVORITE_MOUNT,
     cursorType = MouseRatType.MOUNT,
     primaryKey = "id",
-    getName_helper = _G.MOUNT_JOURNAL_SUMMON_RANDOM_FAVORITE_MOUNT,
-    getIcon_helper = 413588,
-    isUsable_helper = true,
-    pickupToCursor_helper = function() C_MountJournal.Pickup(0) end,
+    helpers = {
+        getName = _G.MOUNT_JOURNAL_SUMMON_RANDOM_FAVORITE_MOUNT,
+        getIcon = 413588,
+        isUsable = true,
+        pickupToCursor = function() C_MountJournal.Pickup(0) end,
+    },
 }
 
 -------------------------------------------------------------------------------

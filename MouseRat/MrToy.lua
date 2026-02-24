@@ -9,11 +9,13 @@ local MrToy = {
     type       = MouseRatType.TOY,
     cursorType = MouseRatType.ITEM, -- _G.GetCursorInfo() reports "item" for toys
     primaryKey = "itemId",
-    getName_helper = C_Item.GetItemInfo,
-    getIcon_helper = C_Item.GetItemIconByID,
-    isUsable_helper = _G.PlayerHasToy, -- TODO: solve faction specific bug via isUsable()
-    setToolTip_helper = GameTooltip.SetToyByItemID,
-    pickupToCursor_helper = C_Item.PickupItem, -- C_ToyBox.PickupToyBoxItem ?
+    helpers = {
+        getName = C_Item.GetItemInfo,
+        getIcon = C_Item.GetItemIconByID,
+        isUsable = _G.PlayerHasToy, -- TODO: solve faction specific bug via isUsable()
+        setToolTip = _G.GameTooltip.SetToyByItemID,
+        pickupToCursor = C_Item.PickupItem, -- C_ToyBox.PickupToyBoxItem ?
+    },
 }
 
 -------------------------------------------------------------------------------

@@ -84,10 +84,10 @@ MouseRatType = {
 ---@field isInstance boolean used to decide what data & methods can be expected
 ---@field type MouseRatType
 ---@field cursorType MouseRatType -- only required if different from type
+---@field helpers table<string,function|string|number> typically Bliz APIs to find icons, names, or to set cursor or tooltip
 ---@field disambiguator function required only if a custom type and a standard MouseRatType share a cursorType
 ---@field primaryKey string "spellId", "mountId", etc.
 ---@field setPvar function stores data on self but hides it from SavedVariables
----@field pickupToCursor_helper function will place it onto the mouse pointer / cursor
 ---@field consumeGetCursorInfo function transforms the wtf _G.GetCursorInfo() results into plain and simple type and id
 MouseRat = {
     ufoType = "MouseRat",
@@ -95,26 +95,19 @@ MouseRat = {
 
 UfoMixIn:mixInto(MouseRat)
 
----@type table<string,string> key = methodName.  value = helperFieldName
-MouseRatSubClassContractualMethodsAndHelpers = {
+MouseRatMethodsContract = {
     -- the following methods are expected to be implemented by all subclasses of MouseRat.
-    -- In the absence of such a method implementation in the subclass, then, the named "helper" is a field on the subclass.
-    -- It must contain either a hardcoded value (e.g. an ID, a name, etc)
+    -- In the absence of such a method implementation in the subclass, then, it can define a "helper".
+    -- These helpers can contain either a hardcoded value (e.g. an ID, a name, etc)
     -- or a function (usually an explicit ref to a Bliz API func.) which will return such a value.
     -- The helper will used by the MouseRat default implementation
-    -- methodName = "helperFieldName"
-    getId      = "primaryKey",
-    getIcon    = "getIcon_helper",
-    isUsable   = "isUsable_helper",
-    getName    = "getName_helper", -- optional
-    setToolTip = "setToolTip_helper",
-    pickupToCursor = "pickupToCursor_helper",
-
-    -- these are optional but available if you need them
-    -- asSecureClickHandlerAttributes = { no helpers recognized },
+    "primaryKey",
+    "getIcon",
+    "isUsable",
+    "getName",
+    "setToolTip",
+    "pickupToCursor",
 }
-
-local helperNames = MouseRatSubClassContractualMethodsAndHelpers
 
 -------------------------------------------------------------------------------
 -- private functions
@@ -267,10 +260,27 @@ function MouseRat:nop()
 end
 
 -------------------------------------------------------------------------------
--- INSTANCE Methods - Default implementations for subclasses.
--- These lean into params set inside the subclasses that understand
--- the specific APIs required for their MouseRatType.
+-- INSTANCE Methods - utilities - not intended for use outside of this library
 -------------------------------------------------------------------------------
+
+local apiSelf = { setToolTip = _G.GameTooltip }
+
+---@param methodName string
+---@return any whatever the helper produced (a name, an icon, true for success, etc)
+function MouseRat:helpMe(methodName)
+    assert(self.isInstance, "instance method called from a class context")
+    local helper = self.helpers[methodName]
+    if helper == nil then error(methodName..":The MouseRat subclass must either implement this method or provide its helper.") end
+    if isFunction(helper) then
+        if apiSelf[methodName] then
+            return helper(apiSelf[methodName], self:getIdUsedByBlizApis())
+        else
+            return helper(self:getIdUsedByBlizApis())
+        end
+    else
+        return helper
+    end
+end
 
 -- at the moment, this exists solely for MOUNT because all of its APIs are actually Spell APIs
 -- Bliz APIs are all over the goddamn place and follow no consistency whatsofuckingever.
@@ -291,11 +301,19 @@ function MouseRat:setId(id)
     self[self.primaryKey or "id"] = id
 end
 
+-------------------------------------------------------------------------------
+-- CONTRACT INSTANCE Methods - provide mandatory behaviors of the MouseRat library
+-- Below are default implementations for subclasses.
+-- These lean into params set inside the subclasses that understand
+-- the specific APIs required for their MouseRatType.
+-- Subclasses can override these default implementations with custom ones.
+-------------------------------------------------------------------------------
+
 -- this method is mandatory and MUST be implemented by the subclass
 -- the Bliz API GetCursorInfo() is a great example of why I fucking hate the Bliz APIs
 ---@field ... varargs - the verbatim results from _G.GetCursorInfo()
 function MouseRat:consumeGetCursorInfo(...)
-    -- error("this method is mandatory and MUST be implemented by the subclass")
+    error("this method is mandatory and MUST be implemented by the subclass")
 end
 
 ---@return string
@@ -305,7 +323,7 @@ function MouseRat:getName()
         return self.name
     end
 
-    local blizNameApiResults = self[helperNames.getName](self:getIdUsedByBlizApis())
+    local blizNameApiResults = self:helpMe("getName")
 
     -- Bliz APIs are all over the goddamn place and follow no consistency whatsofuckingever.
     if isTable(blizNameApiResults) then
@@ -323,21 +341,18 @@ end
 ---@return number texture ID
 function MouseRat:getIcon()
     assert(self.isInstance, "instance method called from a class context")
-    if not self[helperNames.getIcon] then return nil end
-    --zebug.warn:event("event"):owner("self"):print("keyForApis",self[self.altKey], "primaryKey",self.primaryKey)
-    return self[helperNames.getIcon](self:getIdUsedByBlizApis())
+    return self:helpMe("getIcon")
 end
 
 ---@return boolean true if the spell is known / the class can operate the item or toy / the faction can ride the mount / etc
 function MouseRat:isUsable()
     assert(self.isInstance, "instance method called from a class context")
-    assert(self[helperNames.isUsable], "The MouseRat subclass must either implement this method or provide the field 'isUsable_helper'")
-    return self[helperNames.isUsable](self:getIdUsedByBlizApis()) or false
+    return self:helpMe("isUsable") or false
 end
 
 function MouseRat:setToolTip()
     assert(self.isInstance, "instance method called from a class context")
-    self[helperNames.setToolTip](_G.GameTooltip, self:getIdUsedByBlizApis())
+    return self:helpMe("setToolTip")
 end
 
 ---@return boolean true if the WoW client will allow this toon to put this thing onto the cursor
@@ -362,11 +377,12 @@ function MouseRat:pickupToCursor()
 
     local cursor, isOk, err
     if self:canThisToonPickup() then
-        isOk, err = pcall(function() self[helperNames.pickupToCursor](self:getIdUsedByBlizApis()) end)
+        isOk, err = pcall(function() self:helpMe("pickupToCursor") end)
     else
         zebug.error:event("event"):owner(self):print("haven't implemented this yet :-(")
-        if true then return true end
+        return false
 --[[
+        -- TODO - leverage proxy
         cursor = UfoProxy:pickupButtonDefOntoCursor(self, "event")
         isOk = cursor and true or false
         err = isOk and "A-OK" or "couldn't transform myself into a UfoProxy"
@@ -374,9 +390,9 @@ function MouseRat:pickupToCursor()
     end
 
     if isOk then
-        zebug.info:event(event):owner(self):print("grabbed id", self:getIdUsedByBlizApis())
+        zebug.trace:event(event):owner(self):print("picked up A-OK!")
     else
-        zebug.info:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
+        zebug.warn:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
     end
 
     return isOk

@@ -7,11 +7,13 @@ local MrBrokenPetAction = {
     type       = MouseRatType.BROKEN_PET_ACTION,
     cursorType = MouseRatType.PETACTION,
     primaryKey = "brokenPetCommandId",
-    --getName_helper = xxx, -- replaced by getName() defined below
-    --getIcon_helper = xxx, -- replaced by getIcon() defined below
-    --pickupToCursor_helper = xxx, -- replaced by pickupToCursor() defined below
-    --setToolTip_helper = xxx, -- replaced by setToolTip() defined below
-    isUsable_helper = C_SpellBook.HasPetSpells,
+    helpers = {
+        --getName = xxx, -- replaced by getName() defined below
+        --getIcon = xxx, -- replaced by getIcon() defined below
+        --pickupToCursor = xxx, -- replaced by pickupToCursor() defined below
+        --setToolTip = xxx, -- replaced by setToolTip() defined below
+        isUsable = C_SpellBook.HasPetSpells,
+    },
 }
 
 -------------------------------------------------------------------------------

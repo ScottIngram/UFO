@@ -6,11 +6,13 @@ Ufo.Wormhole()
 local MrPetAction = {
     type       = MouseRatType.PETACTION,
     primaryKey = "petSpellId",
-    getName_helper = C_Spell.GetSpellInfo,
-    getIcon_helper = C_Spell.GetSpellTexture,
-    setToolTip_helper = GameTooltip.SetSpellByID,
-    pickupToCursor_helper = _G.PickupPetSpell,
-    --isUsable_helper = C_SpellBook.IsSpellInSpellBook, -- replaced by isUsable() defined below
+    helpers = {
+        getName = C_Spell.GetSpellInfo,
+        getIcon = C_Spell.GetSpellTexture,
+        setToolTip = _G.GameTooltip.SetSpellByID,
+        pickupToCursor = _G.PickupPetSpell,
+        --isUsable = C_SpellBook.IsSpellInSpellBook, -- replaced by isUsable() defined below
+    }
 }
 
 ------------------------------------------------------------------------------------
@@ -24,7 +26,7 @@ function MrPetAction:consumeGetCursorInfo(_, spellId, _, _)
     if spellId < 10 then
         -- the Bliz API is shite.  This isn't a petaction.  None of the APIs understand it.  Fuck you bliz.
         -- the MrBrokenPetAction should have intercepted this.  In absence of a bug in my code,  we should never reach here.
-        --error("How did we reach here?")
+        error("How did we reach here?")
     end
     self:setId(spellId)
 end

@@ -7,14 +7,14 @@ local MrMount = {
     type       = MouseRatType.MOUNT,
     primaryKey = "mountId",
     keyForApis = "spellId",
-    --getName_helper = C_MountJournal.GetMountInfoByID, -- self.name is populated via consumeGetCursorInfo() below
-    getIcon_helper = C_Spell.GetSpellTexture, -- C_MountJournal.GetMountInfoByID(mountID) result[3]
-    setToolTip_helper = GameTooltip.SetSpellByID,
-    pickupToCursor_helper = C_Spell.PickupSpell,
-    --isUsable_helper = C_MountJournal.GetMountUsabilityByID, -- replaced by isUsable() defined below
+    helpers = {
+        --getName = C_MountJournal.GetMountInfoByID, -- self.name is populated via consumeGetCursorInfo() below
+        getIcon = C_Spell.GetSpellTexture, -- C_MountJournal.GetMountInfoByID(mountID) result[3]
+        setToolTip = _G.GameTooltip.SetSpellByID,
+        pickupToCursor = C_Spell.PickupSpell,
+        --isUsable = C_MountJournal.GetMountUsabilityByID, -- replaced by isUsable() defined below
+    },
 }
-
-MouseRat:mixInto(MrMount)
 
 -------------------------------------------------------------------------------
 -- Instance Methods

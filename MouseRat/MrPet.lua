@@ -6,11 +6,13 @@ Ufo.Wormhole()
 local MrPet = {
     type       = MouseRatType.PET,
     primaryKey = "petGuid",
-    isUsable_helper = true,
-    setToolTip_helper = GameTooltip.SetCompanionPet,
-    pickupToCursor_helper = C_PetJournal.PickupPet,
-    --getName_helper = getPetNameAndIcon, -- replaced by getName() defined below
-    --getIcon_helper = getPetNameAndIcon, -- replaced by getIcon() defined below
+    helpers = {
+        isUsable = true,
+        setToolTip = _G.GameTooltip.SetCompanionPet,
+        pickupToCursor = C_PetJournal.PickupPet,
+        --getName = getPetNameAndIcon, -- replaced by getName() defined below
+        --getIcon = getPetNameAndIcon, -- replaced by getIcon() defined below
+    },
 }
 
 -------------------------------------------------------------------------------

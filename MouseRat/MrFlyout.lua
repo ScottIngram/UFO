@@ -6,11 +6,13 @@ Ufo.Wormhole()
 local MrFlyout = {
     type       = MouseRatType.FLYOUT,
     primaryKey = "flyoutId", -- 2nd return value of _G.GetCursorInfo()
-    --getName_helper = GetFlyoutInfo, -- initialized by consumeGetCursorInfo() and used by MouseRat:getName()
-    --getIcon_helper = xxx, -- no such api. see getIcon() below
-    --pickupToCursor_helper = xxx, -- no such api. see pickupToCursor() below
-    --setToolTip_helper = xxx, -- no such api. see setToolTip() below,
-    --isUsable_helper = xxx, -- implemented isUsable()
+    helpers = {
+        --getName = GetFlyoutInfo, -- initialized by consumeGetCursorInfo() and used by MouseRat:getName()
+        --getIcon = xxx, -- no such api. see getIcon() below
+        --pickupToCursor = xxx, -- no such api. see pickupToCursor() below
+        --setToolTip = xxx, -- no such api. see setToolTip() below,
+        --isUsable = xxx, -- implemented isUsable()
+    },
 }
 
 -------------------------------------------------------------------------------
