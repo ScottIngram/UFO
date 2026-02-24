@@ -14,8 +14,6 @@ local MrBrokenPetAction = {
     isUsable_helper = C_SpellBook.HasPetSpells,
 }
 
-MouseRat:mixInto(MrBrokenPetAction)
-
 -------------------------------------------------------------------------------
 -- Class Methods -- operate as self = MrBrokenPetAction
 -------------------------------------------------------------------------------

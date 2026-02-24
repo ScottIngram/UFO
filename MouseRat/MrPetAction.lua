@@ -13,8 +13,6 @@ local MrPetAction = {
     --isUsable_helper = C_SpellBook.IsSpellInSpellBook, -- replaced by isUsable() defined below
 }
 
-MouseRat:mixInto(MrPetAction)
-
 ------------------------------------------------------------------------------------
 -- Instance Methods -- operate as self = {} with its metatable linked to MrPetAction
 ------------------------------------------------------------------------------------

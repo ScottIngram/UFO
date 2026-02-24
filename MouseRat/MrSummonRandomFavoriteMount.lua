@@ -15,8 +15,6 @@ local MrSummonRandomFavoriteMount = {
     pickupToCursor_helper = function() C_MountJournal.Pickup(0) end,
 }
 
-MouseRat:mixInto(MrSummonRandomFavoriteMount)
-
 -------------------------------------------------------------------------------
 -- Class Methods -- operate as self = MrToy
 -------------------------------------------------------------------------------

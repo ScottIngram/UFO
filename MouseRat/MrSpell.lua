@@ -13,8 +13,6 @@ local MrSpell = {
     pickupToCursor_helper = C_Spell.PickupSpell,
 }
 
-MouseRat:mixInto(MrSpell)
-
 -------------------------------------------------------------------------------
 -- Instance Methods
 -------------------------------------------------------------------------------

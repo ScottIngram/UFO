@@ -13,8 +13,6 @@ local MrPet = {
     --getIcon_helper = getPetNameAndIcon, -- replaced by getIcon() defined below
 }
 
-MouseRat:mixInto(MrPet)
-
 -------------------------------------------------------------------------------
 -- Instance Methods
 -------------------------------------------------------------------------------

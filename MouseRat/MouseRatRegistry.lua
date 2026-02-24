@@ -17,8 +17,6 @@ MouseRatRegistry = {
     customizedCursorTypes = {},
 }
 
-UfoMixIn:mixInto(MouseRatRegistry)
-
 -------------------------------------------------------------------------------
 -- Utility Functions
 -------------------------------------------------------------------------------
@@ -37,7 +35,6 @@ end
 ---@param kid MouseRat a "subclass" that implements the MouseRat missing methods required for SPELL, ITEM, etc.
 function MouseRatRegistry:register(kid)
     assert(kid, "bad arg: 'kid' is nil")
-    --zebug.warn:dumpy("kid", kid)
     assert(kid.type, "the registered kid has no defined 'type'")
 
     if self.kids[kid.type] then
@@ -50,13 +47,7 @@ function MouseRatRegistry:register(kid)
         self:addMouseRatForCustomizedCursorType(kid)
     end
 
-    if not kid.ufoType then
-        -- if this field is missing, then, the kid expects us to mix in the MouseRat baseclass
-        MouseRat:mixInto(kid)
-        zebug.warn:event("event"):owner(kid):print("mixed it all in to",kid)
-    else
-        zebug.warn:event("event"):owner(kid):print("mixed it NOTHING coz it alread had ufoType",kid.ufoType)
-    end
+    MouseRat:adopt(kid) -- activate OO inheritance
 
     self.kids[kid.type] = kid
 end

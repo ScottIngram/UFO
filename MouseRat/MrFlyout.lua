@@ -13,10 +13,6 @@ local MrFlyout = {
     --isUsable_helper = xxx, -- implemented isUsable()
 }
 
--- TODO: why does leaving out this line result in failure to find
--- getIcon, isUsable, pickupToCursor, and setToolTip
-MouseRat:mixInto(MrFlyout)
-
 -------------------------------------------------------------------------------
 -- Instance Methods -- operate as self = {} with its metatable linked to MrToy
 -------------------------------------------------------------------------------

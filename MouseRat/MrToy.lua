@@ -16,8 +16,6 @@ local MrToy = {
     pickupToCursor_helper = C_Item.PickupItem, -- C_ToyBox.PickupToyBoxItem ?
 }
 
-MouseRat:mixInto(MrToy)
-
 -------------------------------------------------------------------------------
 -- Class Methods -- operate as self = MrToy
 -------------------------------------------------------------------------------

@@ -36,12 +36,6 @@ BlizCursorType = {
 }
 
 BLIZ_CURSOR_TYPE_BY_NAME = tInvert(BlizCursorType)
---zebug.error:dumpy("BLIZ_CURSOR_TYPE_BY_NAME",BLIZ_CURSOR_TYPE_BY_NAME)
-
--- because Bliz loves when their different APIs disagree with each other
-TYPES_REPORTED_BY_GET_CURSOR_INFO = {
-    -- do I need to enumerate these?  Evidently yes, because some MouseRatTypes never show up from GetCursorInfo
-}
 
 -------------------------------------------------------------------------------
 -- MouseRatType
@@ -49,7 +43,6 @@ TYPES_REPORTED_BY_GET_CURSOR_INFO = {
 -------------------------------------------------------------------------------
 ---@class MouseRatType - the type values actually used by the Bliz API's.
 MouseRatType = {
-    --UNSUPPORTED = BlizCursorType[Enum.UICursorType.AmmoObsolete], -- nobody's got time for that
     UNSUPPORTED = "unsupported", -- nobody's got time for that
     SPELL   = BlizCursorType[Enum.UICursorType.Spell], -- "spell"
     MOUNT   = BlizCursorType[Enum.UICursorType.Mount], -- "mount",
@@ -166,7 +159,7 @@ local function coerce(target, type, c2, c3, c4)
     assert(type, "a type must be provided")
 
     local subClass = MouseRatRegistry:getSubClass(type) or MrUnsupported -- TODO: consider merging MouseRatRegistry and MouseRat
-    zebug.warn:event("event"):owner(subClass):print("type",type, "c2",c2, "c3",c3, "c4",c4)
+    zebug.trace:event("event"):owner(subClass):print("type",type, "c2",c2, "c3",c3, "c4",c4)
 
     -- scrutinize the fucked up shit from GetCursorInfo.
     -- assume anything from SavedVariables has already been analyzed and sanitized.
@@ -193,7 +186,7 @@ local function coerce(target, type, c2, c3, c4)
     local privateData = { isInstance = true } -- storage but it's NOT persisted to SavedVariables
 
     -- create an inheritance tree using setmetatable()
-    -- From the top down, the tree is: subClass / privateData / target
+    -- From the top down, the tree is: MouseRat:adopt()-> subClass / privateData / target
     setmetatable(privateData, { __index = subClass    }) -- subClass is now PD's parent
     setmetatable(target,      { __index = privateData }) -- PD is now target's parent
 
@@ -219,18 +212,17 @@ function MouseRat:init()
     self:installMyToString()
 end
 
-function MouseRat:mixInto(kid, ...)
-    -- shallow copy
-    for k, v in pairs(self) do
-        -- don't clobber existing fields
-        if kid[k] == nil then
-            kid[k] = v
-        else
-            print("skipping",k)
-        end
+-- establish OO inheritance from the MouseRat parent to the kid subclass (eg MrSpell)
+-- this only needs to be done once for each subclass
+---@param kid MouseRat a subclass
+function MouseRat:adopt(kid)
+    if kid.ufoType ~= MouseRat.ufoType then
+        zebug.warn:event("event"):print("adopt YES - none kid.ufoType",kid.ufoType)
+        setmetatable(kid, { __index = MouseRat }) -- MouseRat is now the kid's parent
+        kid:installMyToString()
+    else
+        zebug.trace:event("event"):print("adopt NOT - already got kid.ufoType",kid.ufoType)
     end
-
-    return kid
 end
 
 ---@return MouseRat
@@ -239,7 +231,7 @@ function MouseRat:oneOfUs(target)
     assert(isTable(target), "the 'target' arg must be a table")
     assert(target.type, "the 'target' table must first contain valid data before being converted into One of Us.")
     local instance = coerce(target)
-    zebug.warn:event("event"):owner(target):print("welcome to the club!")
+    zebug.info:event("event"):owner(target):print("welcome to the club!")
     return instance
 end
 
@@ -254,7 +246,7 @@ function MouseRat:new(type, c2, c3, c4)
     zebug.warn:event("event"):owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
     local instance = coerce({}, type, c2, c3, c4)
     instance:consumeGetCursorInfo(type, c2, c3, c4)
-    zebug.warn:event("event"):owner(instance):print("nu!")
+    zebug.info:event("event"):owner(instance):print("")
     return instance
 end
 
