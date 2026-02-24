@@ -32,12 +32,11 @@ end
 ---@return number texture ID
 function MrMacro:getIcon()
     if self:isUsable() then
-        return C_Macro.GetSelectedMacroIcon(self.macroId)
-        --local _, texture, _ = GetMacroInfo(id)
-        --icon = texture
+        _, icon = GetMacroInfo(self.macroId)
     else
         icon = self.fallbackIcon or DEFAULT_ICON_FULL
     end
+    return icon
 end
 
 function MrMacro:isGlobal()
