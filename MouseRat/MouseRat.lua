@@ -370,7 +370,7 @@ function MouseRat:pickupToCursor()
 
     local cursor, isOk, err
     if self:canThisToonPickup() then
-        isOk, err = pcall(function() self[helperNames.getName](self:getIdUsedByBlizApis()) end)
+        isOk, err = pcall(function() self[helperNames.pickupToCursor](self:getIdUsedByBlizApis()) end)
     else
         zebug.error:event("event"):owner(self):print("haven't implemented this yet :-(")
         if true then return true end
