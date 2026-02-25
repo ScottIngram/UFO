@@ -172,7 +172,7 @@ function ButtonDef:setIdAndType(id, type)
     elseif type == ButtonType.PSPELL then
         if id < 10 then
             self.type = ButtonType.BROKENP
-            local brokenPetCommandId, alsoCommand = PetShitShow:get(id)
+            local brokenPetCommandId, alsoCommand = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(id)
             self.brokenPetCommandId = brokenPetCommandId
             self.brokenPetCommandId2 = alsoCommand
         else
@@ -498,6 +498,10 @@ end
 -- TODO: consolidate / integrate with BlizActionBarButton:get()
 ---@return ButtonDef
 function ButtonDef:getFromCursor(event, silenceWarnings)
+    local mr = MouseRat and MouseRat:getFromCursor(event)
+    MouseRat.pickedUpMouseRat = mr
+    zebug.warn:event("event"):owner(self):print("mr",mr)
+
     local type, c1, c2, c3 = GetCursorInfo() -- c1 is usually the ID; c2 is sometimes a tooltip;
     zebug.info:event(event):owner(self):print("type",type, "c1",c1, "c2",c2, "c3",c3)
 
