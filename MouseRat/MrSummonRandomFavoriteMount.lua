@@ -27,7 +27,7 @@ local MrSummonRandomFavoriteMount = {
 ---@param maybeMountIndex any must be 0
 function MrSummonRandomFavoriteMount:disambiguator(type, maybeMountId, maybeMountIndex)
     zebug.warn:print("type", type, "maybeMountId",maybeMountId, "maybeMountIndex",maybeMountIndex)
-    if not type == MouseRatType.MOUNT then return false end
+    if type ~= MouseRatType.MOUNT then return false end
     return maybeMountIndex == 0
 end
 

@@ -110,7 +110,7 @@ function isMacroGlobal(macroId)
 end
 
 -------------------------------------------------------------------------------
--- Methods
+-- CLASS Methods
 -------------------------------------------------------------------------------
 
 -- coerce the incoming table into a ButtonDef instance
@@ -144,6 +144,10 @@ function ButtonDef:new(id, type)
     self:installMyToString()
     return self
 end
+
+-------------------------------------------------------------------------------
+-- INSTANCE Methods
+-------------------------------------------------------------------------------
 
 function ButtonDef:setIdAndType(id, type)
     if not (id and type) then
@@ -190,7 +194,6 @@ function ButtonDef:setIdAndType(id, type)
 
     return self
 end
-
 
 function ButtonDef:toString()
     if not self.type then
@@ -455,6 +458,10 @@ function ButtonDef:getToolTipSetter()
     return nil
 end
 
+-------------------------------------------------------------------------------
+-- CLASS Methods - TODO: move this to top of file with other class methods
+-------------------------------------------------------------------------------
+
 local ttData
 
 function ButtonDef:registerToolTipRecorder()
@@ -581,6 +588,10 @@ function ButtonDef:getFromCursor(event, silenceWarnings)
     return btnDef
 end
 
+-------------------------------------------------------------------------------
+-- INSTANCE Methods
+-------------------------------------------------------------------------------
+
 function ButtonDef:pickupToCursor(event)
     local type = self.type
     local id = self:getIdForBlizApi()
@@ -601,7 +612,7 @@ function ButtonDef:pickupToCursor(event)
     if isOk then
         zebug.info:event(event):owner(self):print("grabbed id", id)
     else
-        shhh:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
+        zebug.info:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
     end
 
     return isOk

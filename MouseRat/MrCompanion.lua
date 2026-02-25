@@ -32,7 +32,7 @@ local MrCompanion = {
 function MrCompanion:transformAndAbort(type, mysteryId, companionType, c4)
     --zebug.warn:print("type", type, "mysteryId",mysteryId, "companionType",companionType, "c4",c4)
 
-    if not MouseRatType.MOUNT == self.become then
+    if MouseRatType.MOUNT ~= self.become then
         error("was expecting the companion to be a mount but got ".. (companionType or "nil"))
     end
 

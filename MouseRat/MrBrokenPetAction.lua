@@ -27,9 +27,8 @@ local MrBrokenPetAction = {
 function MrBrokenPetAction:disambiguator(type, maybeSpellId, maybeSpellIndex)
     if type ~= self.cursorType then return false end
 
-    zebug.warn:print("type", type, "maybeSpellId",maybeSpellId, "maybeSpellIndex",maybeSpellIndex, "c4",c4)
-    if not type == self.cursorType then return false end
-    return (maybeSpellId and (maybeSpellId < 10)) or maybeSpellIndex == nil -- not 100% about checking maybeSpellIndex
+    zebug.warn:print("type", type, "maybeSpellId",maybeSpellId, "maybeSpellIndex",maybeSpellIndex)
+    return (maybeSpellId and (maybeSpellId < 10))
 end
 
 ------------------------------------------------------------------------------------------

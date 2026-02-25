@@ -247,16 +247,12 @@ function MouseRat:getFromCursor(event)
     local type, c2, c3, c4 = GetCursorInfo()
 
     if not type then
-        assert(MouseRatType.EMPTY, "MouseRatType.EMPTY is missing / has not been registered")
-        return self:new(MouseRatType.EMPTY)
+        Ufo.pickedUpBtn = nil
+        zebug.warn:event(event):owner(self):print("Empty cursor is empty")
+        return nil
     end
 
     return self:new(type, c2, c3, c4)
-end
-
-function MouseRat:nop()
-    -- used by subclasses for params that do nothing
-    return nil
 end
 
 -------------------------------------------------------------------------------
@@ -299,6 +295,17 @@ end
 function MouseRat:setId(id)
     assert(self.isInstance, "instance method called from a class context")
     self[self.primaryKey or "id"] = id
+end
+
+---@return boolean true if the WoW client will allow this toon to put this thing onto the cursor
+function MouseRat:canThisToonPickup()
+    -- difference between isUsable() and canThisToonPickup?
+    local canPickup = self:isUsable() or MouseRatType.ITEM == self.type
+    return canPickup
+end
+
+function MouseRat:getMostRecentlyPickedUpMr()
+    return MouseRat.pickedUpMouseRat or Ufo.pickedUpBtn
 end
 
 -------------------------------------------------------------------------------
@@ -355,22 +362,11 @@ function MouseRat:setToolTip()
     return self:helpMe("setToolTip")
 end
 
----@return boolean true if the WoW client will allow this toon to put this thing onto the cursor
-function MouseRat:canThisToonPickup()
-    -- difference between isUsable() and canThisToonPickup?
-    local canPickup = self:isUsable() or MouseRatType.ITEM == self.type
-    return canPickup
-end
-
-function MouseRat:getMostRecentlyPickedUpMr()
-    return MouseRat.pickedUpMouseRat or Ufo.pickedUpBtn
-end
-
 function MouseRat:pickupToCursor()
     assert(self.isInstance, "instance method called from a class context")
-    assert(self[helperNames.pickupToCursor], "The MouseRat subclass must either implement this method or provide the field 'pickupToCursor_helper'")
 
-    MouseRat.pickedUpMouseRat = self
+    --MouseRat.pickedUpMouseRat = self
+    Ufo.pickedUpBtn = self
 
     local event = "event"
     zebug.warn:event(event):owner(self):print("pick me up!")

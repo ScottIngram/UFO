@@ -103,7 +103,7 @@ function Spec:getPlacementConfig(specId)
     -- is this a never-before-encountered spec? - if so, initialze its config
     zebug.trace:line(5, "specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec, "result 1", placementsForTheSpec)
     if not placementsForTheSpec then -- TODO: identify empty OR nil
-        if not previousSpec or specId == previousSpec then
+        if (previousSpec == nil) or (specId == previousSpec) then
             zebug.info:print("initializing spec. specId",specId, "currentSpec",currentSpec, "previousSpec",previousSpec)
             placementsForTheSpec = {}
         else
