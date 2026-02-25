@@ -94,7 +94,7 @@ function MouseRatRegistry:validateKids()
                     end
                 else
                     -- failsafe
-                    kid.helpers[methodName] = function() zebug.error:owner(kid):print(methodName,"is missing.  Defaulting to nil") return nil end
+                    kid.helpers[methodName] = function() zebug.error:owner(kid):print(methodName,"method & helper are both missing.  Defaulting val to nil") return nil end
                 end
             else
                 zebug.error:owner(kid):print("type",kid.type, "must implement a method",methodName, "or define a helper method/field", methodName)

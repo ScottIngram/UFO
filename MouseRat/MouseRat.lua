@@ -95,19 +95,22 @@ MouseRat = {
 
 UfoMixIn:mixInto(MouseRat)
 
+---@class MouseRatMethodsContract
 MouseRatMethodsContract = {
     -- the following methods are expected to be implemented by all subclasses of MouseRat.
     -- In the absence of such a method implementation in the subclass, then, it can define a "helper".
     -- These helpers can contain either a hardcoded value (e.g. an ID, a name, etc)
     -- or a function (usually an explicit ref to a Bliz API func.) which will return such a value.
     -- The helper will used by the MouseRat default implementation
-    "primaryKey",
-    "getIcon",
-    "isUsable",
-    "getName",
-    "setToolTip",
-    "pickupToCursor",
+    primaryKey = "primaryKey",
+    getIcon    = "getIcon",
+    isUsable   = "isUsable",
+    getName    = "getName",
+    setToolTip = "setToolTip",
+    pickupToCursor = "pickupToCursor",
 }
+
+local mName = MouseRatMethodsContract
 
 -------------------------------------------------------------------------------
 -- private functions
@@ -192,6 +195,19 @@ local function coerce(target, type, c2, c3, c4)
     return target
 end
 
+---@param methodName MouseRatMethodsContract
+function isValidMethodName(methodName)
+    return mName[methodName] or false
+end
+
+---@param methodName MouseRatMethodsContract
+local function assertIsValidMethodName(methodName)
+    if not (mName)[methodName] then
+        error("methodName value '"..methodName.."' is not a recognized MouseRatMethodsContract method name", 1)
+    end
+end
+
+
 -------------------------------------------------------------------------------
 -- CLASS Methods - operate on the singleton MouseRat
 --
@@ -259,12 +275,14 @@ end
 -- INSTANCE Methods - utilities - not intended for use outside of this library
 -------------------------------------------------------------------------------
 
-local apiSelf = { setToolTip = _G.GameTooltip }
+local apiSelf = { [mName.setToolTip] = _G.GameTooltip }
 
----@param methodName string
+---@param methodName MouseRatMethodsContract
 ---@return any whatever the helper produced (a name, an icon, true for success, etc)
 function MouseRat:helpMe(methodName)
     assert(self.isInstance, "instance method called from a class context")
+    assert(methodName, "methodName arg is nil")
+    assertIsValidMethodName(methodName)
     local helper = self.helpers[methodName]
     if helper == nil then error(methodName..":The MouseRat subclass must either implement this method or provide its helper.") end
     if isFunction(helper) then
@@ -330,7 +348,7 @@ function MouseRat:getName()
         return self.name
     end
 
-    local blizNameApiResults = self:helpMe("getName")
+    local blizNameApiResults = self:helpMe(mName.getName)
 
     -- Bliz APIs are all over the goddamn place and follow no consistency whatsofuckingever.
     if isTable(blizNameApiResults) then
@@ -348,18 +366,18 @@ end
 ---@return number texture ID
 function MouseRat:getIcon()
     assert(self.isInstance, "instance method called from a class context")
-    return self:helpMe("getIcon")
+    return self:helpMe(mName.getIcon)
 end
 
 ---@return boolean true if the spell is known / the class can operate the item or toy / the faction can ride the mount / etc
 function MouseRat:isUsable()
     assert(self.isInstance, "instance method called from a class context")
-    return self:helpMe("isUsable") or false
+    return self:helpMe(mName.isUsable) or false
 end
 
 function MouseRat:setToolTip()
     assert(self.isInstance, "instance method called from a class context")
-    return self:helpMe("setToolTip")
+    return self:helpMe(mName.setToolTip)
 end
 
 function MouseRat:pickupToCursor()
@@ -373,7 +391,7 @@ function MouseRat:pickupToCursor()
 
     local cursor, isOk, err
     if self:canThisToonPickup() then
-        isOk, err = pcall(function() self:helpMe("pickupToCursor") end)
+        isOk, err = pcall(function() self:helpMe(mName.pickupToCursor) end)
     else
         zebug.error:event("event"):owner(self):print("haven't implemented this yet :-(")
         return false
