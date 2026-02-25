@@ -394,6 +394,8 @@ function initalizeAddonStuff(event)
 
     if MouseRatRegistry then MouseRatRegistry:init() end
 
+    ButtonDef = MouseRat
+
     msgUserOrNot(L10N.LOADED, Ufo.versionMsg)
 
     -- flags to wait out the chaos happening when the UI first loads / reloads.

@@ -224,7 +224,7 @@ function ButtonOnFlyoutMenu:setTooltip()
         GameTooltip:SetOwner(self, TooltipAnchor.LEFT)
     end
 
-    local tooltipSetter = btnDef:getToolTipSetter()
+    --local tooltipSetter = btnDef:getToolTipSetter()
 
     local name = btnDef:getName()
     if not name then
@@ -232,11 +232,15 @@ function ButtonOnFlyoutMenu:setTooltip()
         name = L10N.UNKNOWN
     end
 
+    btnDef:setToolTip()
+
+--[[
     if tooltipSetter then
         tooltipSetter()
     else
         GameTooltip:SetText(name, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
     end
+]]
 end
 
 function ButtonOnFlyoutMenu:warnIfUnusable()
