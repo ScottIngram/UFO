@@ -8,6 +8,7 @@ Ufo.Wormhole()
 local MrToy = {
     type       = MouseRatType.TOY,
     cursorType = MouseRatType.ITEM, -- _G.GetCursorInfo() reports "item" for toys
+    actionBarButtonType = MouseRatTypeForActionBars.ITEM,
     primaryKey = "itemId",
     helpers = {
         getName = C_Item.GetItemInfo,

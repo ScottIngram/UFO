@@ -6,6 +6,7 @@ Ufo.Wormhole()
 local MrBrokenPetAction = {
     type       = MouseRatType.BROKEN_PET_ACTION,
     cursorType = MouseRatType.PETACTION,
+    actionBarButtonType = MouseRatTypeForActionBars.SPELL,
     primaryKey = "brokenPetCommandId",
     helpers = {
         --getName = xxx, -- replaced by getName() defined below

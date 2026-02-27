@@ -3,7 +3,7 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole()
 local zebug = Zebug:new(--[[Z_VOLUME_GLOBAL_OVERRIDE or]] Zebug.TRACE)
 
--- The Bliz Enum.UICursorType lists all possible values given to the CURSOR_CHANGED even handler.
+-- The Bliz Enum.UICursorType lists all possible values given to the CURSOR_CHANGED event handler.
 -- It's only slightly related to the values returned by the Bliz API _G.GetCursorInfo()
 -- Let's create a mapping from the Enum to their corresponding "type" result from GetCursorInfo()
 -- see also https://github.com/Ketho/vscode-wow-api/blob/master/Annotations/Core/Data/Enum.lua
@@ -43,15 +43,15 @@ BLIZ_CURSOR_TYPE_BY_NAME = tInvert(BlizCursorType)
 -------------------------------------------------------------------------------
 ---@class MouseRatType - the type values actually used by the Bliz API's.
 MouseRatType = {
-    UNSUPPORTED = "unsupported", -- nobody's got time for that
-    SPELL   = BlizCursorType[Enum.UICursorType.Spell], -- "spell"
-    MOUNT   = BlizCursorType[Enum.UICursorType.Mount], -- "mount",
     ITEM    = BlizCursorType[Enum.UICursorType.Item], -- "item",
-    TOY     = BlizCursorType[Enum.UICursorType.Toy], -- "toy",
-    PET     = BlizCursorType[Enum.UICursorType.BattlePet], -- "battlepet",
-    MACRO   = BlizCursorType[Enum.UICursorType.Macro], -- "macro",
     FLYOUT  = BlizCursorType[Enum.UICursorType.Flyout], -- "flyout",
+    MACRO   = BlizCursorType[Enum.UICursorType.Macro], -- "macro",
+    MOUNT   = BlizCursorType[Enum.UICursorType.Mount], -- "mount",
+    PET     = BlizCursorType[Enum.UICursorType.BattlePet], -- "battlepet",
     PETACTION = BlizCursorType[Enum.UICursorType.PetAction], -- "petaction",
+    SPELL   = BlizCursorType[Enum.UICursorType.Spell], -- "spell"
+    TOY     = BlizCursorType[Enum.UICursorType.Toy], -- "toy", --  cursorType="item" .. sub-type of: ITEM
+    UNSUPPORTED = "unsupported", -- nobody's got time for that
 
     -- ------------------------
     -- not in Enum.UICursorType
@@ -59,21 +59,66 @@ MouseRatType = {
 
     -- MOUNT variant, an abnormal result containing a useless ID
     -- which isn't accepted by any API. It is returned by PickupSpell(spellIdOfSomeMount)
-    COMPANION = "companion",
+    COMPANION = "companion",  -- sideways brundlefly of: MOUNT
 
     -- an imaginary type that will never be returned by _G.GetCursorInfo()
     -- it is used here to accommodate the various kinds of PSPELL / petaction
     -- that the WoW APIs do not handle correctly.  What?!  No way!
     -- the PSPELL handler has special logic to morph into this type as needed
-    BROKEN_PET_ACTION = "brokenPetCommand",
+    BROKEN_PET_ACTION = "brokenPetCommand", -- cursorType="petaction" .. sub-type of: PETACTION
 
     -- duh
-    SUMMON_RANDOM_FAVORITE_MOUNT = "summonmount",
+    SUMMON_RANDOM_FAVORITE_MOUNT = "summonmount", -- cursorType="mount" .. sub-type of: MOUNT
 
     -- custom UFO types
     UFO_BUTTON = "ufobutton",
     UFO_FLYOUT = "ufoflyout",
 }
+
+MOUSE_RAT_TYPE_FOR_CURSOR_NAME = tInvert(MouseRatType)
+
+-------------------------------------------------------------------------------
+-- FOR ACTION BARS
+-- MouseRatTypeForActionBars
+-- the kinds of stuff WoW lets you put on the action bars and thus the mouse
+-------------------------------------------------------------------------------
+---@class MouseRatTypeForActionBars
+MouseRatTypeForActionBars = {
+
+    -- ------------------------------------------------------------------
+    -- same string used by both _G.GetCursorInfo() and _G.GetActionInfo()
+    -- ------------------------------------------------------------------
+
+    ITEM      = BlizCursorType[Enum.UICursorType.Item], -- "item",
+    FLYOUT    = BlizCursorType[Enum.UICursorType.Flyout], -- "flyout",
+    MACRO     = BlizCursorType[Enum.UICursorType.Macro], -- "macro",
+    PETACTION = BlizCursorType[Enum.UICursorType.PetAction], -- "petaction", buttonType = "spell" .. subType: pet
+    SPELL     = BlizCursorType[Enum.UICursorType.Spell], -- "spell"
+    TOY       = BlizCursorType[Enum.UICursorType.Toy], -- "toy", buttonType = "item"
+
+    -- ----------------------------------------------------------
+    -- used by _G.GetActionInfo() but is not in Enum.UICursorType
+    -- ----------------------------------------------------------
+
+    MOUNT   = "summonmount", -- not BlizCursorType[Enum.UICursorType.Mount], -- buttonType = "summonmount"
+    PET     = "summonpet", -- not  BlizCursorType[Enum.UICursorType.BattlePet], -- buttonType = "summonpet"
+
+    -- ------------------------------------------------------------------------------------
+    -- custom button types - these are neither used by Bliz but is not in Enum.UICursorType
+    -- ------------------------------------------------------------------------------------
+
+    BROKEN_PET_ACTION = "brokenPetCommand",-- buttonType = "spell" .. subType: pet  <--- ID is always 0
+    SUMMON_RANDOM_FAVORITE_MOUNT = "summon_r_f_mount", -- buttonType = "summonmount" .. subType: nil .. id=268435455
+    UNSUPPORTED = "unsupported", -- nobody's got time for that
+}
+
+-- map from button -> mouse
+ACTION_B_MAPPED_TO_MOUSE = {
+    [MouseRatTypeForActionBars.MOUNT] = MouseRatType.MOUNT,
+    [MouseRatTypeForActionBars.PET]   = MouseRatType.PET,
+}
+-- map from mouse -> button
+MOUSE_MAPPED_TO_ACTION_B = tInvert(ACTION_B_MAPPED_TO_MOUSE)
 
 -------------------------------------------------------------------------------
 -- MouseRat
@@ -207,7 +252,6 @@ local function assertIsValidMethodName(methodName)
     end
 end
 
-
 -------------------------------------------------------------------------------
 -- CLASS Methods - operate on the singleton MouseRat
 --
@@ -269,6 +313,23 @@ function MouseRat:getFromCursor(event)
     end
 
     return self:new(type, c2, c3, c4)
+end
+
+---@param btnSlotIndex number the bliz identifier for an action bar button.
+function MouseRat:getFromActionBarSlot(btnSlotIndex)
+    local type, id, subType = GetActionInfo(btnSlotIndex)
+    zebug.warn:event("event"):print("btnSlotIndex",btnSlotIndex, "---> type",type, "id",id, "subType",subType)
+
+    if not type then
+        return nil
+    end
+
+    local mrSisterType = ACTION_B_MAPPED_TO_MOUSE[type] or type
+    zebug.warn:event("event"):print("mrSisterType",mrSisterType)
+
+    local subclass = MouseRatRegistry:getSubClass(mrSisterType)
+    zebug.warn:dumpy("subclass",subclass)
+    return subclass
 end
 
 -------------------------------------------------------------------------------

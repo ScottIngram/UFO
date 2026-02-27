@@ -8,6 +8,7 @@ Ufo.Wormhole()
 local MrSummonRandomFavoriteMount = {
     type       = MouseRatType.SUMMON_RANDOM_FAVORITE_MOUNT,
     cursorType = MouseRatType.MOUNT,
+    actionBarButtonType = MouseRatTypeForActionBars.MOUNT,
     primaryKey = "id",
     helpers = {
         getName = _G.MOUNT_JOURNAL_SUMMON_RANDOM_FAVORITE_MOUNT,
@@ -29,6 +30,20 @@ function MrSummonRandomFavoriteMount:disambiguator(type, maybeMountId, maybeMoun
     zebug.warn:print("type", type, "maybeMountId",maybeMountId, "maybeMountIndex",maybeMountIndex)
     if type ~= MouseRatType.MOUNT then return false end
     return maybeMountIndex == 0
+end
+
+-- == ActionBars methods
+
+-- examines the results of _G.GetActionInfo() and
+-- decides if those results describe a MouseRatTypeForActionBars.BROKEN_PET_ACTION
+---@param btnType MouseRatTypeForActionBars must be MouseRatType.SPELL
+---@param id any 2nd return val from _G.GetActionInfo()
+---@param subType 3rd return val from _G.GetActionInfo()
+function MrSummonRandomFavoriteMount:disamButtonator(btnType, id, subType)
+    if btnType ~= self.actionBarButtonType then return false end
+
+    zebug.warn:print("btnType", btnType, "id", id, "subType", subType)
+    return (subType == "pet")
 end
 
 -------------------------------------------------------------------------------
