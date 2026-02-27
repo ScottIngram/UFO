@@ -121,26 +121,29 @@ end
 
 -- is the type from _G.GetCursorInfo() a big fat fucking lie?
 -- analyze the API's data and decide if one of MouseRat's "customized" sub-subClass is a better fit for this type.
----@return MouseRat|nil a different MouseRat subclass from what the "type" suggests, or nil if none exists
+---@param type MouseRatType|nil (optional) the 1st value returned by _G.GetCursorInfo()
+---@param c2 number|string|nil (optional) the 2nd value from _G.GetCursorInfo()
+---@param c3 number|string|nil (optional) the 3rd value from _G.GetCursorInfo()
+---@param c4 number|string|nil (optional) the 4th value from _G.GetCursorInfo()
+---@return MouseRat|nil the expected MouseRat, or a different MouseRat subclass from what the "type" suggests, or nil if none exists
 function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
 
     local subClass = self.kids[type]
     if not subClass then return nil end
 
-
-    local customMouseRatsForThisType = MouseRatRegistry.customizedCursorTypes[type]
-    if not customMouseRatsForThisType then return subClass end
+    local subSubClasses = MouseRatRegistry.customizedCursorTypes[type]
+    if not subSubClasses then return subClass end
 
     --zebug.warn:event("event"):owner(subClass):dumpKeys(customMouseRatsForThisType)
-    ---@param customSubMr MouseRat
-    for i, customSubMr in ipairs(customMouseRatsForThisType) do
-        local isQualified = customSubMr:disambiguator(type, c2, c3, c4)
-        zebug.warn:event("event"):print("disambiguator! is this type", type," actually", customSubMr.type, "?",isQualified)
+    ---@param subSubMr MouseRat
+    for i, subSubMr in ipairs(subSubClasses) do
+        local isQualified = subSubMr:disambiguator(type, c2, c3, c4)
+        zebug.warn:event("event"):print("disambiguator! is this type", type," actually", subSubMr.type, "?",isQualified)
         if isQualified then
             -- first one wins!  assume only one custom class will qualify
             -- replace the previous subClass with the custom one we found
-            zebug.error:event("event"):print("BLIZ API LIED.  the type wasn't really", type, "IT WAS ACTUALLY", customSubMr.type)
-            subClass = customSubMr
+            zebug.error:event("event"):print("BLIZ API LIED.  the type wasn't really", type, "IT WAS ACTUALLY", subSubMr.type)
+            subClass = subSubMr
             break
         end
     end

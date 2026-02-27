@@ -161,102 +161,32 @@ local mName = MouseRatMethodsContract
 -- private functions
 -------------------------------------------------------------------------------
 
--- is the type from _G.GetCursorInfo() a big fat fucking lie?
--- analyze the API's data and decide if one of MouseRat's "customized" sub-subClass is a better fit for this type.
----@return MouseRat|nil a different MouseRat subclass from what the "type" suggests, or nil if none exists
-local function morph(type, c2, c3, c4)
-    local customMouseRatsForThisType = MouseRatRegistry.customizedCursorTypes[type]
-    if not customMouseRatsForThisType then return end
-
-    --zebug.warn:event("event"):owner(subClass):dumpKeys(customMouseRatsForThisType)
-    ---@param customSubMr MouseRat
-    for i, customSubMr in ipairs(customMouseRatsForThisType) do
-        local isQualified = customSubMr:disambiguator(type, c2, c3, c4)
-        zebug.warn:event("event"):print("disambiguator! is this type", type," actually", customSubMr.type, "?",isQualified)
-        if isQualified then
-            -- first one wins!  assume only one custom class will qualify
-            -- replace the previous subClass with the custom one we found
-            return customSubMr
-        end
-    end
-
-    return nil
-end
-
 -- coerce a table into becoming an instance of a MouseRat subclass. Polymorphism, baby!
----@param target table|nil (optional) either a pre-populated btn probably from SavedVariables or an empty {}
----@param type MouseRatType|nil (optional) the 1st value returned by _G.GetCursorInfo()
----@param c2 number|string|nil (optional) the 2nd value from _G.GetCursorInfo()
----@param c3 number|string|nil (optional) the 3rd value from _G.GetCursorInfo()
----@param c4 number|string|nil (optional) the 4th value from _G.GetCursorInfo()
+---@param target table either an empty {} or a pre-populated chunk of MouseRat-like data (probably from SavedVariables)
+---@param subClass MouseRat
 ---@return MouseRat the target arg but now with metatable goodness
--- TODO - refactor so that args are unambiguous ?
-local function coerce(target, type, c2, c3, c4)
-    local subClass
-
+local function coerce(target, subClass)
+    assert(target, "the 'target' arg can't be nil")
     if target.isInstance then
         -- it's already "one of us" so nothing needs to be done.
         return target
     end
 
-    type = target.type or type
-    assert(type, "a type must be provided")
-
-    -- scrutinize the fucked up shit from GetCursorInfo.
-    -- assume anything from SavedVariables has already been analyzed and sanitized.
-    local untrustworthyBlizBullshit = (c2 or c3 or c4)
-    if untrustworthyBlizBullshit then
-
-        -- currently, this exists only to support the fucked up "companion" type
---[[
-        if subClass.transformAndAbort then
-            local mr = subClass:transformAndAbort(type, c2, c3, c4)
-            if mr then return mr end
-        end
-]]
-
-        -- TODO - refactor into MouseRat:new()
-        subClass = MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
-        --zebug.trace:event("event"):owner(subClass):dumpy("UnreliableData subClass",subClass)
-
-        if subClass then
-            -- even though type is already in subClass,
-            -- that data will be hidden from SavedVariables. rectify.
-            target.type = subClass.type
-        end
-    else
-
-
-        -- TODO - refactor into MouseRat:oneOfUs()
-        -- the data is from a reliable source that has already scrutinized the values are correct
-        subClass = MouseRatRegistry:getSubClassForTrustedType(type)
-    end
-
-    if not subClass then
-        subClass = MrUnsupported
-    end
-
-    zebug.trace:event("event"):owner(subClass):print("type",type, "c2",c2, "c3",c3, "c4",c4)
+    assert(subClass, "the 'subClass' arg can't be nil")
+    zebug.trace:event("event"):owner(subClass):print("type",subClass.type)
 
     local privateData = { isInstance = true } -- storage but it's NOT persisted to SavedVariables
+    function privateData:setPvar(key, val) privateData[key] = val end -- provide a way to set hidden data
 
     -- create an inheritance tree using setmetatable()
     -- From the top down, the tree is: MouseRat:adopt()-> subClass / privateData / target
     setmetatable(privateData, { __index = subClass    }) -- subClass is now PD's parent
     setmetatable(target,      { __index = privateData }) -- PD is now target's parent
 
-    -- provide an accessor to the private data
-    function privateData:setPvar(key, val) privateData[key] = val end
-
-    target:installMyToString()
+    target:installMyToString() -- assumes we are a descendant of UfoMixin
     target:setPvar("isInitialized",true)
 
     return target
-end
-
----@param methodName MouseRatMethodsContract
-function isValidMethodName(methodName)
-    return mName[methodName] or false
 end
 
 ---@param methodName MouseRatMethodsContract
@@ -297,27 +227,49 @@ function MouseRat:oneOfUs(target)
     assert(target, "the 'target' can't be nil")
     assert(isTable(target), "the 'target' arg must be a table")
     assert(target.type, "the 'target' table must first contain valid data before being converted into One of Us.")
-    local instance = coerce(target)
+
+    local subClass = MouseRatRegistry:getSubClassForTrustedType(target.type)
+    if not subClass then
+        subClass = MrUnsupported
+    end
+
+    local instance = coerce(target, subClass)
     zebug.info:event("event"):owner(target):print("welcome to the club!")
     return instance
 end
 
+-- scrutinize the fucked up shit from GetCursorInfo.
 ---@param type MouseRatType the 1st value returned by _G.GetCursorInfo()
 ---@param c2 number|string|nil (optional) the 2nd value from _G.GetCursorInfo()
 ---@param c3 number|string|nil (optional) the 3rd value from _G.GetCursorInfo()
 ---@param c4 number|string|nil (optional) the 4th value from _G.GetCursorInfo()
 ---@return MouseRat
-function MouseRat:new(type, c2, c3, c4)
+function MouseRat:newFromGetCursorIdiot(type, c2, c3, c4)
     assert(type, "the type arg can't be nil")
 
     zebug.warn:event("event"):owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
 
--- get sub class here & now
+    -- scrutinize the fucked up shit from GetCursorInfo.
+    local subClass = MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
+    if not subClass then
+        subClass = MrUnsupported
+    end
 
+    -- TODO: handle
+--[[
+    -- currently, this exists only to support the fucked up "companion" type
+    if subClass.transformAndAbort then
+        local mr = subClass:transformAndAbort(type, c2, c3, c4)
+        if mr then return mr end
+    end
+]]
 
-
-    local instance = coerce({}, type, c2, c3, c4)
+    local instance = coerce({}, subClass)
     instance:consumeGetCursorInfo(type, c2, c3, c4)
+
+    -- even though type is already in subClass, that data will be hidden from SavedVariables. rectify.
+    instance.type = subClass.type
+
     zebug.info:event("event"):owner(instance):print("")
     return instance
 end
@@ -331,7 +283,7 @@ function MouseRat:getFromCursor(event)
         return nil
     end
 
-    return self:new(type, c2, c3, c4)
+    return self:newFromGetCursorIdiot(type, c2, c3, c4)
 end
 
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
