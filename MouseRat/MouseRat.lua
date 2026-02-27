@@ -190,7 +190,10 @@ end
 ---@param c3 number|string|nil (optional) the 3rd value from _G.GetCursorInfo()
 ---@param c4 number|string|nil (optional) the 4th value from _G.GetCursorInfo()
 ---@return MouseRat the target arg but now with metatable goodness
+-- TODO - refactor so that args are unambiguous ?
 local function coerce(target, type, c2, c3, c4)
+    local subClass
+
     if target.isInstance then
         -- it's already "one of us" so nothing needs to be done.
         return target
@@ -199,30 +202,41 @@ local function coerce(target, type, c2, c3, c4)
     type = target.type or type
     assert(type, "a type must be provided")
 
-    local subClass = MouseRatRegistry:getSubClass(type) or MrUnsupported -- TODO: consider merging MouseRatRegistry and MouseRat
-    zebug.trace:event("event"):owner(subClass):print("type",type, "c2",c2, "c3",c3, "c4",c4)
-
     -- scrutinize the fucked up shit from GetCursorInfo.
     -- assume anything from SavedVariables has already been analyzed and sanitized.
     local untrustworthyBlizBullshit = (c2 or c3 or c4)
     if untrustworthyBlizBullshit then
 
         -- currently, this exists only to support the fucked up "companion" type
+--[[
         if subClass.transformAndAbort then
             local mr = subClass:transformAndAbort(type, c2, c3, c4)
             if mr then return mr end
         end
+]]
 
-        -- does the subClass qualify to become a "customized" sub-subClass
-        local butterFly = morph(type, c2, c3, c4)
-        if butterFly then
-            subClass = butterFly
+        -- TODO - refactor into MouseRat:new()
+        subClass = MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
+        --zebug.trace:event("event"):owner(subClass):dumpy("UnreliableData subClass",subClass)
+
+        if subClass then
+            -- even though type is already in subClass,
+            -- that data will be hidden from SavedVariables. rectify.
+            target.type = subClass.type
         end
+    else
 
-        -- even though type is already in subClass,
-        -- that data will be hidden from SavedVariables. rectify.
-        target.type = subClass.type
+
+        -- TODO - refactor into MouseRat:oneOfUs()
+        -- the data is from a reliable source that has already scrutinized the values are correct
+        subClass = MouseRatRegistry:getSubClassForTrustedType(type)
     end
+
+    if not subClass then
+        subClass = MrUnsupported
+    end
+
+    zebug.trace:event("event"):owner(subClass):print("type",type, "c2",c2, "c3",c3, "c4",c4)
 
     local privateData = { isInstance = true } -- storage but it's NOT persisted to SavedVariables
 
@@ -297,6 +311,11 @@ function MouseRat:new(type, c2, c3, c4)
     assert(type, "the type arg can't be nil")
 
     zebug.warn:event("event"):owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
+
+-- get sub class here & now
+
+
+
     local instance = coerce({}, type, c2, c3, c4)
     instance:consumeGetCursorInfo(type, c2, c3, c4)
     zebug.info:event("event"):owner(instance):print("")
@@ -327,7 +346,7 @@ function MouseRat:getFromActionBarSlot(btnSlotIndex)
     local mrSisterType = ACTION_B_MAPPED_TO_MOUSE[type] or type
     zebug.warn:event("event"):print("mrSisterType",mrSisterType)
 
-    local subclass = MouseRatRegistry:getSubClass(mrSisterType)
+    local subclass = MouseRatRegistry:getSubClassForTrustedType(mrSisterType)
     zebug.warn:dumpy("subclass",subclass)
     return subclass
 end
@@ -400,6 +419,18 @@ end
 ---@field ... varargs - the verbatim results from _G.GetCursorInfo()
 function MouseRat:consumeGetCursorInfo(...)
     error("this method is mandatory and MUST be implemented by the subclass")
+end
+
+-- because Bliz loves inconsistency more than life itself,
+-- the results from _G.GetCursorInfo() are given in an unpredictable order.
+-- here, we fix that bullshit
+---@param type MouseRatType the 1st value returned by GCI seems to reliably always be type
+---@param id number|string  the 2nd value from GCI - uSuAlLy the ID
+---@param subType number|string|nil (optional) the 3rd value from GCI - sometimes describes a variation for the type, sometimes an index in some catalog
+---@param subId number|string|nil (optional) the 4th value from GCI - sometimes is a derived ID
+function MouseRat:fixGetCursorInfo(type, id, subType, subId)
+    -- default implementation simply returns them in the same order provided which for some types is actually correctly
+    return type, id, subType, subId
 end
 
 ---@return string

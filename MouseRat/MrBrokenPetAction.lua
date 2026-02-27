@@ -54,6 +54,14 @@ function MrBrokenPetAction:setToolTip()
     _G.GameTooltip:SetText(self:getName())
 end
 
+---@param type BlizCursorType the 1st arg from GetCursorInfo
+---@param spellId number the 2nd arg from GetCursorInfo - Spell ID of the pet action on the cursor, or unknown 0-4 number if the spell is a shared pet control spell (Follow, Stay, Assist, Defensive, etc...)..
+---@param spellIndex number the 3rd arg from GetCursorInfo - The index of the spell in the pet spell book, or nil if the spell is a shared pet control spell (Follow, Stay, Assist, Defensive, etc...).
+function MrBrokenPetAction:fixGetCursorInfo(type, spellId, spellIndex)
+    local id, anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(spellId)
+    return type, spellId, spellIndex
+end
+
 -- will the real spellId please stand up!
 ---@param type BlizCursorType the 1st arg from GetCursorInfo
 ---@param spellId number the 2nd arg from GetCursorInfo - Spell ID of the pet action on the cursor, or unknown 0-4 number if the spell is a shared pet control spell (Follow, Stay, Assist, Defensive, etc...)..

@@ -111,13 +111,43 @@ function MouseRatRegistry:validateKids()
 
 end
 
----@param type MouseRatType
----@return MouseRat|nil will be nil if the given type has no registered subclass
-function MouseRatRegistry:getSubClass(type)
-    assert(type, "bad arg: 'type' is nil")
-    local subClass = self.kids[type]
+---@param confirmedType MouseRatType determined to be the actual type and not an ambiguous value returned from a Bliz API
+---@return MouseRat|nil will be nil if the given type has not been registered
+function MouseRatRegistry:getSubClassForTrustedType(confirmedType)
+    assert(confirmedType, "bad arg: 'type' is nil")
+    local subClass = self.kids[confirmedType]
     return subClass
 end
+
+-- is the type from _G.GetCursorInfo() a big fat fucking lie?
+-- analyze the API's data and decide if one of MouseRat's "customized" sub-subClass is a better fit for this type.
+---@return MouseRat|nil a different MouseRat subclass from what the "type" suggests, or nil if none exists
+function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
+
+    local subClass = self.kids[type]
+    if not subClass then return nil end
+
+
+    local customMouseRatsForThisType = MouseRatRegistry.customizedCursorTypes[type]
+    if not customMouseRatsForThisType then return subClass end
+
+    --zebug.warn:event("event"):owner(subClass):dumpKeys(customMouseRatsForThisType)
+    ---@param customSubMr MouseRat
+    for i, customSubMr in ipairs(customMouseRatsForThisType) do
+        local isQualified = customSubMr:disambiguator(type, c2, c3, c4)
+        zebug.warn:event("event"):print("disambiguator! is this type", type," actually", customSubMr.type, "?",isQualified)
+        if isQualified then
+            -- first one wins!  assume only one custom class will qualify
+            -- replace the previous subClass with the custom one we found
+            zebug.error:event("event"):print("BLIZ API LIED.  the type wasn't really", type, "IT WAS ACTUALLY", customSubMr.type)
+            subClass = customSubMr
+            break
+        end
+    end
+
+    return subClass
+end
+
 
 ---@param mr MouseRat
 function MouseRatRegistry:addMouseRatForCustomizedCursorType(kid)
