@@ -32,7 +32,14 @@ function MrPetAction:consumeGetCursorInfo(_, spellId, _, _)
 end
 
 function MrPetAction:isUsable()
-    return C_SpellBook.IsSpellInSpellBook(self:getId(), Enum.SpellBookSpellBank.Pet, true)
+    -- because pets are sometimes not yet summoned when combat is already underway (eg while mounted)
+    -- a positive result may come too late for the UI to react before combat lockdown happens, thus,
+    -- cache any positive result to ensure it's available even when the pet is momentarily AWOL
+    if not self.wasEverUsable then
+        self.wasEverUsable = C_SpellBook.IsSpellInSpellBook(self:getId(), Enum.SpellBookSpellBank.Pet, true)
+                or IsSpellKnownOrOverridesKnown(self:getId(), true)
+    end
+    return self.wasEverUsable
 end
 
 -- expresses the MouseRat in a way that can be executed in WoW's "secure environment" hellscape / action bar button.

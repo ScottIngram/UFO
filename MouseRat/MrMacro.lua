@@ -32,7 +32,7 @@ end
 ---@return number texture ID
 function MrMacro:getIcon()
     if self:isUsable() then
-        _, icon = GetMacroInfo(self.macroId)
+        _, icon = GetMacroInfo(self.name or self.macroId) -- temp fix until I reintegrate MacroShitShow
     else
         icon = self.fallbackIcon or DEFAULT_ICON_FULL
     end

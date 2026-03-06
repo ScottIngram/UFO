@@ -6,14 +6,14 @@ Ufo.Wormhole()
 local MrBrokenPetAction = {
     type       = MouseRatType.BROKEN_PET_ACTION,
     cursorType = MouseRatType.PETACTION,
-    actionBarButtonType = MouseRatTypeForActionBars.SPELL,
+    abbType    = MouseRatTypeForActionBarButton.SPELL,
     primaryKey = "brokenPetCommandId",
     helpers = {
         --getName = xxx, -- replaced by getName() defined below
         --getIcon = xxx, -- replaced by getIcon() defined below
         --pickupToCursor = xxx, -- replaced by pickupToCursor() defined below
         --setToolTip = xxx, -- replaced by setToolTip() defined below
-        isUsable = C_SpellBook.HasPetSpells,
+        --isUsable = C_SpellBook.HasPetSpells,  -- TODO: bugfix the lag between dismounting and the pet abilities being reported as existing
     },
 }
 
@@ -31,6 +31,19 @@ function MrBrokenPetAction:disambiguator(type, maybeSpellId, maybeSpellIndex)
     zebug.warn:print("type", type, "maybeSpellId",maybeSpellId, "maybeSpellIndex",maybeSpellIndex)
     return (maybeSpellId and (maybeSpellId < 10))
 end
+
+-- examines the results of _G.GetActionInfo() and
+-- decides if those results describe a MouseRatTypeForActionBarButton.BROKEN_PET_ACTION
+---@param abbType MouseRatTypeForActionBarButton must match the configured abbType
+---@param id any 2nd return val from _G.GetActionInfo()
+---@param subType 3rd return val from _G.GetActionInfo()
+function MrBrokenPetAction:disamButtonGator(abbType, id, subType)
+    if abbType ~= self.abbType then return false end
+
+    zebug.warn:print("abbType", abbType, "id", id, "subType", subType)
+    return (id and (id < 10))
+end
+
 
 ------------------------------------------------------------------------------------------
 -- Instance Methods -- operate as self = {} with its metatable linked to MrBrokenPetAction
@@ -75,6 +88,16 @@ function MrBrokenPetAction:consumeGetCursorInfo(type, spellId, spellIndex)
     self:setId(id)
     self.name = self:getMyPetCommandDefinition("name")
     self:setPvar(self.primaryKey.."2", anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
+end
+
+function MrBrokenPetAction:isUsable()
+    -- because pets are sometimes not yet summoned when combat is already underway (eg while mounted)
+    -- a positive result may come too late for the UI to react before combat lockdown happens, thus,
+    -- cache any positive result to ensure it's available even when the pet is momentarily AWOL
+    if not self.wasEverUsable then
+        self.wasEverUsable = C_SpellBook.HasPetSpells()
+    end
+    return self.wasEverUsable
 end
 
 -- expresses the MrBrokenPetAction in a way that can be executed in WoW's "secure environment" hellscape / action bar button.

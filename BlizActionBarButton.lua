@@ -381,7 +381,7 @@ function BabbInstance:toString()
 
             local icon = DEFAULT_ICON_FULL
             if blizId and blizType then
-                local btnDef = ButtonDef:new(blizId, blizType)
+                local btnDef = ButtonDef:newFromGetCursorIdiot(blizId, blizType)
                 icon = btnDef:getIcon()
             end
 

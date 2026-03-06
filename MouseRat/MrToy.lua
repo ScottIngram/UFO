@@ -8,7 +8,7 @@ Ufo.Wormhole()
 local MrToy = {
     type       = MouseRatType.TOY,
     cursorType = MouseRatType.ITEM, -- _G.GetCursorInfo() reports "item" for toys
-    actionBarButtonType = MouseRatTypeForActionBars.ITEM,
+    abbType    = MouseRatTypeForActionBarButton.ITEM,
     primaryKey = "itemId",
     helpers = {
         getName = C_Item.GetItemInfo,
@@ -31,6 +31,20 @@ function MrToy:disambiguator(type, maybeItemId)
     --zebug.warn:print("C_Item.GetItemInfo ->", C_Item.GetItemInfo(maybeItemId)) -- this seems to always provide accurate info. but no indicator of being a toy.
     return PlayerHasToy(maybeItemId)
 end
+
+-- examines the results of _G.GetActionInfo() and
+-- decides if those results describe a MouseRatType.TOY
+---@param abbType MouseRatTypeForActionBarButton must match the configured abbType
+---@param id any 2nd return val from _G.GetActionInfo()
+---@param subType 3rd return val from _G.GetActionInfo()
+function MrToy:disamButtonGator(abbType, id, subType)
+    --assert(abbType == self.abbType, "the provided abbType doesn't match the expected value of MouseRatTypeForActionBarButton.ITEM")
+    if abbType ~= self.abbType then return false end
+
+    zebug.warn:print("abbType", abbType, "id", id, "subType", subType)
+    return PlayerHasToy(id)
+end
+
 
 -------------------------------------------------------------------------------
 -- Instance Methods -- operate as self = {} with its metatable linked to MrToy

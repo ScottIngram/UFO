@@ -43,14 +43,14 @@ BLIZ_CURSOR_TYPE_BY_NAME = tInvert(BlizCursorType)
 -------------------------------------------------------------------------------
 ---@class MouseRatType - the type values actually used by the Bliz API's.
 MouseRatType = {
-    ITEM    = BlizCursorType[Enum.UICursorType.Item], -- "item",
+    ITEM    = BlizCursorType[Enum.UICursorType.Item],   -- "item",
     FLYOUT  = BlizCursorType[Enum.UICursorType.Flyout], -- "flyout",
-    MACRO   = BlizCursorType[Enum.UICursorType.Macro], -- "macro",
-    MOUNT   = BlizCursorType[Enum.UICursorType.Mount], -- "mount",
-    PET     = BlizCursorType[Enum.UICursorType.BattlePet], -- "battlepet",
+    MACRO   = BlizCursorType[Enum.UICursorType.Macro],  -- "macro",
+    MOUNT   = BlizCursorType[Enum.UICursorType.Mount],  -- "mount",
+    PET     = BlizCursorType[Enum.UICursorType.BattlePet],   -- "battlepet",
     PETACTION = BlizCursorType[Enum.UICursorType.PetAction], -- "petaction",
     SPELL   = BlizCursorType[Enum.UICursorType.Spell], -- "spell"
-    TOY     = BlizCursorType[Enum.UICursorType.Toy], -- "toy", --  cursorType="item" .. sub-type of: ITEM
+    TOY     = BlizCursorType[Enum.UICursorType.Toy],   -- "toy", --  cursorType="item" .. sub-type of: ITEM
     UNSUPPORTED = "unsupported", -- nobody's got time for that
 
     -- ------------------------
@@ -79,43 +79,46 @@ MOUSE_RAT_TYPE_FOR_CURSOR_NAME = tInvert(MouseRatType)
 
 -------------------------------------------------------------------------------
 -- FOR ACTION BARS
--- MouseRatTypeForActionBars
+-- MouseRatTypeForActionBarButton
 -- the kinds of stuff WoW lets you put on the action bars and thus the mouse
 -------------------------------------------------------------------------------
----@class MouseRatTypeForActionBars
-MouseRatTypeForActionBars = {
+---@class MouseRatTypeForActionBarButton
+MouseRatTypeForActionBarButton = {
 
     -- ------------------------------------------------------------------
     -- same string used by both _G.GetCursorInfo() and _G.GetActionInfo()
     -- ------------------------------------------------------------------
 
-    ITEM      = BlizCursorType[Enum.UICursorType.Item], -- "item",
+    ITEM      = BlizCursorType[Enum.UICursorType.Item],   -- "item",
     FLYOUT    = BlizCursorType[Enum.UICursorType.Flyout], -- "flyout",
-    MACRO     = BlizCursorType[Enum.UICursorType.Macro], -- "macro",
-    PETACTION = BlizCursorType[Enum.UICursorType.PetAction], -- "petaction", buttonType = "spell" .. subType: pet
+    MACRO     = BlizCursorType[Enum.UICursorType.Macro],  -- "macro",
+    PETACTION = BlizCursorType[Enum.UICursorType.PetAction], -- "petaction", actionBarButtonType = "spell" .. subType: pet
     SPELL     = BlizCursorType[Enum.UICursorType.Spell], -- "spell"
-    TOY       = BlizCursorType[Enum.UICursorType.Toy], -- "toy", buttonType = "item"
+    TOY       = BlizCursorType[Enum.UICursorType.Toy],   -- "toy", actionBarButtonType = "item"
 
     -- ----------------------------------------------------------
     -- used by _G.GetActionInfo() but is not in Enum.UICursorType
     -- ----------------------------------------------------------
 
-    MOUNT   = "summonmount", -- not BlizCursorType[Enum.UICursorType.Mount], -- buttonType = "summonmount"
-    PET     = "summonpet", -- not  BlizCursorType[Enum.UICursorType.BattlePet], -- buttonType = "summonpet"
+    MOUNT   = "summonmount", -- not BlizCursorType[Enum.UICursorType.Mount], -- actionBarButtonType = "summonmount"
+    PET     = "summonpet", -- not  BlizCursorType[Enum.UICursorType.BattlePet], -- actionBarButtonType = "summonpet"
 
     -- ------------------------------------------------------------------------------------
     -- custom button types - these are neither used by Bliz but is not in Enum.UICursorType
     -- ------------------------------------------------------------------------------------
 
-    BROKEN_PET_ACTION = "brokenPetCommand",-- buttonType = "spell" .. subType: pet  <--- ID is always 0
-    SUMMON_RANDOM_FAVORITE_MOUNT = "summon_r_f_mount", -- buttonType = "summonmount" .. subType: nil .. id=268435455
+    BROKEN_PET_ACTION = "brokenPetCommand",-- actionBarButtonType = "spell" .. subType: pet  <--- ID is always 0
+    SUMMON_RANDOM_FAVORITE_MOUNT = "summon_r_f_mount", -- actionBarButtonType = "summonmount" .. subType: nil .. id=268435455
     UNSUPPORTED = "unsupported", -- nobody's got time for that
 }
 
+MOUSE_RAT_ACTION_BAR_BUTTON_TYPE_FOR_BUTTON_NAME = tInvert(MouseRatTypeForActionBarButton)
+
+
 -- map from button -> mouse
 ACTION_B_MAPPED_TO_MOUSE = {
-    [MouseRatTypeForActionBars.MOUNT] = MouseRatType.MOUNT,
-    [MouseRatTypeForActionBars.PET]   = MouseRatType.PET,
+    [MouseRatTypeForActionBarButton.MOUNT] = MouseRatType.MOUNT,
+    [MouseRatTypeForActionBarButton.PET]   = MouseRatType.PET,
 }
 -- map from mouse -> button
 MOUSE_MAPPED_TO_ACTION_B = tInvert(ACTION_B_MAPPED_TO_MOUSE)
@@ -129,6 +132,7 @@ MOUSE_MAPPED_TO_ACTION_B = tInvert(ACTION_B_MAPPED_TO_MOUSE)
 ---@field isInstance boolean used to decide what data & methods can be expected
 ---@field type MouseRatType
 ---@field cursorType MouseRatType -- only required if different from type
+---@field abbType MouseRatTypeForActionBarButton -- only required if different from type
 ---@field helpers table<string,function|string|number> typically Bliz APIs to find icons, names, or to set cursor or tooltip
 ---@field disambiguator function required only if a custom type and a standard MouseRatType share a cursorType
 ---@field primaryKey string "spellId", "mountId", etc.
@@ -136,6 +140,7 @@ MOUSE_MAPPED_TO_ACTION_B = tInvert(ACTION_B_MAPPED_TO_MOUSE)
 ---@field consumeGetCursorInfo function transforms the wtf _G.GetCursorInfo() results into plain and simple type and id
 MouseRat = {
     ufoType = "MouseRat",
+    zebug = zebug,
 }
 
 UfoMixIn:mixInto(MouseRat)
@@ -209,12 +214,24 @@ function MouseRat:init()
     self:installMyToString()
 end
 
+---@param obj any|MouseRat
+---@return boolean
+function MouseRat:isSupported(obj)
+    return obj ~= nil
+            and isTable(obj)
+            and obj.ufoType == MouseRat.ufoType -- TODO: this will break if I decide to give subClasses their own distinct ufoType
+            and obj.type ~= MrUnsupported.type
+    -- TODO: support checking plain type values
+    -- or (not isString(mr))
+    -- or MouseRatRegistry:findSubClassForThisUnreliableData(mr)
+end
+
 -- establish OO inheritance from the MouseRat parent to the kid subclass (eg MrSpell)
 -- this only needs to be done once for each subclass
 ---@param kid MouseRat a subclass
 function MouseRat:adopt(kid)
     if kid.ufoType ~= MouseRat.ufoType then
-        zebug.warn:event("event"):print("adopt YES - none kid.ufoType",kid.ufoType)
+        zebug.trace:event("event"):print("adopt YES - none kid.ufoType",kid.ufoType)
         setmetatable(kid, { __index = MouseRat }) -- MouseRat is now the kid's parent
         kid:installMyToString()
     else
@@ -222,6 +239,7 @@ function MouseRat:adopt(kid)
     end
 end
 
+---@param target table a pre-populated chunk of MouseRat-like data (probably from SavedVariables)
 ---@return MouseRat
 function MouseRat:oneOfUs(target)
     assert(target, "the 'target' can't be nil")
@@ -288,19 +306,32 @@ end
 
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
 function MouseRat:getFromActionBarSlot(btnSlotIndex)
-    local type, id, subType = GetActionInfo(btnSlotIndex)
-    zebug.warn:event("event"):print("btnSlotIndex",btnSlotIndex, "---> type",type, "id",id, "subType",subType)
+    local type, id, subType = _G.GetActionInfo(btnSlotIndex)
+    --[[DEBUG]]zebug.warn:event("event"):print("btnSlotIndex",btnSlotIndex, "---> type",type, "id",id, "subType",subType)
+    if not type then return nil end
 
-    if not type then
-        return nil
+    local subClass = MouseRatRegistry:findSubClassForThisUnreliableData(type, id, subType)
+    if not subClass then
+        subClass = MrUnsupported
     end
 
-    local mrSisterType = ACTION_B_MAPPED_TO_MOUSE[type] or type
-    zebug.warn:event("event"):print("mrSisterType",mrSisterType)
+    --[[
+    -- TODO: handle
+    -- currently, this exists only to support the fucked up "companion" type
+    if subClass.transformAndAbort then
+        local mr = subClass:transformAndAbort(type, c2, c3, c4)
+        if mr then return mr end
+    end
+    ]]
 
-    local subclass = MouseRatRegistry:getSubClassForTrustedType(mrSisterType)
-    zebug.warn:dumpy("subclass",subclass)
-    return subclass
+    local instance = coerce({}, subClass)
+    instance:consumeGetCursorInfo(type, id, subType)
+
+    -- even though type is already in subClass, that data will be hidden from SavedVariables. rectify.
+    instance.type = subClass.type
+
+    --[[DEBUG]]zebug.info:event("event"):owner(instance):print("")
+    return instance
 end
 
 -------------------------------------------------------------------------------
@@ -366,11 +397,15 @@ end
 -- Subclasses can override these default implementations with custom ones.
 -------------------------------------------------------------------------------
 
--- this method is mandatory and MUST be implemented by the subclass
--- the Bliz API GetCursorInfo() is a great example of why I fucking hate the Bliz APIs
----@field ... varargs - the verbatim results from _G.GetCursorInfo()
-function MouseRat:consumeGetCursorInfo(...)
-    error("this method is mandatory and MUST be implemented by the subclass")
+-- subclasses can override this method and decide how to interpret GetCursorBullshit() for particularly shitty data
+---@param ... any - the verbatim results from _G.GetCursorInfo()
+function MouseRat:consumeGetCursorInfo(type, prollyId, maybeSubType, whoEvenFuckingKnows)
+    if type ~= self.type then
+        error(type..",the provided type, doesn't match the expected one:"..self.type)
+    end
+    self:setId(prollyId)
+    self:setPvar("subType", maybeSubType)
+    self:setPvar("extraId", whoEvenFuckingKnows)
 end
 
 -- because Bliz loves inconsistency more than life itself,
@@ -427,24 +462,20 @@ end
 function MouseRat:pickupToCursor()
     assert(self.isInstance, "instance method called from a class context")
 
-    --MouseRat.pickedUpMouseRat = self
+    --MouseRat.pickedUpMouseRat = self -- TODO: fully switch over from ButtonDef to MouseRat
     Ufo.pickedUpBtn = self
 
     local event = "event"
     zebug.warn:event(event):owner(self):print("pick me up!")
 
-    local cursor, isOk, err
+    local isOk, err
     if self:canThisToonPickup() then
         isOk, err = pcall(function() self:helpMe(mName.pickupToCursor) end)
     else
-        zebug.error:event("event"):owner(self):print("haven't implemented this yet :-(")
-        return false
---[[
-        -- TODO - leverage proxy
-        cursor = UfoProxy:pickupButtonDefOntoCursor(self, "event")
+        -- TODO - implement MrUfoButtton / Flyout, ie, replace UfoProxy with MouseRats
+        local cursor = UfoProxy:pickupButtonDefOntoCursor(self, "event")
         isOk = cursor and true or false
         err = isOk and "A-OK" or "couldn't transform myself into a UfoProxy"
-]]
     end
 
     if isOk then

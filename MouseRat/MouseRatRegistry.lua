@@ -1,7 +1,7 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole()
-local zebug = Zebug:new(--[[Z_VOLUME_GLOBAL_OVERRIDE or]] Zebug.TRACE)
+local zebug = MouseRat.zebug -- Zebug:new(--[[Z_VOLUME_GLOBAL_OVERRIDE or]] Zebug.TRACE)
 
 -------------------------------------------------------------------------------
 -- MouseRatRegistry
@@ -11,10 +11,12 @@ local zebug = Zebug:new(--[[Z_VOLUME_GLOBAL_OVERRIDE or]] Zebug.TRACE)
 ---@field ufoType string
 ---@field kids table<MouseRatType,MouseRat>
 ---@field customizedCursorTypes table<MouseRatType,table<>>
+---@field customizedAbbTypes table<MouseRatTypeForActionBarButton,table<>>
 MouseRatRegistry = {
     ufoType = "MouseRatRegistry",
     kids = {},
     customizedCursorTypes = {},
+    customizedAbbTypes = {},
 }
 
 -------------------------------------------------------------------------------
@@ -31,9 +33,13 @@ function MouseRatRegistry:register(kid)
     end
 
     -- subclasses are considered "custom" when their type is different from their cursorType (if specified)
-    local isCustom = kid.cursorType and (kid.cursorType ~= kid.type)
-    if isCustom then
+    local isCustomCursor = kid.cursorType and (kid.cursorType ~= kid.type)
+    if isCustomCursor then
         self:addMouseRatForCustomizedCursorType(kid)
+    end
+    local isCustomAbb = kid.abbType and (kid.abbType ~= kid.type)
+    if isCustomAbb then
+        self:addMouseRatForCustomizedAbb(kid)
     end
 
     MouseRat:adopt(kid) -- activate OO inheritance
@@ -151,8 +157,7 @@ function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
     return subClass
 end
 
-
----@param mr MouseRat
+---@param kid MouseRat
 function MouseRatRegistry:addMouseRatForCustomizedCursorType(kid)
     -- custom types must provide the "cursorType" field and it must specify a standard BlizCursorType
     assert(kid.cursorType, "bad config: The custom MouseRat for "..kid.type.." has not specified a 'cursorType' field")
@@ -166,6 +171,22 @@ function MouseRatRegistry:addMouseRatForCustomizedCursorType(kid)
     end
 
     table.insert(cct, kid)
+end
+
+---@param kid MouseRat
+function MouseRatRegistry:addMouseRatForCustomizedAbb(kid)
+    local regKey = "customizedAbbTypes"
+    local configKey = "abbType"
+    -- custom types must provide the "cursorType" field and it must specify a standard BlizCursorType
+    assert(kid[configKey], "bad config: The custom MouseRat for "..kid.type.." has not specified a '..key..' field")
+    assert(MOUSE_RAT_ACTION_BAR_BUTTON_TYPE_FOR_BUTTON_NAME[kid[configKey]], "bad config: The custom '"..kid.type.."' -> '"..kid[configKey].."' ".. configKey .." is not standard")
+    assert(kid.disamButtonGator, "bad config: The custom MouseRat for "..kid.type.." -> "..kid[configKey].." has not specified a 'disamButtonGator' method")
+
+    if not self[regKey][kid[configKey]] then
+        self[regKey][kid[configKey]] = {}
+    end
+
+    table.insert(self[regKey][kid[configKey]], kid)
 end
 
 -------------------------------------------------------------------------------

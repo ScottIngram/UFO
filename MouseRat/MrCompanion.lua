@@ -65,11 +65,6 @@ end
 function MrCompanion:pickupToCursor()
 end
 
----@param type BlizCursorType the 1st arg from GetCursorInfo
----@param c2 number the 2nd arg from GetCursorInfo
-function MrCompanion:consumeGetCursorInfo(type, c1, c2, c3)
-end
-
 -------------------------------------------------------------------------------
 -- REGISTER NOW!
 -------------------------------------------------------------------------------

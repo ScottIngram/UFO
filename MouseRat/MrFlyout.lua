@@ -93,7 +93,7 @@ function MrFlyout:getSpells()
     return spells
 end
 
-function MrFlyout:pickupToCursor()
+function MrFlyout:XXX_pickupToCursor()
     -- Bliz provides no API to programmatically pickup a flyout (unless it is already on your actionbar)
     -- TODO: implement via fancy macro proxy magic
     -- see ButtonOnFlyoutMenu:abortIfUnusable() for an example of the limitations

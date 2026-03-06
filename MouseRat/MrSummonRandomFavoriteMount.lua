@@ -8,7 +8,7 @@ Ufo.Wormhole()
 local MrSummonRandomFavoriteMount = {
     type       = MouseRatType.SUMMON_RANDOM_FAVORITE_MOUNT,
     cursorType = MouseRatType.MOUNT,
-    actionBarButtonType = MouseRatTypeForActionBars.MOUNT,
+    abbType = MouseRatTypeForActionBarButton.MOUNT,
     primaryKey = "id",
     helpers = {
         getName = _G.MOUNT_JOURNAL_SUMMON_RANDOM_FAVORITE_MOUNT,
@@ -27,7 +27,7 @@ local MrSummonRandomFavoriteMount = {
 ---@param maybeMountId any do not care
 ---@param maybeMountIndex any must be 0
 function MrSummonRandomFavoriteMount:disambiguator(type, maybeMountId, maybeMountIndex)
-    zebug.warn:print("type", type, "maybeMountId",maybeMountId, "maybeMountIndex",maybeMountIndex)
+    zebug.info:print("type", type, "maybeMountId",maybeMountId, "maybeMountIndex",maybeMountIndex)
     if type ~= MouseRatType.MOUNT then return false end
     return maybeMountIndex == 0
 end
@@ -35,12 +35,12 @@ end
 -- == ActionBars methods
 
 -- examines the results of _G.GetActionInfo() and
--- decides if those results describe a MouseRatTypeForActionBars.BROKEN_PET_ACTION
----@param btnType MouseRatTypeForActionBars must be MouseRatType.SPELL
+-- decides if those results describe a MouseRatTypeForActionBarButton.SUMMON_RANDOM_FAVORITE_MOUNT
+---@param btnType MouseRatTypeForActionBarButton must be MouseRatTypeForActionBarButton.MOUNT
 ---@param id any 2nd return val from _G.GetActionInfo()
 ---@param subType 3rd return val from _G.GetActionInfo()
-function MrSummonRandomFavoriteMount:disamButtonator(btnType, id, subType)
-    if btnType ~= self.actionBarButtonType then return false end
+function MrSummonRandomFavoriteMount:disamButtonGator(btnType, id, subType)
+    if btnType ~= self.abbType then return false end
 
     zebug.warn:print("btnType", btnType, "id", id, "subType", subType)
     return (subType == "pet")

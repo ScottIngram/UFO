@@ -518,7 +518,7 @@ function ButtonDef:getFromCursor(event, silenceWarnings)
         return Ufo.pickedUpBtn
     end
 
-    local btnDef = ButtonDef:new()
+    local btnDef = ButtonDef:newFromGetCursorIdiot()
 
     btnDef.type = type
     if type == ButtonType.SPELL then

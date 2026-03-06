@@ -156,8 +156,8 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     local flyoutMenu = self:getFlyoutMenu()
     if not flyoutMenu.isForCatalog then return end -- only the flyouts in the catalog are valid drop targets.  TODO: let flyouts on the germs receive too?
 
-    local crsDef = ButtonDef:getFromCursor(event)
-    if not crsDef then
+    local crsDef = MouseRat:getFromCursor(event)
+    if not MouseRat:isSupported(crsDef) then
         zebug.info:event(event):owner(self):print("Sorry, unsupported type:", Ufo.unknownType)
         msgUser(L10N.UNSUPPORTED_TYPE, ": ", Ufo.unknownType)
         return
@@ -463,7 +463,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     end
 ]]
 
-    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-dragged-away"):run(function(event)
+    zebug.warn:mTriangle():owner(self):newEvent(self, "bofm-dragged-away"):run(function(event)
         local isOk, err = btnDef:pickupToCursor(event)
         if not isOk then
             zebug.error:event(event):owner(self):print("FAILED to drag! err",err)
