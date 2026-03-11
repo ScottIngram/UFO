@@ -3,6 +3,7 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole()
 
 ---@class MrBrokenPetAction : MouseRat
+---@field myTwinActionIdAction MrBrokenPetAction some of these fuckers are eXtRa broken and one "ID" actually represents TWO different behaviors.  FU Bliz.
 local MrBrokenPetAction = {
     type       = MouseRatType.BROKEN_PET_ACTION,
     cursorType = MouseRatType.PETACTION,
@@ -11,7 +12,8 @@ local MrBrokenPetAction = {
     helpers = {
         --getName = xxx, -- replaced by getName() defined below
         --getIcon = xxx, -- replaced by getIcon() defined below
-        --pickupToCursor = xxx, -- replaced by pickupToCursor() defined below
+        --pickupToCursor = xxx,
+        canThisToonPickup = false, -- Bliz provides no API to do so.  FU.
         --setToolTip = xxx, -- replaced by setToolTip() defined below
         --isUsable = C_SpellBook.HasPetSpells,  -- TODO: bugfix the lag between dismounting and the pet abilities being reported as existing
     },
@@ -44,10 +46,9 @@ function MrBrokenPetAction:disamButtonGator(abbType, id, subType)
     return (id and (id < 10))
 end
 
-
-------------------------------------------------------------------------------------------
--- Instance Methods -- operate as self = {} with its metatable linked to MrBrokenPetAction
-------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+-- Instance Methods for MouseRat Contract
+-------------------------------------------------------------------------------
 
 ---@return string "Assist" or "Attack" or etc
 function MrBrokenPetAction:getName()
@@ -64,15 +65,7 @@ function MrBrokenPetAction:getIcon()
 end
 
 function MrBrokenPetAction:setToolTip()
-    _G.GameTooltip:SetText(self:getName())
-end
-
----@param type BlizCursorType the 1st arg from GetCursorInfo
----@param spellId number the 2nd arg from GetCursorInfo - Spell ID of the pet action on the cursor, or unknown 0-4 number if the spell is a shared pet control spell (Follow, Stay, Assist, Defensive, etc...)..
----@param spellIndex number the 3rd arg from GetCursorInfo - The index of the spell in the pet spell book, or nil if the spell is a shared pet control spell (Follow, Stay, Assist, Defensive, etc...).
-function MrBrokenPetAction:fixGetCursorInfo(type, spellId, spellIndex)
-    local id, anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(spellId)
-    return type, spellId, spellIndex
+    _G.GameTooltip:SetText(_G.PET .. ": " .. self:getName())
 end
 
 -- will the real spellId please stand up!
@@ -87,7 +80,8 @@ function MrBrokenPetAction:consumeGetCursorInfo(type, spellId, spellIndex)
     local id, anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(spellId)
     self:setId(id)
     self.name = self:getMyPetCommandDefinition("name")
-    self:setPvar(self.primaryKey.."2", anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
+    zebug.warn:owner(self):event():print("myTwinActionId",anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
+    self:setPvar("myTwinActionId", anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
 end
 
 function MrBrokenPetAction:isUsable()
@@ -95,7 +89,7 @@ function MrBrokenPetAction:isUsable()
     -- a positive result may come too late for the UI to react before combat lockdown happens, thus,
     -- cache any positive result to ensure it's available even when the pet is momentarily AWOL
     if not self.wasEverUsable then
-        self.wasEverUsable = C_SpellBook.HasPetSpells()
+        self:setPvar("wasEverUsable", C_SpellBook.HasPetSpells())
     end
     return self.wasEverUsable
 end
@@ -105,16 +99,40 @@ end
 ---@return string the name of some key recognized by SecureActionButton as an attribute (according to Bliz's fucking insane rules) related to the above "type" attribute
 ---@return string the actual fucking value assigned to whatever goddamn key was decided above
 function MrBrokenPetAction:asSecureClickHandlerAttributes()
+    local cfg = self:getMyPetCommandDefinition()
+    if cfg.scripty then
+        local type = "SCRIPT_FOR_" .. self.brokenPetCommandId
+        return type, "_"..type, cfg.scripty
+    end
     local macro = self:getMyPetCommandDefinition("macro")
     return ButtonType.MACRO, "macrotext", macro
 end
+
+-- some MrBrokenPetAction are eXtRa broken and one "ID" actually represents TWO different behaviors.  FU Bliz.
+---@return MrBrokenPetAction|nil
+function MrBrokenPetAction:getTwin()
+    if self.myTwinActionId then
+        ---@type MrBrokenPetAction
+        local twin = {}
+        setmetatable(twin, { __index = self })
+        twin:setId(self.myTwinActionId)
+        twin.name = twin:getMyPetCommandDefinition("name")
+        twin.type = self.type -- even though type is already in self, it would be hidden from SavedVariables. rectify.
+        return twin
+    end
+    return nil
+end
+
+------------------------------------------------------------------------------------------
+-- Instance Methods - utils
+------------------------------------------------------------------------------------------
 
 function MrBrokenPetAction:getMyPetCommandDefinition(key)
     local cfg = BrokenPetCommand[self:getId()]
     if not cfg then
         error("bad id:" .. nilStr(self:getId()))
     end
-    return cfg[key] or "bad key:"..nilStr(key)
+    return (key and (cfg[key] or "bad key:"..nilStr(key))) or cfg
 end
 
 -------------------------------------------------------------------------------

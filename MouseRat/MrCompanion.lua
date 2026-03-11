@@ -26,7 +26,7 @@ local MrCompanion = {
 -- Class Methods -- operate as self = MrToy
 -------------------------------------------------------------------------------
 
--- examines the results of _G.GetCursorInfo() and decides if those results describe a Toy
+-- examines the results of _G.GetCursorInfo() and decides if those results describe a MrCompanion
 ---@param type MouseRatType must be MouseRatType.SPELL
 ---@param maybeItemId any could be an itemId
 function MrCompanion:transformAndAbort(type, mysteryId, companionType, c4)
@@ -60,9 +60,6 @@ function MrCompanion:getId()
 end
 
 function MrCompanion:setToolTip()
-end
-
-function MrCompanion:pickupToCursor()
 end
 
 -------------------------------------------------------------------------------

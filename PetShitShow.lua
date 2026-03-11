@@ -19,7 +19,10 @@ BrokenPetCommand = {
     ASSIST     = { fubarId=3, icon=524348, macro="/petassist",    name="Assist", }, -- Sets pet to assist mode.
     ATTACK     = { fubarId=2, icon=132152, macro="/petattack",    name="Attack", }, -- Sends pet to attack currently selected target.
     FOLLOW     = { fubarId=1, icon=132328, macro="/petfollow",    name="Follow", }, -- Set pet to follow you... is effectively PetStopAttack()
-    DEFENSIVE  = { fubarId=4, icon=132110, macro="/petdefensive", name="Defensive", }, -- Set pet to defensive.
+    -- the /petdefensive macro has been broken since at least 2020 https://us.forums.blizzard.com/en/wow/t/petdefensive-macro/437857
+    -- also, PetDefensiveMode() is not available inside the restricted environment hellscape.
+    -- so, Bliz provides no way for us to implement DEFENSIVE.  FU yet another time, Bliz.
+    DEFENSIVE  = { fubarId=4, icon=132110, X_scripty="PetDefensiveMode()", macroX="/petdefensive", name="Defensive", macro="/s the /petdefensive macro has been broken since circa 2020." },
     MOVETO     = { fubarId=4, icon=457329, macro="/petmoveto",    name="Move To", }, -- Set pet to move to and stay at a hover-targeted location.
     PASSIVE    = { fubarId=0, icon=132311, macro="/petpassive",   name="Passive", }, -- Set pet to passive mode.
     STAY       = { fubarId=0, icon=136106, macro="/petstay",      name="Stay", }, -- Set pet to stay where it is at.
