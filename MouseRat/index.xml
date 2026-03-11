@@ -16,8 +16,9 @@
     <Script file="MrPetAction.lua"/> <!-- MrSpell subclass -->
     <Script file="MrBrokenPetAction.lua"/> <!-- MrPetAction subclass -->
     <Script file="MrSummonRandomFavoriteMount.lua"/> <!-- MrMount subclass -->
+    <Script file="MrDreadlord.lua"/>  <!-- MrMacro subclass -->
     <!--
-    <Script file="MrUfoButton.lua"/> MrMacro subclass
+    <Script file="MrButtonOnUfo.lua"/> MrMacro subclass
     <Script file="MrUfoFlyout.lua"/> MrMacro subclass
     -->
 

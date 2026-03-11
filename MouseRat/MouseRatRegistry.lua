@@ -68,7 +68,7 @@ function MouseRatRegistry:validateKids()
             local helper = kid.helpers and kid.helpers[methodName]
             local isTheHelperThere = (helper ~= nil) -- allow false but not nil
             local isMethodDefaultBaseImpl = (method == MouseRat[methodName])
-            local isDefaultGoodEnoughByItself = (methodName == "getName")
+            local isDefaultGoodEnoughByItself = (methodName == MouseRatMethodsContract.getName) or (methodName == MouseRatMethodsContract.canThisToonPickup)
 
             -- validate that the required methods are implemented by the subclass, or if not, then their helpers have.
             if isMethodDefaultBaseImpl then

@@ -44,11 +44,12 @@ function MrMacro:isGlobal()
 end
 
 function MrMacro:isUsable()
-    --zebug.warn:owner("self"):print("macroId",self.macroId, "isGlobal",self:isGlobal(), "owner",self.macroOwner, "toon",getIdForCurrentToon())
+    assert(self.isInstance, "instance method called from a class context")
+    zebug.info:owner("self"):event():print("macroId",self.macroId, "isGlobal",self:isGlobal(), "owner",self.macroOwner, "toon",getIdForCurrentToon())
     local isUsable = self:isGlobal() or (getIdForCurrentToon() == self.macroOwner)
     if not isUsable then
         local err = isUsable or (L10N.NOT_MACRO_OWNER .. " " .. (self.macroOwner or L10N.UNKNOWN))
-        --zebug.warn:owner("self"):print("macroId",self.macroId, "isUsable",isUsable, "err", err)
+        zebug.info:owner("self"):event():print("macroId",self.macroId, "isUsable",isUsable, "err", err)
     end
     return isUsable
 end
@@ -68,7 +69,7 @@ end
 function MrMacro:consumeGetCursorInfo(type, macroId)
     self:setId(macroId)
     if not self:isGlobal() then
-        self.macroOwner = (Ufo.pickedUpBtn and Ufo.pickedUpBtn.macroOwner) or getIdForCurrentToon()
+        self.macroOwner = getIdForCurrentToon()
         self.fallbackIcon = self:getIcon()
     end
 end

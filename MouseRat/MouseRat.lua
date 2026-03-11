@@ -57,6 +57,9 @@ MouseRatType = {
     -- not in Enum.UICursorType
     -- ------------------------
 
+    -- a proxy, used to put custom, arbitrary anything on the cursor.
+    DREADLORD = "DREADLORD",
+
     -- MOUNT variant, an abnormal result containing a useless ID
     -- which isn't accepted by any API. It is returned by PickupSpell(spellIdOfSomeMount)
     COMPANION = "companion",  -- sideways brundlefly of: MOUNT
@@ -158,9 +161,14 @@ MouseRatMethodsContract = {
     getName    = "getName",
     setToolTip = "setToolTip",
     pickupToCursor = "pickupToCursor",
+    canThisToonPickup = "canThisToonPickup",
 }
 
 local mName = MouseRatMethodsContract
+
+local OPTIONAL_HELPERS = {
+    [mName.canThisToonPickup] = true,
+}
 
 -------------------------------------------------------------------------------
 -- private functions
@@ -301,6 +309,16 @@ function MouseRat:getFromCursor(event)
         return nil
     end
 
+    -- handle the special case of a DREADLORD (which is simply a macro) being on the cursor
+    -- the cursor info can only describe the macro and not the wrapped data/obj/MouseRat
+    -- return the cached result of when the DREADLORD was originally pickupToCursor() and initialized
+    if MrDreadlord:isThisMySpawn(type, c2, c3, c4) then
+        if MouseRat.pickedUpMouseRat then
+            return MouseRat.pickedUpMouseRat
+        end
+    end
+
+    -- TODO: store this as onTheCursor -- subsequently, clear it via CURSOR_CHANGED event listener
     return self:newFromGetCursorIdiot(type, c2, c3, c4)
 end
 
@@ -334,23 +352,37 @@ function MouseRat:getFromActionBarSlot(btnSlotIndex)
     return instance
 end
 
+---@return MouseRat whatever was last put on the cursor
+function MouseRat:getMostRecentlyPickedUpMr()
+    return MouseRat.pickedUpMouseRat or Ufo.pickedUpBtn
+end
+
 -------------------------------------------------------------------------------
 -- INSTANCE Methods - utilities - not intended for use outside of this library
 -------------------------------------------------------------------------------
 
-local apiSelf = { [mName.setToolTip] = _G.GameTooltip }
+local selfObjNeededFor = { [mName.setToolTip] = _G.GameTooltip } -- sOmE Bliz APIs need a self object
 
 ---@param methodName MouseRatMethodsContract
 ---@return any whatever the helper produced (a name, an icon, true for success, etc)
 function MouseRat:helpMe(methodName)
+    -- TODO: cache this
     assert(self.isInstance, "instance method called from a class context")
     assert(methodName, "methodName arg is nil")
     assertIsValidMethodName(methodName)
     local helper = self.helpers[methodName]
-    if helper == nil then error(methodName..":The MouseRat subclass must either implement this method or provide its helper.") end
+    if helper == nil then
+        local isOptional = OPTIONAL_HELPERS[methodName]
+        if isOptional then
+            return
+        else
+            error(methodName..": The MouseRat subclass must either implement this method or provide its helper.")
+        end
+    end
     if isFunction(helper) then
-        if apiSelf[methodName] then
-            return helper(apiSelf[methodName], self:getIdUsedByBlizApis())
+        local zelf = selfObjNeededFor[methodName]
+        if zelf then
+            return helper(zelf, self:getIdUsedByBlizApis())
         else
             return helper(self:getIdUsedByBlizApis())
         end
@@ -380,13 +412,22 @@ end
 
 ---@return boolean true if the WoW client will allow this toon to put this thing onto the cursor
 function MouseRat:canThisToonPickup()
-    -- difference between isUsable() and canThisToonPickup?
-    local canPickup = self:isUsable() or MouseRatType.ITEM == self.type
-    return canPickup
+    local canPickup = self:helpMe(mName.canThisToonPickup)
+    if canPickup ~= nil then return canPickup end
+    return self:isUsable() -- or MouseRatType.ITEM == self.type or MouseRatType.DREADLORD == self.type
 end
 
-function MouseRat:getMostRecentlyPickedUpMr()
-    return MouseRat.pickedUpMouseRat or Ufo.pickedUpBtn
+function MouseRat:invalidateCache()
+    -- TODO - used by FlyoutDef
+end
+
+function MouseRat:redefine()
+    -- TODO - used by MacroShitShow
+end
+
+function MouseRat:isType(type)
+    assert(self.isInstance, "instance method called from a class context")
+    return type == self.type
 end
 
 -------------------------------------------------------------------------------
@@ -406,18 +447,6 @@ function MouseRat:consumeGetCursorInfo(type, prollyId, maybeSubType, whoEvenFuck
     self:setId(prollyId)
     self:setPvar("subType", maybeSubType)
     self:setPvar("extraId", whoEvenFuckingKnows)
-end
-
--- because Bliz loves inconsistency more than life itself,
--- the results from _G.GetCursorInfo() are given in an unpredictable order.
--- here, we fix that bullshit
----@param type MouseRatType the 1st value returned by GCI seems to reliably always be type
----@param id number|string  the 2nd value from GCI - uSuAlLy the ID
----@param subType number|string|nil (optional) the 3rd value from GCI - sometimes describes a variation for the type, sometimes an index in some catalog
----@param subId number|string|nil (optional) the 4th value from GCI - sometimes is a derived ID
-function MouseRat:fixGetCursorInfo(type, id, subType, subId)
-    -- default implementation simply returns them in the same order provided which for some types is actually correctly
-    return type, id, subType, subId
 end
 
 ---@return string
@@ -462,29 +491,31 @@ end
 function MouseRat:pickupToCursor()
     assert(self.isInstance, "instance method called from a class context")
 
-    --MouseRat.pickedUpMouseRat = self -- TODO: fully switch over from ButtonDef to MouseRat
+    MouseRat.pickedUpMouseRat = self -- TODO: fully switch over from ButtonDef to MouseRat
     Ufo.pickedUpBtn = self
 
-    local event = "event"
-    zebug.warn:event(event):owner(self):print("pick me up!")
+    zebug.trace:event():owner(self):print("pick me up!")
 
-    local isOk, err
+    ---@type MouseRat
+    local me
     if self:canThisToonPickup() then
-        isOk, err = pcall(function() self:helpMe(mName.pickupToCursor) end)
+        me = self
     else
-        -- TODO - implement MrUfoButtton / Flyout, ie, replace UfoProxy with MouseRats
-        local cursor = UfoProxy:pickupButtonDefOntoCursor(self, "event")
-        isOk = cursor and true or false
-        err = isOk and "A-OK" or "couldn't transform myself into a UfoProxy"
+        me = MrDreadlord:new(self)
+        zebug.info:event():owner(self):print("I'm dreadlord now!")
     end
+
+    local isOk, err = pcall(function() me:helpMe(mName.pickupToCursor) end)
 
     if isOk then
-        zebug.trace:event(event):owner(self):print("picked up A-OK!")
+        zebug.trace:event():owner(me):print("picked up A-OK!")
+        -- TODO: store "me" as onTheCursor -- subsequently, clear it via CURSOR_CHANGED event listener
     else
-        zebug.warn:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
+        me = nil
+        zebug.warn:event():owner(me):print("pickupToCursor failed! ERROR is",err)
     end
 
-    return isOk
+    return me
 end
 
 -- expresses the MouseRat in a way that can be executed in WoW's "secure environment" hellscape / action bar button.

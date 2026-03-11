@@ -60,7 +60,7 @@ function ButtonOnFlyoutMenu:hasDef()
     return self.btnDef and true or false
 end
 
----@return ButtonDef
+---@return MouseRat
 function ButtonOnFlyoutMenu:getDef()
     return self.btnDef
 end
@@ -156,24 +156,34 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     local flyoutMenu = self:getFlyoutMenu()
     if not flyoutMenu.isForCatalog then return end -- only the flyouts in the catalog are valid drop targets.  TODO: let flyouts on the germs receive too?
 
-    local crsDef = MouseRat:getFromCursor(event)
-    if not MouseRat:isSupported(crsDef) then
+    local mr = MouseRat:getFromCursor(event)
+    if not MouseRat:isSupported(mr) then
         zebug.info:event(event):owner(self):print("Sorry, unsupported type:", Ufo.unknownType)
         msgUser(L10N.UNSUPPORTED_TYPE, ": ", Ufo.unknownType)
         return
+    end
+
+    -- handle special case where the MR is a wrapper
+    if mr.getOriginalMouseRat then
+        mr = mr:getOriginalMouseRat()
     end
 
     local flyoutId = flyoutMenu:getId()
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     local btnIndex = self:getId()
 
-    flyoutDef:insertButton(btnIndex, crsDef)
-    if crsDef.brokenPetCommandId2 then
-        local twin = ButtonDef:getFromCursor(event)
-        twin.brokenPetCommandId = twin.brokenPetCommandId2
-        twin.brokenPetCommandId2 = nil
-        twin.name = nil
-        flyoutDef:insertButton(btnIndex+1, twin)
+    flyoutDef:insertButton(btnIndex, mr)
+
+    -- handle the special case of the pet action shit show
+    if mr:isType(MouseRatType.BROKEN_PET_ACTION) then
+        zebug.info:event("event"):owner(self):print("handling BROKEN_PET_ACTION...")
+        -- sometimes it's impossible to distinguish two different pet actions (FU Bliz)
+        -- so if you add one, add both
+        local twin = mr:getTwin()
+        zebug.info:event("event"):owner(self):print("twin",twin)
+        if twin then
+            flyoutDef:insertButton(btnIndex+1, twin)
+        end
     end
 
     Cursor:clear(event)
@@ -447,6 +457,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     local flyoutMenu = self:getFlyoutMenu()
     if not flyoutMenu.isForCatalog then return end
 
+    -- is something else already on the cursor?
     local isDragging = GetCursorInfo()
     if isDragging then
         zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me-SWAP"):run(function(event)
@@ -456,14 +467,8 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     end
 
     local btnDef = self:getDef()
---[[
-    if self:abortIfUnusable(btnDef) then
-        -- TODO - work some sort of proxy magic to let a toon drag around a spell they don't know
-        return
-    end
-]]
 
-    zebug.warn:mTriangle():owner(self):newEvent(self, "bofm-dragged-away"):run(function(event)
+    zebug.warn:mTriangle():owner(self):newEvent(self, "drag-away"):run(function(event)
         local isOk, err = btnDef:pickupToCursor(event)
         if not isOk then
             zebug.error:event(event):owner(self):print("FAILED to drag! err",err)
