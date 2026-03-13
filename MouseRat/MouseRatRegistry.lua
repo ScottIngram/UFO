@@ -48,65 +48,59 @@ function MouseRatRegistry:register(kid)
 end
 
 function MouseRatRegistry:init()
-    self:validateKids()
+    MouseRatRegistry:forEachKid(MouseRatRegistry.validateKid)
 end
 
-function MouseRatRegistry:validateKids()
-    local invalids
-    MouseRatRegistry:forEachKid(function(kid)
-        for i, methodName in ipairs(MouseRatMethodsContract) do
-            local valid
-            local method = kid[methodName]
-            local helper = kid.helpers and kid.helpers[methodName]
-            local isTheHelperThere = (helper ~= nil) -- allow false but not nil
-            local isMethodDefaultBaseImpl = (method == MouseRat[methodName])
-            local isDefaultGoodEnoughByItself = (methodName == MouseRatMethodsContract.getName) or (methodName == MouseRatMethodsContract.canThisToonPickup)
+---@param kid MouseRat
+function MouseRatRegistry:validateKid(kid)
+    --local invalids
+    for i, methodName in ipairs(MouseRatMethodsContract) do
+        local valid
+        local method = kid[methodName]
+        local helper = kid.helpers and kid.helpers[methodName]
+        local isTheHelperThere = (helper ~= nil) -- allow false but not nil
+        local isMethodDefaultBaseImpl = (method == MouseRat[methodName])
+        local isDefaultGoodEnoughByItself = (methodName == MouseRatMethodsContract.getName) or (methodName == MouseRatMethodsContract.canThisToonPickup)
 
-            -- validate that the required methods are implemented by the subclass, or if not, then their helpers have.
-            if isMethodDefaultBaseImpl then
-                if isDefaultGoodEnoughByItself then
+        -- validate that the required methods are implemented by the subclass, or if not, then their helpers have.
+        if isMethodDefaultBaseImpl then
+            if isDefaultGoodEnoughByItself then
+                valid = true
+            else
+                if isTheHelperThere then
                     valid = true
                 else
-                    if isTheHelperThere then
-                        valid = true
-                    else
-                        valid = false
-                    end
+                    valid = false
                 end
-            else
-                valid = true
             end
-
-            -- go above and beyond mere validation.
-            -- enable subclasses to specify helpers as static values which we will wrap inside a function
-            if valid then
-                if not kid.helpers then
-                    kid.helpers = {}
-                end
-
-                if isTheHelperThere then
-                    if not isFunction(helper) then
-                        --print("WRAPPING",kid.type, "helper", helperName, helper)
-                        -- the helper "method" is actually just a string, number, etc.  So convert it into a function.
-                        kid.helpers[methodName] = function() return helper end -- this snapshots the current value.  bug?
-                    end
-                else
-                    -- failsafe
-                    kid.helpers[methodName] = function() zebug.error:owner(kid):print(methodName,"method & helper are both missing.  Defaulting val to nil") return nil end
-                end
-            else
-                zebug.error:owner(kid):print("type",kid.type, "must implement a method",methodName, "or define a helper method/field", methodName)
-                if not invalids then invalids = {} end
-                invalids[#invalids+1] = kid.type
-            end
+        else
+            valid = true
         end
-    end)
 
-    if invalids then
-        -- prolly need to either accumulate all errs, or, just fail immediately above
-        -- error("blah blah")
+        -- go above and beyond mere validation.
+        -- enable subclasses to specify helpers as static values which we will wrap inside a function
+        if valid then
+            if not kid.helpers then
+                kid.helpers = {}
+            end
+
+            if isTheHelperThere then
+                if not isFunction(helper) then
+                    --print("WRAPPING",kid.type, "helper", helperName, helper)
+                    -- the helper "method" is actually just a string, number, etc.  So convert it into a function.
+                    kid.helpers[methodName] = function() return helper end -- this snapshots the current value.  bug?
+                end
+            else
+                -- failsafe
+                kid.helpers[methodName] = function() zebug.error:owner(kid):print(methodName,"method & helper are both missing.  Defaulting val to nil") return nil end
+            end
+        else
+            --zebug.error:owner(kid):print("type",kid.type, "must implement a method",methodName, "or define a helper method/field", methodName)
+            --if not invalids then invalids = {} end
+            --invalids[#invalids+1] = kid.type
+        end
     end
-
+    --return invalids
 end
 
 ---@param confirmedType MouseRatType determined to be the actual type and not an ambiguous value returned from a Bliz API
