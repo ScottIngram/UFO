@@ -126,18 +126,11 @@ end
 -- Instance Methods for MouseRat Contract
 -------------------------------------------------------------------------------
 
--- will the real macroId please stand up!
----@param type BlizCursorType the 1st arg from GetCursorInfo
----@param macroId number the 2nd arg from GetCursorInfo
-function MrDreadlord:consumeGetCursorInfo(type, macroId)
-    self:setId(macroId)
-end
-
 -- the whole point of a MrDreadlord is to pickup something that otherwise can't be pickedup
 -- including arbitrary whatevers but also legit MouseRats that for whatever reason the current toon can't.
 -- jump through elaborate hoops to "trick" the wow client
 function MrDreadlord:pickupToCursorHelper()
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     zebug.warn:event():owner(self):print("DREAD to pick me up!!!!")
 
     -- because a Dreadlord is a fake thing, we must create a real thing if we want to drag it around.
@@ -151,7 +144,7 @@ function MrDreadlord:pickupToCursorHelper()
     if index then
         PickupMacro(--[[self.macroVesselName or]] index)
     else
-        error("couldn't create a macro for the ", self.type)
+        error("couldn't create a macro for the ".. self.type)
     end
 
     return self
@@ -164,7 +157,7 @@ MrDreadlord.helpers.pickupToCursor = MrDreadlord.pickupToCursorHelper
 -------------------------------------------------------------------------------
 
 function MrDreadlord:areYouMe(you)
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     if you == nil then
         return false
     elseif you == self then
@@ -175,7 +168,7 @@ function MrDreadlord:areYouMe(you)
 end
 
 function MrDreadlord:makeMacroVessel()
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     local verb
     local icon = self:getIcon()
     self.macroText = self.macroText or self:makeMacroText()

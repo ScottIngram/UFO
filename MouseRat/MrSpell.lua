@@ -34,10 +34,10 @@ end
 function MrSpell:asSecureClickHandlerAttributes()
     -- PROFESSIONS - TODO? split into a sub-type ?
     local professionSnafuId = ProfessionShitShow:get(self.name)
-    --zebug.error:event("event"):owner(self):print("name",self.name, "id",self.spellId, "professionSnafuId", professionSnafuId)
+    --zebug.error:event():owner(self):print("name",self.name, "id",self.spellId, "professionSnafuId", professionSnafuId)
     if professionSnafuId then
         local profMacro = sprintf("/run C_TradeSkillUI.OpenTradeSkill(%d)", professionSnafuId)
-        zebug.trace:event("event"):owner(self):print("name",self.name, "professionSnafuId", professionSnafuId, "profMacro",profMacro)
+        zebug.trace:event():owner(self):print("name",self.name, "professionSnafuId", professionSnafuId, "profMacro",profMacro)
         return ButtonType.MACRO, "macrotext", profMacro
     else
         return MouseRat.asSecureClickHandlerAttributes(self)

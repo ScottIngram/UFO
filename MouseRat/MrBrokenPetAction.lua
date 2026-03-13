@@ -77,7 +77,7 @@ function MrBrokenPetAction:consumeGetCursorInfo(type, spellId, spellIndex)
     -- I looked at my old code that I wrote to mush it into some semblance of sanity.
     -- JFC.  To anyone who reads my comments and is taken aback by my unrestrained contempt for Bliz's WoW APIs,
     -- I invite you to read PetShitShow.lua to understand one of the worst examples of their fuckery.
-    local id, anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(spellId)
+    local id, anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues = PetShitShow:remapCursorIdiotSpellIdToBrokenPetCommandId(spellId)
     self:setId(id)
     self.name = self:getMyPetCommandDefinition("name")
     zebug.warn:owner(self):event():print("myTwinActionId",anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)

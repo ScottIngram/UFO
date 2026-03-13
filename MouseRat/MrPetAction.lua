@@ -36,8 +36,8 @@ end
 ---@return string the name of some key recognized by SecureActionButton as an attribute related to the above "type" attribute (according to Bliz's convoluted rules)
 ---@return string the actual fucking value assigned to whatever goddamn key was decided above
 function MrPetAction:asSecureClickHandlerAttributes()
-    assert(self.isInstance, "instance method called from a class context")
-    --zebug.info:event("event"):owner(self):print("default asSecureClickHandlerAttributes")
+    self:assertIsInstance()
+    --zebug.info:event():owner(self):print("default asSecureClickHandlerAttributes")
     return MouseRatType.SPELL, MouseRatType.SPELL, self:getId()
 end
 

@@ -186,7 +186,7 @@ local function coerce(target, subClass)
     end
 
     assert(subClass, "the 'subClass' arg can't be nil")
-    zebug.trace:event("event"):owner(subClass):print("type",subClass.type)
+    zebug.trace:event():owner(subClass):print("type",subClass.type)
 
     local privateData = { isInstance = true } -- storage but it's NOT persisted to SavedVariables
     function privateData:setPvar(key, val) privateData[key] = val end -- provide a way to set hidden data
@@ -239,11 +239,11 @@ end
 ---@param kid MouseRat a subclass
 function MouseRat:adopt(kid)
     if kid.ufoType ~= MouseRat.ufoType then
-        zebug.trace:event("event"):print("adopt YES - none kid.ufoType",kid.ufoType)
+        zebug.trace:event():print("adopt YES - none kid.ufoType",kid.ufoType)
         setmetatable(kid, { __index = MouseRat }) -- MouseRat is now the kid's parent
         kid:installMyToString()
     else
-        zebug.trace:event("event"):print("adopt NOT - already got kid.ufoType",kid.ufoType)
+        zebug.trace:event():print("adopt NOT - already got kid.ufoType",kid.ufoType)
     end
 end
 
@@ -260,7 +260,7 @@ function MouseRat:oneOfUs(target)
     end
 
     local instance = coerce(target, subClass)
-    zebug.info:event("event"):owner(target):print("welcome to the club!")
+    zebug.info:event():owner(target):print("welcome to the club!")
     return instance
 end
 
@@ -273,7 +273,7 @@ end
 function MouseRat:newFromGetCursorIdiot(type, c2, c3, c4)
     assert(type, "the type arg can't be nil")
 
-    zebug.warn:event("event"):owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
+    zebug.warn:event():owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
 
     -- scrutinize the fucked up shit from GetCursorInfo.
     local subClass = MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
@@ -296,7 +296,7 @@ function MouseRat:newFromGetCursorIdiot(type, c2, c3, c4)
     -- even though type is already in subClass, that data will be hidden from SavedVariables. rectify.
     instance.type = subClass.type
 
-    zebug.info:event("event"):owner(instance):print("")
+    zebug.info:event():owner(instance):print("")
     return instance
 end
 
@@ -325,7 +325,7 @@ end
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
 function MouseRat:getFromActionBarSlot(btnSlotIndex)
     local type, id, subType = _G.GetActionInfo(btnSlotIndex)
-    --[[DEBUG]]zebug.warn:event("event"):print("btnSlotIndex",btnSlotIndex, "---> type",type, "id",id, "subType",subType)
+    --[[DEBUG]]zebug.warn:event():print("btnSlotIndex",btnSlotIndex, "---> type",type, "id",id, "subType",subType)
     if not type then return nil end
 
     local subClass = MouseRatRegistry:findSubClassForThisUnreliableData(type, id, subType)
@@ -348,13 +348,18 @@ function MouseRat:getFromActionBarSlot(btnSlotIndex)
     -- even though type is already in subClass, that data will be hidden from SavedVariables. rectify.
     instance.type = subClass.type
 
-    --[[DEBUG]]zebug.info:event("event"):owner(instance):print("")
+    --[[DEBUG]]zebug.info:event():owner(instance):print("")
     return instance
 end
 
----@return MouseRat whatever was last put on the cursor
-function MouseRat:getMostRecentlyPickedUpMr()
-    return MouseRat.pickedUpMouseRat or Ufo.pickedUpBtn
+local FRAME_STACK_SKIP = 2 -- despite the implications of a numeric value, Lua doesn't recognize anything other than 1 or 2. ¯\_(ツ)_/¯
+
+-- save my sanity, simplify debugging, and raise an immediate alarm
+-- when I accidentally invoke a method without having its required data as provided by the "instance" table
+function MouseRat:assertIsInstance()
+    if not self.isInstance then
+        error("instance method called from a static class context", FRAME_STACK_SKIP)
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -367,7 +372,7 @@ local selfObjNeededFor = { [mName.setToolTip] = _G.GameTooltip } -- sOmE Bliz AP
 ---@return any whatever the helper produced (a name, an icon, true for success, etc)
 function MouseRat:helpMe(methodName)
     -- TODO: cache this
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     assert(methodName, "methodName arg is nil")
     assertIsValidMethodName(methodName)
     local helper = self.helpers[methodName]
@@ -395,18 +400,18 @@ end
 -- Bliz APIs are all over the goddamn place and follow no consistency whatsofuckingever.
 ---@return number|string a unique identifier for this thing as expected by bliz APIs
 function MouseRat:getIdUsedByBlizApis()
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     return self[self.keyForApis or self.primaryKey]
 end
 
 ---@return number|string the unique identifier for this thing, its primaryKey
 function MouseRat:getId()
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     return self[self.primaryKey]
 end
 
 function MouseRat:setId(id)
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     self[self.primaryKey or "id"] = id
 end
 
@@ -426,7 +431,7 @@ function MouseRat:redefine()
 end
 
 function MouseRat:isType(type)
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     return type == self.type
 end
 
@@ -441,6 +446,7 @@ end
 -- subclasses can override this method and decide how to interpret GetCursorBullshit() for particularly shitty data
 ---@param ... any - the verbatim results from _G.GetCursorInfo()
 function MouseRat:consumeGetCursorInfo(type, prollyId, maybeSubType, whoEvenFuckingKnows)
+    self:assertIsInstance()
     if type ~= self.type then
         error(type..",the provided type, doesn't match the expected one:"..self.type)
     end
@@ -451,7 +457,7 @@ end
 
 ---@return string
 function MouseRat:getName()
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     if self.name then
         return self.name
     end
@@ -473,23 +479,23 @@ end
 
 ---@return number texture ID
 function MouseRat:getIcon()
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     return self:helpMe(mName.getIcon)
 end
 
 ---@return boolean true if the spell is known / the class can operate the item or toy / the faction can ride the mount / etc
 function MouseRat:isUsable()
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     return self:helpMe(mName.isUsable) or false
 end
 
 function MouseRat:setToolTip()
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     return self:helpMe(mName.setToolTip)
 end
 
 function MouseRat:pickupToCursor()
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
 
     MouseRat.pickedUpMouseRat = self -- TODO: fully switch over from ButtonDef to MouseRat
     Ufo.pickedUpBtn = self
@@ -525,8 +531,8 @@ end
 ---@return string the name of some key recognized by SecureActionButton as an attribute related to the above "type" attribute (according to Bliz's convoluted rules)
 ---@return string the actual fucking value assigned to whatever goddamn key was decided above
 function MouseRat:asSecureClickHandlerAttributes()
-    assert(self.isInstance, "instance method called from a class context")
-    --zebug.info:event("event"):owner(self):print("default asSecureClickHandlerAttributes")
+    self:assertIsInstance()
+    --zebug.info:event():owner(self):print("default asSecureClickHandlerAttributes")
     return self.type, self.type, self:getName()
 end
 
@@ -535,7 +541,6 @@ end
 -------------------------------------------------------------------------------
 
 function MouseRat:toString(arg)
-    --assert(self.isInstance, "instance method called from a class context")
     if not self.type then
         return "<MouseRat zombie>"
     elseif not self.isInstance then

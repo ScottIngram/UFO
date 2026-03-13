@@ -44,7 +44,7 @@ function MrMacro:isGlobal()
 end
 
 function MrMacro:isUsable()
-    assert(self.isInstance, "instance method called from a class context")
+    self:assertIsInstance()
     zebug.info:owner("self"):event():print("macroId",self.macroId, "isGlobal",self:isGlobal(), "owner",self.macroOwner, "toon",getIdForCurrentToon())
     local isUsable = self:isGlobal() or (getIdForCurrentToon() == self.macroOwner)
     if not isUsable then

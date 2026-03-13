@@ -140,15 +140,15 @@ function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
     local subSubClasses = MouseRatRegistry.customizedCursorTypes[type]
     if not subSubClasses then return subClass end
 
-    --zebug.warn:event("event"):owner(subClass):dumpKeys(customMouseRatsForThisType)
+    --zebug.warn:event():owner(subClass):dumpKeys(customMouseRatsForThisType)
     ---@param subSubMr MouseRat
     for i, subSubMr in ipairs(subSubClasses) do
         local isQualified = subSubMr:disambiguator(type, c2, c3, c4)
-        zebug.warn:event("event"):print("disambiguator! is this type", type," actually", subSubMr.type, "?",isQualified)
+        zebug.warn:event():print("disambiguator! is this type", type," actually", subSubMr.type, "?",isQualified)
         if isQualified then
             -- first one wins!  assume only one custom class will qualify
             -- replace the previous subClass with the custom one we found
-            zebug.error:event("event"):print("BLIZ API LIED.  the type wasn't really", type, "IT WAS ACTUALLY", subSubMr.type)
+            zebug.warn:event():print("BLIZ API LIED.  the type wasn't really", type, "IT WAS ACTUALLY", subSubMr.type)
             subClass = subSubMr
             break
         end
