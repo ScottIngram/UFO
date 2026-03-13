@@ -51,17 +51,9 @@ function MouseRatRegistry:init()
     self:validateKids()
 end
 
-local CGCI = "consumeGetCursorInfo"
-
 function MouseRatRegistry:validateKids()
     local invalids
     MouseRatRegistry:forEachKid(function(kid)
-        local isExempt = (kid == MrUnsupported) or (kid.become ~= nil) -- any subclass that simply becomes a different one is exempt from providing the full contract
-
-        if ((kid[CGCI] == nil) or (kid[CGCI] == MouseRat.consumeGetCursorInfo)) and not isExempt then
-            zebug.warn:owner(kid):print("the method",CGCI, "is mandatory and MUST be implemented by the subclass")
-        end
-
         for i, methodName in ipairs(MouseRatMethodsContract) do
             local valid
             local method = kid[methodName]
