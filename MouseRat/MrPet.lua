@@ -19,13 +19,6 @@ local MrPet = {
 -- Instance Methods
 -------------------------------------------------------------------------------
 
--- will the real petGuid please stand up!
----@param type BlizCursorType the 1st arg from GetCursorInfo
----@param petGuid number the 2nd arg from GetCursorInfo
-function MrPet:consumeGetCursorInfo(type, petGuid)
-    self:setId(petGuid)
-end
-
 function MrPet:getPetNameAndIcon()
     local _, _, _, _, _, _, _, name, icon = C_PetJournal.GetPetInfoByPetID(self:getId())
     self.name = name
