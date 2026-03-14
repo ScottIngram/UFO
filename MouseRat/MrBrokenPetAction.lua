@@ -46,6 +46,31 @@ function MrBrokenPetAction:disamButtonGator(abbType, id, subType)
     return (id and (id < 10))
 end
 
+-- not currently used. is a proof of concept
+-- correct the fucked up shit from GetCursorInfo.
+---@param gc0_type MouseRatType|nil the 1st value returned by _G.GetCursorInfo()
+---@param gc1_spellId number|string|nil (optional) the 2nd value from _G.GetCursorInfo()
+---@param gc2_spellIndex number|string|nil (optional) the 3rd value from _G.GetCursorInfo()
+---@param gc3_unknown number|string|nil (optional) the 4th value from _G.GetCursorInfo()
+---@param gc4_nil number|string|nil (optional) the 5th value from _G.GetCursorInfo()
+---@return MouseRatType parrot the type param
+---@return number id - in this case the spellId
+---@return string subType - in this case the bookType
+---@return number index - in this case the spellIndex
+---@return number altId - in this case the baseSpellId
+---@return table all of the above in a sanely homogenous consistent predictable naming scheme.  Try to learn something, Bliz.
+function MrBrokenPetAction:fixGetCursorIdiot(gc0_type, gc1_spellId, gc2_spellIndex, gc3_unknown, gc4_nil)
+    if self.type ~= gc0_type then return nil end
+    local notSpellId, ambiguousResultOfNonUniqueBlizId = PetShitShow:remapCursorIdiotSpellIdToBrokenPetCommandId(gc1_spellId)
+    return gc0_type, notSpellId, gc2_spellIndex, gc3_unknown, ambiguousResultOfNonUniqueBlizId, {
+        type = gc0_type,
+        id = notSpellId,
+        subType = gc3_unknown,
+        index = gc2_spellIndex,
+        altId = ambiguousResultOfNonUniqueBlizId,
+    }
+end
+
 -------------------------------------------------------------------------------
 -- Instance Methods for MouseRat Contract
 -------------------------------------------------------------------------------
@@ -82,6 +107,14 @@ function MrBrokenPetAction:consumeGetCursorInfo(type, spellId, spellIndex)
     self.name = self:getMyPetCommandDefinition("name")
     zebug.warn:owner(self):event():print("myTwinActionId",anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
     self:setPvar("myTwinActionId", anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
+end
+
+---@return boolean true if the args from GetCursorIdiot match mine
+function MrBrokenPetAction:isThisCursorDataMine(type, spellId)
+    if self.type ~= type then return nil end
+    local id, anotherIdAlsoMappedToSameSpellIdBcozFuBliz = PetShitShow:remapCursorIdiotSpellIdToBrokenPetCommandId(spellId)
+    local myId = self:getId()
+    return ((myId == id) or (myId == anotherIdAlsoMappedToSameSpellIdBcozFuBliz))
 end
 
 function MrBrokenPetAction:isUsable()

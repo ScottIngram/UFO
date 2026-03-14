@@ -28,6 +28,7 @@ local MrToy = {
 ---@param maybeItemId any could be an itemId
 function MrToy:disambiguator(type, maybeItemId)
     zebug.warn:print("type", type, "maybeItemId",maybeItemId)
+    if self.cursorType ~= type then return nil end
     --zebug.warn:print("C_Item.GetItemInfo ->", C_Item.GetItemInfo(maybeItemId)) -- this seems to always provide accurate info. but no indicator of being a toy.
     return PlayerHasToy(maybeItemId)
 end
@@ -53,6 +54,11 @@ end
 function MrToy:isUsable_TODO()
     -- TODO: solve faction specific bug
     return PlayerHasToy(self:getId()) -- and C_ToyBox.IsToyUsable(id) -- nope, IsToyUsable is unreliable and overreaching
+end
+
+---@return boolean true if the args from GetCursorIdiot match mine
+function MrToy:isThisCursorDataMine(type, itemId)
+    return self:disambiguator(type, itemId) and (self:getId() == itemId)
 end
 
 -- will the real itemId please stand up!

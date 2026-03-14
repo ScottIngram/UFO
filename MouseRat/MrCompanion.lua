@@ -42,11 +42,14 @@ function MrCompanion:transformAndAbort(type, mysteryId, companionType, c4)
     -- zebug.warn:print("GetDisplayedMountInfo()", C_MountJournal.GetDisplayedMountInfo(mysteryId))
 
     -- so, cross fingers and become whatever was last picked up
-    local grabbedBtn = self:getMostRecentlyPickedUpMr()
+    local cachedMr = self:getRecentCursorCache()
+    local cachedMrType = cachedMr and cachedMr.type
     --zebug.warn:owner(grabbedBtn):dumpy("called getMostRecentlyPickedUpMr()", grabbedBtn)
-    if grabbedBtn and (grabbedBtn.type == self.become) then
-        zebug.warn:owner(grabbedBtn):print("returning getMostRecentlyPickedUpMr()", grabbedBtn)
-        return grabbedBtn
+    if cachedMrType == self.become then
+        zebug.warn:owner(cachedMr):print("returning getMostRecentlyPickedUpMr()", cachedMr)
+        return cachedMr
+    else
+        zebug.warn:owner(cachedMr):print("contents of cursor cache was unsuitable.  type", cachedMrType)
     end
     return nil
 end

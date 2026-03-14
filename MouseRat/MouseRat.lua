@@ -140,7 +140,8 @@ MOUSE_MAPPED_TO_ACTION_B = tInvert(ACTION_B_MAPPED_TO_MOUSE)
 ---@field disambiguator function required only if a custom type and a standard MouseRatType share a cursorType
 ---@field primaryKey string "spellId", "mountId", etc.
 ---@field setPvar function stores data on self but hides it from SavedVariables
----@field consumeGetCursorInfo function transforms the wtf _G.GetCursorInfo() results into plain and simple type and id
+---@field currentlyOnCursor MouseRat
+---@field recentlyOnCursor MouseRat
 MouseRat = {
     ufoType = "MouseRat",
     zebug = zebug,
@@ -281,14 +282,11 @@ function MouseRat:newFromGetCursorIdiot(type, c2, c3, c4)
         subClass = MrUnsupported
     end
 
-    -- TODO: handle
---[[
     -- currently, this exists only to support the fucked up "companion" type
     if subClass.transformAndAbort then
         local mr = subClass:transformAndAbort(type, c2, c3, c4)
         if mr then return mr end
     end
-]]
 
     local instance = coerce({}, subClass)
     instance:consumeGetCursorInfo(type, c2, c3, c4)
@@ -300,26 +298,80 @@ function MouseRat:newFromGetCursorIdiot(type, c2, c3, c4)
     return instance
 end
 
+---@param mr MouseRat
+---@return MouseRat whatever was passed in
+function MouseRat:cacheCursor(mr)
+    zebug.info:event():owner(self):print("caching", mr)
+    self.currentlyOnCursor = mr
+    self.recentlyOnCursor = mr
+    Ufo.pickedUpBtn = mr -- TODO fully switch over from ButtonDef to MouseRat
+    return mr
+end
+
+function MouseRat:handleWhenCursorEmpties()
+    self:clearCurrentCursorCache()
+end
+
+function MouseRat:clearCurrentCursorCache()
+    self.currentlyOnCursor = nil
+end
+
+---@return MouseRat the thing on the cursor right now
+function MouseRat:getCurrentCursorCache()
+    return self.currentlyOnCursor
+end
+
+---@return MouseRat the thing on the cursor right now OR the thing that was on it most recently
+function MouseRat:getRecentCursorCache()
+    return self.currentlyOnCursor or self.recentlyOnCursor
+end
+
+-- subclasses can override this method and decide how to interpret GetCursorBullshit() for particularly shitty data
+---@return boolean true if the args from GetCursorIdiot match mine
+function MouseRat:isThisCursorDataMine(type, prollyId, maybeSubType, whoEvenFuckingKnows)
+    self:assertIsInstance()
+    zebug.warn:print("DEFAULT IMPL - type", type, "prollyId",prollyId)
+    return ((self.type == type) and (self:getId() == prollyId))
+end
+
 function MouseRat:getFromCursor(event)
     local type, c2, c3, c4 = GetCursorInfo()
 
     if not type then
+        -- this should be handled automatically now by my shiny CURSOR_CHANGED handler.  TODO: remove
         Ufo.pickedUpBtn = nil
+        MouseRat:clearCurrentCursorCache()
         zebug.warn:event(event):owner(self):print("Empty cursor is empty")
         return nil
+    end
+
+    local result
+    local mrCsr = MouseRat:getRecentCursorCache()
+
+    -- handle the case of we already have a cached copy of the exact thing on the cursor, so bypass instantiating a new copy
+    if mrCsr then
+        -- cursory (get it?) check to verify what we think is on the cursor is correct... probably.
+        --[[DEBUG]]zebug.warn:event():owner(mrCsr):print("is the thing on the cursor what's in the cache?  mrCsr")
+        local isAlreadyInCache = mrCsr:isThisCursorDataMine(type, c2, c3, c4) and mrCsr or nil
+        --[[DEBUG]]zebug.warn:event():owner(mrCsr):print("called mrCsr:isThisCursorDataMine() isAlreadyInCache",isAlreadyInCache or "NOPE!")
+
+        if isAlreadyInCache then return mrCsr end
+    else
+        --[[DEBUG]]zebug.warn:event():print("no cached mrCsr so creating a fresh new MouseRat")
     end
 
     -- handle the special case of a DREADLORD (which is simply a macro) being on the cursor
     -- the cursor info can only describe the macro and not the wrapped data/obj/MouseRat
     -- return the cached result of when the DREADLORD was originally pickupToCursor() and initialized
     if MrDreadlord:isThisMySpawn(type, c2, c3, c4) then
-        if MouseRat.pickedUpMouseRat then
-            return MouseRat.pickedUpMouseRat
-        end
+        result = MouseRat:getRecentCursorCache()
+        if result then return self:cacheCursor(result) end
     end
 
-    -- TODO: store this as onTheCursor -- subsequently, clear it via CURSOR_CHANGED event listener
-    return self:newFromGetCursorIdiot(type, c2, c3, c4)
+    -- handle the default case
+    result = self:newFromGetCursorIdiot(type, c2, c3, c4)
+
+    return self:cacheCursor(result)
 end
 
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
@@ -496,10 +548,6 @@ end
 
 function MouseRat:pickupToCursor()
     self:assertIsInstance()
-
-    MouseRat.pickedUpMouseRat = self -- TODO: fully switch over from ButtonDef to MouseRat
-    Ufo.pickedUpBtn = self
-
     zebug.trace:event():owner(self):print("pick me up!")
 
     ---@type MouseRat
@@ -508,7 +556,6 @@ function MouseRat:pickupToCursor()
         me = self
     else
         me = MrDreadlord:new(self)
-        zebug.info:event():owner(self):print("I'm dreadlord now!")
     end
 
     local isOk, err = pcall(function() me:helpMe(mName.pickupToCursor) end)
@@ -520,6 +567,8 @@ function MouseRat:pickupToCursor()
         me = nil
         zebug.warn:event():owner(me):print("pickupToCursor failed! ERROR is",err)
     end
+
+    MouseRat:cacheCursor(me)
 
     return me
 end
@@ -560,6 +609,34 @@ function MouseRat:toString(arg)
         )
     end
 end
+
+-------------------------------------------------------------------------------
+-- Event Handlers
+-------------------------------------------------------------------------------
+
+local EventHandlers = { }
+
+---@param eName string "CURSOR_CHANGED"
+---@param eCount number how many CURSOR_CHANGED events have happened
+---@param newCursorType number see Enum.UICursorType
+---@param oldCursorType number see Enum.UICursorType
+---@param oldCursorVirtualID any who the fuck knows
+function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorType, oldCursorType, oldCursorVirtualID)
+    if not MouseRat:getCurrentCursorCache() then return end
+    if not isCursorEmpty then return end
+
+    eCount = eCount or "NO-EVENT-COUNTER"
+
+    zebug.info
+         :name("handler")
+         :newEvent("MR", Cursor:nameMakerForCursorChanged(isCursorEmpty), eCount)
+         :run(function(event)
+            zebug.warn:event():owner(MouseRat:getCurrentCursorCache() or "nil"):print("clearing cursor cache")
+            MouseRat:handleWhenCursorEmpties()
+    end)
+end
+
+BlizGlobalEventsListener:register(MouseRat, EventHandlers) -- TODO: refactor so that EventHandlers can be an array or a single string with the event name(s)
 
 -------------------------------------------------------------------------------
 -- BRIDGE to satisfy ButtonDef "interface"

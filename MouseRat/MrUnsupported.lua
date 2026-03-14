@@ -24,5 +24,6 @@ MouseRatRegistry:register(MrUnsupported)
 function MrUnsupported:consumeGetCursorInfo(type, ...)
     self.type = type
     self.name = strjoinnilsafe(",", ...)
+    self:setId(self.name)
     self.cursorInfo = {...} -- in case we want to know later
 end

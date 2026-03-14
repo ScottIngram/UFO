@@ -47,13 +47,13 @@ function MrDreadlord:new(victim)
     if (victim.ufoType == self.ufoType) and (victim.isInstance) then
         -- special case: this is already a MouseRat.
         -- inherit all of its existing behavior & data PLUS wrap it inside dreadlord magic
-        zebug.warn:event():owner(victim):print("wrapping",victim)
-        zebug.warn:event():owner(victim):dumpy("victim",victim)
+        zebug.info:event():owner(victim):print("wrapping inside Dreadlord")
+        --zebug.warn:event():owner(victim):dumpy("victim",victim)
 
         dreadlord = deepcopy(MrDreadlord,{})
         dreadlord.primaryKey = nil
         dreadlord.getId = nil
-        zebug.warn:event():owner("proto-DL"):dumpy("proto-DL", dreadlord)
+        --zebug.warn:event():owner("proto-DL"):dumpy("proto-DL", dreadlord)
         -- remove all the Dreadlord helpers and instead defer to the original MouseRat
         -- except for pickupToCursor
         dreadlord.helpers = { pickupToCursor = function() dreadlord:pickupToCursorHelper() end }
@@ -66,13 +66,12 @@ function MrDreadlord:new(victim)
         dreadlord:installMyToString() -- assumes we are a descendant of UfoMixin
 
     else
-        zebug.warn:event():owner(self):dumpy("victim",victim)
+        --zebug.warn:event():owner(self):dumpy("victim",victim)
         victim.type = self.type
         dreadlord = self:oneOfUs(victim)
     end
 
-    zebug.warn:event():owner(victim):print("victim.helpers",victim.helpers, "dreadlord.helpers",dreadlord.helpers)
-    zebug.warn:event():owner(dreadlord):print("Mwuhahaha")
+    zebug.info:event():owner(dreadlord):print("Mwuhahaha")
 
     return dreadlord
 end
