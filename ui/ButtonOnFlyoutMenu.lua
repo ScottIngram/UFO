@@ -191,7 +191,8 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     flyoutMenu.displaceBtnsHere = nil
     --flyoutMenu:updateForCatalog(flyoutId, event)
     flyoutMenu:redraw(event)
-    Ufo.pickedUpBtn = nil
+    MouseRat:clearCurrentCursorCache()
+    --Ufo.pickedUpBtn = nil
 end
 
 function ButtonOnFlyoutMenu:installExcluder(event)

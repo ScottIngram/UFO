@@ -11,23 +11,23 @@ Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace wi
 -------------------------------------------------------------------------------
 ---@class BrokenPetCommand
 ---@field name string
----@field fubarId number the non-unique "identifier" provided by Bliz's broken API
+---@field notSpellId number the non-unique "identifier" provided by Bliz's broken API
 ---@field icon number
 ---@field macro string text that will be interpreted as a macro
 ---@field scripty string text that will be used as a "restricted snippet"
 BrokenPetCommand = {
-    ASSIST     = { fubarId=3, icon=524348, macro="/petassist",    name="Assist", }, -- Sets pet to assist mode.
-    ATTACK     = { fubarId=2, icon=132152, macro="/petattack",    name="Attack", }, -- Sends pet to attack currently selected target.
-    FOLLOW     = { fubarId=1, icon=132328, macro="/petfollow",    name="Follow", }, -- Set pet to follow you... is effectively PetStopAttack()
+    ASSIST     = { notSpellId=3, icon=524348, macro="/petassist",    name="Assist", }, -- Sets pet to assist mode.
+    ATTACK     = { notSpellId=2, icon=132152, macro="/petattack",    name="Attack", }, -- Sends pet to attack currently selected target.
+    FOLLOW     = { notSpellId=1, icon=132328, macro="/petfollow",    name="Follow", }, -- Set pet to follow you... is effectively PetStopAttack()
     -- the /petdefensive macro has been broken since at least 2020 https://us.forums.blizzard.com/en/wow/t/petdefensive-macro/437857
     -- also, PetDefensiveMode() is not available inside the restricted environment hellscape.
     -- so, Bliz provides no way for us to implement DEFENSIVE.  FU yet another time, Bliz.
-    DEFENSIVE  = { fubarId=4, icon=132110, X_scripty="PetDefensiveMode()", macroX="/petdefensive", name="Defensive", macro="/s the /petdefensive macro has been broken since circa 2020." },
-    MOVETO     = { fubarId=4, icon=457329, macro="/petmoveto",    name="Move To", }, -- Set pet to move to and stay at a hover-targeted location.
-    PASSIVE    = { fubarId=0, icon=132311, macro="/petpassive",   name="Passive", }, -- Set pet to passive mode.
-    STAY       = { fubarId=0, icon=136106, macro="/petstay",      name="Stay", }, -- Set pet to stay where it is at.
-    -- TODO: also map STOPATTACK to fubarId=2 (same as ATTACK)
-    STOPATTACK = { fubarId=9, icon=236372, macro="/run PetStopAttack()", scripty="PetStopAttack()", }, -- stop attack
+    DEFENSIVE  = { notSpellId=4, icon=132110, X_scripty="PetDefensiveMode()", macroX="/petdefensive", name="Defensive", macro="/s the /petdefensive macro has been broken since circa 2020." },
+    MOVETO     = { notSpellId=4, icon=457329, macro="/petmoveto",    name="Move To", }, -- Set pet to move to and stay at a hover-targeted location.
+    PASSIVE    = { notSpellId=0, icon=132311, macro="/petpassive",   name="Passive", }, -- Set pet to passive mode.
+    STAY       = { notSpellId=0, icon=136106, macro="/petstay",      name="Stay", }, -- Set pet to stay where it is at.
+    -- TODO: also map STOPATTACK to notSpellId=2 (same as ATTACK)
+    STOPATTACK = { notSpellId=9, icon=236372, macro="/run PetStopAttack()", scripty="PetStopAttack()", }, -- stop attack
     --Dismiss        = { name="Dismiss",         icon="12345678", macro="petdismiss", }, -- Dismiss your pet.
     --Autocastoff    = { name="Autocast Off",    icon="12345678", macro="petautocastoff", }, -- Turn off autocast for a pet spell.
     --Autocaston     = { name="Autocast On",     icon="12345678", macro="petautocaston", }, -- Turn on autocast for a pet spell.
@@ -42,7 +42,7 @@ PetShitShow = {
     BrokenPetCommand = BrokenPetCommand
 }
 
----@type table key=fubarIdProvidedByBlizAPI -> array or corresponding BrokenPetCommands
+---@type table key=notSpellIdProvidedByBlizAPI -> array or corresponding BrokenPetCommands
 local indexOfBrokenPetCommands
 
 function PetShitShow:getIndex()
@@ -50,11 +50,11 @@ function PetShitShow:getIndex()
     if not indexOfBrokenPetCommands then
         indexOfBrokenPetCommands = {}
         for brokenPetCommandId, howToFix in pairs(BrokenPetCommand) do
-            local fubarId = howToFix.fubarId
-            if not indexOfBrokenPetCommands[fubarId] then
-                indexOfBrokenPetCommands[fubarId] = {}
+            local notSpellId = howToFix.notSpellId
+            if not indexOfBrokenPetCommands[notSpellId] then
+                indexOfBrokenPetCommands[notSpellId] = {}
             end
-            local a = indexOfBrokenPetCommands[fubarId]
+            local a = indexOfBrokenPetCommands[notSpellId]
             a[#a+1] = brokenPetCommandId
         end
         --zebug.warn:dumpy("indexOfBrokenPetCommands",indexOfBrokenPetCommands)
@@ -62,9 +62,9 @@ function PetShitShow:getIndex()
     return indexOfBrokenPetCommands
 end
 
-function PetShitShow:forEach(fubarId, func)
-    local commands = self:getIndex()[fubarId]
-    assert(commands, "Unknown fubarId " .. (fubarId or "NIL") )
+function PetShitShow:forEach(notSpellId, func)
+    local commands = self:getIndex()[notSpellId]
+    assert(commands, "Unknown notSpellId " .. (notSpellId or "NIL") )
 
     for i, brokenPetCommand in ipairs(commands) do
         func(i,brokenPetCommand)
@@ -72,13 +72,16 @@ function PetShitShow:forEach(fubarId, func)
 end
 
 -- fuck you Bliz.  All the fucks are for you.  Please try to enjoy each fuck equally.
----@param fubarId number the second return val from GetCursorInfo().  It is a NON-unique "id" that refers to one or MORE different BrokenPetCommands
+---@param notSpellId number the second return val from GetCursorInfo() which is NOT actually a spellId.  It is a NON-unique "id" that refers to one or MORE different BrokenPetCommands
 ---@return BrokenPetCommand one of potentially many that the Bliz dumbass devs mapped to the given "id"
----@return BrokenPetCommand another one of potentially many that the Bliz dumbass devs mapped to the given "id"
-function PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(fubarId)
-    local commands = self:getIndex()[fubarId]
-    assert(commands, "Unknown fubarId " .. (fubarId or "NIL") )
-    return unpack(commands)
+---@return BrokenPetCommand|nil possibly another command that the Bliz dumbass devs mapped to the given "id" (flames on the side of my face)
+function PetShitShow:remapCursorIdiotSpellIdToBrokenPetCommandId(notSpellId)
+    local mapFromNotSpellIdToCommandName = self:getIndex()
+    local commandNameOneAndMaybeTwo = mapFromNotSpellIdToCommandName[notSpellId]
+    if not commandNameOneAndMaybeTwo then
+        error("Unknown spellId: " .. (notSpellId or "NIL") )
+    end
+    return unpack(commandNameOneAndMaybeTwo)
 end
 
 function PetShitShow:canHazPet()
