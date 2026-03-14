@@ -172,7 +172,7 @@ function ButtonDef:setIdAndType(id, type)
     elseif type == ButtonType.PSPELL then
         if id < 10 then
             self.type = ButtonType.BROKENP
-            local brokenPetCommandId, alsoCommand = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(id)
+            local brokenPetCommandId, alsoCommand = PetShitShow:remapCursorIdiotSpellIdToBrokenPetCommandId(id)
             self.brokenPetCommandId = brokenPetCommandId
             self.brokenPetCommandId2 = alsoCommand
         else
@@ -499,7 +499,6 @@ end
 ---@return ButtonDef
 function ButtonDef:getFromCursor(event, silenceWarnings)
     local mr = MouseRat and MouseRat:getFromCursor(event)
-    MouseRat.pickedUpMouseRat = mr
     zebug.warn:event("event"):owner(self):print("mr",mr)
 
     local type, c1, c2, c3 = GetCursorInfo() -- c1 is usually the ID; c2 is sometimes a tooltip;
@@ -561,7 +560,7 @@ function ButtonDef:getFromCursor(event, silenceWarnings)
         if c1 < 10 then
             --zebug.error:print("BROKENP !!! ",GetCursorInfo() )
             btnDef.type = ButtonType.BROKENP
-            local brokenPetCommandId, alsoCommand = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(c1)
+            local brokenPetCommandId, alsoCommand = PetShitShow:remapCursorIdiotSpellIdToBrokenPetCommandId(c1)
             btnDef.brokenPetCommandId = brokenPetCommandId
             btnDef.brokenPetCommandId2 = alsoCommand
             --zebug.error:dumpy("BROKENP btnDef",btnDef)
