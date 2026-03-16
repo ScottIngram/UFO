@@ -22,6 +22,7 @@ MrDreadlord = {
         -- these are only used by non-MouseRats victims
         getName = function() return DREADLORD_VESSEL_NAME end,
         isUsable = false,
+        canThisToonPickup = true, -- that's the whole point of this class!  to pick it up!
         getIcon = 5333371,
         setToolTip = function() _G.GameTooltip:SetText("Dreadlord") end,
         -- pickupToCursor = PickupMacro, is defined below as pickupToCursorHelper()
@@ -56,7 +57,7 @@ function MrDreadlord:new(victim)
         --zebug.warn:event():owner("proto-DL"):dumpy("proto-DL", dreadlord)
         -- remove all the Dreadlord helpers and instead defer to the original MouseRat
         -- except for pickupToCursor
-        dreadlord.helpers = { pickupToCursor = function() dreadlord:pickupToCursorHelper() end }
+        dreadlord.helpers = { pickupToCursor = function() dreadlord:pickupToCursorHelper() end }  -- TODO: make this less fragile
         setmetatable(dreadlord.helpers, { __index = victim.helpers }) -- dl is now a perfect mimic of the victim
 
         dreadlord.getOriginalMouseRat = function() return victim end -- TODO: would be ok to NOT wrap it inside a method?
@@ -67,8 +68,8 @@ function MrDreadlord:new(victim)
 
     else
         --zebug.warn:event():owner(self):dumpy("victim",victim)
-        victim.type = self.type
-        dreadlord = self:oneOfUs(victim)
+        dreadlord = self:oneOfUs(victim, self.type)
+        dreadlord.helpers.pickupToCursor = function() dreadlord:pickupToCursorHelper() end -- TODO: make this less fragile
     end
 
     zebug.info:event():owner(dreadlord):print("Mwuhahaha")

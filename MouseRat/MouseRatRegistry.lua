@@ -10,13 +10,13 @@ local zebug = MouseRat.zebug -- Zebug:new(--[[Z_VOLUME_GLOBAL_OVERRIDE or]] Zebu
 ---@class MouseRatRegistry : UfoMixIn
 ---@field ufoType string
 ---@field kids table<MouseRatType,MouseRat>
----@field customizedCursorTypes table<MouseRatType,table<>>
----@field customizedAbbTypes table<MouseRatTypeForActionBarButton,table<>>
+---@field customizersByCursorType table<MouseRatType,table<>>
+---@field customizersByAbbType table<MouseRatTypeForActionBarButton,table<>>
 MouseRatRegistry = {
     ufoType = "MouseRatRegistry",
     kids = {},
-    customizedCursorTypes = {},
-    customizedAbbTypes = {},
+    customizersByCursorType = {},
+    customizersByAbbType = {},
 }
 
 -------------------------------------------------------------------------------
@@ -32,11 +32,7 @@ function MouseRatRegistry:register(kid)
         error("This MouseRat has already been registered: " .. kid.type)
     end
 
-    -- subclasses are considered "custom" when their type is different from their cursorType (if specified)
-    local isCustomCursor = kid.cursorType and (kid.cursorType ~= kid.type)
-    if isCustomCursor then
-        self:addMouseRatForCustomizedCursorType(kid)
-    end
+    local isCustomCursor = self:addCustomizerForCursorType(kid)
     local isCustomAbb = kid.abbType and (kid.abbType ~= kid.type)
     if isCustomAbb then
         self:addMouseRatForCustomizedAbb(kid)
@@ -123,7 +119,7 @@ function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
     local subClass = self.kids[type]
     if not subClass then return nil end
 
-    local subSubClasses = MouseRatRegistry.customizedCursorTypes[type]
+    local subSubClasses = MouseRatRegistry.customizersByCursorType[type]
     if not subSubClasses then return subClass end
 
     --zebug.warn:event():owner(subClass):dumpKeys(customMouseRatsForThisType)
@@ -144,24 +140,29 @@ function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
 end
 
 ---@param kid MouseRat
-function MouseRatRegistry:addMouseRatForCustomizedCursorType(kid)
-    -- custom types must provide the "cursorType" field and it must specify a standard BlizCursorType
-    assert(kid.cursorType, "bad config: The custom MouseRat for "..kid.type.." has not specified a 'cursorType' field")
+---@return boolean true if the kid extends, modifies, and replaces some other subclass under special circumstances (eg, toys are special kinds of items)
+function MouseRatRegistry:addCustomizerForCursorType(kid)
+    -- customizers provide a "cursorType" field which MUST be a standard BlizCursorType.
+    if not kid.cursorType then
+        return false
+    end
+    --assert(kid.cursorType, "bad config: The custom MouseRat for "..kid.type.." has not specified a 'cursorType' field")
     assert(BLIZ_CURSOR_TYPE_BY_NAME[kid.cursorType], "bad config: The custom '"..kid.type.."' -> '"..kid.cursorType.."' cursorType is not a standard BlizCursorType")
     assert(kid.disambiguator, "bad config: The custom MouseRat for "..kid.type.." -> "..kid.cursorType.." has not specified a 'disambiguator' method")
 
-    local cct = self.customizedCursorTypes[kid.cursorType]
+    local cct = self.customizersByCursorType[kid.cursorType]
     if not cct then
         cct = {}
-        self.customizedCursorTypes[kid.cursorType] = cct
+        self.customizersByCursorType[kid.cursorType] = cct
     end
 
     table.insert(cct, kid)
+    return true
 end
 
 ---@param kid MouseRat
 function MouseRatRegistry:addMouseRatForCustomizedAbb(kid)
-    local regKey = "customizedAbbTypes"
+    local regKey = "customizersByAbbType"
     local configKey = "abbType"
     -- custom types must provide the "cursorType" field and it must specify a standard BlizCursorType
     assert(kid[configKey], "bad config: The custom MouseRat for "..kid.type.." has not specified a '..key..' field")

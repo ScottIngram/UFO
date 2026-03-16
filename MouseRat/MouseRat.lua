@@ -177,7 +177,7 @@ local OPTIONAL_HELPERS = {
 
 -- coerce a table into becoming an instance of a MouseRat subclass. Polymorphism, baby!
 ---@param target table either an empty {} or a pre-populated chunk of MouseRat-like data (probably from SavedVariables)
----@param subClass MouseRat
+---@param subClass MouseRat or more specifically, any of its sub classes
 ---@return MouseRat the target arg but now with metatable goodness
 local function coerce(target, subClass)
     assert(target, "the 'target' arg can't be nil")
@@ -189,13 +189,43 @@ local function coerce(target, subClass)
     assert(subClass, "the 'subClass' arg can't be nil")
     zebug.trace:event():owner(subClass):print("type",subClass.type)
 
+    -- support object oriented polymorphism.
+    -- create an inheritance tree using setmetatable()
+    -- the subclass will have already been given parent/child relationship to the MouseRat class via adopt()
+    -- From the top down, the tree will be:
+    -- MouseRat:adopt()-> subClass / privateData (and perhaps including target's original parent) / target
+    -- First, create some private data storage and give it a parent/child relationship with the subclass
     local privateData = { isInstance = true } -- storage but it's NOT persisted to SavedVariables
     function privateData:setPvar(key, val) privateData[key] = val end -- provide a way to set hidden data
+    setmetatable(privateData, { __index = subClass }) -- subClass is now PD's parent
 
-    -- create an inheritance tree using setmetatable()
-    -- From the top down, the tree is: MouseRat:adopt()-> subClass / privateData / target
-    setmetatable(privateData, { __index = subClass    }) -- subClass is now PD's parent
-    setmetatable(target,      { __index = privateData }) -- PD is now target's parent
+    -- solve the problem when the target already has a metatable.__index - we can't simply replace / clobber it
+    local newMt
+    local newIndex
+    local originalMt = getmetatable(target)
+    if originalMt then
+        newMt = originalMt
+        local originalIndex = originalMt.__index
+        if originalIndex then
+            -- provide logic that first checks the original parent and failing that, it will check the inheritance chain established above
+            newIndex = function(self,key)
+                --if originalIndex[key] ~= nil and privateData[key] ~= nil then
+                --    print("multiInheritance clash! key:",key, " - a:",originalIndex[key]," - b:",privateData[key])
+                --end
+                local winner = originalIndex[key] or privateData[key]
+                --print("multiInheritance - key:",key, "... w:",winner)
+                return winner
+            end
+        else
+            newIndex = privateData
+        end
+    else
+        newMt = {}
+        newIndex = privateData
+    end -- TODO: make this less fragile
+
+    newMt.__index = newIndex
+    setmetatable(target, newMt) -- PD is now target's co-parent or maybe sole parent
 
     target:installMyToString() -- assumes we are a descendant of UfoMixin
     target:setPvar("isInitialized",true)
@@ -221,6 +251,11 @@ end
 
 function MouseRat:init()
     self:installMyToString()
+end
+
+-- not really wrapping the target as much as converting it (alters its metatable)
+function MouseRat:wrap(target)
+    return MrDreadlord:new(target)
 end
 
 ---@param obj any|MouseRat
@@ -250,12 +285,13 @@ end
 
 ---@param target table a pre-populated chunk of MouseRat-like data (probably from SavedVariables)
 ---@return MouseRat
-function MouseRat:oneOfUs(target)
+---@param type MouseRatType provided when the target lacks a type field
+function MouseRat:oneOfUs(target, type)
     assert(target, "the 'target' can't be nil")
     assert(isTable(target), "the 'target' arg must be a table")
-    assert(target.type, "the 'target' table must first contain valid data before being converted into One of Us.")
+    assert(type or target.type, "either the arg 'type' must be provided or the 'target' table must contain a 'type' field.")
 
-    local subClass = MouseRatRegistry:getSubClassForTrustedType(target.type)
+    local subClass = MouseRatRegistry:getSubClassForTrustedType(type or target.type)
     if not subClass then
         subClass = MrUnsupported
     end
@@ -547,14 +583,17 @@ function MouseRat:setToolTip()
 end
 
 function MouseRat:pickupToCursor()
+    if isInCombatLockdown("Drag and drop") then return end
     self:assertIsInstance()
-    zebug.trace:event():owner(self):print("pick me up!")
+    zebug.info:event():owner(self):print("pick me up? ", self:canThisToonPickup())
 
     ---@type MouseRat
     local me
     if self:canThisToonPickup() then
+        zebug.trace:event():owner(self):print("can too pickup", self.type, "w/ ufoType",self.ufoType)
         me = self
     else
+        zebug.info:event():owner(self):print("canThisToonPickup() said no (cough)... Let's do the Dreadlord!")
         me = MrDreadlord:new(self)
     end
 
@@ -562,13 +601,12 @@ function MouseRat:pickupToCursor()
 
     if isOk then
         zebug.trace:event():owner(me):print("picked up A-OK!")
-        -- TODO: store "me" as onTheCursor -- subsequently, clear it via CURSOR_CHANGED event listener
+        MouseRat:cacheCursor(me)
     else
+        zebug.error:event():owner(me):print("pickupToCursor failed! ERROR is",err)
+        MouseRat:clearCurrentCursorCache()
         me = nil
-        zebug.warn:event():owner(me):print("pickupToCursor failed! ERROR is",err)
     end
-
-    MouseRat:cacheCursor(me)
 
     return me
 end

@@ -523,6 +523,9 @@ function CatalogEntry:getDirection()
     return "RIGHT"
 end
 
+-------------------------------------------------------------------------------
+-- handlers registered in the XML for CatalogEntry class
+-------------------------------------------------------------------------------
 
 function CatalogEntry:OnLeave()
     local event = Event:new(self, "CatalogEntry_OnLeave")
@@ -549,6 +552,9 @@ function CatalogEntry:OnEnter()
     GermCommander:forEachGermWithFlyoutId(self.flyoutId, Germ.glowStart)
 end
 
+---@type table<number,MouseRat>
+local MOUSE_RATS = {}
+
 function CatalogEntry:OnDragStart()
     local eventCapture
     local flyoutId = self.flyoutId
@@ -557,7 +563,19 @@ function CatalogEntry:OnDragStart()
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
         zebug.info:mSquare():owner(flyoutDef):newEvent("CatalogEntry", "OnDragStart"):run(function(event)
             eventCapture = event
-            UfoProxy:pickupUfoOntoCursor(flyoutId, event)
+
+            -- switching to MouseRat !!!
+            if true then
+                if not MOUSE_RATS[flyoutId] then
+                    local flyoutConf = FlyoutDefsDb:get(flyoutId)
+                    MOUSE_RATS[flyoutId] = MouseRat:wrap(flyoutConf)
+                    local mr = MOUSE_RATS[flyoutId]
+                    zebug.info:owner(flyoutDef):event(event):print("wrapped myself inside a MouseRat", mr, "mr.assertIsInstance",mr.assertIsInstance)
+                end
+                MOUSE_RATS[flyoutId]:pickupToCursor()
+            else
+                UfoProxy:pickupUfoOntoCursor(flyoutId, event)
+            end
         end)
     end
     local scrollPane = self:GetParent():GetParent()
