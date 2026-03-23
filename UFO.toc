@@ -35,6 +35,7 @@ PetShitShow.lua
 ProfessionShitShow.lua
 
 MouseRat\index.xml
+MrUfo.lua
 
 FlyoutDefsDb.lua
 FlyoutDef.lua

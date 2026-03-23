@@ -67,15 +67,11 @@ MouseRatType = {
     -- an imaginary type that will never be returned by _G.GetCursorInfo()
     -- it is used here to accommodate the various kinds of PSPELL / petaction
     -- that the WoW APIs do not handle correctly.  What?!  No way!
-    -- the PSPELL handler has special logic to morph into this type as needed
+    -- the PETACTION handler has special logic to morph into this type as needed
     BROKEN_PET_ACTION = "brokenPetCommand", -- cursorType="petaction" .. sub-type of: PETACTION
 
     -- duh
     SUMMON_RANDOM_FAVORITE_MOUNT = "summonmount", -- cursorType="mount" .. sub-type of: MOUNT
-
-    -- custom UFO types
-    UFO_BUTTON = "ufobutton",
-    UFO_FLYOUT = "ufoflyout",
 }
 
 MOUSE_RAT_TYPE_FOR_CURSOR_NAME = tInvert(MouseRatType)
@@ -134,8 +130,9 @@ MOUSE_MAPPED_TO_ACTION_B = tInvert(ACTION_B_MAPPED_TO_MOUSE)
 ---@field ufoType string The classname
 ---@field isInstance boolean used to decide what data & methods can be expected
 ---@field type MouseRatType
----@field cursorType MouseRatType -- only required if different from type
+---@field cursorType BlizCursorType -- only required if different from type
 ---@field abbType MouseRatTypeForActionBarButton -- only required if different from type
+---@field parentType MouseRatType -- used to create inheritance tree and disambiguate between multiple kids who want to handle the same cursorType
 ---@field helpers table<string,function|string|number> typically Bliz APIs to find icons, names, or to set cursor or tooltip
 ---@field disambiguator function required only if a custom type and a standard MouseRatType share a cursorType
 ---@field primaryKey string "spellId", "mountId", etc.
@@ -176,6 +173,7 @@ local OPTIONAL_HELPERS = {
 -------------------------------------------------------------------------------
 
 -- coerce a table into becoming an instance of a MouseRat subclass. Polymorphism, baby!
+-- Also, preserves pre-existing inheritance (respects existing metatable.__index)
 ---@param target table either an empty {} or a pre-populated chunk of MouseRat-like data (probably from SavedVariables)
 ---@param subClass MouseRat or more specifically, any of its sub classes
 ---@return MouseRat the target arg but now with metatable goodness
@@ -275,11 +273,20 @@ end
 ---@param kid MouseRat a subclass
 function MouseRat:adopt(kid)
     if kid.ufoType ~= MouseRat.ufoType then
-        zebug.trace:event():print("adopt YES - none kid.ufoType",kid.ufoType)
-        setmetatable(kid, { __index = MouseRat }) -- MouseRat is now the kid's parent
+        zebug.trace:event():print("setmetatable for",kid.type)
+        local parentClass
+        if kid.parentType then
+            parentClass = MouseRatRegistry:getSubClassForTrustedType(kid.parentType)
+            if not parentClass then
+                error("Couldn't find a MouseRat for configured parentType:"..kid.parentType)
+            end
+        else
+            parentClass = MouseRat
+        end
+        setmetatable(kid, { __index = parentClass })
         kid:installMyToString()
     else
-        zebug.trace:event():print("adopt NOT - already got kid.ufoType",kid.ufoType)
+        zebug.trace:event():print("adopt NOPE",kid.type, " - already got kid.ufoType",kid.ufoType)
     end
 end
 
@@ -367,7 +374,7 @@ end
 function MouseRat:isThisCursorDataMine(type, prollyId, maybeSubType, whoEvenFuckingKnows)
     self:assertIsInstance()
     zebug.warn:print("DEFAULT IMPL - type", type, "prollyId",prollyId)
-    return ((self.type == type) and (self:getId() == prollyId))
+    return (((self.type == type)or(self.cursorType == type)) and (self:getId() == prollyId))
 end
 
 function MouseRat:getFromCursor(event)
@@ -382,16 +389,14 @@ function MouseRat:getFromCursor(event)
     end
 
     local result
-    local mrCsr = MouseRat:getRecentCursorCache()
+    local mrCached = MouseRat:getRecentCursorCache()
 
     -- handle the case of we already have a cached copy of the exact thing on the cursor, so bypass instantiating a new copy
-    if mrCsr then
+    if mrCached then
         -- cursory (get it?) check to verify what we think is on the cursor is correct... probably.
-        --[[DEBUG]]zebug.warn:event():owner(mrCsr):print("is the thing on the cursor what's in the cache?  mrCsr")
-        local isAlreadyInCache = mrCsr:isThisCursorDataMine(type, c2, c3, c4) and mrCsr or nil
-        --[[DEBUG]]zebug.warn:event():owner(mrCsr):print("called mrCsr:isThisCursorDataMine() isAlreadyInCache",isAlreadyInCache or "NOPE!")
-
-        if isAlreadyInCache then return mrCsr end
+        local isCacheRight = mrCached:isThisCursorDataMine(type, c2, c3, c4) and mrCached or nil
+        --[[DEBUG]]zebug.warn:event():owner(mrCached):print("isCacheRight", isCacheRight or "NOPE!")
+        if isCacheRight then return mrCached end
     else
         --[[DEBUG]]zebug.warn:event():print("no cached mrCsr so creating a fresh new MouseRat")
     end

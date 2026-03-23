@@ -381,7 +381,7 @@ function initalizeAddonStuff(event)
     ThirdPartyAddonSupport:detectSupportedAddons()
     registerSlashCmd("ufo", slashFuncs)
     Catalog:definePopupDialogWindow()
-    ButtonDef:registerToolTipRecorder()
+    --ButtonDef:registerToolTipRecorder()
 
     -- check to see if the usually on-demand Bliz windows have already been loaded (by some other addon)
     Catalog:createToggleButtonIfWeCan(SpellBookFrame) -- support WoW v10

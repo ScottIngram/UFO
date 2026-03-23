@@ -16,10 +16,6 @@
     <Script file="MrPetAction.lua"/> <!-- MrSpell subclass -->
     <Script file="MrBrokenPetAction.lua"/> <!-- MrPetAction subclass -->
     <Script file="MrSummonRandomFavoriteMount.lua"/> <!-- MrMount subclass -->
-    <Script file="MrDreadlord.lua"/>  <!-- MrMacro subclass -->
-    <!--
-    <Script file="MrButtonOnUfo.lua"/> MrMacro subclass
-    <Script file="MrUfoFlyout.lua"/> MrMacro subclass
-    -->
+    <Script file="MrDreadlord.lua"/>  <!-- MrMacro subclass - designed to wrap any/all of the above when the WoW client doesn't let the current toon to place something on the cursor -->
 
 </Ui>

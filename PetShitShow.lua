@@ -79,7 +79,7 @@ function PetShitShow:remapCursorIdiotSpellIdToBrokenPetCommandId(notSpellId)
     local mapFromNotSpellIdToCommandName = self:getIndex()
     local commandNameOneAndMaybeTwo = mapFromNotSpellIdToCommandName[notSpellId]
     if not commandNameOneAndMaybeTwo then
-        error("Unknown spellId: " .. (notSpellId or "NIL") )
+        error("Unknown notSpellId: " .. (notSpellId or "NIL") )
     end
     return unpack(commandNameOneAndMaybeTwo)
 end

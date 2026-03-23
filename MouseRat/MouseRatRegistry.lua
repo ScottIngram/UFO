@@ -10,20 +10,22 @@ local zebug = MouseRat.zebug -- Zebug:new(--[[Z_VOLUME_GLOBAL_OVERRIDE or]] Zebu
 ---@class MouseRatRegistry : UfoMixIn
 ---@field ufoType string
 ---@field kids table<MouseRatType,MouseRat>
----@field customizersByCursorType table<MouseRatType,table<>>
----@field customizersByAbbType table<MouseRatTypeForActionBarButton,table<>>
+---@field customizersByCursorType table<BlizCursorType,MouseRat>
+---@field customizersByAbbType table<MouseRatTypeForActionBarButton,MouseRat>
+---@field customizersByParentType table<MouseRatType,MouseRat>
 MouseRatRegistry = {
     ufoType = "MouseRatRegistry",
     kids = {},
     customizersByCursorType = {},
     customizersByAbbType = {},
+    customizersByParentType = {},
 }
 
 -------------------------------------------------------------------------------
 -- Methods
 -------------------------------------------------------------------------------
 
----@param kid MouseRat a "subclass" that implements the MouseRat missing methods required for SPELL, ITEM, etc.
+---@param kid MouseRat|string a "subclass" that implements the MouseRat missing methods required for SPELL, ITEM, etc.
 function MouseRatRegistry:register(kid)
     assert(kid, "bad arg: 'kid' is nil")
     assert(kid.type, "the registered kid has no defined 'type'")
@@ -99,7 +101,7 @@ function MouseRatRegistry:validateKid(kid)
     --return invalids
 end
 
----@param confirmedType MouseRatType determined to be the actual type and not an ambiguous value returned from a Bliz API
+---@param confirmedType MouseRatType|string determined to be the actual type and not an ambiguous value returned from a Bliz API
 ---@return MouseRat|nil will be nil if the given type has not been registered
 function MouseRatRegistry:getSubClassForTrustedType(confirmedType)
     assert(confirmedType, "bad arg: 'type' is nil")
@@ -119,7 +121,7 @@ function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
     local subClass = self.kids[type]
     if not subClass then return nil end
 
-    local subSubClasses = MouseRatRegistry.customizersByCursorType[type]
+    local subSubClasses = self.customizersByCursorType[type]
     if not subSubClasses then return subClass end
 
     --zebug.warn:event():owner(subClass):dumpKeys(customMouseRatsForThisType)
@@ -128,7 +130,21 @@ function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
         local isQualified = subSubMr:disambiguator(type, c2, c3, c4)
         zebug.warn:event():print("disambiguator! is this type", type," actually", subSubMr.type, "?",isQualified)
         if isQualified then
-            -- first one wins!  assume only one custom class will qualify
+            -- TODO - support arbitrary depth hierarchy
+            if subSubMr.parentType then
+                local suuuuubSubSubClasses = self.customizersByParentType[subSubMr.parentType]
+                assert(suuuuubSubSubClasses, "I somehow broke my own code")
+                for i, suuuuubSubSubMr in ipairs(subSubClasses) do
+                    local isAlsoQualified = suuuuubSubSubMr:disambiguator(type, c2, c3, c4)
+                    if isAlsoQualified then
+                        -- first one wins!  assume only one custom suuuuub class will qualify
+                        -- replace the previous subClass with the custom one we found
+                        subSubMr = suuuuubSubSubMr
+                    end
+                end
+            end
+
+            -- first one wins!  assume only one custom sub class will qualify
             -- replace the previous subClass with the custom one we found
             zebug.warn:event():print("BLIZ API LIED.  the type wasn't really", type, "IT WAS ACTUALLY", subSubMr.type)
             subClass = subSubMr
@@ -150,13 +166,23 @@ function MouseRatRegistry:addCustomizerForCursorType(kid)
     assert(BLIZ_CURSOR_TYPE_BY_NAME[kid.cursorType], "bad config: The custom '"..kid.type.."' -> '"..kid.cursorType.."' cursorType is not a standard BlizCursorType")
     assert(kid.disambiguator, "bad config: The custom MouseRat for "..kid.type.." -> "..kid.cursorType.." has not specified a 'disambiguator' method")
 
-    local cct = self.customizersByCursorType[kid.cursorType]
-    if not cct then
-        cct = {}
-        self.customizersByCursorType[kid.cursorType] = cct
+    local byCursor = self.customizersByCursorType[kid.cursorType]
+    if not byCursor then
+        byCursor = {}
+        self.customizersByCursorType[kid.cursorType] = byCursor
+    end
+    table.insert(byCursor, kid)
+
+    -- when more than one kid wants to handle the same cursorType then the most specialized kid wins.  So track parentage.  TODO - maybe extend this generally for item->toy, mount->mount_special, etc
+    if kid.parentType then
+        local byParent = self.customizersByParentType[kid.parentType]
+        if not byParent then
+            byParent = {}
+            self.customizersByParentType[kid.parentType] = byParent
+        end
+        table.insert(byParent, kid)
     end
 
-    table.insert(cct, kid)
     return true
 end
 

@@ -8,6 +8,7 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
+local zebug = MouseRat.zebug
 
 ---@class Catalog : UfoMixIn
 ---@field ufoType string The classname
@@ -206,7 +207,7 @@ function Catalog:update(event)
         ---@type number
         local row = i+scrollOffset
         local btnFrame = visibleBtnFrames[i]
-        zebug.trace:event(event):print("i",i, "row", row)
+        zebug.trace:mCircle():event(event):print("i",i, "row", row)
         if row > theAddButton then
             btnFrame:Hide()
         else
@@ -265,7 +266,7 @@ function Catalog:update(event)
                 btnFrame.text:SetText(btnFrame.label);
                 btnFrame.text:SetTextColor(DEFAULT_COLOR.r, DEFAULT_COLOR.g, DEFAULT_COLOR.b);
 
-                zebug.trace:event(event):print("flyoutIndex", row, "btnFrame.flyoutId",btnFrame.flyoutId)
+                zebug.trace:event(event):owner(flyoutDef):print("flyoutIndex", row, "btnFrame.flyoutId",btnFrame.flyoutId)
 
                 if icon then
                     if(type(icon) == "number") then
@@ -552,9 +553,6 @@ function CatalogEntry:OnEnter()
     GermCommander:forEachGermWithFlyoutId(self.flyoutId, Germ.glowStart)
 end
 
----@type table<number,MouseRat>
-local MOUSE_RATS = {}
-
 function CatalogEntry:OnDragStart()
     local eventCapture
     local flyoutId = self.flyoutId
@@ -563,19 +561,7 @@ function CatalogEntry:OnDragStart()
         local flyoutDef = FlyoutDefsDb:get(flyoutId)
         zebug.info:mSquare():owner(flyoutDef):newEvent("CatalogEntry", "OnDragStart"):run(function(event)
             eventCapture = event
-
-            -- switching to MouseRat !!!
-            if true then
-                if not MOUSE_RATS[flyoutId] then
-                    local flyoutConf = FlyoutDefsDb:get(flyoutId)
-                    MOUSE_RATS[flyoutId] = MouseRat:wrap(flyoutConf)
-                    local mr = MOUSE_RATS[flyoutId]
-                    zebug.info:owner(flyoutDef):event(event):print("wrapped myself inside a MouseRat", mr, "mr.assertIsInstance",mr.assertIsInstance)
-                end
-                MOUSE_RATS[flyoutId]:pickupToCursor()
-            else
-                UfoProxy:pickupUfoOntoCursor(flyoutId, event)
-            end
+            MrUfo:pickupFlyoutId(flyoutId)
         end)
     end
     local scrollPane = self:GetParent():GetParent()
