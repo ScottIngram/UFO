@@ -472,13 +472,19 @@ function MouseRat:helpMe(methodName)
             error(methodName..": The MouseRat subclass must either implement this method or provide its helper.")
         end
     end
+
     if isFunction(helper) then
+        local selfie = (self.passSelfForHelper and self.passSelfForHelper[methodName])
+        if selfie then
+            return helper(self, self:getId())
+        end
+
         local zelf = selfObjNeededFor[methodName]
         if zelf then
             return helper(zelf, self:getIdUsedByBlizApis())
-        else
-            return helper(self:getIdUsedByBlizApis())
         end
+
+        return helper(self:getIdUsedByBlizApis())
     else
         return helper
     end

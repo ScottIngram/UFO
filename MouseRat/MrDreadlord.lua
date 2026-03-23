@@ -12,6 +12,9 @@ DREADLORD_VESSEL_NAME = "Z-Dreadlord"
 -- Prolly not a good idea to use it to represent stuff actually supported by WoW cursor or abbs.
 -------------------------------------------------------------------------------
 
+local HelperHelper = { } -- jumping through hoops due to lexical scoping
+local pickupToCursorHelper = function(...) return HelperHelper.pickupToCursor(...) end -- we will define this below
+
 ---@class MrDreadlord : MouseRat -- make this globally accessable
 MrDreadlord = {
     type       = MouseRatType.DREADLORD,
@@ -25,8 +28,9 @@ MrDreadlord = {
         canThisToonPickup = true, -- that's the whole point of this class!  to pick it up!
         getIcon = 5333371,
         setToolTip = function() _G.GameTooltip:SetText("Dreadlord") end,
-        -- pickupToCursor = PickupMacro, is defined below as pickupToCursorHelper()
+        pickupToCursor = pickupToCursorHelper,
     },
+    passSelfForHelper = { pickupToCursor = true } -- will tell MouseRat:helpMe() to pass the self obj into the HelperHelper.pickupToCursor
 }
 
 local currentDreadlord
@@ -54,10 +58,10 @@ function MrDreadlord:new(victim)
         dreadlord = deepcopy(MrDreadlord,{})
         dreadlord.primaryKey = nil
         dreadlord.getId = nil
-        --zebug.warn:event():owner("proto-DL"):dumpy("proto-DL", dreadlord)
+
         -- remove all the Dreadlord helpers and instead defer to the original MouseRat
         -- except for pickupToCursor
-        dreadlord.helpers = { pickupToCursor = function() dreadlord:pickupToCursorHelper() end }  -- TODO: make this less fragile
+        dreadlord.helpers = { pickupToCursor = pickupToCursorHelper }
         setmetatable(dreadlord.helpers, { __index = victim.helpers }) -- dl is now a perfect mimic of the victim
 
         dreadlord.getOriginalMouseRat = function() return victim end -- TODO: would be ok to NOT wrap it inside a method?
@@ -69,22 +73,32 @@ function MrDreadlord:new(victim)
     else
         --zebug.warn:event():owner(self):dumpy("victim",victim)
         dreadlord = self:oneOfUs(victim, self.type)
-        dreadlord.helpers.pickupToCursor = function() dreadlord:pickupToCursorHelper() end -- TODO: make this less fragile
     end
 
     zebug.info:event():owner(dreadlord):print("Mwuhahaha")
 
+    currentDreadlord = dreadlord
+
     return dreadlord
+end
+
+function MrDreadlord:getCurrent()
+    if currentDreadlord then
+        return currentDreadlord
+    end
+
+    -- TODO - reconstitute from the macro ?
+    return nil
 end
 
 -- because the "id" never changes, it's ok for this method to be "static" / "class"
 -- this fucks up the victim
 function MrDreadlord:getId()
-    return self.macroId or getMacroIndexByNameOrReturnNil(self.macroVesselName)
+    return getMacroIndexByNameOrReturnNil(self.macroVesselName)
 end
 
 function MrDreadlord:isThisMySpawn(type, c2, c3, c4)
-    return (type == self.cursorType) and ((c2 == DREADLORD_VESSEL_NAME) or (c2 == getMacroIndexByNameOrReturnNil(DREADLORD_VESSEL_NAME)))
+    return (type == self.cursorType) and ((c2 == DREADLORD_VESSEL_NAME) or (c2 == self:getId())) -- c2 ShOuLd always be numeric, but this is Bliz we're talking about, so ima not taking any chances
 end
 
 function MrDreadlord:getMacroVesselIndex()
@@ -98,18 +112,7 @@ end
 ---@param macroId any could be an itemId
 ---@return boolean true if the data implies this class
 function MrDreadlord:disambiguator(type, macroId)
-    zebug.warn:event():print("type", type, "macroId", macroId, "my ID",self:getId())
-    if type ~= self.cursorType then return false end
-
-    local maybeId = self:getId()
-    zebug.warn:event():print("2 type", type, "macroId", macroId, "my ID",self:getId())
-    if maybeId and (maybeId == macroId) then return true end
-
-    --local maybeMe = self:getMostRecentlyPickedUpMr()
-    --zebug.warn:event():print("3 type", type, "macroId", macroId, "my ID",self:getId(), "maybeMe",maybeMe, "maybeMe:getId()",maybeMe and maybeMe:getId())
-    --if maybeMe and (maybeMe:getId() == macroId) then return true end
-
-    return false
+    return self:isThisMySpawn(type, macroId)
 end
 
 -------------------------------------------------------------------------------
@@ -123,13 +126,19 @@ function getMacroIndexByNameOrReturnNil(name)
 end
 
 -------------------------------------------------------------------------------
--- Instance Methods for MouseRat Contract
+-- HelperHelper Methods
+-- required because lexical scoping prevents me from defining this directly into MrDreadlord.helpers
+-- satisfy the MouseRat Contract
 -------------------------------------------------------------------------------
 
 -- the whole point of a MrDreadlord is to pickup something that otherwise can't be pickedup
 -- including arbitrary whatevers but also legit MouseRats that for whatever reason the current toon can't.
 -- jump through elaborate hoops to "trick" the wow client
-function MrDreadlord:pickupToCursorHelper()
+function HelperHelper:pickupToCursor()
+
+    ---@type MrDreadlord
+    local self = self -- these lines are here purely to help my IDE understand what I'm doing.
+
     self:assertIsInstance()
     zebug.warn:event():owner(self):print("DREAD to pick me up!!!!")
 
@@ -137,7 +146,7 @@ function MrDreadlord:pickupToCursorHelper()
     local index = nil -- never(?) reuse the old macro -- self:getMacroVesselIndex()
     if not index then
         zebug.warn:event():owner(self):print("DREAD MAKING a macro")
-        index = self:makeMacroVessel()
+        index = self:createOrEditMacroVessel()
         zebug.warn:event():owner(self):print("DREAD made a macro. index",index, "name",self.macroVesselName, "macro text", self.macroText)
     end
 
@@ -150,13 +159,12 @@ function MrDreadlord:pickupToCursorHelper()
     return self
 end
 
-MrDreadlord.helpers.pickupToCursor = MrDreadlord.pickupToCursorHelper
-
 -------------------------------------------------------------------------------
 -- Instance Methods - unique to MrDreadlord
 -------------------------------------------------------------------------------
 
 function MrDreadlord:areYouMe(you)
+    -- TODO this isn't actually useful
     self:assertIsInstance()
     if you == nil then
         return false
@@ -167,7 +175,7 @@ function MrDreadlord:areYouMe(you)
     return (you.type == self.type) and (you.macroText == self.macroText) and (you.macroIndex == self.macroIndex)
 end
 
-function MrDreadlord:makeMacroVessel()
+function MrDreadlord:createOrEditMacroVessel()
     self:assertIsInstance()
     local verb
     local icon = self:getIcon()
