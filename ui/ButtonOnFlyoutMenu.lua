@@ -93,7 +93,7 @@ function ButtonOnFlyoutMenu:copyDefToBlizFields()
     -- the names on the left are used deep inside Bliz code by the likes of SpellFlyoutButton_UpdateCooldown() etc
     self.actionType = d.type
     self.actionID   = d.spellId or d.itemId or d.toyId or d.mountId -- or d.petGuid
-    self.spellID    = d.spellId
+    self.spellID    = d.spellId -- "Secret value" TAINT as of 3/26
     self.itemID     = d.itemId
     self.mountID    = d.mountId
     self.battlepet  = d.petGuid
