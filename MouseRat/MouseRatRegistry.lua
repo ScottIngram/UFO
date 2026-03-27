@@ -34,13 +34,15 @@ function MouseRatRegistry:register(kid)
         error("This MouseRat has already been registered: " .. kid.type)
     end
 
+    -- activate OO inheritance
+    -- do this first because the code below relies on MrUfo knowing it is a MrDreadlord (which is a MrMacro, but) which is a MouseRat
+    MouseRat:adopt(kid)
+
     local isCustomCursor = self:addCustomizerForCursorType(kid)
     local isCustomAbb = kid.abbType and (kid.abbType ~= kid.type)
     if isCustomAbb then
         self:addMouseRatForCustomizedAbb(kid)
     end
-
-    MouseRat:adopt(kid) -- activate OO inheritance
 
     self.kids[kid.type] = kid
 end

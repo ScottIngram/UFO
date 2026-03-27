@@ -44,12 +44,14 @@ function FlyoutDef:oneOfUs(self)
     -- and attach methods to get and put that data
     local privateCache = {
         alreadyCoercedMyButtons = false,
+        lastMod = time(),
     }
     function privateCache:setAlreadyCoercedMyButtons() privateCache.alreadyCoercedMyButtons = true end
     function privateCache:cacheUsableFlyoutDef(usableFlyoutDef) privateCache.cachedUsableFlyoutDef = usableFlyoutDef end
     function privateCache:cacheHasItem(hasIt) privateCache._hasItem = hasIt end
     function privateCache:cacheHasMacro(hasIt) privateCache._hasMacro = hasIt end
     function privateCache:cacheHasSpell(hasIt) privateCache._hasSpell = hasIt end
+    function privateCache:setPvar(key,val) privateCache[key] = val end
 
     -- tie the privateData table to the FlyoutDef class definition
     setmetatable(privateCache, { __index = FlyoutDef })
@@ -57,12 +59,6 @@ function FlyoutDef:oneOfUs(self)
     setmetatable(self, { __index = privateCache })
 
     self:installMyToString()
-
-    -- on any modification always update the lastMod
-    -- well, this causes the initial load to silently fail and UFO does nothing until a reload
-    -- maybe because no defs get loaded SAVED_VARIABLES ?
-
-    self:setModStamp()
 
     return self
 end
@@ -92,7 +88,7 @@ function FlyoutDef:getName()
 end
 
 function FlyoutDef:setModStamp()
-    self.lastMod = time()
+    self:setPvar("lastMod", time())
 end
 
 function FlyoutDef:getModStamp()
@@ -223,6 +219,19 @@ function FlyoutDef:removeButton(removeAtIndex)
         end
     end)
     self:invalidateCache()
+end
+
+-- TODO delete this
+--[[
+function FlyoutDef:getId()
+    zebug.info:event():owner(self):print("self.id", self.id)
+    return self.id
+end
+]]
+
+function FlyoutDef:getFlyoutId()
+    zebug.info:event():owner(self):name("getFlyoutId"):print("self.flyoutId", self.id)
+    return self.id
 end
 
 function FlyoutDef:getIcon(n)

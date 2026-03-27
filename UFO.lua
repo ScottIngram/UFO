@@ -8,7 +8,6 @@
 ---@class Ufo -- IntelliJ-EmmyLua annotation
 ---@field myTitle string Ufo.toc Title
 ---@field iconTexture string Ufo.toc IconTexture
----@field devMode boolean unlocks developer switches and levers for debugging
 ---@field thatWasMeThatDidThatMacro boolean flag used to stop event handler responses to UFO actions related to macros
 ---@field droppedPlaceholderOntoActionBar boolean flag used to stop event handler responses to UFO actions related to drag and drop
 ---@field pickedUpBtn ButtonDef data for the UFO button on the mouse cursor
@@ -75,6 +74,11 @@ local ASSISTED_COMBAT = "assistedcombat"
 function EventHandlers:ACTIONBAR_SLOT_CHANGED(eName, n, btnSlotIndex)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
+--[[
+    zebug.error:event(eName):owner(mr):print("")
+    local mr = MouseRat:getFromActionBarSlot(btnSlotIndex)
+]]
+
     -- ignore all Single Button Assist SPAM.  bugfix #72
     local _, _, subType = GetActionInfo(btnSlotIndex)
     if subType == ASSISTED_COMBAT then
@@ -92,6 +96,7 @@ function EventHandlers:ACTIONBAR_SLOT_CHANGED(eName, n, btnSlotIndex)
 
     zebug.info:mSquare():name("handler"):newEvent("Ufo", eName, n, myVolume):run(function(event)
         Ufo.germLock = event
+        zebug.info:event(event):name("handler"):print("btnSlotIndex",btnSlotIndex)
         GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlotIndex, event)
         Ufo.germLock = nil
     end, "btnSlotIndex", btnSlotIndex)
@@ -207,9 +212,11 @@ function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorTyp
     --print("EventHandlers:CURSOR_CHANGED... isCursorEmpty",isCursorEmpty, "eName", eName, "eventCounter", eCount, "newCursorType",newCursorType, "oldCursorType",oldCursorType, "oldCursorVirtualID",oldCursorVirtualID )
     eCount = eCount or "NO-EVENT-COUNTER"
 
-    zebug.trace
+    local myVolume = Ufo:getEventVolume(eName)
+
+    zebug.info
         :name("handler")
-        :newEvent("Ufo", Cursor:nameMakerForCursorChanged(isCursorEmpty), eCount, Zebug.trace)
+        :newEvent("Ufo", Cursor:nameMakerForCursorChanged(isCursorEmpty), eCount, myVolume)
         :run(function(event)
             GermCommander:forEachActiveGerm(Germ.maybeRegisterForClicksDependingOnCursorIsEmpty, event)
             Cursor:clearCache(event)
@@ -242,7 +249,7 @@ EventHandlers.SPELL_UPDATE_CHARGES = EventHandlers.SPELL_UPDATE_USABLE
 
 -- support dynamically (de)activating DEBUG output in real time for individual events
 function Ufo:getEventVolume(eventName)
-    return Ufo.devMode and Config.opts.devTool.eventVolume[eventName] or nil
+    return Config.opts.devTool.devMode and Config.opts.devTool.eventVolume[eventName] or nil
 end
 
 function Ufo:setEventVolume(eventName, volume)
@@ -307,8 +314,16 @@ end
 -- Debugger tools
 -------------------------------------------------------------------------------
 
+---@param tru boolean true if devModeActive
+function devModeActive(tru)
+    Config.opts.devTool.devMode = true
+    if tru then
+        -- tell config menu to redraw
+    end
+end
+
 function dumpIfUnderMousePointer()
-    Ufo.devMode = true
+    Config.opts.devTool.devMode = true
     local didOutput
     zebug.warn:mark(Mark.QUEST):newEvent("Ufo","debug"):run(function(event)
         local foci  = GetMouseFoci()
@@ -323,7 +338,7 @@ function dumpIfUnderMousePointer()
 
         if not didOutput then
             zebug.warn:event(event):print("Point at a UFO first then issue this command.  Dev Mode now disabled.")
-            Ufo.devMode = false
+            Config.opts.devTool.devMode = false
         end
     end)
 end

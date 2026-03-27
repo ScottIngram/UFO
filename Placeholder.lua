@@ -42,7 +42,7 @@ end
 
 ---@param btnSlotIndex number
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
----@return ButtonDef whatever was on btnSlotIndex before it got clobbered by the Placeholder
+---@return MouseRat whatever was on btnSlotIndex before it got clobbered by the Placeholder
 function Placeholder:put(btnSlotIndex, event)
     if not Config.opts.usePlaceHolders then return end
 

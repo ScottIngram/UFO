@@ -22,7 +22,7 @@ UfoProxy = {
 UfoMixIn:mixInto(UfoProxy)
 
 -------------------------------------------------------------------------------
--- Class Methods
+-- utility functions
 -------------------------------------------------------------------------------
 
 function getMacroIndexByNameOrNil(name)
@@ -34,8 +34,14 @@ end
 UfoProxy.getMacroIndexByNameOrNil = getMacroIndexByNameOrNil
 
 -------------------------------------------------------------------------------
--- Instance Methods
+-- Class Methods
 -------------------------------------------------------------------------------
+
+function UfoProxy:init()
+    setmetatable(dreadlord, { __index = victim }) --
+
+
+end
 
 function UfoProxy:syncMyId()
     self.macroId = getMacroIndexByNameOrNil(self.name)

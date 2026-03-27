@@ -359,20 +359,30 @@ function Germ:pickupFromSlotAndClear(event)
 
     -- the ON_DRAG_START event apparently precedes the cursor change
     -- so, handle whatever is currently on the cursor, if anything.
-    local cursorBeforeItDrops = Cursor:get()
-    if cursorBeforeItDrops then
-        zebug.info:event(event):owner(self):print("cursorBeforeItDrops", cursorBeforeItDrops)
-        if cursorBeforeItDrops:isUfoProxyForFlyout() then
-            -- the user is dragging a UFO
-            local droppingThisFlyoutId = UfoProxy:getFlyoutId()
+
+    if true then
+        local mrUfo = MrUfo:getFromCursor()
+        if mrUfo then
+            local droppingThisFlyoutId = mrUfo:getFlyoutId()
             GermCommander:dropDraggedUfoFromCursorOntoActionBar(btnSlotIndex, droppingThisFlyoutId, event)
-        else
-            -- the user is just dragging a normal Bliz spell/item/etc.
-            -- Cursor:dropOntoActionBar(btnSlotIndex, eventId) -- this is already happening without me needing to do anything, yes?
         end
+        MrUfo:pickupFlyoutId(pickingUpThisFlyoutId)
+    else
+        local cursorBeforeItDrops = Cursor:get()
+        if cursorBeforeItDrops then
+            zebug.info:event(event):owner(self):print("cursorBeforeItDrops", cursorBeforeItDrops)
+            if cursorBeforeItDrops:isUfoProxyForFlyout() then
+                -- the user is dragging a UFO
+                local droppingThisFlyoutId = UfoProxy:getFlyoutId()
+                GermCommander:dropDraggedUfoFromCursorOntoActionBar(btnSlotIndex, droppingThisFlyoutId, event)
+            else
+                -- the user is just dragging a normal Bliz spell/item/etc.
+                -- Cursor:dropOntoActionBar(btnSlotIndex, eventId) -- this is already happening without me needing to do anything, yes?
+            end
+        end
+        UfoProxy:pickupUfoOntoCursor(pickingUpThisFlyoutId, event)
     end
 
-    UfoProxy:pickupUfoOntoCursor(pickingUpThisFlyoutId, event)
 end
 
 ---@return BlizActionBarButton
@@ -759,43 +769,90 @@ end
 
 function Germ:handleReceiveDrag(event)
     if isInCombatLockdown("Drag and drop") then return end
-    local cursor = Cursor:get()
-    if cursor then
+
+    if true then
+        -- NEW WAY
+        local mr = MouseRat:getFromCursor(event)
+        if not mr then return end
+
         Ufo.germLock = event
 
         local flyoutIdOld = self.flyoutId
 
-        if cursor:isUfoProxyForFlyout() then
-            -- soup to nuts. do everything without relying on the ACTIONBAR_SLOT_CHANGED handler
-            -- don't let the UfoProxy hit the actionbar.
-            zebug.info:event(event):owner(self):print("cursor is a proxy",cursor)
-            local flyoutIdNew = UfoProxy:getFlyoutId()
+        if mr:isClass(MrUfo) then
+            ---@type MR_UFO_INHERITANCE here just for the sake of my IDE
+            local mrUfo = mr
+            zebug.info:event(event):owner(self):print("cursor is a MrUfo",mrUfo)
+            local flyoutIdNew = mrUfo:getFlyoutId()
             self:changeFlyoutIdAndEnable(flyoutIdNew, event)
             Placeholder:put(self.btnSlotIndex, event) -- will discard the UfoProxy in favor of a Placeholder
             GermCommander:savePlacement(self.btnSlotIndex, flyoutIdNew, event)
-        elseif cursor:isUfoProxyForButton() then
+
+        elseif mr:isClass(MrDreadlord) then
             -- The user has dropped the fake button proxy onto the action bar.
-            ButtonOnFlyoutMenu:abortIfUnusable(Ufo.pickedUpBtn)
+            ButtonOnFlyoutMenu:reportIfUnusable(Ufo.pickedUpBtn)
+            ButtonOnFlyoutMenu:reportIfUnusable(mr)
 
             -- ignore it
             Ufo.germLock = nil
             return
         else
-            zebug.info:event(event):owner(self):print("just got hit by rando",cursor)
+            -- just a regular ol' spell, item, etc.
+            zebug.info:event(event):owner(self):print("just got hit by rando mr",mr)
             self:clearAndDisable(event)
             GermCommander:forgetPlacement(self.btnSlotIndex, event)
-            cursor:dropOntoActionBar(self.btnSlotIndex, event)
+            mr:dropOntoActionBar(self.btnSlotIndex, event)
         end
 
         if flyoutIdOld then
-            zebug.info:mMoon():event(event):owner(self):print("--------- PRE  UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
-            UfoProxy:pickupUfoOntoCursor(flyoutIdOld, event)
-            zebug.info:mMoon():event(event):owner(self):print("--------- POST UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
+            zebug.info:mMoon():event(event):owner(self):print("--------- PRE  UfoProxy:PICKUP", GetCursorInfo(), MouseRat:getFromCursor(event))
+            MrUfo:pickupFlyoutId(flyoutIdOld)
+            zebug.info:mMoon():event(event):owner(self):print("--------- POST UfoProxy:PICKUP", GetCursorInfo(),  MouseRat:getFromCursor(event))
         else
-            cursor:clear(event) -- will discard the UfoProxy if it's still there
+            MouseRat:clearCursor()
         end
 
-        Ufo.germLock = nil
+
+    else
+        -- OLD WAY
+        local cursor = Cursor:get()
+        if cursor then
+            Ufo.germLock = event
+
+            local flyoutIdOld = self.flyoutId
+
+            if cursor:isUfoProxyForFlyout() then
+                -- soup to nuts. do everything without relying on the ACTIONBAR_SLOT_CHANGED handler
+                -- don't let the UfoProxy hit the actionbar.
+                zebug.info:event(event):owner(self):print("cursor is a proxy",cursor)
+                local flyoutIdNew = UfoProxy:getFlyoutId()
+                self:changeFlyoutIdAndEnable(flyoutIdNew, event)
+                Placeholder:put(self.btnSlotIndex, event) -- will discard the UfoProxy in favor of a Placeholder
+                GermCommander:savePlacement(self.btnSlotIndex, flyoutIdNew, event)
+            elseif cursor:isUfoProxyForButton() then
+                -- The user has dropped the fake button proxy onto the action bar.
+                ButtonOnFlyoutMenu:reportIfUnusable(Ufo.pickedUpBtn)
+
+                -- ignore it
+                Ufo.germLock = nil
+                return
+            else
+                zebug.info:event(event):owner(self):print("just got hit by rando",cursor)
+                self:clearAndDisable(event)
+                GermCommander:forgetPlacement(self.btnSlotIndex, event)
+                cursor:dropOntoActionBar(self.btnSlotIndex, event)
+            end
+
+            if flyoutIdOld then
+                zebug.info:mMoon():event(event):owner(self):print("--------- PRE  UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
+                UfoProxy:pickupUfoOntoCursor(flyoutIdOld, event)
+                zebug.info:mMoon():event(event):owner(self):print("--------- POST UfoProxy:PICKUP", GetCursorInfo(), Cursor:get())
+            else
+                cursor:clear(event) -- will discard the UfoProxy if it's still there
+            end
+
+            Ufo.germLock = nil
+        end
     end
 end
 
@@ -811,7 +868,7 @@ function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
         if cursor then
             -- self:handleReceiveDrag(event)
         else
-            zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_DOWN"):print("not dragging, so, exiting. proxy",UfoProxy)
+            zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_DOWN"):print("not dragging, so, exiting. proxy")
         end
     end, cursor)
 end
@@ -825,7 +882,7 @@ function ScriptHandlers:ON_MOUSE_UP()
         if isDragging then
             self:handleReceiveDrag(event)
         else
-            zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_UP"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
+            zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_UP"):print("not dragging, so, exiting. mySlotBtn",mySlotBtn)
         end
     end)
 end

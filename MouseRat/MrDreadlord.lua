@@ -3,8 +3,6 @@ local ADDON_NAME, Ufo = ...
 Ufo.Wormhole()
 local zebug = MouseRat.zebug
 
-DREADLORD_VESSEL_NAME = "Z-Dreadlord"
-
 -------------------------------------------------------------------------------
 -- MrDreadlord
 -- a proxy that will stand in for stuff not supported by WoW cursor or action bar buttons
@@ -18,12 +16,14 @@ local pickupToCursorHelper = function(...) return HelperHelper.pickupToCursor(..
 ---@class MrDreadlord : MouseRat -- make this globally accessable
 MrDreadlord = {
     type       = MouseRatType.DREADLORD,
+    --parentType = MouseRatType.MACRO, -- MouseRatRegistry:register() will create the OO inheritance -- TODO: use this line!
     cursorType = MouseRatType.MACRO,
+    abbType    = MouseRatTypeForActionBarButton.MACRO,
     primaryKey = "id",
-    macroVesselName = DREADLORD_VESSEL_NAME,
+    macroVesselName = "Z-Dreadlord-UFO", -- subClasses can define their own macro name
     helpers = {
-        -- these are only used by non-MouseRats victims
-        getName = function() return DREADLORD_VESSEL_NAME end,
+        -- these are only used by non-MouseRat victims
+        getName = function() return MrDreadlord.macroVesselName end,
         isUsable = false,
         canThisToonPickup = true, -- that's the whole point of this class!  to pick it up!
         getIcon = 5333371,
@@ -91,6 +91,14 @@ function MrDreadlord:getCurrent()
     return nil
 end
 
+local DREADLORD_SINGLETON
+function MrDreadlord:getSingleton()
+    if not DREADLORD_SINGLETON then
+        DREADLORD_SINGLETON = deepcopy(MrDreadlord,{})
+    end
+    return DREADLORD_SINGLETON
+end
+
 -- because the "id" never changes, it's ok for this method to be "static" / "class"
 -- this fucks up the victim
 function MrDreadlord:getId()
@@ -98,7 +106,20 @@ function MrDreadlord:getId()
 end
 
 function MrDreadlord:isThisMySpawn(type, c2, c3, c4)
-    return (type == self.cursorType) and ((c2 == DREADLORD_VESSEL_NAME) or (c2 == self:getId())) -- c2 ShOuLd always be numeric, but this is Bliz we're talking about, so ima not taking any chances
+    local isIt = (type == self.cursorType) and ((c2 == self.macroVesselName) or (c2 == self:getId()))
+    zebug.info:event():owner(self):print("comparing... type",type, "to self.cursorType",self.cursorType, "and comparing c2",c2,"to self.macroVesselName", self.macroVesselName, "OR self:getId()",self:getId(), "... So, isIt",isIt)
+    return isIt -- c2 ShOuLd always be numeric, but this is Bliz we're talking about, so ima not taking any chances
+end
+
+function MrDreadlord:_isThisActionBarSlotDataMyClass(abbType, id, subType)
+    local isMe = (abbType == self.abbType) and ((id == self.macroVesselName) or (id == self:getId()))
+    zebug.warn:event():owner(self):print("abbType",abbType, "id",id, "subType",subType, "isMe",isMe)
+    return isMe
+end
+
+function MrDreadlord:_isThisActionBarSlotDataMyInstance(...)
+    self:assertIsInstance()
+    return self:_isThisActionBarSlotDataMyClass(...)
 end
 
 function MrDreadlord:getMacroVesselIndex()
@@ -113,6 +134,10 @@ end
 ---@return boolean true if the data implies this class
 function MrDreadlord:disambiguator(type, macroId)
     return self:isThisMySpawn(type, macroId)
+end
+
+function MrDreadlord:disamButtonGator(abbType, macroId)
+    return self:isThisMySpawn(abbType, macroId)
 end
 
 -------------------------------------------------------------------------------
@@ -131,7 +156,7 @@ end
 -- satisfy the MouseRat Contract
 -------------------------------------------------------------------------------
 
--- the whole point of a MrDreadlord is to pickup something that otherwise can't be pickedup
+-- the whole point of a MrDreadlord is to pickup something that otherwise can't be picked up
 -- including arbitrary whatevers but also legit MouseRats that for whatever reason the current toon can't.
 -- jump through elaborate hoops to "trick" the wow client
 function HelperHelper:pickupToCursor()
@@ -140,14 +165,14 @@ function HelperHelper:pickupToCursor()
     local self = self -- these lines are here purely to help my IDE understand what I'm doing.
 
     self:assertIsInstance()
-    zebug.warn:event():owner(self):print("DREAD to pick me up!!!!")
+    zebug.warn:event():owner(self):name("HelperHelper:pickupToCursor"):print("DREAD to pick me up!!!!")
 
     -- because a Dreadlord is a fake thing, we must create a real thing if we want to drag it around.
     local index = nil -- never(?) reuse the old macro -- self:getMacroVesselIndex()
     if not index then
-        zebug.warn:event():owner(self):print("DREAD MAKING a macro")
+        zebug.warn:event():owner(self):name("HelperHelper:pickupToCursor"):print("DREAD MAKING a macro")
         index = self:createOrEditMacroVessel()
-        zebug.warn:event():owner(self):print("DREAD made a macro. index",index, "name",self.macroVesselName, "macro text", self.macroText)
+        zebug.warn:event():owner(self):name("HelperHelper:pickupToCursor"):print("DREAD made a macro. index",index, "name",self.macroVesselName, "macro text", self.macroText)
     end
 
     if index then
@@ -175,18 +200,28 @@ function MrDreadlord:areYouMe(you)
     return (you.type == self.type) and (you.macroText == self.macroText) and (you.macroIndex == self.macroIndex)
 end
 
+function MrDreadlord:deleteProxyMacro()
+    Ufo.thatWasMeThatDidThatMacro = Event:new(self, "deleteProxyMacro()")
+    DeleteMacro(self.macroVesselName)
+    if _G.MacroFrame and _G.MacroFrame:IsShown() then
+        _G.MacroFrame:Update()
+    end
+end
+
 function MrDreadlord:createOrEditMacroVessel()
     self:assertIsInstance()
     local verb
     local icon = self:getIcon()
-    self.macroText = self.macroText or self:makeMacroText()
+    self:makeMacroText()
     local existingIndex = getMacroIndexByNameOrReturnNil(self.macroVesselName)
     if existingIndex then
         verb = "EDITTED"
         self.macroIndex = existingIndex
+        zebug.info:event():owner(self):print("EDIT macro",existingIndex, "named",self.macroVesselName, "macro text", self.macroText)
         EditMacro(existingIndex, self.macroVesselName, icon, self.macroText)
     else
         verb = "Created"
+        zebug.info:event():owner(self):print("CREATE macro",existingIndex, "named",self.macroVesselName, "macro text", self.macroText)
         self.macroIndex = CreateMacro(self.macroVesselName, icon, self.macroText)
     end
 
@@ -195,17 +230,21 @@ function MrDreadlord:createOrEditMacroVessel()
 end
 
 function MrDreadlord:makeMacroText()
-    if self.macroText then return self.macroText end
+    local result, myData
 
-    local myData
     if self.getOriginalMouseRat then
         myData = self:getOriginalMouseRat()
     else
         myData = self
     end
 
-    local data = (self.getOriginalMouseRat and self:getOriginalMouseRat()) or self
-    self.macroText = sprintf([=[##%s:%s]=], self.type, serialize(data, nil, true))
+    if myData.serialize then
+        result = myData:serialize()
+    else
+        result = sprintf([=[##%s:%s]=], self.type, serialize(myData, nil, true))
+    end
+
+    self:setPvar("macroText", result)
     return self.macroText
 end
 

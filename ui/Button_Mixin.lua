@@ -161,7 +161,7 @@ function Button_Mixin:updateCooldown(event)
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
         zebug.trace:event(event):owner(self):print("spellId",spellId)
         self.spellID = spellId --v11 -- internal Bliz code expects this field -- TAINT?
-
+if isInCombatLockdownQuiet("fuck you bliz") then return end
         ActionButton_UpdateCooldown(self);
         return
     end

@@ -381,8 +381,8 @@ function BabbInstance:toString()
 
             local icon = DEFAULT_ICON_FULL
             if blizId and blizType then
-                local btnDef = ButtonDef:newFromGetCursorIdiot(blizId, blizType)
-                icon = btnDef:getIcon()
+                local mr = MouseRat:newFromGetCursorIdiot(blizType, blizId)
+                icon = mr:getIcon()
             end
 
             local slot = self.isUserFacing and "in slot #" or "s"

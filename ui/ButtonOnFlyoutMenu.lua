@@ -133,7 +133,7 @@ function ButtonOnFlyoutMenu:setExcluderVisibility()
 end
 
 ---@param btnDef ButtonDef
-function ButtonOnFlyoutMenu:abortIfUnusable(btnDef)
+function ButtonOnFlyoutMenu:reportIfUnusable(btnDef)
     if (not btnDef) or btnDef:isUsable() then
         return false
     end
@@ -419,7 +419,7 @@ function ButtonOnFlyoutMenu:onMouseUp()
     -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
     local isDragging = GetCursorInfo()
     if isDragging then
-        zebug.info:mTriangle():owner(self):newEvent(self, "bofm-mouse-up"):run(function(event)
+        zebug.warn:mTriangle():owner(self):newEvent(self, "bofm-mouse-up"):run(function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
     end
@@ -443,7 +443,7 @@ end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onReceiveDrag()
-    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me"):run(function(event)
+    zebug.warn:mTriangle():owner(self):newEvent(self, "drag-hit-me"):run(function(event)
         self:onReceiveDragAddItTryCatch(event)
     end)
 end
@@ -461,7 +461,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     -- is something else already on the cursor?
     local isDragging = GetCursorInfo()
     if isDragging then
-        zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me-SWAP"):run(function(event)
+        zebug.warn:mTriangle():owner(self):newEvent(self, "drag-hit-me-SWAP"):run(function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
         return
@@ -470,6 +470,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     local btnDef = self:getDef()
 
     zebug.warn:mTriangle():owner(self):newEvent(self, "drag-away"):run(function(event)
+        zebug.warn:event(event):owner(self):print("invoking pickupToCursor for btnDef",btnDef)
         local isOk, err = btnDef:pickupToCursor(event)
         if not isOk then
             zebug.error:event(event):owner(self):print("FAILED to drag! err",err)

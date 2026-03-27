@@ -26,6 +26,8 @@ ButtonType = {
     SUMMON_RANDOM_FAVORITE_MOUNT = "summonmount"
 }
 
+--[[
+
 -------------------------------------------------------------------------------
 -- BlizApiFieldDef
 -- maps my types into Bliz types.
@@ -40,7 +42,7 @@ BlizApiFieldDef = {
     [ButtonType.MOUNT] = { pickerUpper = C_Spell.PickupSpell, typeForBliz = ButtonType.SPELL, },
     [ButtonType.ITEM ] = { pickerUpper = C_Item.PickupItem, typeForBliz = ButtonType.ITEM,  },
     [ButtonType.TOY  ] = { pickerUpper = C_Item.PickupItem, typeForBliz = ButtonType.TOY, key = "itemId"  },
-    [ButtonType.MACRO] = { pickerUpper = PickupMacro, typeForBliz = ButtonType.MACRO --[[, key = "name"]] },
+    [ButtonType.MACRO] = { pickerUpper = PickupMacro, typeForBliz = ButtonType.MACRO }, --, key = "name" },
     [ButtonType.SNAFU] = { pickerUpper = nil,         typeForBliz = ButtonType.SPELL, key = "mountId" },
     [ButtonType.PET  ] = { pickerUpper = C_PetJournal.PickupPet, typeForBliz = ButtonType.PET, key = "petGuid" },
     [ButtonType.PSPELL]= { pickerUpper = PickupPetSpell, typeForBliz = ButtonType.SPELL, key="petSpellId" },
@@ -254,7 +256,7 @@ function ButtonDef:isUsable()
     zebug.trace:owner(self):print("type",t, "spellId", self.spellId, "id",id)
     if t == ButtonType.MOUNT then
         local mountId = self.mountId
-        isUsable, err = C_MountJournal.GetMountUsabilityByID(mountId, false --[[checkIndoors]])
+        isUsable, err = C_MountJournal.GetMountUsabilityByID(mountId, false)-- checkIndoors)
         local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountId)
         --zebug.warn:owner(self):mTriangle():print("mountId",self.mountId, "isUsable",isUsable, "err", err)
         --zebug.warn:owner(self):mCircle():print("name",name, "spellID",spellID, "isUsable",isUsable, "isFactionSpecific",isFactionSpecific, "faction",faction, "shouldHideOnChar",shouldHideOnChar, "mountID",mountID)
@@ -294,22 +296,22 @@ function ButtonDef:isUsable()
     end
 end
 
---[[
-local ICON_CACHE = {}
 
-function ButtonDef:cacheIcon(type, id, icon)
-    if not ICON_CACHE[type] then
-        ICON_CACHE[type] = {}
-    end
+--local ICON_CACHE = {}
+--
+--function ButtonDef:cacheIcon(type, id, icon)
+--    if not ICON_CACHE[type] then
+--        ICON_CACHE[type] = {}
+--    end
+--
+--    ICON_CACHE[type][id] = icon
+--end
+--
+--function getIconFromCache(type, id)
+--    if not ICON_CACHE[type] then return nil end
+--    return ICON_CACHE[type][id]
+--end
 
-    ICON_CACHE[type][id] = icon
-end
-
-function getIconFromCache(type, id)
-    if not ICON_CACHE[type] then return nil end
-    return ICON_CACHE[type][id]
-end
-]]
 
 function ButtonDef:getIcon()
     local t = self.type
@@ -353,13 +355,11 @@ function ButtonDef:getName()
     if t == ButtonType.SPELL or t == ButtonType.MOUNT or t == ButtonType.PSPELL then
         zebug.trace:owner(self):print("type",t, "id",id, "mountId", self.mountId)
 
---[[
-        local foo
-        local isOk, err = pcall( function()  foo = C_Spell.GetSpellInfo(id or self.mountId) end  )
-        if not isOk then
-            zebug.error:owner(self):print("C_Spell.GetSpellInfo() failed for id",id, "and maybe mountId",self.mountId, "with ERROR",err)
-        end
-]]
+        --local foo
+        --local isOk, err = pcall( function()  foo = C_Spell.GetSpellInfo(id or self.mountId) end  )
+        --if not isOk then
+        --    zebug.error:owner(self):print("C_Spell.GetSpellInfo() failed for id",id, "and maybe mountId",self.mountId, "with ERROR",err)
+        --end
 
         local foo = C_Spell.GetSpellInfo(id or self.mountId) -- changed to not barf for the "summon random favorite mount" button aka type == "summonmount"
         self.name = foo and foo.name or "UnKnOwN!"
@@ -681,3 +681,4 @@ function ButtonDef:asSecureClickHandlerAttributes(event)
     zebug.info:event(event):owner(self):print("blizType",blizType)
     return blizType, blizType, self.name -- "standard" types can be cast/summon/use by name
 end
+]]

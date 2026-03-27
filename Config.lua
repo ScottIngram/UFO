@@ -142,7 +142,7 @@ local function initializeOptionsMenu()
                 type = "group",
                 name = "Developer Tools",
                 inline = true,
-                hidden = function() return not Ufo.devMode end,
+                hidden = function() return not Config.opts.devTool.devMode end,
                 args = {
 
                     help1 = {

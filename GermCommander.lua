@@ -277,18 +277,18 @@ function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlo
     if btnInSlot:isEmpty() or btnInSlot:isUfoPlaceholder(event) then
         -- an empty slot or one with a Placeholder is meaningless to us.
         zebug.info:event(event):owner(btnInSlot):print("the btn slot is now empty/UfoPlaceholder and nobody cares")
-    elseif btnInSlot:isUfoProxyForFlyout() then
+    elseif MrUfo:isOnActionBarSlot(btnSlotIndex) --[[or btnInSlot:isUfoProxyForFlyout()]] then
         -- user just dragged and dropped a UFO onto the bar.
         -- what was there before?
         local draggedAndDroppedFlyoutId = UfoProxy:getFlyoutId()
-        zebug.info:event(event):owner(btnInSlot):print("user just dragged and dropped a UFO onto the bar. UfoProxy",UfoProxy)
+        zebug.info:event(event):owner(btnInSlot):print("user just dragged and dropped a UFO onto the bar. MrUfo",MrUfo)
 
         if savedFlyoutIdForSlot then
             -- there was already a germ there.
             -- was it the same one as was just dropped?
             if draggedAndDroppedFlyoutId == savedFlyoutIdForSlot then
                 -- do absolutely nothing
-                zebug.trace:event(event):owner(btnInSlot):print("The Ufo",UfoProxy, "was the same as the one already on the bar",germInSlot, "Nothing to do but exit.")
+                zebug.trace:event(event):owner(btnInSlot):print("The Ufo",MrUfo, "was the same as the one already on the bar",germInSlot, "Nothing to do but exit.")
             else
                 -- I don't think we can ever reach here.
                 -- If there is a savedFlyoutIdForSlot there would also be an enabled germ in the slot.
@@ -299,7 +299,7 @@ function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlo
                 -- was essentially self:updateBtnSlot(btnSlotIndex, eventId)
 
                 assert(germInSlot, "config says there should already be a germ here but it's missing")
-                zebug.trace:event(event):owner(btnInSlot):print("The Ufo",UfoProxy, "was dropped on an existing germ", germInSlot)
+                zebug.trace:event(event):owner(btnInSlot):print("The Ufo",MrUfo, "was dropped on an existing germ", germInSlot)
                 germInSlot:changeFlyoutIdAndEnable(draggedAndDroppedFlyoutId, event)
             end
         else
@@ -307,7 +307,9 @@ function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlo
             -- the slot may have (1) an active germ, (2) an inactive one, (3) none at all.
             -- save the new ID into the DB
             -- and create a new germ or update the existing one
-            local droppedFlyoutId = btnInSlot:getFlyoutIdFromUfoProxy()
+            local mrUfo = MrUfo:getFromActionBarSlot(btnSlotIndex)
+            zebug.error:event():owner(mrUfo):dumpy("mrUfo",mrUfo)
+            local droppedFlyoutId = mrUfo.flyoutId
             self:putUfoOntoActionBar(btnSlotIndex, droppedFlyoutId, event)
         end
 
@@ -316,7 +318,7 @@ function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlo
     elseif btnInSlot:isUfoProxyForButton() then
         event = "woo"
         -- The user has dropped the fake button proxy onto the action bar.
-        ButtonOnFlyoutMenu:abortIfUnusable(Ufo.pickedUpBtn)
+        ButtonOnFlyoutMenu:reportIfUnusable(Ufo.pickedUpBtn)
 
         -- Clear it from the bar and put it back on the cursor.
 
@@ -427,10 +429,16 @@ function GermCommander:putUfoOntoActionBar(btnSlotIndex, flyoutId, event)
     self:savePlacement(btnSlotIndex, flyoutId, event)
 
     local clobberedBtnDef = Placeholder:put(btnSlotIndex, event)
+    if clobberedBtnDef and (clobberedBtnDef:isClass(MrUfo) or clobberedBtnDef:isClass(MrDreadlord)) then
+        zebug.info:event(event):print("clearing the re-picked-up UfoProxy from the cursor", clobberedBtnDef)
+        MouseRat:clearCursor()
+    end
+--[[
     if UfoProxy:isOn(clobberedBtnDef) then
         zebug.info:event(event):print("clearing the re-picked-up UfoProxy from the cursor", clobberedBtnDef)
         Cursor:clear(event)
     end
+]]
 
     local germ = self:recallGerm(btnSlotIndex)
     if not germ then

@@ -58,7 +58,7 @@ MouseRatType = {
     -- ------------------------
 
     -- a proxy, used to put custom, arbitrary anything on the cursor.
-    DREADLORD = "DREADLORD",
+    DREADLORD = "dreadlord",
 
     -- MOUNT variant, an abnormal result containing a useless ID
     -- which isn't accepted by any API. It is returned by PickupSpell(spellIdOfSomeMount)
@@ -331,7 +331,9 @@ function MouseRat:newFromGetCursorIdiot(type, c2, c3, c4)
         if mr then return mr end
     end
 
+    zebug.info:event():owner(self):print("instantiating subClass",subClass)
     local instance = coerce({}, subClass)
+    zebug.info:event():owner(self):print("produced instance",instance)
     instance:consumeGetCursorInfo(type, c2, c3, c4)
 
     -- even though type is already in subClass, that data will be hidden from SavedVariables. rectify.
@@ -339,6 +341,11 @@ function MouseRat:newFromGetCursorIdiot(type, c2, c3, c4)
 
     zebug.info:event():owner(instance):print("")
     return instance
+end
+
+function MouseRat:clearCursor()
+    ClearCursor() -- I'm pretty sure this will synchronously trigger an immediate CURSOR_CHANGED event
+    --self:handleWhenCursorEmpties() -- if so, this will happen automatically via our handler
 end
 
 ---@param mr MouseRat
@@ -367,6 +374,15 @@ end
 ---@return MouseRat the thing on the cursor right now OR the thing that was on it most recently
 function MouseRat:getRecentCursorCache()
     return self.currentlyOnCursor or self.recentlyOnCursor
+end
+
+function MouseRat:isEqual(other)
+    self:assertIsInstance()
+    if other == self then return true end
+    return other ~= nil
+            and UfoMixIn:isA(other, MouseRat)
+            and (other.type == self.type)
+            and (other:getId() == self:getId())
 end
 
 -- subclasses can override this method and decide how to interpret GetCursorBullshit() for particularly shitty data
@@ -401,9 +417,11 @@ function MouseRat:getFromCursor(event)
         --[[DEBUG]]zebug.warn:event():print("no cached mrCsr so creating a fresh new MouseRat")
     end
 
+    -- TODO - consolidate this with the above
     -- handle the special case of a DREADLORD (which is simply a macro) being on the cursor
     -- the cursor info can only describe the macro and not the wrapped data/obj/MouseRat
     -- return the cached result of when the DREADLORD was originally pickupToCursor() and initialized
+    -- note: while this looks redundant with the mrCached check above, the differance is that isThisMySpawn compares type with self.cursorType not self.type
     if MrDreadlord:isThisMySpawn(type, c2, c3, c4) then
         result = MouseRat:getRecentCursorCache()
         if result then return self:cacheCursor(result) end
@@ -418,7 +436,7 @@ end
 ---@param btnSlotIndex number the bliz identifier for an action bar button.
 function MouseRat:getFromActionBarSlot(btnSlotIndex)
     local type, id, subType = _G.GetActionInfo(btnSlotIndex)
-    --[[DEBUG]]zebug.warn:event():print("btnSlotIndex",btnSlotIndex, "---> type",type, "id",id, "subType",subType)
+    zebug.warn:event():print("btnSlotIndex",btnSlotIndex, "---> type",type, "id",id, "subType",subType)
     if not type then return nil end
 
     local subClass = MouseRatRegistry:findSubClassForThisUnreliableData(type, id, subType)
@@ -441,9 +459,49 @@ function MouseRat:getFromActionBarSlot(btnSlotIndex)
     -- even though type is already in subClass, that data will be hidden from SavedVariables. rectify.
     instance.type = subClass.type
 
-    --[[DEBUG]]zebug.info:event():owner(instance):print("")
+    zebug.info:event():owner(instance):print("")
     return instance
 end
+
+function MouseRat:isOnActionBarSlot(btnSlotIndex)
+    local abbType, id, subType = _G.GetActionInfo(btnSlotIndex)
+    local isMe = self:isThisActionBarSlotDataMine(abbType, id, subType)
+    zebug.warn:event():owner(self):print("comparing to btnSlotIndex",btnSlotIndex, "---> type",type, "id",id, "subType",subType, "isMe",isMe)
+    return isMe
+end
+
+-- examines the results of _G.GetActionInfo() and
+-- decides if those results describe a MouseRatTypeForActionBarButton.SUMMON_RANDOM_FAVORITE_MOUNT
+---@param abbType MouseRatTypeForActionBarButton must be MouseRatTypeForActionBarButton.MOUNT
+---@param id any 2nd return val from _G.GetActionInfo()
+---@param subType 3rd return val from _G.GetActionInfo()
+function MouseRat:isThisActionBarSlotDataMine(abbType, id, subType)
+    if abbType ~= self.abbType then
+        return false
+    elseif self.isInstance then
+        return self:_isThisActionBarSlotDataMyInstance(abbType, id, subType)
+    else
+        return self:_isThisActionBarSlotDataMyClass(abbType, id, subType)
+    end
+end
+
+-- default implementation. subclasses can override
+function MouseRat:_isThisActionBarSlotDataMyClass(abbType, id, subType)
+    return (abbType == self.abbType)
+end
+
+-- default implementation. subclasses can override
+function MouseRat:_isThisActionBarSlotDataMyInstance(abbType, id, subType)
+    self:assertIsInstance()
+    return (id == self:getId()) and ((subType == nil) or (subType == self.subType))
+end
+
+
+
+
+
+
+
 
 local FRAME_STACK_SKIP = 2 -- despite the implications of a numeric value, Lua doesn't recognize anything other than 1 or 2. ¯\_(ツ)_/¯
 
@@ -529,10 +587,26 @@ function MouseRat:redefine()
     -- TODO - used by MacroShitShow
 end
 
+---@param type MouseRatType
 function MouseRat:isType(type)
     self:assertIsInstance()
     return type == self.type
 end
+
+---@param class MouseRat
+function MouseRat:isClass(class)
+    self:assertIsInstance()
+    return class.type == self.type
+end
+
+---@param btnSlotIndex number the bliz identifier for an action bar button.
+---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
+function MouseRat:dropOntoActionBar(btnSlotIndex, event)
+    self:assertIsInstance()
+    zebug.info:event(event):owner(self):print("dropping onto btnSlotIndex",btnSlotIndex)
+    PlaceAction(btnSlotIndex)
+end
+
 
 -------------------------------------------------------------------------------
 -- CONTRACT INSTANCE Methods - provide mandatory behaviors of the MouseRat library
@@ -547,7 +621,7 @@ end
 function MouseRat:consumeGetCursorInfo(type, prollyId, maybeSubType, whoEvenFuckingKnows)
     self:assertIsInstance()
     if type ~= self.type then
-        error(type..",the provided type, doesn't match the expected one:"..self.type)
+        error("the provided type: "..type.." - doesn't match the expected one: "..self.type)
     end
     self:setId(prollyId)
     self:setPvar("subType", maybeSubType)
@@ -673,6 +747,7 @@ local EventHandlers = { }
 function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorType, oldCursorType, oldCursorVirtualID)
     if not MouseRat:getCurrentCursorCache() then return end
     if not isCursorEmpty then return end
+    -- TODO: if there IS something on the cursor, do we want to validate the cache / discard if fails to match ?
 
     eCount = eCount or "NO-EVENT-COUNTER"
 
