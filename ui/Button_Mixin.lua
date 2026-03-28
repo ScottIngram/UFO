@@ -92,7 +92,7 @@ function Button_Mixin:renderCooldownsAndCountsAndStatesEtc(event)
     if spellId then
         if not self.spellID then
             -- internal Bliz code expects this field
-            self.spellID = spellId -- TAINT?
+            self.spellID = spellId -- "Secret value" TAINT as of 3/26
         end
         local isThisTheSpell = C_Spell.IsCurrentSpell(spellId)
         self:SetChecked(isThisTheSpell);
@@ -160,8 +160,12 @@ function Button_Mixin:updateCooldown(event)
     if exists(spellId) then
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
         zebug.trace:event(event):owner(self):print("spellId",spellId)
-        self.spellID = spellId --v11 -- internal Bliz code expects this field -- TAINT?
-if isInCombatLockdownQuiet("fuck you bliz") then return end
+        self.spellID = spellId --v11 -- internal Bliz code expects this field --  -- "Secret value" TAINT as of 3/26
+if isInCombatLockdownQuiet("Bliz broke this") then
+    -- Bliz released a hotfix (not a proper patch) that broke some API features this week which is unprofessional and undisciplined.
+    -- So here's an emergency fix for their secret bullshit breaking their OWN FUCKING CODE.
+    return
+end
         ActionButton_UpdateCooldown(self);
         return
     end
