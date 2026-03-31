@@ -130,7 +130,7 @@ function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
     ---@param subSubMr MouseRat
     for i, subSubMr in ipairs(subSubClasses) do
         local isQualified = subSubMr:disambiguator(type, c2, c3, c4)
-        zebug.warn:event():print("disambiguator! is this type", type," actually", subSubMr.type, "?",isQualified)
+        zebug.info:event():print("disambiguator! is this type", type," actually", subSubMr.type, "?",isQualified)
         if isQualified then
             -- TODO - support arbitrary depth hierarchy
             if subSubMr.parentType then
@@ -148,7 +148,7 @@ function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
 
             -- first one wins!  assume only one custom sub class will qualify
             -- replace the previous subClass with the custom one we found
-            zebug.warn:event():print("BLIZ API LIED.  the type wasn't really", type, "IT WAS ACTUALLY", subSubMr.type)
+            zebug.info:event():print("BLIZ API LIED.  the type wasn't really", type, "IT WAS ACTUALLY", subSubMr.type)
             subClass = subSubMr
             break
         end
@@ -174,6 +174,7 @@ function MouseRatRegistry:addCustomizerForCursorType(kid)
         self.customizersByCursorType[kid.cursorType] = byCursor
     end
     table.insert(byCursor, kid)
+    zebug.info:event():owner(kid):print("is customizersByCursorType for", kid.cursorType)
 
     -- when more than one kid wants to handle the same cursorType then the most specialized kid wins.  So track parentage.  TODO - maybe extend this generally for item->toy, mount->mount_special, etc
     if kid.parentType then
@@ -183,6 +184,7 @@ function MouseRatRegistry:addCustomizerForCursorType(kid)
             self.customizersByParentType[kid.parentType] = byParent
         end
         table.insert(byParent, kid)
+        zebug.info:event():owner(kid):print("is customizersByParentType for", kid.parentType)
     end
 
     return true

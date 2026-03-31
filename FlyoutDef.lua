@@ -221,14 +221,6 @@ function FlyoutDef:removeButton(removeAtIndex)
     self:invalidateCache()
 end
 
--- TODO delete this
---[[
-function FlyoutDef:getId()
-    zebug.info:event():owner(self):print("self.id", self.id)
-    return self.id
-end
-]]
-
 function FlyoutDef:getFlyoutId()
     zebug.info:event():owner(self):name("getFlyoutId"):print("self.flyoutId", self.id)
     return self.id

@@ -308,16 +308,46 @@ function MouseRat:oneOfUs(target, type)
     return instance
 end
 
--- scrutinize the fucked up shit from GetCursorInfo.
+-- scrutinize the fucked up shit from GetCursorInfo or the more reliable GetActionInfo
 ---@param type MouseRatType the 1st value returned by _G.GetCursorInfo()
----@param c2 number|string|nil (optional) the 2nd value from _G.GetCursorInfo()
----@param c3 number|string|nil (optional) the 3rd value from _G.GetCursorInfo()
----@param c4 number|string|nil (optional) the 4th value from _G.GetCursorInfo()
+---@param c2 number|string|nil (optional) the 2nd value from _G.GetCursorInfo() - usually but not always the primary id
+---@param c3 number|string|nil (optional) the 3rd value from _G.GetCursorInfo() - sometimes a subType
+---@param c4 number|string|nil (optional) the 4th value from _G.GetCursorInfo() - all bets are off
 ---@return MouseRat
-function MouseRat:newFromGetCursorIdiot(type, c2, c3, c4)
+function MouseRat:newFromUnreliableBlizData(type, c2, c3, c4)
     assert(type, "the type arg can't be nil")
 
     zebug.warn:event():owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
+
+    local result
+    local cachedMr = MouseRat:getRecentCursorCache()
+    zebug.warn:event():owner(self):print("peeking into the cache (-",cachedMr)
+
+    -- handle the case of we already have a cached copy of the exact thing on the cursor, so bypass instantiating a new copy
+    if cachedMr then
+        local isCacheRight
+        -- cursory (get it?) check to verify what we think is on the cursor is correct... probably.
+        zebug.info:event():owner(self):print("asking",cachedMr, "isThisCursorDataMine()", type, c2, c3, c4)
+        isCacheRight = cachedMr:isThisMyCursorData(type, c2, c3, c4) and cachedMr or nil
+        if not isCacheRight then
+            zebug.info:event():owner(self):print("asking",cachedMr, "isThisMyActionBarButtonData()", type, c2, c3, c4)
+            isCacheRight = cachedMr:isThisMyActionBarButtonData(type, c2, c3, c4) and cachedMr or nil
+        end
+        zebug.info:event():owner(cachedMr):print("isCacheRight", isCacheRight or "NOPE!")
+        if isCacheRight then return cachedMr end
+    else
+        --[[DEBUG]]zebug.warn:event():print("no cached mrCsr so creating a fresh new MouseRat")
+    end
+
+    -- TODO - consolidate this with the above
+    -- handle the special case of a DREADLORD (which is simply a macro) being on the cursor
+    -- the cursor info can only describe the macro and not the wrapped data/obj/MouseRat
+    -- return the cached result of when the DREADLORD was originally pickupToCursor() and initialized
+    -- note: while this looks redundant with the mrCached check above, the differance is that isThisMySpawn compares type with self.cursorType not self.type
+    if MrDreadlord:isThisMySpawn(type, c2, c3, c4) then
+        result = MouseRat:getRecentCursorCache()
+        if result then return self:cacheCursor(result) end
+    end
 
     -- scrutinize the fucked up shit from GetCursorInfo.
     local subClass = MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
@@ -331,10 +361,13 @@ function MouseRat:newFromGetCursorIdiot(type, c2, c3, c4)
         if mr then return mr end
     end
 
-    zebug.info:event():owner(self):print("instantiating subClass",subClass)
-    local instance = coerce({}, subClass)
-    zebug.info:event():owner(self):print("produced instance",instance)
+    -- seedData serves a very similar purpose as consumeGetCursorInfo() in that both do initialization / setup
+    -- I introduced it to allow MrUfo to intervene when the user drags its macro out of the macro window and inject the FlyoutDef as the Dreadlord "victem"
+    zebug.info:event():owner(self):print("instantiating subClass",subClass, "because type",type, "c2",c2, "c3",c3, "c4",c4)
+    local target = (subClass.getSeedData and subClass:getSeedData()) or {}
+    local instance = coerce(target, subClass)
     instance:consumeGetCursorInfo(type, c2, c3, c4)
+    zebug.info:event():owner(self):print("produced instance",instance)
 
     -- even though type is already in subClass, that data will be hidden from SavedVariables. rectify.
     instance.type = subClass.type
@@ -387,10 +420,20 @@ end
 
 -- subclasses can override this method and decide how to interpret GetCursorBullshit() for particularly shitty data
 ---@return boolean true if the args from GetCursorIdiot match mine
-function MouseRat:isThisCursorDataMine(type, prollyId, maybeSubType, whoEvenFuckingKnows)
+---@param type MouseRatType
+function MouseRat:isThisMyCursorData(type, prollyId, maybeSubType, whoEvenFuckingKnows)
     self:assertIsInstance()
     zebug.warn:print("DEFAULT IMPL - type", type, "prollyId",prollyId)
     return (((self.type == type)or(self.cursorType == type)) and (self:getId() == prollyId))
+end
+
+-- subclasses can override this method and decide how to interpret GetCursorBullshit() for particularly shitty data
+---@return boolean true if the args from GetCursorIdiot match mine
+---@param abbType MouseRatTypeForActionBarButton
+function MouseRat:isThisMyActionBarButtonData(abbType, id, subType)
+    self:assertIsInstance()
+    zebug.warn:print("DEFAULT IMPL - abbType", abbType, "id", id, "subType",subType)
+    return (((self.type == abbType)or(self.abbType == abbType)) and (self:getId() == id))
 end
 
 function MouseRat:getFromCursor(event)
@@ -404,31 +447,8 @@ function MouseRat:getFromCursor(event)
         return nil
     end
 
-    local result
-    local mrCached = MouseRat:getRecentCursorCache()
-
-    -- handle the case of we already have a cached copy of the exact thing on the cursor, so bypass instantiating a new copy
-    if mrCached then
-        -- cursory (get it?) check to verify what we think is on the cursor is correct... probably.
-        local isCacheRight = mrCached:isThisCursorDataMine(type, c2, c3, c4) and mrCached or nil
-        --[[DEBUG]]zebug.warn:event():owner(mrCached):print("isCacheRight", isCacheRight or "NOPE!")
-        if isCacheRight then return mrCached end
-    else
-        --[[DEBUG]]zebug.warn:event():print("no cached mrCsr so creating a fresh new MouseRat")
-    end
-
-    -- TODO - consolidate this with the above
-    -- handle the special case of a DREADLORD (which is simply a macro) being on the cursor
-    -- the cursor info can only describe the macro and not the wrapped data/obj/MouseRat
-    -- return the cached result of when the DREADLORD was originally pickupToCursor() and initialized
-    -- note: while this looks redundant with the mrCached check above, the differance is that isThisMySpawn compares type with self.cursorType not self.type
-    if MrDreadlord:isThisMySpawn(type, c2, c3, c4) then
-        result = MouseRat:getRecentCursorCache()
-        if result then return self:cacheCursor(result) end
-    end
-
     -- handle the default case
-    result = self:newFromGetCursorIdiot(type, c2, c3, c4)
+    local result = self:newFromUnreliableBlizData(type, c2, c3, c4)
 
     return self:cacheCursor(result)
 end
@@ -439,10 +459,17 @@ function MouseRat:getFromActionBarSlot(btnSlotIndex)
     zebug.warn:event():print("btnSlotIndex",btnSlotIndex, "---> type",type, "id",id, "subType",subType)
     if not type then return nil end
 
+    -- handle the default case
+    local result = self:newFromUnreliableBlizData(type, id, subType)
+
+    return self:cacheCursor(result)
+
+--[[
     local subClass = MouseRatRegistry:findSubClassForThisUnreliableData(type, id, subType)
     if not subClass then
         subClass = MrUnsupported
     end
+]]
 
     --[[
     -- TODO: handle
@@ -453,6 +480,7 @@ function MouseRat:getFromActionBarSlot(btnSlotIndex)
     end
     ]]
 
+--[[
     local instance = coerce({}, subClass)
     instance:consumeGetCursorInfo(type, id, subType)
 
@@ -461,6 +489,7 @@ function MouseRat:getFromActionBarSlot(btnSlotIndex)
 
     zebug.info:event():owner(instance):print("")
     return instance
+]]
 end
 
 function MouseRat:isOnActionBarSlot(btnSlotIndex)
@@ -495,13 +524,6 @@ function MouseRat:_isThisActionBarSlotDataMyInstance(abbType, id, subType)
     self:assertIsInstance()
     return (id == self:getId()) and ((subType == nil) or (subType == self.subType))
 end
-
-
-
-
-
-
-
 
 local FRAME_STACK_SKIP = 2 -- despite the implications of a numeric value, Lua doesn't recognize anything other than 1 or 2. ¯\_(ツ)_/¯
 
@@ -547,6 +569,7 @@ function MouseRat:helpMe(methodName)
             return helper(zelf, self:getIdUsedByBlizApis())
         end
 
+        --print("methodName",methodName, "keyForApis",self.keyForApis, "primaryKey",self.primaryKey, "self:getIdUsedByBlizApis()",self:getIdUsedByBlizApis())
         return helper(self:getIdUsedByBlizApis())
     else
         return helper
@@ -607,7 +630,6 @@ function MouseRat:dropOntoActionBar(btnSlotIndex, event)
     PlaceAction(btnSlotIndex)
 end
 
-
 -------------------------------------------------------------------------------
 -- CONTRACT INSTANCE Methods - provide mandatory behaviors of the MouseRat library
 -- Below are default implementations for subclasses.
@@ -620,8 +642,8 @@ end
 ---@param ... any - the verbatim results from _G.GetCursorInfo()
 function MouseRat:consumeGetCursorInfo(type, prollyId, maybeSubType, whoEvenFuckingKnows)
     self:assertIsInstance()
-    if type ~= self.type then
-        error("the provided type: "..type.." - doesn't match the expected one: "..self.type)
+    if (type ~= self.type) and (type ~= self.cursorType) then
+        error("the provided type: "..type.." - doesn't match the expected one: "..self.type.." or "..toStr(self.cursorType))
     end
     self:setId(prollyId)
     self:setPvar("subType", maybeSubType)

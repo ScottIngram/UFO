@@ -7,15 +7,19 @@ Ufo.Wormhole()
 -------------------------------------------------------------------------------
 
 ---@alias MR_UFO_INHERITANCE FlyoutDef | MrDreadlord
+---@alias MR_UFO_TYPE MrUfo | MR_UFO_INHERITANCE
 
----@class MrUfo : MrDreadlord
+---@class MrUfo : MrDreadlord -- also a FlyoutDef
 MrUfo = {
     -- values not defined here will be inherited from MrDreadlord
     type       = "ufo",
     parentType = MouseRatType.DREADLORD, -- MouseRatRegistry:register() will create the OO inheritance
-    primaryKey = "id",
+    primaryKey = "macroId",
     macroVesselName = "Z-UFO",
-    passSelfForHelper = { pickupToCursor = true }
+    passSelfForHelper = {
+        pickupToCursor = true,
+        getName=true,
+    },
 }
 
 local cache = {}
@@ -30,29 +34,28 @@ local currentUfo -- if there is a currentMouseRat, it needs to automatically be 
 ---@param macroId number the 2nd arg from GetCursorInfo
 function MrUfo:disambiguator(type, c2, c3, c4)
     -- all MrUfos are actually MrDreadlords
-    if not MrDreadlord.isThisMySpawn(self, type, c2, c3, c4) then return false end
-
-    local mrDl = MrDreadlord.getCurrent(self)
-    if not mrDl then return false end
-
-    local flyoutId
-    return true
+    zebug.warn:mCircle():name("disambiguator"):event():owner(self):print("primaryKey",self.primaryKey, "getId", self:getId() ) -- getId here is a static/class method
+    return MrDreadlord.isThisMySpawn(self, type, c2, c3, c4)
 end
 
 ---@return boolean true if the args from GetCursorIdiot match mine
-function MrUfo:isThisCursorDataMine(type, macroId)
+function MrUfo:isThisMyCursorData(type, macroId)
     return self:disambiguator(type, macroId)
 end
 
 ---@return MrUfo returns nil if it's a MouseRat but not specifically a MrUfo
 function MrUfo:getFromCursor()
     local mr = MouseRat:getFromCursor()
-            local chk = mr and mr:getFromCursor()
-            zebug.info:event():owner(self):print("double checking the cache worked... mr", mr, "chk",chk, "mr==chk", mr == chk)
+    zebug.info:mCross():event():owner(self):print("got once", mr)
+    if mr then
+        local chk = mr and MouseRat:getFromCursor()
+        zebug.info:mCross():event():owner(self):print("double checking the cache worked... got twice...  mr", mr, "chk",chk, "mr==chk", mr == chk)
+    end
     return mr and mr:isType(self.type) and mr or nil
 end
 
 function MrUfo:isOnCursor()
+    zebug.info:event():owner(self):print("am I on the cursor?")
     return self:getFromCursor() or false
 end
 
@@ -103,29 +106,27 @@ function MrUfo:pickupFlyoutId(flyoutId)
     return zelf
 end
 
-function MrUfo:deleteProxyMacro()
-    MrDreadlord.deleteProxyMacro(self) -- the dot syntax lets me pass MY self in to be used as ITS self
+function MrUfo:deleteMacroVessel()
+    MrDreadlord.deleteMacroVessel(self) -- the dot syntax lets me pass MY self in to be used as ITS self
     self.flyoutId = nil -- not sure if this is going to work?
 end
 
-function MrUfo:getId()
-    if self.isInstance then
-        return self:getFlyoutId()
-    else
-        return MrDreadlord.getId(self)
-    end
+-- TODO: bug? what if the macro is gone?
+function MrUfo:getSeedData()
+    local flyoutId = self:getMacroText()
+    zebug.info:event():print("flyoutId",flyoutId)
+    assert(flyoutId, "the UFO macro is empty")
+    return FlyoutDefsDb:get(flyoutId)
 end
 
 -------------------------------------------------------------------------------
 -- Instance Methods -- operate as self = {} with its metatable linked to MrUfo
 -------------------------------------------------------------------------------
 
-function MrUfo:serialize()
+function MrUfo:serialize(x)
     self:assertIsInstance()
-    return self:getId()
+    return self:getFlyoutId() -- inherited from FlyoutDef
 end
-
---MrUfo.serialize = MrUfo.getFlyoutId
 
 -------------------------------------------------------------------------------
 -- REGISTER NOW!

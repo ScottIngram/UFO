@@ -339,7 +339,7 @@ function Catalog:clearProxyAndCursor(event)
     UfoProxy:deleteProxyMacro(event)
 ]]
     MrUfo:clearCursor()
-    MrUfo:deleteProxyMacro()
+    MrUfo:deleteMacroVessel()
 end
 
 function Catalog:open()
@@ -564,7 +564,7 @@ function CatalogEntry:OnEnter()
 end
 
 function CatalogEntry:OnDragStart()
-    local volumeCutoff = zebug.TRACE
+    local volumeCutoff = zebug.ERROR -- TODO: move this into my Config framework
     zebug.info:newEvent(self, "OnDragStart", nil, volumeCutoff):mark(Mark.DPS):name("handler"):run(function(event)
         local flyoutId = self.flyoutId
         flyoutIndexOnTheMouse = self.flyoutIndex

@@ -57,7 +57,7 @@ function MrToy:isUsable_TODO()
 end
 
 ---@return boolean true if the args from GetCursorIdiot match mine
-function MrToy:isThisCursorDataMine(type, itemId)
+function MrToy:isThisMyCursorData(type, itemId)
     return self:disambiguator(type, itemId) and (self:getId() == itemId)
 end
 

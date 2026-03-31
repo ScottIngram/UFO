@@ -86,17 +86,24 @@ function EventHandlers:ACTIONBAR_SLOT_CHANGED(eName, n, btnSlotIndex)
         return Throttler.RUN_IMMEDIATELY
     end
 
-    if Ufo.germLock then
-        local btnInSlot = BlizActionBarButtonHelper:get(btnSlotIndex, eName)
-        zebug.info:event(Ufo.germLock):name("handler"):print("LOCKED - ignoring", eName, "caused by",btnInSlot)
-        return
-    end
-
     local myVolume = Ufo:getEventVolume(eName)
 
     zebug.info:mSquare():name("handler"):newEvent("Ufo", eName, n, myVolume):run(function(event)
+
+        if Ufo.thatWasMeThatDidThatMacro then
+            zebug.info:event(event):name("handler"):print("SEMAPHORE - ignoring the changed btnSlotIndex",btnSlotIndex, "because",Ufo.thatWasMeThatDidThatMacro)
+            return -- ABORT
+        end
+
+        if Ufo.germLock then
+            local btnInSlot = BlizActionBarButtonHelper:get(btnSlotIndex, eName)
+            zebug.info:event(event):name("handler"):print("BLOCKED - ignoring the changed btnInSlot",btnInSlot, "because",Ufo.germLock)
+            return -- ABORT
+        end
+
+        -- OK to handle the event...
         Ufo.germLock = event
-        zebug.info:event(event):name("handler"):print("btnSlotIndex",btnSlotIndex)
+        zebug.info:event(event):name("handler"):print("btnSlotIndex",btnSlotIndex, "Ufo.thatWasMeThatDidThatMacro",Ufo.thatWasMeThatDidThatMacro)
         GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlotIndex, event)
         Ufo.germLock = nil
     end, "btnSlotIndex", btnSlotIndex)
@@ -158,7 +165,7 @@ function EventHandlers:UPDATE_MACROS(eName, n)
         if Ufo.thatWasMeThatDidThatMacro then
             -- the event was caused by an action of this addon and as such we shall ignore it
             zebug.trace:newEvent("Ufo", eName, n):name("handler"):print("ignoring internally triggered event that was caused by", Ufo.thatWasMeThatDidThatMacro)
-            Ufo.thatWasMeThatDidThatMacro = nil
+            --Ufo.thatWasMeThatDidThatMacro = nil
             return
         else
             MacroShitShow:analyzeMacroUpdate(event)
@@ -268,9 +275,9 @@ function Ufo:isThereAnEventSemaphore(semaphoreName)
     return self.semaphores[semaphoreName]
 end
 
-function Ufo:setEventSemaphore(semaphoreName, event)
+function Ufo:clearEventSemaphore(semaphoreName)
     if not self.semaphores then return end
-    self.semaphores[semaphoreName] = event
+    self.semaphores[semaphoreName] = nil
 end
 
 -------------------------------------------------------------------------------
@@ -282,23 +289,23 @@ local HandlersForAddonLoadedEvents = {}
 function HandlersForAddonLoadedEvents:Blizzard_PlayerSpells(name)
     --v11 Bliz moved the spell book into its own internal, load-on-demand addon
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_PlayerSpells")
-    Catalog:createToggleButton(PlayerSpellsFrame)
+    Catalog:createToggleButton(_G.PlayerSpellsFrame)
 end
 
 function HandlersForAddonLoadedEvents:Blizzard_Collections(name)
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_Collections")
-    Catalog:createToggleButton(CollectionsJournal)
+    Catalog:createToggleButton(_G.CollectionsJournal)
 end
 
 function HandlersForAddonLoadedEvents:Blizzard_MacroUI(name)
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_MacroUI")
-    Catalog:createToggleButton(MacroFrame)
+    Catalog:createToggleButton(_G.MacroFrame)
     MacroShitShow:init()
 end
 
 function HandlersForAddonLoadedEvents:Blizzard_ProfessionsBook(name)
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_ProfessionsBook")
-    Catalog:createToggleButton(ProfessionsBookFrame)
+    Catalog:createToggleButton(_G.ProfessionsBookFrame)
 end
 
 function HandlersForAddonLoadedEvents:LargerMacroIconSelection(name)

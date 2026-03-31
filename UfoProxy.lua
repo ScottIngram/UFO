@@ -247,15 +247,18 @@ function UfoProxy:putProxyMacroOnCursor(icon, macroText, event)
         zebug.info:event(event):owner(self):print("CreatED the proxy macro. macroText",macroText,  "icon",icon, "proxyMacroId",proxyMacroId)
     end
 
+    Ufo.thatWasMeThatDidThatMacro = nil
+
     return Cursor:pickupMacro(proxyMacroId, event)
 end
 
 function UfoProxy:deleteProxyMacro(event)
     Ufo.thatWasMeThatDidThatMacro = Event:new(self, "deleteProxyMacro()") -- event or "deleteProxyMacro()"
     DeleteMacro(PROXY_MACRO_NAME)
+    Ufo.thatWasMeThatDidThatMacro = nil
     -- workaround Bliz bug - make sure the macro frame accurately reflects that the macro has been deleted
-    if MacroFrame:IsShown() then
-        MacroFrame:Update()
+    if _G.MacroFrame:IsShown() then
+        _G.MacroFrame:Update()
     end
     self.flyoutId = nil
 end

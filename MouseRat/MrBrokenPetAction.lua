@@ -110,7 +110,7 @@ function MrBrokenPetAction:consumeGetCursorInfo(type, spellId, spellIndex)
 end
 
 ---@return boolean true if the args from GetCursorIdiot match mine
-function MrBrokenPetAction:isThisCursorDataMine(type, spellId)
+function MrBrokenPetAction:isThisMyCursorData(type, spellId)
     if self.type ~= type then return nil end
     local id, anotherIdAlsoMappedToSameSpellIdBcozFuBliz = PetShitShow:remapCursorIdiotSpellIdToBrokenPetCommandId(spellId)
     local myId = self:getId()

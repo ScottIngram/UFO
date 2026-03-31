@@ -381,8 +381,9 @@ function BabbInstance:toString()
 
             local icon = DEFAULT_ICON_FULL
             if blizId and blizType then
-                local mr = MouseRat:newFromGetCursorIdiot(blizType, blizId)
-                icon = mr:getIcon()
+                -- TODO: fix this.
+                -- local mr = MouseRat:newFromGetCursorIdiotData(blizType, blizId)
+                icon = QUESTION_MARK_ICON --  mr:getIcon()
             end
 
             local slot = self.isUserFacing and "in slot #" or "s"

@@ -28,6 +28,7 @@ function Placeholder:createIfNotExists(event)
         zebug.info:event(event):print("name",PLACEHOLDER_MACRO_NAME, "icon",icon, "PLACEHOLDER_MACRO_TEXT", PLACEHOLDER_MACRO_TEXT)
         Ufo.thatWasMeThatDidThatMacro = event
         CreateMacro(PLACEHOLDER_MACRO_NAME, icon, PLACEHOLDER_MACRO_TEXT)
+        Ufo.thatWasMeThatDidThatMacro = nil
     else
         zebug.info:event(event):print("placeholder exists",PLACEHOLDER_MACRO_NAME)
     end

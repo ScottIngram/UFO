@@ -23,14 +23,14 @@ MrDreadlord = {
     macroVesselName = "Z-Dreadlord-UFO", -- subClasses can define their own macro name
     helpers = {
         -- these are only used by non-MouseRat victims
-        getName = function() return MrDreadlord.macroVesselName end,
+        getName = function(self) return self.macroVesselName end,
         isUsable = false,
         canThisToonPickup = true, -- that's the whole point of this class!  to pick it up!
         getIcon = 5333371,
         setToolTip = function() _G.GameTooltip:SetText("Dreadlord") end,
         pickupToCursor = pickupToCursorHelper,
     },
-    passSelfForHelper = { pickupToCursor = true } -- will tell MouseRat:helpMe() to pass the self obj into the HelperHelper.pickupToCursor
+    passSelfForHelper = { pickupToCursor = true, getName=true } -- will tell MouseRat:helpMe() to pass the self obj into the HelperHelper.pickupToCursor
 }
 
 local currentDreadlord
@@ -106,9 +106,9 @@ function MrDreadlord:getId()
 end
 
 function MrDreadlord:isThisMySpawn(type, c2, c3, c4)
-    local isIt = (type == self.cursorType) and ((c2 == self.macroVesselName) or (c2 == self:getId()))
+    local isIt = (type == self.cursorType) and ((c2 == self.macroVesselName) or (c2 == self:getId())) -- c2 ShOuLd always be numeric, but this is Bliz we're talking about, so ima not taking any chances
     zebug.info:event():owner(self):print("comparing... type",type, "to self.cursorType",self.cursorType, "and comparing c2",c2,"to self.macroVesselName", self.macroVesselName, "OR self:getId()",self:getId(), "... So, isIt",isIt)
-    return isIt -- c2 ShOuLd always be numeric, but this is Bliz we're talking about, so ima not taking any chances
+    return isIt
 end
 
 function MrDreadlord:_isThisActionBarSlotDataMyClass(abbType, id, subType)
@@ -176,7 +176,7 @@ function HelperHelper:pickupToCursor()
     end
 
     if index then
-        PickupMacro(--[[self.macroVesselName or]] index)
+        _G.PickupMacro(--[[self.macroVesselName or]] index)
     else
         error("couldn't create a macro for the ".. self.type)
     end
@@ -200,9 +200,29 @@ function MrDreadlord:areYouMe(you)
     return (you.type == self.type) and (you.macroText == self.macroText) and (you.macroIndex == self.macroIndex)
 end
 
-function MrDreadlord:deleteProxyMacro()
-    Ufo.thatWasMeThatDidThatMacro = Event:new(self, "deleteProxyMacro()")
-    DeleteMacro(self.macroVesselName)
+-- set a semaphore so other code can decide to respond to the resulting UPDATE_MACROS event
+-- or possibly an ACTIONBAR_SLOT_CHANGED event if the macro is on an action bar when it's modified
+---@param msg string
+function MrDreadlord:setEventSemaphore(msg)
+--[[
+    if Ufo.setEventSemaphore then
+        Ufo:setEventSemaphore("thatWasMeThatDidThatMacro", Event:new(self, msg))
+    end
+]]
+    Ufo.thatWasMeThatDidThatMacro = Event:new(self, msg)
+    zebug.info:event():print("set SEMAPHORE Ufo.thatWasMeThatDidThatMacro as EVENT", Ufo.thatWasMeThatDidThatMacro)
+end
+
+function MrDreadlord:clearEventSemaphore()
+    zebug.info:event():print("clear SEMAPHORE thatWasMeThatDidThatMacro")
+    Ufo.thatWasMeThatDidThatMacro = nil
+end
+
+
+function MrDreadlord:deleteMacroVessel()
+    self:setEventSemaphore("MrDreadlord:delete") -- tell any EVENT handlers what caused the following event
+    _G.DeleteMacro(self.macroVesselName)
+    self:clearEventSemaphore() -- WoW lua is synchronous, so, we know if we reach this line, all event handlers have finished with the above line
     if _G.MacroFrame and _G.MacroFrame:IsShown() then
         _G.MacroFrame:Update()
     end
@@ -218,11 +238,15 @@ function MrDreadlord:createOrEditMacroVessel()
         verb = "EDITTED"
         self.macroIndex = existingIndex
         zebug.info:event():owner(self):print("EDIT macro",existingIndex, "named",self.macroVesselName, "macro text", self.macroText)
-        EditMacro(existingIndex, self.macroVesselName, icon, self.macroText)
+        self:setEventSemaphore("MrDreadlord:edit")
+        _G.EditMacro(existingIndex, self.macroVesselName, icon, self.macroText)
+        self:clearEventSemaphore() -- WoW lua is synchronous, so, we know if we reach this line, all event handlers have finished with the above line
     else
         verb = "Created"
         zebug.info:event():owner(self):print("CREATE macro",existingIndex, "named",self.macroVesselName, "macro text", self.macroText)
-        self.macroIndex = CreateMacro(self.macroVesselName, icon, self.macroText)
+        self:setEventSemaphore("MrDreadlord:create")
+        self.macroIndex = _G.CreateMacro(self.macroVesselName, icon, self.macroText)
+        self:clearEventSemaphore() -- WoW lua is synchronous, so, we know if we reach this line, all event handlers have finished with the above line
     end
 
     zebug.info:event():owner(self):print(verb,"the proxy macro.", "macroText",self.macroText,  "icon",icon, "index", self.macroIndex)
@@ -247,6 +271,16 @@ function MrDreadlord:makeMacroText()
     self:setPvar("macroText", result)
     return self.macroText
 end
+
+function MrDreadlord:getMacroText()
+    zebug.info:event():print("self.macroText",self.macroText)
+    if self.macroText then return self.macroText end
+    local index = self:getMacroVesselIndex()
+    self.macroText = _G.GetMacroBody(index)
+    zebug.info:event():print("index",index, "macroText",self.macroText)
+    return self.macroText
+end
+
 
 -------------------------------------------------------------------------------
 -- REGISTER NOW!

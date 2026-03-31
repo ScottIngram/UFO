@@ -56,7 +56,7 @@ function MrSpell:consumeGetCursorInfo(type, _, _, spellId)
 end
 
 ---@return boolean true if the args from GetCursorIdiot match mine
-function MrSpell:isThisCursorDataMine(type, _, _, spellId)
+function MrSpell:isThisMyCursorData(type, _, _, spellId)
     return (self.type == type) and (self:getId() == spellId)
 end
 

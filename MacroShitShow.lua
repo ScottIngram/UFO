@@ -65,7 +65,7 @@ function MacroShitShow:analyzeMacroUpdate(event)
     if Ufo.thatWasMeThatDidThatMacro then
         -- the event was caused by an action of this addon and as such we shall ignore it
         zebug.trace:print("ignoring proxy draggable creation/death")
-        Ufo.thatWasMeThatDidThatMacro = nil
+        --Ufo.thatWasMeThatDidThatMacro = nil
         return -- EXIT
     end
 
