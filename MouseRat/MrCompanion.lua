@@ -30,7 +30,7 @@ local MrCompanion = {
 ---@param type MouseRatType must be MouseRatType.SPELL
 ---@param maybeItemId any could be an itemId
 function MrCompanion:transformAndAbort(type, mysteryId, companionType, c4)
-    --zebug.warn:print("type", type, "mysteryId",mysteryId, "companionType",companionType, "c4",c4)
+    --zebug.info:print("type", type, "mysteryId",mysteryId, "companionType",companionType, "c4",c4)
 
     if MouseRatType.MOUNT ~= self.become then
         error("was expecting the companion to be a mount but got ".. (companionType or "nil"))
@@ -38,18 +38,18 @@ function MrCompanion:transformAndAbort(type, mysteryId, companionType, c4)
 
     -- none of the APIs know wtf to do with the mysteryId
     -- PickupCompanion("MOUNT", mysteryId)
-    -- zebug.warn:print("GetCompanionInfo()", GetCompanionInfo(companionType, mysteryId))
-    -- zebug.warn:print("GetDisplayedMountInfo()", C_MountJournal.GetDisplayedMountInfo(mysteryId))
+    -- zebug.info:print("GetCompanionInfo()", GetCompanionInfo(companionType, mysteryId))
+    -- zebug.info:print("GetDisplayedMountInfo()", C_MountJournal.GetDisplayedMountInfo(mysteryId))
 
     -- so, cross fingers and become whatever was last picked up
     local cachedMr = self:getRecentCursorCache()
     local cachedMrType = cachedMr and cachedMr.type
-    --zebug.warn:owner(grabbedBtn):dumpy("called getMostRecentlyPickedUpMr()", grabbedBtn)
+    --zebug.info:owner(grabbedBtn):dumpy("called getMostRecentlyPickedUpMr()", grabbedBtn)
     if cachedMrType == self.become then
-        zebug.warn:owner(cachedMr):print("returning getMostRecentlyPickedUpMr()", cachedMr)
+        zebug.info:owner(cachedMr):print("returning getMostRecentlyPickedUpMr()", cachedMr)
         return cachedMr
     else
-        zebug.warn:owner(cachedMr):print("contents of cursor cache was unsuitable.  type", cachedMrType)
+        zebug.info:owner(cachedMr):print("contents of cursor cache was unsuitable.  type", cachedMrType)
     end
     return nil
 end

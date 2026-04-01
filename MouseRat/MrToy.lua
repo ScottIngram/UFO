@@ -27,9 +27,9 @@ local MrToy = {
 ---@param type MouseRatType must be MouseRatType.SPELL
 ---@param maybeItemId any could be an itemId
 function MrToy:disambiguator(type, maybeItemId)
-    zebug.warn:print("type", type, "maybeItemId",maybeItemId)
+    zebug.info:print("type", type, "maybeItemId",maybeItemId)
     if self.cursorType ~= type then return nil end
-    --zebug.warn:print("C_Item.GetItemInfo ->", C_Item.GetItemInfo(maybeItemId)) -- this seems to always provide accurate info. but no indicator of being a toy.
+    --zebug.info:print("C_Item.GetItemInfo ->", C_Item.GetItemInfo(maybeItemId)) -- this seems to always provide accurate info. but no indicator of being a toy.
     return PlayerHasToy(maybeItemId)
 end
 
@@ -42,7 +42,7 @@ function MrToy:disamButtonGator(abbType, id, subType)
     --assert(abbType == self.abbType, "the provided abbType doesn't match the expected value of MouseRatTypeForActionBarButton.ITEM")
     if abbType ~= self.abbType then return false end
 
-    zebug.warn:print("abbType", abbType, "id", id, "subType", subType)
+    zebug.info:print("abbType", abbType, "id", id, "subType", subType)
     return PlayerHasToy(id)
 end
 

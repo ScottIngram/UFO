@@ -42,7 +42,7 @@ end
 function MrSummonRandomFavoriteMount:disamButtonGator(btnType, id, subType)
     if btnType ~= self.abbType then return false end
 
-    zebug.warn:print("btnType", btnType, "id", id, "subType", subType)
+    zebug.info:print("btnType", btnType, "id", id, "subType", subType)
     return (subType == "pet")
 end
 

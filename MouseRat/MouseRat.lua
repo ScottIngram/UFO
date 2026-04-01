@@ -1,7 +1,7 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole()
-local zebug = Zebug:new(--[[Z_VOLUME_GLOBAL_OVERRIDE or]] Zebug.TRACE)
+local zebug = Zebug:new(--[[Z_VOLUME_GLOBAL_OVERRIDE or]] Zebug.ERROR)
 
 -- The Bliz Enum.UICursorType lists all possible values given to the CURSOR_CHANGED event handler.
 -- It's only slightly related to the values returned by the Bliz API _G.GetCursorInfo()
@@ -317,11 +317,11 @@ end
 function MouseRat:newFromUnreliableBlizData(type, c2, c3, c4)
     assert(type, "the type arg can't be nil")
 
-    zebug.warn:event():owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
+    zebug.info:event():owner(self):print("type",type, "c2",c2, "c3",c3, "c4",c4)
 
     local result
     local cachedMr = MouseRat:getRecentCursorCache()
-    zebug.warn:event():owner(self):print("peeking into the cache (-",cachedMr)
+    zebug.info:event():owner(self):print("peeking into the cache (-",cachedMr)
 
     -- handle the case of we already have a cached copy of the exact thing on the cursor, so bypass instantiating a new copy
     if cachedMr then
@@ -336,7 +336,7 @@ function MouseRat:newFromUnreliableBlizData(type, c2, c3, c4)
         zebug.info:event():owner(cachedMr):print("isCacheRight", isCacheRight or "NOPE!")
         if isCacheRight then return cachedMr end
     else
-        --[[DEBUG]]zebug.warn:event():print("no cached mrCsr so creating a fresh new MouseRat")
+        --[[DEBUG]]zebug.info:event():print("no cached mrCsr so creating a fresh new MouseRat")
     end
 
     -- TODO - consolidate this with the above
@@ -423,7 +423,7 @@ end
 ---@param type MouseRatType
 function MouseRat:isThisMyCursorData(type, prollyId, maybeSubType, whoEvenFuckingKnows)
     self:assertIsInstance()
-    zebug.warn:print("DEFAULT IMPL - type", type, "prollyId",prollyId)
+    zebug.info:print("DEFAULT IMPL - type", type, "prollyId",prollyId)
     return (((self.type == type)or(self.cursorType == type)) and (self:getId() == prollyId))
 end
 
@@ -432,7 +432,7 @@ end
 ---@param abbType MouseRatTypeForActionBarButton
 function MouseRat:isThisMyActionBarButtonData(abbType, id, subType)
     self:assertIsInstance()
-    zebug.warn:print("DEFAULT IMPL - abbType", abbType, "id", id, "subType",subType)
+    zebug.info:print("DEFAULT IMPL - abbType", abbType, "id", id, "subType",subType)
     return (((self.type == abbType)or(self.abbType == abbType)) and (self:getId() == id))
 end
 
@@ -443,7 +443,7 @@ function MouseRat:getFromCursor(event)
         -- this should be handled automatically now by my shiny CURSOR_CHANGED handler.  TODO: remove
         Ufo.pickedUpBtn = nil
         MouseRat:clearCurrentCursorCache()
-        zebug.warn:event(event):owner(self):print("Empty cursor is empty")
+        zebug.info:event(event):owner(self):print("Empty cursor is empty")
         return nil
     end
 
@@ -777,7 +777,7 @@ function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorTyp
          :name("handler")
          :newEvent("MR", Cursor:nameMakerForCursorChanged(isCursorEmpty), eCount)
          :run(function(event)
-            zebug.warn:event():owner(MouseRat:getCurrentCursorCache() or "nil"):print("clearing cursor cache")
+            zebug.trace:event():owner(MouseRat:getCurrentCursorCache() or "nil"):print("clearing cursor cache")
             MouseRat:handleWhenCursorEmpties()
     end)
 end

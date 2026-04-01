@@ -30,7 +30,7 @@ local MrBrokenPetAction = {
 function MrBrokenPetAction:disambiguator(type, maybeSpellId, maybeSpellIndex)
     if type ~= self.cursorType then return false end
 
-    zebug.warn:print("type", type, "maybeSpellId",maybeSpellId, "maybeSpellIndex",maybeSpellIndex)
+    zebug.info:print("type", type, "maybeSpellId",maybeSpellId, "maybeSpellIndex",maybeSpellIndex)
     return (maybeSpellId and (maybeSpellId < 10))
 end
 
@@ -42,7 +42,7 @@ end
 function MrBrokenPetAction:disamButtonGator(abbType, id, subType)
     if abbType ~= self.abbType then return false end
 
-    zebug.warn:print("abbType", abbType, "id", id, "subType", subType)
+    zebug.info:print("abbType", abbType, "id", id, "subType", subType)
     return (id and (id < 10))
 end
 
@@ -105,7 +105,7 @@ function MrBrokenPetAction:consumeGetCursorInfo(type, spellId, spellIndex)
     local id, anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues = PetShitShow:remapCursorIdiotSpellIdToBrokenPetCommandId(spellId)
     self:setId(id)
     self.name = self:getMyPetCommandDefinition("name")
-    zebug.warn:owner(self):event():print("myTwinActionId",anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
+    zebug.info:owner(self):event():print("myTwinActionId",anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
     self:setPvar("myTwinActionId", anotherIdThatAlsoMappedToTheSameSpellIdYesOneKeyForMultipleValues)
 end
 

@@ -308,7 +308,7 @@ function GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlo
             -- save the new ID into the DB
             -- and create a new germ or update the existing one
             local mrUfo = MrUfo:getFromActionBarSlot(btnSlotIndex)
-            zebug.error:event():owner(mrUfo):dumpy("mrUfo",mrUfo)
+            zebug.info:event():owner(mrUfo):dumpy("mrUfo",mrUfo)
             local droppedFlyoutId = mrUfo:getFlyoutId()
             self:putUfoOntoActionBar(btnSlotIndex, droppedFlyoutId, event)
         end

@@ -28,7 +28,7 @@ end
 ---@param flyoutId number will the real flyoutId please stand up!
 ---@param dunno any no documentation to be found
 function MrFlyout:consumeGetCursorInfo(type, flyoutId, dunno)
-    zebug.error:print("type, flyoutId, dunno",type, flyoutId, dunno)
+    zebug.info:print("type, flyoutId, dunno",type, flyoutId, dunno)
     local name, description, numSlots, isKnown = _G.GetFlyoutInfo(flyoutId)
     self:setId(flyoutId)
     self.name = name
@@ -60,7 +60,7 @@ function MrFlyout:getIcon()
 
         local flyoutId = foo.actionID
         if flyoutId ~= self.flyoutId then
-            zebug.warn:print("OOPS!  the convoluted hoops moved from flyoutId",self.flyoutId, "to",flyoutId)
+            zebug.info:print("OOPS!  the convoluted hoops moved from flyoutId",self.flyoutId, "to",flyoutId)
         end
     end
 

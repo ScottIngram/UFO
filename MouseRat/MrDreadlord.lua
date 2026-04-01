@@ -53,7 +53,7 @@ function MrDreadlord:new(victim)
         -- special case: this is already a MouseRat.
         -- inherit all of its existing behavior & data PLUS wrap it inside dreadlord magic
         zebug.info:event():owner(victim):print("wrapping inside Dreadlord")
-        --zebug.warn:event():owner(victim):dumpy("victim",victim)
+        --zebug.info:event():owner(victim):dumpy("victim",victim)
 
         dreadlord = deepcopy(MrDreadlord,{})
         dreadlord.primaryKey = nil
@@ -71,7 +71,7 @@ function MrDreadlord:new(victim)
         dreadlord:installMyToString() -- assumes we are a descendant of UfoMixin
 
     else
-        --zebug.warn:event():owner(self):dumpy("victim",victim)
+        --zebug.info:event():owner(self):dumpy("victim",victim)
         dreadlord = self:oneOfUs(victim, self.type)
     end
 
@@ -113,7 +113,7 @@ end
 
 function MrDreadlord:_isThisActionBarSlotDataMyClass(abbType, id, subType)
     local isMe = (abbType == self.abbType) and ((id == self.macroVesselName) or (id == self:getId()))
-    zebug.warn:event():owner(self):print("abbType",abbType, "id",id, "subType",subType, "isMe",isMe)
+    zebug.info:event():owner(self):print("abbType",abbType, "id",id, "subType",subType, "isMe",isMe)
     return isMe
 end
 
@@ -165,14 +165,14 @@ function HelperHelper:pickupToCursor()
     local self = self -- these lines are here purely to help my IDE understand what I'm doing.
 
     self:assertIsInstance()
-    zebug.warn:event():owner(self):name("HelperHelper:pickupToCursor"):print("DREAD to pick me up!!!!")
+    zebug.info:event():owner(self):name("HelperHelper:pickupToCursor"):print("DREAD to pick me up!!!!")
 
     -- because a Dreadlord is a fake thing, we must create a real thing if we want to drag it around.
     local index = nil -- never(?) reuse the old macro -- self:getMacroVesselIndex()
     if not index then
-        zebug.warn:event():owner(self):name("HelperHelper:pickupToCursor"):print("DREAD MAKING a macro")
+        zebug.info:event():owner(self):name("HelperHelper:pickupToCursor"):print("DREAD MAKING a macro")
         index = self:createOrEditMacroVessel()
-        zebug.warn:event():owner(self):name("HelperHelper:pickupToCursor"):print("DREAD made a macro. index",index, "name",self.macroVesselName, "macro text", self.macroText)
+        zebug.info:event():owner(self):name("HelperHelper:pickupToCursor"):print("DREAD made a macro. index",index, "name",self.macroVesselName, "macro text", self.macroText)
     end
 
     if index then

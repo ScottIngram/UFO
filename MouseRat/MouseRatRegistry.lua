@@ -92,7 +92,7 @@ function MouseRatRegistry:validateKid(kid)
                 end
             else
                 -- failsafe
-                kid.helpers[methodName] = function() zebug.error:owner(kid):print(methodName,"method & helper are both missing.  Defaulting val to nil") return nil end
+                kid.helpers[methodName] = function() zebug.warn:owner(kid):print(methodName,"method & helper are both missing.  Defaulting val to nil") return nil end
             end
         else
             --zebug.error:owner(kid):print("type",kid.type, "must implement a method",methodName, "or define a helper method/field", methodName)
@@ -126,7 +126,7 @@ function MouseRatRegistry:findSubClassForThisUnreliableData(type, c2, c3, c4)
     local subSubClasses = self.customizersByCursorType[type]
     if not subSubClasses then return subClass end
 
-    --zebug.warn:event():owner(subClass):dumpKeys(customMouseRatsForThisType)
+    --zebug.info:event():owner(subClass):dumpKeys(customMouseRatsForThisType)
     ---@param subSubMr MouseRat
     for i, subSubMr in ipairs(subSubClasses) do
         local isQualified = subSubMr:disambiguator(type, c2, c3, c4)
@@ -216,7 +216,7 @@ function MouseRatRegistry:forEachKid(func)
     end
 
     for type, kid in pairs(self.kids) do
-        --zebug.warn:print("type", type, "kid", kid)
+        --zebug.info:print("type", type, "kid", kid)
         func(kid)
     end
 end
