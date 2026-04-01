@@ -168,7 +168,7 @@ local function initializeOptionsMenu()
                         name = " ",
                         type = "group",
                         --inline = true, -- set this to false to enable multiple configs, one per flyout.
-                        args = generateMenusForEventHandlers(),
+                        args = getMenusForEventHandlers(),
                     },
 
                 },
@@ -604,13 +604,7 @@ local eventMenusArgs = {}
 local debuggerOpts = {}
 local debuggerEventOptsOrder = 0
 
-function generateMenusForEventHandlers()
-    if not (debuggerOpts and debuggerOpts.eventHandlers) then return eventMenusArgs end
-
-    for eventName, _ in pairs(debuggerOpts.eventHandlers) do
-        eventMenusArgs[eventName] = includeDebuggerEventOpts(eventName)
-    end
-
+function getMenusForEventHandlers()
     return eventMenusArgs
 end
 
@@ -854,12 +848,25 @@ function Config:getPrimeClickers(flyoutId)
     return primeClickers
 end
 
-function Config:initializeOptionsMenu(eventHandlers)
-    debuggerOpts.eventHandlers = eventHandlers
+function Config:initializeOptionsMenu()
     initializeOptionsMenu()
     Config.AceConfigDialog = LibStub("AceConfigDialog-3.0");
     LibStub("AceConfig-3.0"):RegisterOptionsTable(ADDON_NAME, optionsMenu)
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions(ADDON_NAME, Ufo.myTitle)
+end
+
+function Config:includeOptsForEventHandlers(eventHandlers)
+    if isString(eventHandlers) then
+        local eventName = eventHandlers
+        eventMenusArgs[eventName] = includeDebuggerEventOpts(eventName)
+    elseif isTable(eventHandlers) then
+        for eventName, _ in pairs(eventHandlers) do
+            if eventMenusArgs[eventName] ~= nil then
+                error("The event '"..eventMenusArgs[eventName].."' has already been registered with Config.")
+            end
+            eventMenusArgs[eventName] = includeDebuggerEventOpts(eventName)
+        end
+    end
 end
 
 function Config:toggle()
