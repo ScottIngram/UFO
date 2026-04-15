@@ -767,15 +767,25 @@ local EventHandlers = { }
 ---@param oldCursorType number see Enum.UICursorType
 ---@param oldCursorVirtualID any who the fuck knows
 function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorType, oldCursorType, oldCursorVirtualID)
-    if not MouseRat:getCurrentCursorCache() then return end
-    if not isCursorEmpty then return end
-    -- TODO: if there IS something on the cursor, do we want to validate the cache / discard if fails to match ?
+    local volumeCutoff = Ufo:getEventVolume("MouseRat:CURSOR_CHANGED")
 
-    eCount = eCount or "NO-EVENT-COUNTER"
+    if not isCursorEmpty then
+        -- TODO: if there IS something on the cursor, do we want to validate the cache / discard if fails to match ?
+        if volumeCutoff <= zebug.TRACE then
+            local mr = MouseRat:getFromCursor()
+            local event = Event:new("MR", Cursor:nameMakerForCursorChanged(isCursorEmpty), eCount, volumeCutoff)
+            zebug.trace:event(event):name("handler"):owner(mr):print()
+        end
+
+        -- exit
+        return
+    end
+
+    if not MouseRat:getCurrentCursorCache() then return end
 
     zebug.info
          :name("handler")
-         :newEvent("MR", Cursor:nameMakerForCursorChanged(isCursorEmpty), eCount)
+         :newEvent("MR", Cursor:nameMakerForCursorChanged(isCursorEmpty), eCount, volumeCutoff)
          :run(function(event)
             zebug.trace:event():owner(MouseRat:getCurrentCursorCache() or "nil"):print("clearing cursor cache")
             MouseRat:handleWhenCursorEmpties()
@@ -783,6 +793,7 @@ function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorTyp
 end
 
 BlizGlobalEventsListener:register(MouseRat, EventHandlers) -- TODO: refactor so that EventHandlers can be an array or a single string with the event name(s)
+Config:includeOptsForEventHandlers("MouseRat:CURSOR_CHANGED")
 
 -------------------------------------------------------------------------------
 -- BRIDGE to satisfy ButtonDef "interface"
