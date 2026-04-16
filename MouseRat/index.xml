@@ -10,6 +10,7 @@
     <Script file="MrItem.lua"/>
     <Script file="MrPet.lua"/>
     <Script file="MrMacro.lua"/>
+    <Script file="MrOutfit.lua"/>
     <Script file="MrFlyout.lua"/>
     <Script file="MrCompanion.lua"/>
     <Script file="MrToy.lua"/>       <!-- MrItem subclass -->

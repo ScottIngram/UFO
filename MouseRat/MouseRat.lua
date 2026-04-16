@@ -51,6 +51,7 @@ MouseRatType = {
     PETACTION = BlizCursorType[Enum.UICursorType.PetAction], -- "petaction",
     SPELL   = BlizCursorType[Enum.UICursorType.Spell], -- "spell"
     TOY     = BlizCursorType[Enum.UICursorType.Toy],   -- "toy", --  cursorType="item" .. sub-type of: ITEM
+    OUTFIT  = BlizCursorType[Enum.UICursorType.Outfit],-- "outfit"
     UNSUPPORTED = "unsupported", -- nobody's got time for that
 
     -- ------------------------
