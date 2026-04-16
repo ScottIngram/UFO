@@ -400,23 +400,30 @@ end
 -- GLOBAL Functions Supporting Catalog XML Callbacks
 -------------------------------------------------------------------------------
 
-function GLOBAL_UFO_CatalogScrollPane_OnLoad(scrollPane)
-    HybridScrollFrame_OnLoad(scrollPane)
-    scrollPane.update = function()
-        Catalog:update("Bliz_CatalogScrollPane_OnLoad")
+Catalog.ScrollPane = {}
+_G.UFO_CatalogScrollPaneMixin = Catalog.ScrollPane
+
+function Catalog.ScrollPane:OnLoad()
+    local catalog = self:GetParent()
+    zebug.error:owner(self):print("self.parent",self:GetParent().inset:GetName())
+    self.scrollBar.doNotHide  = 1;
+    self:SetFrameLevel(catalog.inset:GetFrameLevel()+1);
+    Bliz.HybridScrollFrame_OnLoad(self)
+    self.update = function()
+        Catalog:update("Bliz_CatalogScrollPane_OnLoad_Callback")
     end
     HybridScrollFrame_CreateButtons(scrollPane, "UFO_CatalogEntry")
 end
 
-function GLOBAL_UFO_CatalogScrollPane_OnShow(scrollPane)
-    local volumeCutoff = zebug.ERROR
+function Catalog.ScrollPane:OnShow()
+    local volumeCutoff = Ufo:getEventVolume("CatalogScrollPane:OnShow")
     zebug.info:name("handler"):newEvent("CatalogScrollPane", "OnShow", nil, volumeCutoff):run(function(event)
         HybridScrollFrame_CreateButtons(scrollPane, "UFO_CatalogEntry")
         Catalog:update(event)
     end)
 end
 
-function GLOBAL_UFO_CatalogScrollPane_OnHide(scrollPane)
+function Catalog.ScrollPane:OnHide()
     IconPicker:Hide()
     -- UFO_FlyoutMenuForCatalog:Hide()
 end
@@ -485,16 +492,10 @@ end
 -- CatalogEntry class
 -------------------------------------------------------------------------------
 
----@class CatalogEntry : UfoMixIn
----@field ufoType string The classname
-CatalogEntry = {
-    ufoType = "CatalogEntry",
-}
-UfoMixIn:mixInto(CatalogEntry)
+Catalog.Entry = {}
+_G.UFO_MIXIN_FOR_CatalogEntry = Catalog.Entry -- export to global name space via ExportToGlobal.lua
 
-GLOBAL_UFO_MIXIN_FOR_CatalogEntry = CatalogEntry -- export to global name space via ExportToGlobal.lua
-
-function CatalogEntry:OnLoad()
+function Catalog.Entry:OnLoad()
     local event = Event:new(self, "CatalogEntry_OnLoad")
     zebug.info:event(event):owner(self):print("load catalog entry", self:GetName())
     self:RegisterForDrag("LeftButton");
@@ -517,7 +518,7 @@ if true then return end -- temp disable
 
 end
 
-function CatalogEntry:initFlyoutMenu(event)
+function Catalog.Entry:initFlyoutMenu(event)
     self.flyoutMenu = UFO_FlyoutMenuForCatalog
     self.flyoutMenu:SetParent(self)
     --self.flyoutMenu:applyConfigForGerm(self, event)
@@ -527,28 +528,49 @@ function CatalogEntry:initFlyoutMenu(event)
     return self.flyoutMenu
 end
 
-function CatalogEntry:getDirection()
+function Catalog.Entry:getDirection()
     return "RIGHT"
 end
 
--------------------------------------------------------------------------------
--- handlers registered in the XML for CatalogEntry class
--------------------------------------------------------------------------------
+function Catalog.Entry:initConfigOptsForEventHandlers()
+    Config:includeOptsForEventHandlers("CatalogEntry:OnLeave")
+    Config:includeOptsForEventHandlers("CatalogEntry:OnEnter")
+    Config:includeOptsForEventHandlers("CatalogEntry:OnDragStart")
+    Config:includeOptsForEventHandlers("CatalogEntry:OnClick")
+    Config:includeOptsForEventHandlers("CatalogEntryButtons:OnShow")
+    Config:includeOptsForEventHandlers("CatalogScrollPane:OnShow")
+end
 
-function CatalogEntry:OnLeave()
-    local volumeCutoff = zebug.ERROR
-    zebug.info:mark(Mark.TANK):name("handler"):newEvent(self, "OnLeave", nil, volumeCutoff):run(function(event)
-        GameTooltip_Hide()
+function Catalog.Entry:OnLeave()
+    if (self.deleteButton:IsMouseOver() or self.editButton:IsMouseOver()) then
+        return
+    end
+
+    local volumeCutoff = Ufo:getEventVolume("CatalogEntry:OnLeave")
+    zebug.info:mark(Mark.TANK):owner(self):name("handler"):newEvent(self, "OnLeave", nil, volumeCutoff):run(function(event)
+        self.deleteButton:Hide()
+        self.editButton:Hide()
+        self.HighlightBar:Hide()
+        zebug.error:mark(Mark.INFO):event(event):owner(self):name("handler"):print("name",self:GetName(), "IsMouseOver",self:IsMouseOver())
+        Bliz.GameTooltip_Hide()
         btnUnderTheMouse = nil
         Catalog:update(event)
         GermCommander:forEachGermWithFlyoutId(self.flyoutId, Germ.glowStop)
     end)
 end
 
--- TODO - handle the hover glow here and not in the update() routine
-function CatalogEntry:OnEnter()
-    local volumeCutoff = zebug.ERROR
+function Catalog.Entry:OnEnter()
+    local volumeCutoff = Ufo:getEventVolume("CatalogEntry:OnEnter")
     zebug.info:mark(Mark.TANK):name("handler"):newEvent(self, "OnEnter", nil, volumeCutoff):run(function(event)
+        if self.name == ADD_BUTTON_NAME then
+            self.deleteButton:Hide()
+            self.editButton:Hide()
+        else
+            self.deleteButton:Show()
+            self.editButton:Show()
+        end
+        self.HighlightBar:Show()
+
         local flyoutDef = MrUfo:getFromCursor()
 
         if flyoutDef then
@@ -563,8 +585,8 @@ function CatalogEntry:OnEnter()
     end)
 end
 
-function CatalogEntry:OnDragStart()
-    local volumeCutoff = zebug.ERROR -- TODO: move this into my Config framework
+function Catalog.Entry:OnDragStart()
+    local volumeCutoff = Ufo:getEventVolume("CatalogEntry:OnDragStart")
     zebug.info:newEvent(self, "OnDragStart", nil, volumeCutoff):mark(Mark.DPS):name("handler"):run(function(event)
         local flyoutId = self.flyoutId
         flyoutIndexOnTheMouse = self.flyoutIndex
@@ -581,8 +603,8 @@ function CatalogEntry:OnDragStart()
     end)
 end
 
-function CatalogEntry:OnClick(mouseClick, down)
-    local volumeCutoff = zebug.ERROR
+function Catalog.Entry:OnClick(mouseClick, down)
+    local volumeCutoff = Ufo:getEventVolume("CatalogEntry:OnClick")
     zebug.info:mark(Mark.SWORD):name("handler"):newEvent(self, "OnClick", nil, volumeCutoff):run(function(event)
         zebug.info:event(event):name("CatalogEntry:OnClick"):print("btnInCatalog.flyoutIndex", self.flyoutIndex,"btnInCatalog.name", self.name)
         local scrollPane = UFO_CatalogScrollPane
@@ -626,19 +648,26 @@ function CatalogEntry:OnClick(mouseClick, down)
     end)
 end
 
-function GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow(btn)
-    local volumeCutoff = zebug.ERROR
+-------------------------------------------------------------------------------
+-- CatalogEntry class
+-------------------------------------------------------------------------------
+
+Catalog.Entry.Buttons = {}
+_G.UFO_MIXIN_FOR_CatalogEntryButtons = Catalog.Entry.Buttons -- export to global name space via ExportToGlobal.lua
+
+function Catalog.Entry.Buttons:OnShow()
+    local volumeCutoff = Ufo:getEventVolume("CatalogEntryButtons:OnShow")
     zebug.info:mark(Mark.TANK):name("handler"):newEvent("CatalogEntryEdDelBtns", "OnShow", nil, volumeCutoff):run(function(event)
         if MrUfo:getFromCursor() then
-            btn:Hide()
+            self:Hide()
         else
             Catalog:update(event)
         end
     end)
 end
 
-function GLOBAL_UFO_CatalogEntryDeleteButton_OnClick(deleteBtnFrame)
-    local btnInCatalog = deleteBtnFrame:GetParent()
+function Catalog.Entry.Buttons:OnClickDelete()
+    local btnInCatalog = self:GetParent()
     local popupLabel = btnInCatalog.label
     local dialog = StaticPopup_Show("UFO_CONFIRM_DELETE", popupLabel);
     if dialog then
@@ -649,12 +678,41 @@ function GLOBAL_UFO_CatalogEntryDeleteButton_OnClick(deleteBtnFrame)
     end
 end
 
-function GLOBAL_UFO_CatalogEntryEditButton_OnClick(editBtn)
-    local btnInCatalog = editBtn:GetParent()
+function Catalog.Entry.Buttons:OnClickEdit()
+    local btnInCatalog = self:GetParent()
     IconPicker:open(btnInCatalog)
     Catalog:selectRow(btnInCatalog.flyoutIndex, "CatalogEntryEditButton_OnClick")
 
     -- example code for getting the displayed icon as set by the 1st button on the flyout
     --local itemTexture = btnInCatalog.icon:GetTexture()
     --itemTexture = string.upper(string.sub(itemTexture, string.len("INTERFACE\\ICONS\\") + 1));
+end
+
+-------------------------------------------------------------------------------
+-- Bliz addon compartment menu
+-------------------------------------------------------------------------------
+
+---@param mouseClick MouseClick
+function GLOBAL_UFO_BlizCompartment_OnClick(addonName, mouseClick)
+    Catalog:clickUfoButton(mouseClick, true)
+end
+
+local muhToolTip
+function GLOBAL_UFO_BlizCompartment_OnEnter(addonName, menuButtonFrame)
+    zebug.trace:print("addonName",addonName, "menuButtonFrame", menuButtonFrame:GetName())
+    Bliz.GameTooltip:SetOwner(menuButtonFrame, TooltipAnchor.LEFT);
+    if not muhToolTip then
+        muhToolTip = sprintf(
+                "%s \r\r %s - %s \r %s - %s",
+                ADDON_NAME,
+                zebug.trace:colorize(L10N.LEFT_CLICK), zebug.info:colorize(L10N.OPEN_CATALOG),
+                zebug.trace:colorize(L10N.RIGHT_CLICK), zebug.info:colorize(L10N.OPEN_CONFIG)
+        )
+    end
+    Bliz.GameTooltip:SetText(muhToolTip);
+end
+
+function GLOBAL_UFO_BlizCompartment_OnLeave(addonName, menuButtonFrame)
+    zebug.trace:print("addonName",addonName, "menuButtonFrame", menuButtonFrame:GetName())
+    GameTooltip_Hide();
 end

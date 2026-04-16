@@ -194,7 +194,7 @@
     ============================================================================
     -->
 
-    <Button name="UFO_CatalogEntry" virtual="true" mixin="GLOBAL_UFO_MIXIN_FOR_CatalogEntry">
+    <Button name="UFO_CatalogEntry" virtual="true" mixin="UFO_MIXIN_FOR_CatalogEntry">
         <Size x="105" y="44"/>
         <Anchors>
             <Anchor point="LEFT" x="2" y="0"/>
@@ -260,7 +260,7 @@
             </Layer>
         </Layers>
         <Frames>
-            <Button name="$parentDeleteButton" parentKey="deleteButton" hidden="true">
+            <Button name="$parentDeleteButton" parentKey="deleteButton" hidden="true" mixin="UFO_MIXIN_FOR_CatalogEntryButtons">
                 <Size>
                     <AbsDimension x="14" y="14"/>
                 </Size>
@@ -273,7 +273,8 @@
                     </Layer>
                 </Layers>
                 <Scripts>
-                    <OnShow function="GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow" />
+                    <OnShow method="OnShow" />
+                    <OnClick method="OnClickDelete" />
                     <OnEnter>
                         self.texture:SetAlpha(1.0);
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -282,6 +283,7 @@
                     <OnLeave>
                         self.texture:SetAlpha(0.5);
                         GameTooltip_Hide();
+                        self:GetParent():OnLeave(self)
                     </OnLeave>
                     <OnMouseDown>
                         self.texture:SetPoint("TOPLEFT", 1, -1);
@@ -289,10 +291,9 @@
                     <OnMouseUp>
                         self.texture:SetPoint("TOPLEFT", 0, 0);
                     </OnMouseUp>
-                    <OnClick function="GLOBAL_UFO_CatalogEntryDeleteButton_OnClick" />
                 </Scripts>
             </Button>
-            <Button name="$parentEditButton" parentKey="editButton" hidden="true">
+            <Button name="$parentEditButton" parentKey="editButton" hidden="true"  mixin="UFO_MIXIN_FOR_CatalogEntryButtons">
                 <Size>
                     <AbsDimension x="16" y="16"/>
                 </Size>
@@ -305,7 +306,8 @@
                     </Layer>
                 </Layers>
                 <Scripts>
-                    <OnShow function="GLOBAL_UFO_CatalogEntryButtonsMouseOver_OnShow" />
+                    <OnShow method="OnShow" />
+                    <OnClick method="OnClickEdit" />
                     <OnEnter>
                         self.texture:SetAlpha(1.0);
                         GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
@@ -314,6 +316,7 @@
                     <OnLeave>
                         self.texture:SetAlpha(0.5);
                         GameTooltip_Hide();
+                        self:GetParent():OnLeave()
                     </OnLeave>
                     <OnMouseDown>
                         self.texture:SetPoint("TOPLEFT", 1, -1);
@@ -321,7 +324,6 @@
                     <OnMouseUp>
                         self.texture:SetPoint("TOPLEFT", 0, 0);
                     </OnMouseUp>
-                    <OnClick function="GLOBAL_UFO_CatalogEntryEditButton_OnClick" />
                 </Scripts>
             </Button>
         </Frames>
@@ -361,13 +363,13 @@
             <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="35" y="-5" />
         </Anchors>
         <Frames>
-            <Frame name="UFO_CatalogInset" inherits="InsetFrameTemplate" >
+            <Frame name="UFO_CatalogInset" parentKey="inset" inherits="InsetFrameTemplate" >
                 <Anchors>
                     <Anchor point="TOPLEFT" x="8" y="-8"/>
                     <Anchor point="BOTTOMRIGHT"  x="-8" y="8"/>
                 </Anchors>
             </Frame>
-            <ScrollFrame name="UFO_CatalogScrollPane" inherits="HybridScrollFrameTemplate">
+            <ScrollFrame name="UFO_CatalogScrollPane" parentKey="scrollPane" inherits="HybridScrollFrameTemplate" mixin="UFO_CatalogScrollPaneMixin">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="UFO_CatalogInset" x="4" y="-4"/>
                     <Anchor point="BOTTOMRIGHT" relativeTo="UFO_CatalogInset" x="-27" y="2"/>
@@ -385,14 +387,9 @@
                     </Slider>
                 </Frames>
                 <Scripts>
-                    <OnLoad>
-                        self.scrollBar.doNotHide  = 1;
-                        self:SetFrameLevel(UFO_CatalogInset:GetFrameLevel()+1);
-                        GLOBAL_UFO_CatalogScrollPane_OnLoad(self);
-                    </OnLoad>
-                    <OnShow function="GLOBAL_UFO_CatalogScrollPane_OnShow"/>
-                    <OnHide function="GLOBAL_UFO_CatalogScrollPane_OnHide"/>
-                    <OnUpdate function="GLOBAL_UFO_CatalogScrollPane_OnUpdate"/>
+                    <OnLoad method="OnLoad"/>
+                    <OnShow method="OnShow"/>
+                    <OnHide method="OnHide"/>
                 </Scripts>
             </ScrollFrame>
         </Frames>
