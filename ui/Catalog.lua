@@ -9,6 +9,7 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 local zebug = MouseRat.zebug
+local Bliz = _G
 
 ---@class Catalog : UfoMixIn
 ---@field ufoType string The classname
@@ -40,8 +41,8 @@ local LANDING_BUTTON_NAME = "LANDING_BUTTON_NAME"
 function Catalog:definePopupDialogWindow()
     StaticPopupDialogs["UFO_CONFIRM_DELETE"] = {
         text = L10N.CONFIRM_DELETE,
-        button1 = YES,
-        button2 = NO,
+        button1 = Bliz.YES,
+        button2 = Bliz.NO,
         -- OnAccept = function (dialog) IconPicker:Hide(); FlyoutDefsDb:delete(dialog.flyoutId); Catalog:update("Catalog:acceptIcon"); GermCommander:updateAll(); end,
         OnAccept = function (dialog)
             IconPicker:Hide()
@@ -86,7 +87,7 @@ function Catalog:createToggleButton(parentFrame, xBtnOverride)
     local xBtnFrame = parentFrame.MaximizeMinimizeButton or _G[xBtnName]
     zebug.trace:print("parentName", parentFrameName, "xBtnName", xBtnName, "btnName",btnName, "blizFrame.MaximizeMinimizeButton", parentFrame.MaximizeMinimizeButton)
 
-    btnFrame = CreateFrame(FrameType.BUTTON, btnName, parentFrame, "UIPanelButtonTemplate")
+    btnFrame = Bliz.CreateFrame(FrameType.BUTTON, btnName, parentFrame, "UIPanelButtonTemplate")
     btnFrame:SetSize(80,22)
     btnFrame:SetPoint(Anchor.RIGHT, xBtnOverride or xBtnFrame, Anchor.LEFT, 2, 1)
     btnFrame:SetFrameStrata(xBtnFrame:GetFrameStrata())
@@ -142,24 +143,24 @@ function Catalog:toggle(clickedBtn, forceOpen)
     zebug.trace:print("parentName", blizFrameName, "oldParent name", oldBlizFrame:GetName(), "isCatalogOpen",isCatalogOpen, "willMoveCatalog", willMoveCatalog, "willCloseCatalog", willCloseCatalog )
 
     local xOffSet = 0
-    if blizFrame == SpellBookFrame then
+    if blizFrame == Bliz.SpellBookFrame then
         -- accommodate those tabs down the side...
         -- because they aren't already included in the width?!?!  Facepalm.
         xOffSet = 35
     end
 
     if willCloseCatalog then
-        SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth())
+        Bliz.SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth())
         catalogFrame:Hide()
     end
 
     if (willMoveCatalog and isCatalogOpen) or willCloseCatalog then
-        SetUIPanelAttribute(oldBlizFrame, "width", oldBlizFrame:GetWidth())
+        Bliz.SetUIPanelAttribute(oldBlizFrame, "width", oldBlizFrame:GetWidth())
     end
 
     if willMoveCatalog then
         catalogFrame:Hide()
-        SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth() +150)
+        Bliz.SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth() +150)
         catalogFrame:SetParent(blizFrame)
         catalogFrame:ClearAllPoints() -- required to avoid error: Action[SetPoint] failed because[SetPoint would result in anchor family connection]
         catalogFrame:SetPoint(Anchor.TOPLEFT, blizFrame, Anchor.TOPRIGHT, xOffSet, -15)
@@ -167,14 +168,14 @@ function Catalog:toggle(clickedBtn, forceOpen)
     end
 
     if not willCloseCatalog then
-        SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth() +150)
+        Bliz.SetUIPanelAttribute(blizFrame, "width", blizFrame:GetWidth() +150)
         catalogFrame:Show()
     end
 
     -- tell the UI to update window positions
-    UpdateUIPanelPositions(blizFrame)
+    Bliz.UpdateUIPanelPositions(blizFrame)
     if willMoveCatalog then
-        UpdateUIPanelPositions(oldBlizFrame)
+        Bliz.UpdateUIPanelPositions(oldBlizFrame)
     end
 end
 
@@ -185,8 +186,8 @@ function Catalog:update(event)
     local scrollPane = UFO_CatalogScrollPane
     local flyoutsCount = FlyoutDefsDb:howMany()
     local theAddButton = flyoutsCount + 1
-    HybridScrollFrame_Update(scrollPane, theAddButton * EQUIPMENTSET_BUTTON_HEIGHT + 20, scrollPane:GetHeight())
-    local scrollOffset = HybridScrollFrame_GetOffset(scrollPane) -- how many buttons have scrolled up out of sight
+    Bliz.HybridScrollFrame_Update(scrollPane, theAddButton * Bliz.EQUIPMENTSET_BUTTON_HEIGHT + 20, scrollPane:GetHeight())
+    local scrollOffset = Bliz.HybridScrollFrame_GetOffset(scrollPane) -- how many buttons have scrolled up out of sight
     local visibleBtnFrames = scrollPane.buttons -- how many buttons are actually onscreen (or almost onscreen)
     local selectedIdx = scrollPane.selectedIdx
 
@@ -334,10 +335,6 @@ function Catalog:update(event)
 end
 
 function Catalog:clearProxyAndCursor(event)
---[[
-    Cursor:clear(event)
-    UfoProxy:deleteProxyMacro(event)
-]]
     MrUfo:clearCursor()
     MrUfo:deleteMacroVessel()
 end
@@ -353,12 +350,8 @@ function Catalog:open()
     end
 
     if not anyOpenBlizFrame then
-        if PlayerSpellsUtil and PlayerSpellsUtil.ToggleSpellBookFrame then -- v11
-            PlayerSpellsUtil.ToggleSpellBookFrame()
-        else --v10
-            ToggleSpellBook("spell")
-        end
-        anyOpenBlizFrame = SpellBookFrame or PlayerSpellsFrame
+        Bliz.PlayerSpellsUtil.ToggleSpellBookFrame()
+        anyOpenBlizFrame = Bliz.SpellBookFrame or Bliz.PlayerSpellsFrame
     end
 
     zebug.trace:dump(toggleBtns)
@@ -381,13 +374,13 @@ function Catalog:setToolTip(btnInCatalog)
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     local label = flyoutDef.name or flyoutDef.id
 
-    if GetCVar("UberTooltips") == "1" then
-        GameTooltip_SetDefaultAnchor(GameTooltip, btnInCatalog)
+    if Bliz.GetCVar("UberTooltips") == "1" then
+        Bliz.GameTooltip_SetDefaultAnchor(GameTooltip, btnInCatalog)
     else
-        GameTooltip:SetOwner(btnInCatalog, TooltipAnchor.LEFT)
+        Bliz.GameTooltip:SetOwner(btnInCatalog, TooltipAnchor.LEFT)
     end
 
-    GameTooltip:SetText(label)
+    Bliz.GameTooltip:SetText(label)
 end
 
 function Catalog:addNewFlyout(name, icon)
@@ -405,87 +398,25 @@ _G.UFO_CatalogScrollPaneMixin = Catalog.ScrollPane
 
 function Catalog.ScrollPane:OnLoad()
     local catalog = self:GetParent()
-    zebug.error:owner(self):print("self.parent",self:GetParent().inset:GetName())
     self.scrollBar.doNotHide  = 1;
     self:SetFrameLevel(catalog.inset:GetFrameLevel()+1);
     Bliz.HybridScrollFrame_OnLoad(self)
     self.update = function()
         Catalog:update("Bliz_CatalogScrollPane_OnLoad_Callback")
     end
-    HybridScrollFrame_CreateButtons(scrollPane, "UFO_CatalogEntry")
+    Bliz.HybridScrollFrame_CreateButtons(self, "UFO_CatalogEntry")
 end
 
 function Catalog.ScrollPane:OnShow()
     local volumeCutoff = Ufo:getEventVolume("CatalogScrollPane:OnShow")
     zebug.info:name("handler"):newEvent("CatalogScrollPane", "OnShow", nil, volumeCutoff):run(function(event)
-        HybridScrollFrame_CreateButtons(scrollPane, "UFO_CatalogEntry")
+        Bliz.HybridScrollFrame_CreateButtons(self, "UFO_CatalogEntry")
         Catalog:update(event)
     end)
 end
 
 function Catalog.ScrollPane:OnHide()
     IconPicker:Hide()
-    -- UFO_FlyoutMenuForCatalog:Hide()
-end
-
----@param mouseClick MouseClick
-function GLOBAL_UFO_BlizCompartment_OnClick(addonName, mouseClick)
-    Catalog:clickUfoButton(mouseClick, true)
-end
-
-local muhToolTip
-function GLOBAL_UFO_BlizCompartment_OnEnter(addonName, menuButtonFrame)
-    zebug.trace:print("addonName",addonName, "menuButtonFrame", menuButtonFrame:GetName())
-    GameTooltip:SetOwner(menuButtonFrame, TooltipAnchor.LEFT);
-    if not muhToolTip then
-        muhToolTip = sprintf(
-                "%s \r\r %s - %s \r %s - %s",
-                ADDON_NAME,
-                zebug.trace:colorize(L10N.LEFT_CLICK), zebug.info:colorize(L10N.OPEN_CATALOG),
-                zebug.trace:colorize(L10N.RIGHT_CLICK), zebug.info:colorize(L10N.OPEN_CONFIG)
-        )
-    end
-    GameTooltip:SetText(muhToolTip);
-end
-
-function GLOBAL_UFO_BlizCompartment_OnLeave(addonName, menuButtonFrame)
-    zebug.trace:print("addonName",addonName, "menuButtonFrame", menuButtonFrame:GetName())
-    GameTooltip_Hide();
-end
-
-
--- throttle OnUpdate because it fires as often as FPS and is very resource intensive
-local C_UI_ON_UPDATE_TIMER_FREQUENCY = 0.25
-local onUpdateTimerForConfigUi = 0
-
-function GLOBAL_UFO_CatalogScrollPane_OnUpdate(scrollPane, elapsed)
-    onUpdateTimerForConfigUi = onUpdateTimerForConfigUi + elapsed
-    if onUpdateTimerForConfigUi < C_UI_ON_UPDATE_TIMER_FREQUENCY then
-        return
-    end
-    --print("GLOBAL_UFO_CatalogScrollPane_OnUpdate() UFO_CatalogScrollPane_onUpdateTimer =", onUpdateTimerForConfigUi)
-    onUpdateTimerForConfigUi = 0
-    UFO_CatalogScrollPane_DoUpdate(scrollPane)
-end
-
-function UFO_CatalogScrollPane_DoUpdate(scrollPane)
-    for i = 1, #scrollPane.buttons do
-        local button = scrollPane.buttons[i]
-        if button:IsMouseOver() then
-            if button.name == ADD_BUTTON_NAME then
-                button.deleteButton:Hide()
-                button.editButton:Hide()
-            else
-                button.deleteButton:Show()
-                button.editButton:Show()
-            end
-            button.HighlightBar:Show()
-        else
-            button.deleteButton:Hide()
-            button.editButton:Hide()
-            button.HighlightBar:Hide()
-        end
-    end
 end
 
 -------------------------------------------------------------------------------
@@ -499,8 +430,8 @@ function Catalog.Entry:OnLoad()
     local event = Event:new(self, "CatalogEntry_OnLoad")
     zebug.info:event(event):owner(self):print("load catalog entry", self:GetName())
     self:RegisterForDrag("LeftButton");
-    SetClampedTextureRotation(self.BgBottom, 180);
-    SetClampedTextureRotation(self.Arrow, 90);
+    Bliz.SetClampedTextureRotation(self.BgBottom, 180);
+    Bliz.SetClampedTextureRotation(self.Arrow, 90);
 
     self.flyoutMenu = self:initFlyoutMenu(event)
 
@@ -574,7 +505,7 @@ function Catalog.Entry:OnEnter()
         local flyoutDef = MrUfo:getFromCursor()
 
         if flyoutDef then
-            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+            Bliz.PlaySound(Bliz.SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
             zebug.info:event(event):print("entering button with drag", self.flyoutIndex, "flyoutId", flyoutDef)
         end
 
@@ -622,7 +553,7 @@ function Catalog.Entry:OnClick(mouseClick, down)
             btnOnTheMouse = nil
             Catalog:clearProxyAndCursor("CatalogEntryButton_OnClick()")
             Catalog:update(event)
-            PlaySound(1202) -- PutDownCloth_Leather01
+            Bliz.PlaySound(1202) -- PutDownCloth_Leather01
         else
             -- A regular UFO.  Open/close it.
             local row
@@ -669,12 +600,12 @@ end
 function Catalog.Entry.Buttons:OnClickDelete()
     local btnInCatalog = self:GetParent()
     local popupLabel = btnInCatalog.label
-    local dialog = StaticPopup_Show("UFO_CONFIRM_DELETE", popupLabel);
+    local dialog = Bliz.StaticPopup_Show("UFO_CONFIRM_DELETE", popupLabel);
     if dialog then
         local flyoutId = btnInCatalog.flyoutId
         dialog.flyoutId = flyoutId
     else
-        UIErrorsFrame:AddMessage(ERR_CLIENT_LOCKED_OUT, 1.0, 0.1, 0.1, 1.0)
+        Bliz.UIErrorsFrame:AddMessage(Bliz.ERR_CLIENT_LOCKED_OUT, 1.0, 0.1, 0.1, 1.0)
     end
 end
 
