@@ -145,52 +145,6 @@ function ButtonDef:new(id, type)
     return self
 end
 
-function ButtonDef:setIdAndType(id, type)
-    if not (id and type) then
-        return
-    end
-
-    self.type = type
-    if type == ButtonType.SPELL then
-        self.spellId = id
-    elseif type == ButtonType.MOUNT then
-        local name, spellId = C_MountJournal.GetMountInfoByID(id)
-        self.spellId = spellId
-        self.mountId = id
-    elseif type == ButtonType.ITEM then
-        self.itemId = id
-    elseif type == ButtonType.TOY then
-        self.itemId = id
-    elseif type == ButtonType.MACRO then
-        self.macroId = id
-    elseif type == ButtonType.PET then
-        self.petGuid = id
-    elseif type == ButtonType.PSPELL then
-        if id < 10 then
-            self.type = ButtonType.BROKENP
-            local brokenPetCommandId, alsoCommand = PetShitShow:get(id)
-            self.brokenPetCommandId = brokenPetCommandId
-            self.brokenPetCommandId2 = alsoCommand
-        else
-            self.petSpellId = id
-        end
-    else
-        zebug.warn:owner(self):print("Sorry, I don't recognize this type of button:", type)
-        Ufo.unknownType = type or "UnKnOwN"
-        type = nil
-        self = nil
-    end
-
-    if self then
-        if type then
-            -- discovering the name requires knowing its type
-            self:getName()
-        end
-    end
-
-    return self
-end
-
 
 function ButtonDef:toString()
     if not self.type then
@@ -241,6 +195,98 @@ end
 function ButtonDef:getTypeForBlizApi()
     local blizApiFieldDef = BlizApiFieldDef[self.type]
     return blizApiFieldDef.typeForBliz
+end
+
+function trim1(s)
+    if not s then return nil end
+    return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+function stripEol(s)
+    if not s then return nil end
+    return s:gsub("\n", " ")
+end
+
+local ttData
+
+function ButtonDef:registerToolTipRecorder()
+    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip, data)
+        if tooltip == GameTooltip then
+            ttData = data
+        end
+    end)
+end
+
+function ButtonDef:readToolTipForToyType()
+    ttData = nil -- will be re-populated by the registerToolTipRecorder() event handler above
+
+    -- trigger the tooltip
+    local tooltipSetter = self:getToolTipSetter()
+    local foo = tooltipSetter and tooltipSetter()
+    if not ttData then
+        return false
+    end
+
+    -- scan the text in the tooltip
+    for i, ttLine in ipairs(ttData.lines) do
+        zebug.trace:print("ttLine.leftText",ttLine.leftText)
+        if ttLine.leftText == L10N.TOY then
+            zebug.trace:out(30,")","TOY !!!")
+            return true
+        end
+    end
+
+    return false
+end
+
+-------------------------------------------------------------------------------
+-- Methods - must customize for each type
+-------------------------------------------------------------------------------
+
+function ButtonDef:setIdAndType(id, type)
+    if not (id and type) then
+        return
+    end
+
+    self.type = type
+    if type == ButtonType.SPELL then
+        self.spellId = id
+    elseif type == ButtonType.MOUNT then
+        local name, spellId = C_MountJournal.GetMountInfoByID(id)
+        self.spellId = spellId
+        self.mountId = id
+    elseif type == ButtonType.ITEM then
+        self.itemId = id
+    elseif type == ButtonType.TOY then
+        self.itemId = id
+    elseif type == ButtonType.MACRO then
+        self.macroId = id
+    elseif type == ButtonType.PET then
+        self.petGuid = id
+    elseif type == ButtonType.PSPELL then
+        if id < 10 then
+            self.type = ButtonType.BROKENP
+            local brokenPetCommandId, alsoCommand = PetShitShow:get(id)
+            self.brokenPetCommandId = brokenPetCommandId
+            self.brokenPetCommandId2 = alsoCommand
+        else
+            self.petSpellId = id
+        end
+    else
+        zebug.warn:owner(self):print("Sorry, I don't recognize this type of button:", type)
+        Ufo.unknownType = type or "UnKnOwN"
+        type = nil
+        self = nil
+    end
+
+    if self then
+        if type then
+            -- discovering the name requires knowing its type
+            self:getName()
+        end
+    end
+
+    return self
 end
 
 function ButtonDef:isUsable()
@@ -384,17 +430,6 @@ function ButtonDef:getName()
     return self.name
 end
 
-function trim1(s)
-    if not s then return nil end
-    return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
-
-function stripEol(s)
-    if not s then return nil end
-    return s:gsub("\n", " ")
-end
-
-
 function ButtonDef:getToolTipSetter()
     local type = self.type
     local id = self:getIdForBlizApi()
@@ -453,38 +488,6 @@ function ButtonDef:getToolTipSetter()
     end
 
     return nil
-end
-
-local ttData
-
-function ButtonDef:registerToolTipRecorder()
-    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip, data)
-        if tooltip == GameTooltip then
-            ttData = data
-        end
-    end)
-end
-
-function ButtonDef:readToolTipForToyType()
-    ttData = nil -- will be re-populated by the registerToolTipRecorder() event handler above
-
-    -- trigger the tooltip
-    local tooltipSetter = self:getToolTipSetter()
-    local foo = tooltipSetter and tooltipSetter()
-    if not ttData then
-        return false
-    end
-
-    -- scan the text in the tooltip
-    for i, ttLine in ipairs(ttData.lines) do
-        zebug.trace:print("ttLine.leftText",ttLine.leftText)
-        if ttLine.leftText == L10N.TOY then
-            zebug.trace:out(30,")","TOY !!!")
-            return true
-        end
-    end
-
-    return false
 end
 
 -- TODO: fixx bug - doesn't understand Bliz flyouts such as Dragon Riding
