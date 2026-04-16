@@ -256,7 +256,7 @@ EventHandlers.SPELL_UPDATE_CHARGES = EventHandlers.SPELL_UPDATE_USABLE
 
 -- support dynamically (de)activating DEBUG output in real time for individual events
 function Ufo:getEventVolume(eventName)
-    return Config.opts.devTool.devMode and Config.opts.devTool.eventVolume[eventName] or nil
+    return Config.opts.devTool.devMode and Config.opts.devTool.eventVolume[eventName] or Zebug.MUTE
 end
 
 function Ufo:setEventVolume(eventName, volume)
@@ -394,7 +394,8 @@ function initalizeAddonStuff(event)
     DB:initializePlacements()
     DB:initializeOptsMemory()
     Config:migrateToCurrentVersion()
-    Config:initializeOptionsMenu(EventHandlers)
+    Config:initializeOptionsMenu()
+    Config:includeOptsForEventHandlers(EventHandlers)
 
     SecEnv:loadConfigOptions()
 
@@ -411,6 +412,8 @@ function initalizeAddonStuff(event)
     Catalog:createToggleButtonIfWeCan(CollectionsJournal)
     Catalog:createToggleButtonIfWeCan(MacroFrame)
     Catalog:createToggleButtonIfWeCan(ProfessionsBookFrame)
+    Catalog.Entry:initConfigOptsForEventHandlers()
+    ButtonOnFlyoutMenu:initConfigOptsForEventHandlers()
 
     IconPicker:init()
 

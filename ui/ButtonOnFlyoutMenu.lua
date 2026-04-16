@@ -377,6 +377,12 @@ end
 -- XML Callbacks - see ui/ui.xml
 -------------------------------------------------------------------------------
 
+function ButtonOnFlyoutMenu:initConfigOptsForEventHandlers()
+    Config:includeOptsForEventHandlers("ButtonOnFlyoutMenu:OnMouseUp")
+    Config:includeOptsForEventHandlers("ButtonOnFlyoutMenu:OnReceiveDrag")
+    Config:includeOptsForEventHandlers("ButtonOnFlyoutMenu:OnDragStart")
+end
+
 -- TODO: should this be in Button_Mixin so that Germ can enjoy it too?
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onLoad()
@@ -419,7 +425,8 @@ function ButtonOnFlyoutMenu:onMouseUp()
     -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
     local isDragging = GetCursorInfo()
     if isDragging then
-        zebug.warn:mTriangle():owner(self):newEvent(self, "bofm-mouse-up"):run(function(event)
+        local volumeCutoff = Ufo:getEventVolume("ButtonOnFlyoutMenu:OnMouseUp")
+        zebug.warn:mTriangle():owner(self):newEvent(self, "bofm-mouse-up", nil, volumeCutoff):run(function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
     end
@@ -443,7 +450,8 @@ end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onReceiveDrag()
-    zebug.warn:mTriangle():owner(self):newEvent(self, "drag-hit-me"):run(function(event)
+    local volumeCutoff = Ufo:getEventVolume("ButtonOnFlyoutMenu:OnReceiveDrag")
+    zebug.warn:mTriangle():owner(self):newEvent(self, "drag-hit-me", nil, volumeCutoff):run(function(event)
         self:onReceiveDragAddItTryCatch(event)
     end)
 end
@@ -469,7 +477,9 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
 
     local btnDef = self:getDef()
 
-    zebug.warn:mTriangle():owner(self):newEvent(self, "drag-away"):run(function(event)
+    local volumeCutoff = Ufo:getEventVolume("ButtonOnFlyoutMenu:OnDragStart")
+
+    zebug.warn:mTriangle():owner(self):newEvent(self, "drag-away", nil, volumeCutoff):run(function(event)
         zebug.warn:event(event):owner(self):print("invoking pickupToCursor for btnDef",btnDef)
         local isOk, err = btnDef:pickupToCursor(event)
         if not isOk then
