@@ -163,6 +163,11 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
         return
     end
 
+    if crsDef.spellId == CLEAR_CURRENT_TRANSMOGRIFICATIONS_SPELL_ID then
+        msgUser(L10N.CLEAR_CURRENT_TRANSMOGRIFICATIONS_BULLSHIT)
+        return
+    end
+
     local flyoutId = flyoutMenu:getId()
     local flyoutDef = FlyoutDefsDb:get(flyoutId)
     local btnIndex = self:getId()
