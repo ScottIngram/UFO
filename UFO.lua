@@ -207,6 +207,14 @@ function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorTyp
     --print("EventHandlers:CURSOR_CHANGED... isCursorEmpty",isCursorEmpty, "eName", eName, "eventCounter", eCount, "newCursorType",newCursorType, "oldCursorType",oldCursorType, "oldCursorVirtualID",oldCursorVirtualID )
     eCount = eCount or "NO-EVENT-COUNTER"
 
+--[[
+    if not isCursorEmpty then
+        local e = Event:new(self, eName, eCount, zebug.INFO)
+        local b = ButtonDef:getFromCursor(e)
+        zebug.warn:event(e):owner(b):print("isUsable",b:isUsable(e))
+    end
+]]
+
     zebug.trace
         :name("handler")
         :newEvent("Ufo", Cursor:nameMakerForCursorChanged(isCursorEmpty), eCount, Zebug.trace)

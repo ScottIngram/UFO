@@ -6,6 +6,8 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 
+CLEAR_CURRENT_TRANSMOGRIFICATIONS_SPELL_ID = 1247917
+
 -------------------------------------------------------------------------------
 -- ButtonType
 -- identifies a button as a Spell, Item, Pet, etc. as used by most(some?) APIs including GetCursorInfo.
@@ -20,6 +22,7 @@ ButtonType = {
     TOY   = "toy",
     PET   = "battlepet",
     MACRO = "macro",
+    OUTFIT = "outfit",
     PSPELL = "petaction",
     BROKENP = "brokenPetCommand",
     SNAFU = "companion",
@@ -41,6 +44,7 @@ BlizApiFieldDef = {
     [ButtonType.ITEM ] = { pickerUpper = C_Item.PickupItem, typeForBliz = ButtonType.ITEM,  },
     [ButtonType.TOY  ] = { pickerUpper = C_Item.PickupItem, typeForBliz = ButtonType.TOY, key = "itemId"  },
     [ButtonType.MACRO] = { pickerUpper = PickupMacro, typeForBliz = ButtonType.MACRO --[[, key = "name"]] },
+    [ButtonType.OUTFIT]= { pickerUpper = C_TransmogOutfitInfo.PickupOutfit, typeForBliz = ButtonType.OUTFIT},
     [ButtonType.SNAFU] = { pickerUpper = nil,         typeForBliz = ButtonType.SPELL, key = "mountId" },
     [ButtonType.PET  ] = { pickerUpper = C_PetJournal.PickupPet, typeForBliz = ButtonType.PET, key = "petGuid" },
     [ButtonType.PSPELL]= { pickerUpper = PickupPetSpell, typeForBliz = ButtonType.SPELL, key="petSpellId" },
@@ -126,6 +130,7 @@ function ButtonDef:oneOfUs(self)
     -- and attach methods to get and put that data
     local privateData = { }
     function privateData:setIdForBlizApi(id) privateData.idForBlizApis = id end
+    function privateData:setPvar(key,val) privateData[key] = val end
 
     -- tie the privateData table to the ButtonDef class definition
     setmetatable(privateData, { __index = ButtonDef })
@@ -239,6 +244,32 @@ function ButtonDef:readToolTipForToyType()
     return false
 end
 
+-- Because the /outfit macro only uses transmogINDEX
+-- and NONE of the APIs will tell you the transmogINDEX
+-- I get to iterate through ALL of the outfits and FUCKING COUNT THEM.
+local outfitCache
+function getIndexForId_AndFuckYouBliz(outfitId)
+    local outfits = C_TransmogOutfitInfo.GetOutfitsInfo()
+    for i, outfitData in ipairs(outfits) do
+        if outfitData.outfitID == outfitId then
+            return i
+        end
+    end
+end
+
+function ButtonDef:initOutfit()
+    local o = C_TransmogOutfitInfo.GetOutfitInfo(self.outfitId)
+    --zebug.error:dumpy("GetOutfitInfo",o)
+    self.name = o.name
+    self.owner = getIdForCurrentToon()
+    self:setPvar("icon",o.icon)
+    local i = getIndexForId_AndFuckYouBliz(self.outfitId)
+    self:setPvar("outfitIndex",i)
+    if not self.outfitIndex then
+        error("The Bliz APIs failed to provide UFO with the index for outfit with ID:".. self.outfitId .. " name:" .. self.name)
+    end
+end
+
 -------------------------------------------------------------------------------
 -- Methods - must customize for each type
 -------------------------------------------------------------------------------
@@ -261,6 +292,8 @@ function ButtonDef:setIdAndType(id, type)
         self.itemId = id
     elseif type == ButtonType.MACRO then
         self.macroId = id
+    elseif type == ButtonType.OUTFIT then
+        self.outfitId = id
     elseif type == ButtonType.PET then
         self.petGuid = id
     elseif type == ButtonType.PSPELL then
@@ -289,7 +322,7 @@ function ButtonDef:setIdAndType(id, type)
     return self
 end
 
-function ButtonDef:isUsable()
+function ButtonDef:isUsable(event)
     local t = self.type
     local id = self:getIdForBlizApi()
     local isUsable, err
@@ -310,7 +343,11 @@ function ButtonDef:isUsable()
         -- TODO: solve faction specific bug
         return  PlayerHasToy(id) -- and C_ToyBox.IsToyUsable(id) -- nope, unreliable and overreaching
     elseif t == ButtonType.SPELL then
-        --zebug.trace:print("IsSpellKnownOrOverridesKnown",IsSpellKnownOrOverridesKnown(id))
+        zebug.info:event(event):owner(self):print("type",t, "spellId", self.spellId, "id",id)
+        if id == CLEAR_CURRENT_TRANSMOGRIFICATIONS_SPELL_ID then
+            -- it's not really a spell. SecureActionButtonTemplate can't cast it.  No API recognizes it.  Not by name nor ID.  GG, Bliz. GGF.
+            return false
+        end
         return IsSpellKnownOrOverridesKnown(id)
     elseif t == ButtonType.PSPELL then
         --zebug.warn:print("IsSpellKnownOrOverridesKnown PET",IsSpellKnownOrOverridesKnown(id, true))
@@ -330,6 +367,8 @@ function ButtonDef:isUsable()
             zebug.info:owner(self):print("macroId",self.macroId, "isUsable",isUsable, "err", err)
         end
         return isUsable, err
+    elseif t == ButtonType.OUTFIT then
+        return true -- self.owner == getIdForCurrentToon()
     elseif t == ButtonType.BROKENP then
         return PetShitShow:canHazPet()
     elseif t == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT then
@@ -372,6 +411,11 @@ function ButtonDef:getIcon()
         else
             icon = self.fallbackIcon or DEFAULT_ICON_FULL
         end
+    elseif t == ButtonType.OUTFIT then
+        if not self.icon then
+            self:initOutfit()
+        end
+        icon = self.icon
     elseif t == ButtonType.PET then
         local _, x = getPetNameAndIcon(id)
         icon = x
@@ -414,6 +458,8 @@ function ButtonDef:getName()
         self.name =  C_Item.GetItemInfo(id)
     elseif t == ButtonType.MACRO then
         self.name =  GetMacroInfo(self.macroId)
+    elseif t == ButtonType.OUTFIT then
+        self:initOutfit()
     elseif t == ButtonType.PET then
         self.name =  getPetNameAndIcon(id)
     elseif t == ButtonType.BROKENP then
@@ -461,6 +507,14 @@ function ButtonDef:getToolTipSetter()
                 text = "Toon Macro for " .. self.macroOwner
             end
             return zelf:SetText(text)
+        end
+        -- END FUNC
+    elseif type == ButtonType.OUTFIT then
+        local name = self:getName()
+        local text = "Outfit: " .. (name or "UnKnOwN")
+        -- START FUNC
+        tooltipSetter = function(zelf, _)
+            return GameTooltip:SetText(text)
         end
         -- END FUNC
     elseif type == ButtonType.BROKENP then
@@ -547,6 +601,8 @@ function ButtonDef:getFromCursor(event, silenceWarnings)
             btnDef.macroOwner = (Ufo.pickedUpBtn and Ufo.pickedUpBtn.macroOwner) or getIdForCurrentToon()
             btnDef.fallbackIcon = btnDef:getIcon()
         end
+    elseif type == ButtonType.OUTFIT then
+        btnDef.outfitId = c1
     elseif type == ButtonType.PET then
         btnDef.petGuid = c1
     elseif type == ButtonType.PSPELL then
@@ -604,7 +660,7 @@ function ButtonDef:pickupToCursor(event)
     if isOk then
         zebug.info:event(event):owner(self):print("grabbed id", id)
     else
-        shhh:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
+        zebug.warn:event(event):owner(self):print("pickupToCursor failed! ERROR is",err)
     end
 
     return isOk
@@ -631,6 +687,16 @@ function ButtonDef:asSecureClickHandlerAttributes(event)
         local petMacro = "/run C_PetJournal.SummonPetByGUID(" .. QUOTE .. self.petGuid .. QUOTE ..")"
         return ButtonType.MACRO, "macrotext", petMacro
     elseif ButtonType.SPELL == self.type then
+--[[
+        if false and self.spellId == CLEAR_CURRENT_TRANSMOGRIFICATIONS_SPELL_ID then
+            -- hardcode the ID for Clear Current Transmogrifications
+            -- actually, it's not even a spell. SecureActionButtonTemplate can't cast it.  Not by name nor ID.  GG, Bliz. GfG. GGF.
+
+            -- the following doesn't actually work
+            --return ButtonType.MACRO, "macrotext", "/cast Clear Current Transmogrifications"
+            return ButtonType.SPELL, ButtonType.SPELL, "Clear Current Transmogrifications" -- CLEAR_CURRENT_TRANSMOGRIFICATIONS_SPELL_ID
+        end
+]]
         -- PROFESSIONS
         --local altId = BrokenProfessions[self.name]
         local professionSnafuId = ProfessionShitShow:get(self.name)
@@ -657,6 +723,13 @@ function ButtonDef:asSecureClickHandlerAttributes(event)
         end
         local macroText = BrokenPetCommand[self.brokenPetCommandId]
         return ButtonType.MACRO, "macrotext", macroText
+    elseif ButtonType.OUTFIT == self.type then
+        if not self.outfitIndex then
+            self:initOutfit()
+        end
+        --local body = sprintf('/say outfit ID=%d INDEX=%d "%s"', self.outfitId, self.outfitIndex, self:getName())
+        local body = sprintf("/outfit %d", self.outfitIndex)
+        return ButtonType.MACRO, "macrotext", body
     elseif ButtonType.ITEM == self.type then
         -- because using items by name implies rank 1 and never rank 2 or 3 we must use by the item's ID
         return ButtonType.ITEM, ButtonType.ITEM, "item:".. self.itemId -- but not just itemId, it must be item:itemId - I hate you Bliz
