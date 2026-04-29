@@ -163,6 +163,11 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
         return
     end
 
+    if mr.spellId == CLEAR_CURRENT_TRANSMOGRIFICATIONS_SPELL_ID then
+        msgUser(L10N.CLEAR_CURRENT_TRANSMOGRIFICATIONS_BULLSHIT)
+        return
+    end
+
     -- handle special case where the MR is a wrapper
     if mr.getOriginalMouseRat then
         mr = mr:getOriginalMouseRat()

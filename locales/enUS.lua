@@ -68,6 +68,7 @@ UNSUPPORTED_TYPE = "Sorry, unsupported type"
 UFO_ICON_PROMOTE = "update the UFO icon to reflect the most recently used member."
 VERSION = "Version"
 YOUR_ACTION_BARS_ARE_LOCKED = "Your action bars are locked.  To move a UFO, hold shift/control/etc."
+CLEAR_CURRENT_TRANSMOGRIFICATIONS_BULLSHIT = "Sorry, Blizzard provides no way for addons to invoke Clear Current Transmogrifications.  It claims to be a spell but no API recognizes it."
 
 -------------------------------------------------------------------------------
 -- Configuration Screen
