@@ -5,11 +5,31 @@ Ufo.Wormhole()
 ---@class MrOutfit : MouseRat
 local MrOutfit = {
     type       = MouseRatType.OUTFIT,
-    primaryKey = "outfitIndex",
+    primaryKey = "outfitId",
     helpers = {
         pickupToCursor = C_TransmogOutfitInfo.PickupOutfit,
     },
 }
+
+-------------------------------------------------------------------------------
+-- Functions
+-------------------------------------------------------------------------------
+
+-- Because the /outfit macro only uses transmogINDEX
+-- and NONE of the APIs will tell you the transmogINDEX
+-- I get to iterate through ALL of the outfits and FUCKING COUNT THEM.
+-- TODO: cache this and clear if some event exists to tell me the use changes the outfit list
+function getIndexForId_AndFuckYouBliz(outfitId)
+    local outfits = C_TransmogOutfitInfo.GetOutfitsInfo()
+    for i, outfitData in ipairs(outfits) do
+        if outfitData.outfitID == outfitId then
+            zebug.info:print("matched outfitId", outfitId, "to index",i)
+            zebug.info:dumpy("outfitData", outfitData)
+            return i
+        end
+    end
+    return nil
+end
 
 -------------------------------------------------------------------------------
 -- Instance Methods
@@ -38,13 +58,20 @@ end
 
 -- will the real itemId please stand up!
 ---@param type BlizCursorType the 1st arg from GetCursorInfo
----@param outfitIndex number the 2nd arg from GetCursorInfo
-function MrOutfit:consumeGetCursorInfo(type, outfitIndex)
-    self:setId(outfitIndex)
-    local o = C_TransmogOutfitInfo.GetOutfitInfo(outfitIndex)
+---@param outfitId number the 2nd arg from GetCursorInfo
+function MrOutfit:consumeGetCursorInfo(type, outfitId)
+    self:setId(outfitId)
+    local o = C_TransmogOutfitInfo.GetOutfitInfo(outfitId)
     self.name = o.name
     self.owner = getIdForCurrentToon()
     self:setPvar("icon",o.icon)
+
+    local i = getIndexForId_AndFuckYouBliz(self.outfitId)
+    self:setPvar("outfitIndex",i)
+    if not self.outfitIndex then
+        error("The Bliz APIs failed to provide UFO with the index for outfit with ID:".. self.outfitId .. " name:" .. self.name)
+    end
+    self:setPvar("isInit",true)
 end
 
 function MrOutfit:setToolTip()
@@ -61,8 +88,11 @@ end
 ---@return string the name of some key recognized by SecureActionButton as an attribute (according to Bliz's fucking insane rules) related to the above "type" attribute
 ---@return string the actual fucking value assigned to whatever goddamn key was decided above
 function MrOutfit:asSecureClickHandlerAttributes()
-    -- because using items by name implies rank 1 and never rank 2 or 3 we must use by the item's ID
-    return ButtonType.ITEM, ButtonType.ITEM, "item:".. self.itemId -- but not just itemId, it must be item:itemId - I hate you Bliz
+    if not self.isInit then
+        self:doInit()
+    end
+
+    return ButtonType.MACRO, "macrotext", sprintf("/outfit %d", self.outfitIndex)
 end
 
 -------------------------------------------------------------------------------

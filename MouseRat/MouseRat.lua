@@ -727,7 +727,7 @@ end
 ---@return string the actual fucking value assigned to whatever goddamn key was decided above
 function MouseRat:asSecureClickHandlerAttributes()
     self:assertIsInstance()
-    --zebug.info:event():owner(self):print("default asSecureClickHandlerAttributes")
+    zebug.info:event():owner(self):print("default asSecureClickHandlerAttributes")
     return self.type, self.type, self:getName()
 end
 
