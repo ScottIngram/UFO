@@ -66,6 +66,21 @@ PrimaryButtonIs = {
     RECENT = "RECENT",
 }
 
+---@class PresetUfos
+PresetUfos = {
+    BUFF = { "Buffs", 'Interface/ICONS/spell_holy_arcaneintellect.blp' },
+    RIDE = { "Ride",  'Interface/ICONS/achievement_halloween_witch_01.blp' },
+    HEARTHSTONE   = { "Hearthstones",  'Interface/ICONS/achievement_guildperk_hastyhearth.blp'},
+    MAGE_PORTAL   = { "Mage Portal",   'Interface/ICONS/spell_arcane_portaldalaran.blp' },
+    MAGE_TELEPORT = { "Mage Teleport", 'Interface/ICONS/spell_arcane_teleportdalaran.blp' },
+    INVTORY_MGMNT = { "Invtory Mgmnt", 'Interface/ICONS/achievement_guildperk_mobilebanking.blp' },
+    TRADE_SKILLS  = { "Trade Skills",  'Interface/ICONS/ui_profession_tailoring.blp' },
+    HEAL  = { "Heal",   'Interface/ICONS/achievement_guild_doctorisin.blp' },
+    CURE  = { "Cure",   'Interface/ICONS/petbattle_health.blp' },
+    DELVE = { "Delves", 'Interface/ICONS/icon_treasuremap.blp' },
+    PARACHUTE = { "Parachute",  'Interface/ICONS/archaeology_5_0_umbrellaofchiji.blp' },
+}
+
 -------------------------------------------------------------------------------
 -- Constants
 -------------------------------------------------------------------------------
@@ -129,28 +144,50 @@ local function initializeOptionsMenu()
     optionsMenus = {
         type = "group",
         childGroups = "tab",
-        get = "GetValue",
-        set = "SetValue",
-        args ={
+        args = {
+
+            -------------------------------------------------------------------------------
+            -- PRESETS TAB
+            -------------------------------------------------------------------------------
+
             presetsMenu = {
                 order = 2,
                 name = "Presets",
                 type = "group",
                 args = {
 
-                    -------------------------------------------------------------------------------
-                    -- blah blah
-                    -------------------------------------------------------------------------------
-
                     helpText = {
-                        order = 100,
+                        order = 10,
                         type = 'description',
                         fontSize = "small",
-                        name = "Testing 123\n\n" .. Ufo.myTitle .. "blah blah blah blah!!!" .. EOLx2
+                        name = "These are pre-configured UFOs to get you started or inspire you.  Clicking any of the buttons below will create an entry in your Catalog for a UFO cram-packed with my choices for relevant spells/toys/items/etc.  Once in your Catalog, they are normal UFOs like any other: you can drag them onto your bars, customize them, rearrange their buttons, etc." .. EOLx2
                     },
-
+                    buttons = {
+                        name = " ",
+                        order = 20,
+                        type = "group",
+                        inline = true,
+                        args = Config:makePresetButtons(
+                            PresetUfos.HEARTHSTONE
+                            , PresetUfos.BUFF
+                            , PresetUfos.MAGE_TELEPORT
+                            , PresetUfos.MAGE_PORTAL
+                            , PresetUfos.RIDE
+                            , PresetUfos.INVTORY_MGMNT
+                            , PresetUfos.HEAL
+                            , PresetUfos.CURE
+                            , PresetUfos.DELVE
+                            , PresetUfos.PARACHUTE
+                        ),
+                    },
                 }
             },
+
+
+            -------------------------------------------------------------------------------
+            -- CONFIG OPTIONS TAB
+            -------------------------------------------------------------------------------
+
             configOptions = {
                 order = 1,
                 name = "Configuration",
@@ -159,7 +196,7 @@ local function initializeOptionsMenu()
                 args = {
 
                     -------------------------------------------------------------------------------
-                    -- General Options
+                    -- Secret Debugger Options
                     -------------------------------------------------------------------------------
 
                     debuggerOpts = {
@@ -173,7 +210,7 @@ local function initializeOptionsMenu()
                             help1 = {
                                 order = 5,
                                 type = 'description',
-                                name = "You got here because you type /ufo debug"
+                                name = "You got here because you typed /ufo debug"
                             },
 
                             header = {
@@ -932,6 +969,34 @@ function Config:deletePlaceholder()
 end
 
 Config.deletePlaceholder = Pacifier:wrap(Config.deletePlaceholder, L10N.DELETE_PLACEHOLDERS)
+
+function Config:makePresetButtons(...)
+    local result
+    for i = 1, select("#", ...) do
+        if not result then result = {} end
+        local config = select(i, ...)
+        local label = config[1]
+        local icon = config[2]
+        zebug.error:print("Config:makePresetButtons... label",label, "icon",icon)
+        result[label] = {
+            type = "execute",
+            order = 100 + i,
+            name = label,
+            image = icon,
+            width = "half",
+            descStyle = inline,
+            func = function()
+                zebug.error:print("you clicked:", label)
+            end,
+        }
+    end
+
+    -- zebug.error:dumpy("Config:makePresetButtons RESULT",result)
+
+
+    return result -- and unpack(result)
+end
+
 
 -------------------------------------------------------------------------------
 -- Versioning and Migration
