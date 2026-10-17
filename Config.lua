@@ -192,7 +192,8 @@ local function initializeOptionsMenu()
                 order = 1,
                 name = "Configuration",
                 type = "group",
-                childGroups = "tab",
+                childGroups = "tree",
+                --inline = false,
                 args = {
 
                     -------------------------------------------------------------------------------
@@ -203,7 +204,7 @@ local function initializeOptionsMenu()
                         order = 10,
                         type = "group",
                         name = "Developer Tools",
-                        inline = true,
+                        -- inline = true,
                         hidden = function() return not Ufo.devMode end,
                         args = {
 
@@ -229,7 +230,7 @@ local function initializeOptionsMenu()
                                 order = 30,
                                 name = " ",
                                 type = "group",
-                                --inline = true, -- set this to false to enable multiple configs, one per flyout.
+                                --inline = true,
                                 args = generateMenusForEventHandlers(),
                             },
 
@@ -242,169 +243,191 @@ local function initializeOptionsMenu()
                     -- General Options
                     -------------------------------------------------------------------------------
 
-                    helpText = {
-                        order = 100,
-                        type = 'description',
-                        fontSize = "small",
-                        name = L10N.cfg.SHORTCUT .. "\n\n" .. Ufo.myTitle .. L10N.cfg.UFO_LETS_YOU .. EOLx2
-                    },
-                    doCloseOnClick = {
-                        order = 110,
-                        name = L10N.cfg.AUTO_CLOSE_UFO,
-                        desc = L10N.cfg.CLOSES_THE_UFO,
-                        width = "medium",
-                        type = "toggle",
-                        set = function(optionsMenu, val)
-                            opts.doCloseOnClick = val
-                            UFO_DUM_DUM:setSecEnvAttribute("doCloseOnClick", val)
-
-                            --GermCommander:forEachGerm(Germ.copyDoCloseOnClickConfigValToAttribute, "user-config-changed-doCloseOnClick") -- TODO: target just the clickers
-                        end,
-                        get = function()
-                            return opts.doCloseOnClick
-                        end,
-                    },
-                    doMute = {
-                        order = 120,
-                        name = L10N.cfg.MUTE_LOGIN_MESSAGES,
-                        desc = L10N.cfg.DONT_PRINT,
-                        width = "medium",
-                        type = "toggle",
-                        set = function(optionsMenu, val)
-                            opts.muteLogin = val
-                        end,
-                        get = function()
-                            return Config:get("muteLogin")
-                        end,
-                    },
-                    showLabels = {
-                        order = 130,
-                        name = L10N.cfg.SHOW_LABELS, -- "Show Labels",
-                        desc = L10N.cfg.ADD_A_LABEL, -- "Add a label to the action bar button displaying the UFO's name.",
-                        width = "medium",
-                        type = "toggle",
-                        set = function(optionsMenu, val)
-                            opts.showLabels = val
-                            GermCommander:applyConfigForLabels("config_labels")
-                        end,
-                        get = function()
-                            return Config:get("showLabels")
-                        end,
-                    },
-                    spacer = {
-                        order = 140,
-                        type = 'description',
-                        name = EOLx2
-                    },
-
-
-
-                    -------------------------------------------------------------------------------
-                    -- Max Flyout Size
-                    -------------------------------------------------------------------------------
-
-                    maxFlyoutSizeDiv = {
-                        order = 150,
-                        name = "Maximum Flyout Length",
-                        type = 'header',
-                    },
-
-                    maxFlyoutSizeGroup = {
-                        order = 160,
-                        name = "", -- L10N.cfg.THE_PRIMARY_BUTTON, -- 'The "Primary Button"',
+                    generalOpts = {
+                        order = 20,
+                        name = "General Options",
                         type = "group",
-                        inline = true,
+                        childGroups = "tree",
+                        --inline = false,
                         args = {
-                            maxSizeHelp = {
-                                order = 10,
+                            helpText = {
+                                order = 100,
                                 type = 'description',
-                                name = L10N.cfg.MAX_LEN_HELP, -- "How many buttons can a flyout display on a single line before it splits itself into multiple lines?  A value of 15 means 16 buttons would be displayed as 2 lines of 8."
+                                fontSize = "small",
+                                name = L10N.cfg.SHORTCUT .. "\n\n" .. Ufo.myTitle .. " ".. L10N.cfg.UFO_LETS_YOU .. EOLx2
                             },
-
-                            chooseMaxSize = {
-                                order = 20,
-                                name = "", -- L10N.cfg.THE_PRIMARY_BUTTON_IS_THE, --'The "Primary" Button is the:',
-                                desc = "Button count", -- L10N.cfg.WHICH_BUTTON_OF_THE_FLYOUT, --'Which button of the flyout should be considered its "Primary" button?',
-                                width = "double",
-                                type = "range",
-                                min = 10,
-                                max = MAX_FLYOUT_SIZE,
-                                step = 1,
+                            doCloseOnClick = {
+                                order = 110,
+                                name = L10N.cfg.AUTO_CLOSE_UFO,
+                                desc = L10N.cfg.CLOSES_THE_UFO,
+                                width = "medium",
+                                type = "toggle",
                                 set = function(optionsMenu, val)
-                                    opts.flyoutMaxSize = val
-                                    zebug.info:name("opt:flyoutMaxSize()"):print("new val",val)
-                                    UFO_DUM_DUM:setSecEnvAttribute("FLYOUT_MAX_LEN", val)
+                                    opts.doCloseOnClick = val
+                                    XML_UI.UFO_DUM_DUM:setSecEnvAttribute("doCloseOnClick", val)
+
+                                    --GermCommander:forEachGerm(Germ.copyDoCloseOnClickConfigValToAttribute, "user-config-changed-doCloseOnClick") -- TODO: target just the clickers
                                 end,
                                 get = function()
-                                    return Config:get(Config.field.name.flyoutMaxSize)
+                                    return opts.doCloseOnClick
                                 end,
                             },
-
-                            maxSizeFooter = {
-                                order = 30,
+                            doMute = {
+                                order = 120,
+                                name = L10N.cfg.MUTE_LOGIN_MESSAGES,
+                                desc = L10N.cfg.DONT_PRINT,
+                                width = "medium",
+                                type = "toggle",
+                                set = function(optionsMenu, val)
+                                    opts.muteLogin = val
+                                end,
+                                get = function()
+                                    return Config:get("muteLogin")
+                                end,
+                            },
+                            showLabels = {
+                                order = 130,
+                                name = L10N.cfg.SHOW_LABELS, -- "Show Labels",
+                                desc = L10N.cfg.ADD_A_LABEL, -- "Add a label to the action bar button displaying the UFO's name.",
+                                width = "medium",
+                                type = "toggle",
+                                set = function(optionsMenu, val)
+                                    opts.showLabels = val
+                                    GermCommander:applyConfigForLabels("config_labels")
+                                end,
+                                get = function()
+                                    return Config:get("showLabels")
+                                end,
+                            },
+                            spacer = {
+                                order = 140,
                                 type = 'description',
-                                name = EOLx2,
+                                name = EOLx2
+                            },
+
+
+                            -------------------------------------------------------------------------------
+                            -- Max Flyout Size
+                            -------------------------------------------------------------------------------
+
+                            maxFlyoutSizeDiv = {
+                                order = 150,
+                                name = "Maximum Flyout Length",
+                                type = 'header',
+                            },
+
+                            maxFlyoutSizeGroup = {
+                                order = 160,
+                                name = "", -- L10N.cfg.THE_PRIMARY_BUTTON, -- 'The "Primary Button"',
+                                type = "group",
+                                inline = true,
+                                args = {
+                                    maxSizeHelp = {
+                                        order = 10,
+                                        type = 'description',
+                                        name = L10N.cfg.MAX_LEN_HELP, -- "How many buttons can a flyout display on a single line before it splits itself into multiple lines?  A value of 15 means 16 buttons would be displayed as 2 lines of 8."
+                                    },
+
+                                    chooseMaxSize = {
+                                        order = 20,
+                                        name = "", -- L10N.cfg.THE_PRIMARY_BUTTON_IS_THE, --'The "Primary" Button is the:',
+                                        desc = "Button count", -- L10N.cfg.WHICH_BUTTON_OF_THE_FLYOUT, --'Which button of the flyout should be considered its "Primary" button?',
+                                        width = "double",
+                                        type = "range",
+                                        min = 10,
+                                        max = MAX_FLYOUT_SIZE,
+                                        step = 1,
+                                        set = function(optionsMenu, val)
+                                            opts.flyoutMaxSize = val
+                                            zebug.info:name("opt:flyoutMaxSize()"):print("new val",val)
+                                            XML_UI.UFO_DUM_DUM:setSecEnvAttribute("FLYOUT_MAX_LEN", val)
+                                        end,
+                                        get = function()
+                                            return Config:get(Config.field.name.flyoutMaxSize)
+                                        end,
+                                    },
+
+                                    maxSizeFooter = {
+                                        order = 30,
+                                        type = 'description',
+                                        name = EOLx2,
+                                    },
+                                },
                             },
                         },
+
                     },
+
+
 
 
                     -------------------------------------------------------------------------------
                     -- Define Primary
                     -------------------------------------------------------------------------------
 
-                    primaryButtonIsDiv = {
-                        order = 200,
-                        name =  L10N.cfg.THE_PRIMARY_BUTTON, -- 'The "Primary Button"',
-                        type = 'header',
-                    },
-
-                    primaryButtonIsGroup = {
-                        order = 210,
-                        name = "",
+                    primaryButtonDef = {
+                        order = 30,
+                        name = 'Define "Primary"',
                         type = "group",
-                        inline = true,
+                        childGroups = "tree",
+                        --inline = false,
                         args = {
-                            helpPrim = {
+                            primaryButtonIsDiv = {
+                                order = 200,
+                                name =  L10N.cfg.THE_PRIMARY_BUTTON, -- 'The "Primary Button"',
+                                type = 'header',
+                            },
+
+                            primaryButtonIsGroup = {
                                 order = 210,
-                                type = 'description',
-                                name = L10N.cfg.ONE_BUTTON_ON_THE_UFO_IS_PRIMARY .. EOLx2, -- One button on the UFO is "Primary," is shown on the actionbar, and can be clicked without necessarily opening the UFO.  By default, the first button on the UFO is its primary.  Alternatively, whenever you use a button it would become the new primary.
-                            },
+                                name = "",
+                                type = "group",
+                                inline = true,
+                                args = {
+                                    helpPrim = {
+                                        order = 210,
+                                        type = 'description',
+                                        name = L10N.cfg.ONE_BUTTON_ON_THE_UFO_IS_PRIMARY .. EOLx2, -- One button on the UFO is "Primary," is shown on the actionbar, and can be clicked without necessarily opening the UFO.  By default, the first button on the UFO is its primary.  Alternatively, whenever you use a button it would become the new primary.
+                                    },
 
-                            primaryButtonIsMenu = {
-                                order = 220,
-                                name = L10N.cfg.THE_PRIMARY_BUTTON_IS_THE, --'The "Primary" Button is the:',
-                                desc = L10N.cfg.WHICH_BUTTON_OF_THE_FLYOUT, --'Which button of the flyout should be considered its "Primary" button?',
-                                width = "double",
-                                type = "select",
-                                style = "dropdown",
-                                values = {
-                                    [PrimaryButtonIs.FIRST]  = L10N.cfg.FIRST_BUTTON, --"First Button, usually",
-                                    [PrimaryButtonIs.RECENT] = L10N.cfg.MOST_RECENTLY_USED, --"Most Recently Used",
+                                    primaryButtonIsMenu = {
+                                        order = 220,
+                                        name = L10N.cfg.THE_PRIMARY_BUTTON_IS_THE, --'The "Primary" Button is the:',
+                                        desc = L10N.cfg.WHICH_BUTTON_OF_THE_FLYOUT, --'Which button of the flyout should be considered its "Primary" button?',
+                                        width = "double",
+                                        type = "select",
+                                        style = "dropdown",
+                                        values = {
+                                            [PrimaryButtonIs.FIRST]  = L10N.cfg.FIRST_BUTTON, --"First Button, usually",
+                                            [PrimaryButtonIs.RECENT] = L10N.cfg.MOST_RECENTLY_USED, --"Most Recently Used",
+                                        },
+                                        sorting = {PrimaryButtonIs.FIRST, PrimaryButtonIs.RECENT},
+                                        set = function(optionsMenu, val)
+                                            opts.primaryButtonIs = val
+                                            zebug.info:name("opt:primaryButtonIs()"):print("new val",val)
+                                            GermCommander:applyConfigForPrimaryButtonIs("config_delta_prime")
+                                        end,
+                                        get = function()
+                                            return Config:get("primaryButtonIs")
+                                        end,
+                                    },
+
+                                    promoteViaShiftKey = {
+                                        order = 230,
+                                        -- hidden = function() return Config:get("primaryButtonIs") ~= PrimaryButtonIs.FIRST end,
+                                        type = 'description',
+                                        -- fontSize = "small",
+                                        name = EOL
+                                                .. L10N.cfg.ANY_BUTTON_CAN_BE_PROMOTED -- 'Also, any button can be promoted to "Primary" by holding a modifier key (shift, control, etc) while clicking the button.'
+                                                .. EOLx3
+                                    },
+
                                 },
-                                sorting = {PrimaryButtonIs.FIRST, PrimaryButtonIs.RECENT},
-                                set = function(optionsMenu, val)
-                                    opts.primaryButtonIs = val
-                                    zebug.info:name("opt:primaryButtonIs()"):print("new val",val)
-                                    GermCommander:applyConfigForPrimaryButtonIs("config_delta_prime")
-                                end,
-                                get = function()
-                                    return Config:get("primaryButtonIs")
-                                end,
                             },
-
-                            promoteViaShiftKey = {
-                                order = 230,
-                                -- hidden = function() return Config:get("primaryButtonIs") ~= PrimaryButtonIs.FIRST end,
-                                type = 'description',
-                                -- fontSize = "small",
-                                name = EOL
-                                        .. L10N.cfg.ANY_BUTTON_CAN_BE_PROMOTED -- 'Also, any button can be promoted to "Primary" by holding a modifier key (shift, control, etc) while clicking the button.'
-                                        .. EOLx3
-                            },
-
                         },
+
                     },
+
 
 
 
@@ -413,39 +436,50 @@ local function initializeOptionsMenu()
                     -- Mouse Click opts
                     -------------------------------------------------------------------------------
 
-                    mouseClickDiv = {
-                        order = 300,
-                        name =L10N.cfg.MOUSE_BUTTONS, --"Mouse Buttons",
-                        type = 'header',
-                    },
-
-                    mouseClickHelp = {
-                        order = 310,
-                        type = 'description',
-                        name = L10N.cfg.YOU_CAN_CHOOSE_A_DIFFERENT, -- You can choose a different action for each mouse button when it clicks on a UFO.
-                    },
-
-                    mouseClickGroup = {
-                        order = 320,
-                        name = " ",
+                    mouseClickSection = {
+                        order = 40,
+                        name = "Mouse Clicks",
                         type = "group",
-                        inline = true, -- set this to false to enable multiple configs, one per flyout.
+                        childGroups = "tree",
+                        --inline = false,
                         args = {
+                            mouseClickDiv = {
+                                order = 300,
+                                name = L10N.cfg.MOUSE_BUTTONS, --"Mouse Buttons",
+                                type = 'header',
+                            },
 
-                            leftBtn   = includeMouseButtonOpts(MouseClick.LEFT),
-                            middleBtn = includeMouseButtonOpts(MouseClick.MIDDLE),
-                            rightBtn  = includeMouseButtonOpts(MouseClick.RIGHT),
-                            fourBtn   = includeMouseButtonOpts(MouseClick.FOUR),
-                            fiveBtn   = includeMouseButtonOpts(MouseClick.FIVE),
+                            mouseClickHelp = {
+                                order = 310,
+                                type = 'description',
+                                name = L10N.cfg.YOU_CAN_CHOOSE_A_DIFFERENT, -- You can choose a different action for each mouse button when it clicks on a UFO.
+                            },
+
+                            mouseClickGroup = {
+                                order = 320,
+                                name = " ",
+                                type = "group",
+                                inline = true,
+                                args = {
+
+                                    leftBtn   = includeMouseButtonOpts(MouseClick.LEFT),
+                                    middleBtn = includeMouseButtonOpts(MouseClick.MIDDLE),
+                                    rightBtn  = includeMouseButtonOpts(MouseClick.RIGHT),
+                                    fourBtn   = includeMouseButtonOpts(MouseClick.FOUR),
+                                    fiveBtn   = includeMouseButtonOpts(MouseClick.FIVE),
+                                },
+                            },
+
+                            excluderHelpText = {
+                                order = 330,
+                                type = 'description',
+                                fontSize = "small",
+                                name = EOL .. L10N.cfg.TIP_IN_THE_CATALOG .. EOLx3, --Tip: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions.
+                            },
+
                         },
                     },
 
-                    excluderHelpText = {
-                        order = 330,
-                        type = 'description',
-                        fontSize = "small",
-                        name = EOL .. L10N.cfg.TIP_IN_THE_CATALOG .. EOLx3, --Tip: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions.
-                    },
 
 
 
@@ -453,40 +487,24 @@ local function initializeOptionsMenu()
                     -- Keybinds
                     -------------------------------------------------------------------------------
 
-                    keybindGroup = {
-                        order = 400,
-                        name = L10N.cfg.KEYBINDING_BEHAVIOR, --"Keybinding Behavior",
+                    keybindsSection = {
+                        order = 45,
+                        name = L10N.cfg.KEYBINDS, --"Keybinding Behavior",
                         type = "group",
-                        inline = true, -- set this to false to enable multiple configs, one per flyout.
+                        --inline = true,
                         args = {
-                            mkeybindHelp = {
+                            keybindDiv = {
+                                order = 1,
+                                name =  L10N.cfg.KEYBINDING_BEHAVIOR, -- 'The "Primary Button"',
+                                type = 'header',
+                            },
+                            keybindHelp = {
                                 order = 10,
                                 type = 'description',
-                                name = L10N.cfg.UFOS_ON_THE_ACTION_BARS .. EOLx2, --UFOs on the action bars support keybindings.  Buttons on UFOs can be configured to also have keybindings.
+                                name = L10N.cfg.UFOS_ON_THE_ACTION_BARS, --UFOs on the action bars support keybindings.
                             },
-
-                            hotkeyWhenOpen = {
-                                order = 20,
-                                name = L10N.cfg.HOT_KEY_THE_BUTTONS_ON_A_UFO, --"Hot Key the Buttons on a UFO",
-                                desc = L10N.cfg.WHILE_OPEN_ASSIGN_KEYS, --"While open, assign keys 1 through 9 and 0 to the first 10 buttons on the UFO.",
-                                width = "double",
-                                type = "select",
-                                style = "dropdown",
-                                values = {
-                                    [true] = L10N.cfg.BIND_EACH_BUTTON, --"Bind each button to a number (Escape to close).",
-                                    [false] = L10N.cfg.AN_OPEN_UFO_WONT, --"An open UFO won't intercept key presses.",
-                                },
-                                set = function(_, doKeybindTheButtonsOnTheFlyout)
-                                    opts.doKeybindTheButtonsOnTheFlyout = doKeybindTheButtonsOnTheFlyout
-                                    GermCommander:applyConfigForBindTheButtons("Config-doKeybindTheButtonsOnTheFlyout")
-                                end,
-                                get = function()
-                                    return Config:get("doKeybindTheButtonsOnTheFlyout")
-                                end,
-                            },
-
                             keybindBehavior = {
-                                order = 30,
+                                order = 20,
                                 name = L10N.cfg.ACTIONBAR_KEYBINDING, --"Actionbar Keybinding",
                                 desc = L10N.cfg.A_UFO_ON_AN_ACTIONBAR_BUTTON_WILL_RESPOND, --"A UFO on an actionbar button will respond to any keybinding you've given that button.  Choose what the keybind does:",
                                 width = "double",
@@ -506,15 +524,47 @@ local function initializeOptionsMenu()
                                 end,
                             },
 
+                            hotKeyHelp = {
+                                order = 30,
+                                type = 'description',
+                                name = EOLx2 .. L10N.cfg.BUTTONS_ON_UFOS, -- Buttons on UFOs can be configured to also have keybindings.
+                            },
+                            hotkeyWhenOpen = {
+                                order = 40,
+                                name = L10N.cfg.HOT_KEY_THE_BUTTONS_ON_A_UFO, --"Hot Key the Buttons on a UFO",
+                                desc = L10N.cfg.WHILE_OPEN_ASSIGN_KEYS, --"While open, assign keys 1 through 9 and 0 to the first 10 buttons on the UFO.",
+                                width = "double",
+                                type = "select",
+                                style = "dropdown",
+                                values = {
+                                    [true] = L10N.cfg.BIND_EACH_BUTTON, --"Bind each button to a number (Escape to close).",
+                                    [false] = L10N.cfg.AN_OPEN_UFO_WONT, --"An open UFO won't intercept key presses.",
+                                },
+                                set = function(_, doKeybindTheButtonsOnTheFlyout)
+                                    opts.doKeybindTheButtonsOnTheFlyout = doKeybindTheButtonsOnTheFlyout
+                                    GermCommander:applyConfigForBindTheButtons("Config-doKeybindTheButtonsOnTheFlyout")
+                                end,
+                                get = function()
+                                    return Config:get("doKeybindTheButtonsOnTheFlyout")
+                                end,
+                            },
+
+
 
                             -------------------------------------------------------------------------------
                             -- Keymods
                             -------------------------------------------------------------------------------
 
+                            keymodSpacer = {
+                                order = 50,
+                                type = 'description',
+                                name = EOLx2 .. " ",
+                            },
+
                             enableBonusModifierKeys = {
                                 order = 500,
                                 name = L10N.cfg.ENABLE_MODIFIER_KEYS_FOR_KEYBINDS, --"Enable Modifier Keys for Keybinds",
-                                desc = L10N.cfg.INCORPORATE_SHIFT_ETC, --"Incorporate shift, control, etc when using keybindings.",
+                                desc = EOLx2 .. L10N.cfg.INCORPORATE_SHIFT_ETC, --"Incorporate shift, control, etc when using keybindings.",
                                 width = "double",
                                 type = "toggle",
                                 set = function(optionsMenu, val)
@@ -529,7 +579,7 @@ local function initializeOptionsMenu()
                                 order = 510,
                                 name = L10N.cfg.INCORPORATE_SHIFT_ETC, --"Modifier Keys for Keybindings",
                                 type = "group",
-                                inline = true, -- set this to false to enable multiple configs, one per flyout.
+                                inline = true,
                                 hidden = function() return not Config:get("enableBonusModifierKeys")  end,
                                 args = {
                                     keymodHelp = {
@@ -570,9 +620,8 @@ local function initializeOptionsMenu()
 
                             },
                         },
+
                     },
-
-
 
 
 
@@ -581,44 +630,54 @@ local function initializeOptionsMenu()
                     -- Place Holder options
                     -------------------------------------------------------------------------------
 
-                    placeHoldersHeader = {
-                        order = 600,
-                        name = L10N.cfg.PLACEHOLDER_MACROS_VS_EDIT_MODE_CONFIG, --"PlaceHolder Macros VS Edit Mode Config",
-                        type = 'header',
-                    },
-                    helpTextForPlaceHolders = {
-                        order = 610,
-                        type = 'description',
-                        name = L10N.cfg.EACH_UFO_PLACED,
-                        -- Each UFO placed onto an action bar has a special macro (named "]=].. Ufo.PLACEHOLDER_MACRO_NAME ..[=[") to hold its place as a button and ensure the UI renders it.
-                        -- You may disable placeholder macros, but, doing so will require extra UI configuration on your part: You must set the "Always Show Buttons" config option for action bars in Bliz UI "Edit Mode" (in Bartender4 the same option is called "Button Grid").
+                    placeHoldersSection = {
+                        order = 50,
+                        name = "PlaceHolders",
+                        type = "group",
+                        childGroups = "tree",
+                        --inline = false,
+                        args = {
+                            placeHoldersHeader = {
+                                order = 600,
+                                name = L10N.cfg.PLACEHOLDER_MACROS_VS_EDIT_MODE_CONFIG, --"PlaceHolder Macros VS Edit Mode Config",
+                                type = 'header',
+                            },
+                            helpTextForPlaceHolders = {
+                                order = 610,
+                                type = 'description',
+                                name = L10N.cfg.EACH_UFO_PLACED,
+                                -- Each UFO placed onto an action bar has a special macro (named "]=].. Ufo.PLACEHOLDER_MACRO_NAME ..[=[") to hold its place as a button and ensure the UI renders it.
+                                -- You may disable placeholder macros, but, doing so will require extra UI configuration on your part: You must set the "Always Show Buttons" config option for action bars in Bliz UI "Edit Mode" (in Bartender4 the same option is called "Button Grid").
 
-                    },
-                    usePlaceHolders = {
-                        order = 620,
-                        name = L10N.cfg.CHOOSE_YOUR_WORKAROUND, --"Choose your workaround:",
-                        desc = L10N.cfg.BECAUSE_UFOS_ARENT_SPELLS, --"Because UFOs aren't spells or items, when they are placed into an action bar slot, the UI thinks that slot is empty and doesn't render the slot by default.",
-                        width = "full",
-                        type = "select",
-                        style = "radio",
-                        values = {
-                            [true]  = L10N.cfg.PLACEHOLDER_MACROS, --"Placeholder Macros",
-                            [false] = L10N.cfg.EXTRA_UI_CONFIGURATION, --"Extra UI Configuration" ,
+                            },
+                            usePlaceHolders = {
+                                order = 620,
+                                name = L10N.cfg.CHOOSE_YOUR_WORKAROUND, --"Choose your workaround:",
+                                desc = L10N.cfg.BECAUSE_UFOS_ARENT_SPELLS, --"Because UFOs aren't spells or items, when they are placed into an action bar slot, the UI thinks that slot is empty and doesn't render the slot by default.",
+                                width = "full",
+                                type = "select",
+                                style = "radio",
+                                values = {
+                                    [true]  = L10N.cfg.PLACEHOLDER_MACROS, --"Placeholder Macros",
+                                    [false] = L10N.cfg.EXTRA_UI_CONFIGURATION, --"Extra UI Configuration" ,
+                                },
+                                sorting = {true,false},
+                                set = function(optionsMenu, val)
+                                    opts.usePlaceHolders = val
+                                    zebug.info:name("opt:usePlaceHolders()"):print("new val",val)
+                                    if val then
+                                        GermCommander:ensureAllGermsHavePlaceholders("config_delta_ph")
+                                    else
+                                        Config:deletePlaceholder()
+                                    end
+                                end,
+                                get = function()
+                                    return opts.usePlaceHolders
+                                end,
+                            },
                         },
-                        sorting = {true,false},
-                        set = function(optionsMenu, val)
-                            opts.usePlaceHolders = val
-                            zebug.info:name("opt:usePlaceHolders()"):print("new val",val)
-                            if val then
-                                GermCommander:ensureAllGermsHavePlaceholders("config_delta_ph")
-                            else
-                                Config:deletePlaceholder()
-                            end
-                        end,
-                        get = function()
-                            return opts.usePlaceHolders
-                        end,
                     },
+
 
 
 
@@ -626,31 +685,40 @@ local function initializeOptionsMenu()
                     -- Snapshot
                     -------------------------------------------------------------------------------
 
-                    snapshotHeader = {
-                        order = 700,
-                        name = L10N.cfg.SNAPSHOT,
-                        type = 'header',
-                    },
-                    helpTextForSnapshot = {
-                        order = 710,
-                        type = 'description',
-                        name = L10N.cfg.SNAPSHOT_HELP,
-                    },
-                    snapshotSave = {
-                        order = 720,
-                        name = L10N.cfg.SNAPSHOT_SAVE_BTN,
-                        desc = L10N.SLASH_DESC_SNAPSHOT_SAVE,
-                        --width = "full",
-                        type = "execute",
-                        func = DB.snapshotSave,
-                    },
-                    snapshotLoad = {
-                        order = 730,
-                        name = L10N.cfg.SNAPSHOT_LOAD_BTN,
-                        desc = L10N.SLASH_DESC_SNAPSHOT_LOAD,
-                        type = "execute",
-                        func = DB.snapshotLoad,
-                        hidden = DB.isNoSnapshot
+                    snapshotSection = {
+                        order = 60,
+                        name = "Snapshot",
+                        type = "group",
+                        childGroups = "tree",
+                        --inline = false,
+                        args = {
+                            snapshotHeader = {
+                                order = 700,
+                                name = L10N.cfg.SNAPSHOT,
+                                type = 'header',
+                            },
+                            helpTextForSnapshot = {
+                                order = 710,
+                                type = 'description',
+                                name = L10N.cfg.SNAPSHOT_HELP,
+                            },
+                            snapshotSave = {
+                                order = 720,
+                                name = L10N.cfg.SNAPSHOT_SAVE_BTN,
+                                desc = L10N.SLASH_DESC_SNAPSHOT_SAVE,
+                                --width = "full",
+                                type = "execute",
+                                func = DB.snapshotSave,
+                            },
+                            snapshotLoad = {
+                                order = 730,
+                                name = L10N.cfg.SNAPSHOT_LOAD_BTN,
+                                desc = L10N.SLASH_DESC_SNAPSHOT_LOAD,
+                                type = "execute",
+                                func = DB.snapshotLoad,
+                                hidden = DB.isNoSnapshot
+                            },
+                        },
                     },
                 },
             },

@@ -114,13 +114,15 @@ YOU_CAN_CHOOSE_A_DIFFERENT = "You can choose a different action for each mouse b
 ANY_BUTTON_CAN_BE_PROMOTED = 'TIP: any button can be promoted to "Primary" by holding a modifier key (shift, control, etc) while clicking the button.'
 MAX_LEN_HELP = "How many buttons can a flyout display on a single line before it splits itself into multiple lines?  A value of 15 means 16 buttons would be displayed as 2 lines of 8."
 TIP_IN_THE_CATALOG = [=[TIP: In the catalog, open a UFO and right click a button to exclude it from the "random" and "cycle" actions. ]=]
+KEYBINDS = "Keybinds"
 KEYBINDING_BEHAVIOR = "Keybinding Behavior"
-UFOS_ON_THE_ACTION_BARS = [=[ UFOs on the action bars support keybindings.  Buttons on UFOs can be configured to also have keybindings. ]=]
+UFOS_ON_THE_ACTION_BARS = "UFOs on the action bars support keybindings."
+BUTTONS_ON_UFOS = "Buttons on UFOs can be configured to also have keybindings."
 HOT_KEY_THE_BUTTONS_ON_A_UFO = "Hot Key the Buttons on a UFO"
 WHILE_OPEN_ASSIGN_KEYS = "While open, assign keys 1 through 9 and 0 to the first 10 buttons on the UFO."
 BIND_EACH_BUTTON = "Bind each button to a number (Escape to close)."
 AN_OPEN_UFO_WONT = "An open UFO won't intercept key presses."
-ACTIONBAR_KEYBINDING = "Actionbar Keybinding"
+ACTIONBAR_KEYBINDING = "Actionbar keybinding will..."
 A_UFO_ON_AN_ACTIONBAR_BUTTON_WILL_RESPOND = "A UFO on an actionbar button will respond to any keybinding you've given that button.  Choose what the keybind does:"
 ENABLE_MODIFIER_KEYS_FOR_KEYBINDS = "Enable Modifier Keys for Keybinds"
 INCORPORATE_SHIFT_ETC = "Incorporate shift, control, etc when using keybindings."
