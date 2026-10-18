@@ -26,6 +26,7 @@ locales\index.xml
 SecEnvDrugMule.lua
 UfoMixin.lua
 DB.lua
+presets\index.xml
 Config.lua
 Placeholder.lua
 SpecHelper.lua

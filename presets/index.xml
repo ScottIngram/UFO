@@ -1,0 +1,19 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd"
+>
+    <Script file="Preset.lua"/>
+    <Script file="buff.lua"/>
+    <Script file="ride.lua"/>
+    <Script file="hearthstone.lua"/>
+    <Script file="mage_portal.lua"/>
+    <Script file="mage_teleport.lua"/>
+    <Script file="invtory_mgmnt.lua"/>
+    <Script file="trade_skills.lua"/>
+    <Script file="heal.lua"/>
+    <Script file="cure.lua"/>
+    <Script file="delve.lua"/>
+    <Script file="parachute.lua"/>
+    <Script file="vision.lua"/>
+
+</Ui>

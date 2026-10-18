@@ -66,21 +66,6 @@ PrimaryButtonIs = {
     RECENT = "RECENT",
 }
 
----@class PresetUfos
-PresetUfos = {
-    BUFF = { "Buffs", 'Interface/ICONS/spell_holy_arcaneintellect.blp' },
-    RIDE = { "Ride",  'Interface/ICONS/achievement_halloween_witch_01.blp' },
-    HEARTHSTONE   = { "Hearthstones",  'Interface/ICONS/achievement_guildperk_hastyhearth.blp'},
-    MAGE_PORTAL   = { "Mage Portal",   'Interface/ICONS/spell_arcane_portaldalaran.blp' },
-    MAGE_TELEPORT = { "Mage Teleport", 'Interface/ICONS/spell_arcane_teleportdalaran.blp' },
-    INVTORY_MGMNT = { "Invtory Mgmnt", 'Interface/ICONS/achievement_guildperk_mobilebanking.blp' },
-    TRADE_SKILLS  = { "Trade Skills",  'Interface/ICONS/ui_profession_tailoring.blp' },
-    HEAL  = { "Heal",   'Interface/ICONS/achievement_guild_doctorisin.blp' },
-    CURE  = { "Cure",   'Interface/ICONS/petbattle_health.blp' },
-    DELVE = { "Delves", 'Interface/ICONS/icon_treasuremap.blp' },
-    PARACHUTE = { "Parachute",  'Interface/ICONS/archaeology_5_0_umbrellaofchiji.blp' },
-}
-
 -------------------------------------------------------------------------------
 -- Constants
 -------------------------------------------------------------------------------
@@ -167,18 +152,31 @@ local function initializeOptionsMenu()
                         order = 20,
                         type = "group",
                         inline = true,
-                        args = Config:makePresetButtons(
-                            PresetUfos.HEARTHSTONE
-                            , PresetUfos.BUFF
-                            , PresetUfos.MAGE_TELEPORT
-                            , PresetUfos.MAGE_PORTAL
-                            , PresetUfos.RIDE
-                            , PresetUfos.INVTORY_MGMNT
-                            , PresetUfos.HEAL
-                            , PresetUfos.CURE
-                            , PresetUfos.DELVE
-                            , PresetUfos.PARACHUTE
-                        ),
+                        args = Config:makeButtonsForPresets()
+--[[
+                            Preset.Ids.HEARTHSTONE
+                            , Preset.Ids.BUFF
+                            , Preset.Ids.MAGE_TELEPORT
+                            , Preset.Ids.MAGE_PORTAL
+                            , Preset.Ids.RIDE
+                            , Preset.Ids.INVTORY_MGMNT
+                            , Preset.Ids.HEAL
+                            , Preset.Ids.CURE
+                            , Preset.Ids.DELVE
+                            , Preset.Ids.PARACHUTE
+]]
+--[[
+                              Preset.Ufo.HEARTHSTONE
+                            , Preset.Ufo.BUFF
+                            , Preset.Ufo.MAGE_TELEPORT
+                            , Preset.Ufo.MAGE_PORTAL
+                            , Preset.Ufo.RIDE
+                            , Preset.Ufo.INVTORY_MGMNT
+                            , Preset.Ufo.HEAL
+                            , Preset.Ufo.CURE
+                            , Preset.Ufo.DELVE
+                            , Preset.Ufo.PARACHUTE
+]]
                     },
                 }
             },
@@ -1038,28 +1036,31 @@ end
 
 Config.deletePlaceholder = Pacifier:wrap(Config.deletePlaceholder, L10N.DELETE_PLACEHOLDERS)
 
-function Config:makePresetButtons(...)
-    local result
-    for i = 1, select("#", ...) do
-        if not result then result = {} end
-        local config = select(i, ...)
-        local label = config[1]
-        local icon = config[2]
-        zebug.error:print("Config:makePresetButtons... label",label, "icon",icon)
-        result[label] = {
+function Config:makeButtonsForPresets()
+    local i = 100
+    local result = {}
+    Preset:forEach(function(id)
+        local cfg = Preset.defs[id]
+        if not cfg then
+            error("no cfg for"..id)
+        end
+        zebug.warn:print("Config:makePresetButtons... id", id, "name",cfg.name, "icon",cfg.Ace3icon)
+        result[id] = {
             type = "execute",
-            order = 100 + i,
-            name = label,
-            image = icon,
+            order = i,
+            name = cfg.name,
+            image = cfg.Ace3icon,
             width = "half",
-            descStyle = inline,
+            descStyle = "inline",
             func = function()
-                zebug.error:print("you clicked:", label)
+                zebug.warn:print("you clicked:", cfg.name)
+                Preset:install(id)
             end,
         }
-    end
+        i = i + 1
+    end)
 
-    -- zebug.error:dumpy("Config:makePresetButtons RESULT",result)
+    -- zebug.warn:dumpy("Config:makePresetButtons RESULT",result)
 
 
     return result -- and unpack(result)
