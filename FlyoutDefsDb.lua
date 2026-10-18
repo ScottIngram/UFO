@@ -176,9 +176,16 @@ function FlyoutDefsDb:getByIndex(flyoutIndex)
 end
 
 ---@return FlyoutDef
-function FlyoutDefsDb:appendNewOne()
-    local newDef = FlyoutDef:new()
-    newDef.id = newDef:newId() -- unlike germs, new flyouts in the catalog are given an ID because they are persisted to SAVED_VARs
+---@param newDef table|nil
+function FlyoutDefsDb:appendNewOne(newDef)
+    if newDef then
+        newDef = FlyoutDef:oneOfUs(newDef)
+    else
+        newDef = FlyoutDef:new()
+    end
+    if not newDef.id then
+        newDef.id = newDef:newId()
+    end
     self:add(newDef)
     return newDef
 end

@@ -40,6 +40,10 @@ function FlyoutDef:oneOfUs(self)
         return self
     end
 
+    if not self.btns then
+        self.btns = {}
+    end
+
     -- create a table to store stuff that we do NOT want persisted out to SAVED_VARIABLES
     -- and attach methods to get and put that data
     local privateCache = {

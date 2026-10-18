@@ -386,9 +386,10 @@ function Catalog:setToolTip(btnInCatalog)
 end
 
 function Catalog:addNewFlyout(name, icon)
-    local flyoutDef = FlyoutDefsDb:appendNewOne()
-    flyoutDef.name = name
-    flyoutDef.icon = icon
+    FlyoutDefsDb:appendNewOne({
+        name = name,
+        icon = icon
+    })
 end
 
 -------------------------------------------------------------------------------
