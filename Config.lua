@@ -1044,7 +1044,7 @@ function Config:makeButtonsForPresets()
         if not cfg then
             error("no cfg for"..id)
         end
-        zebug.warn:print("Config:makePresetButtons... id", id, "name",cfg.name, "icon",cfg.Ace3icon)
+        zebug.trace:print("Config:makePresetButtons... id", id, "name",cfg.name, "icon",cfg.Ace3icon)
         result[id] = {
             type = "execute",
             order = i,

@@ -50,11 +50,6 @@ Preset.defs[id] = {
         },
         {
             ["type"] = "toy",
-            ["name"] = "All-Seer's Eye",
-            ["itemId"] = 153204,
-        },
-        {
-            ["type"] = "toy",
             ["name"] = "Farwater Conch",
             ["itemId"] = 86581,
         },
@@ -67,6 +62,11 @@ Preset.defs[id] = {
             ["type"] = "item",
             ["name"] = "Scrying Roguestone",
             ["itemId"] = 83795,
+        },
+        {
+            ["type"] = "toy",
+            ["name"] = "All-Seer's Eye",
+            ["itemId"] = 153204,
         },
         {
             ["type"] = "toy",

@@ -29,12 +29,6 @@ Preset.defs[id] = {
             ["itemId"] = 257736,
         },
         {
-            ["type"] = "item",
-            ["name"] = "Nostwin's Voucher",
-            ["itemId"] = 238727,
-            ["noRnd"] = true,
-        },
-        {
             ["type"] = "toy",
             ["name"] = "Enlightened Hearthstone",
             ["itemId"] = 190196,
@@ -165,6 +159,11 @@ Preset.defs[id] = {
             ["itemId"] = 142542,
         },
         {
+            ["name"] = "The Innkeeper's Daughter",
+            ["type"] = "toy",
+            ["itemId"] = 64488,
+        },
+        {
             ["type"] = "spell",
             ["spellId"] = 556,
             ["name"] = "Astral Recall",
@@ -179,6 +178,7 @@ Preset.defs[id] = {
             ["name"] = "Delver's Mana-Bound Ethergate",
             ["type"] = "toy",
             ["itemId"] = 243056,
+            ["noRnd"] = true,
         },
         {
             ["name"] = "Argent Crusader's Tabard",
@@ -190,6 +190,7 @@ Preset.defs[id] = {
             ["type"] = "toy",
             ["name"] = "Lightveil Recall Beacon",
             ["itemId"] = 276371,
+            ["noRnd"] = true,
         },
         {
             ["type"] = "toy",

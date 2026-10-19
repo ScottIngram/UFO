@@ -9,7 +9,7 @@ Ufo.Wormhole()
 local id = Preset.ids.PARACHUTE
 Preset.defs[id] = {
     ["name"] = "Parachute",
-    ["icon"] = 644385,
+    --["icon"] = 644385,
     ["Ace3icon"] = "Interface/ICONS/archaeology_5_0_umbrellaofchiji.blp",
     ["id"] = id,
     ["btns"] = {

@@ -24,6 +24,7 @@ Preset = {
         TRADE_SKILLS = "TRADE_SKILLS",
         BUFF = "BUFF",
         RIDE = "RIDE",
+        NOMZ = "NOMZ",
         HEAL = "HEAL",
         CURE = "CURE",
         DELVE = "DELVE",
@@ -43,6 +44,7 @@ Preset.Order = {
     Preset.ids.TRADE_SKILLS,
     Preset.ids.BUFF,
     Preset.ids.RIDE,
+    Preset.ids.NOMZ,
     Preset.ids.HEAL,
     Preset.ids.CURE,
     Preset.ids.DELVE,
@@ -99,6 +101,15 @@ end
 -- Methods
 -------------------------------------------------------------------------------
 
+function Preset:getDef(id)
+    local preset = Preset.defs[id]
+    if isFunction(preset) then
+        return preset()
+    else
+        return preset
+    end
+end
+
 ---@param callback fun(id:number)
 function Preset:forEach(callback)
     validate() -- ensure Order contains all Ids
@@ -108,7 +119,8 @@ function Preset:forEach(callback)
 end
 
 function Preset:install(id)
-    local preset = Preset.defs[id]
+    local preset = self:getDef(id)
+
     -- check if it already exists in catalog, if so, warn & abort.
     local all = FlyoutDefsDb:getAll()
     local ufo = all[id]
@@ -122,10 +134,44 @@ function Preset:install(id)
 
     preset = deepcopy(preset)
     zebug.warn:dumpy("Preset", preset)
+    if isFunction(preset.btns) then
+        preset.btns = preset.btns()
+    end
     local flyoutDef = FlyoutDefsDb:appendNewOne(preset)
     zebug.warn:dumpy("flyoutDef", flyoutDef)
 
     -- TODO: if locale is not en_US, replace all of the names
 
     Catalog:update("PRESET-INSTALL")
+end
+
+---@return table<number,number> array of spellIds
+function Preset:getSpellsFromFlyout(...)
+    local spells = {}
+    local alreadySeen = {}
+
+    for i = 1, select("#", ...) do
+        local flyoutId = select(i, ...)
+        local name, description, numSlots, isKnown = _G.GetFlyoutInfo(flyoutId)
+        zebug.trace:print("Flyout name",name, "numSlots",numSlots)
+
+        for i = 1, numSlots do
+            local spellId, overrideSpellId, isKnown, name, slotSpecId = GetFlyoutSlotInfo(flyoutId, i)
+            zebug.warn:print("Flyout name",name, "#",i, "name",name, "isKnown",isKnown, "alreadySeen", alreadySeen[spellId])
+            if alreadySeen[spellId] then
+                zebug.info:mCircle():print("skipping redundant name",name, "spellId",spellId)
+
+            else
+                spells[#spells+1] = {
+                    type = ButtonType.SPELL,
+                    name = name,
+                    spellId = spellId,
+                    overrideSpellId = overrideSpellId,
+                }
+                alreadySeen[spellId] = true
+            end
+        end
+    end
+
+    return spells
 end

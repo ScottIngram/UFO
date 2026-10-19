@@ -15,5 +15,6 @@
     <Script file="delve.lua"/>
     <Script file="parachute.lua"/>
     <Script file="vision.lua"/>
+    <Script file="nomz.lua"/>
 
 </Ui>
