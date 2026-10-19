@@ -134,12 +134,12 @@ function Preset:install(id)
     end
 
     preset = deepcopy(preset)
-    zebug.warn:dumpy("Preset", preset)
+    --zebug.warn:dumpy("Preset", preset)
     if isFunction(preset.btns) then
         preset.btns = preset.btns()
     end
     local flyoutDef = FlyoutDefsDb:appendNewOne(preset)
-    zebug.warn:dumpy("flyoutDef", flyoutDef)
+    --zebug.warn:dumpy("flyoutDef", flyoutDef)
 
     -- TODO: if locale is not en_US, replace all of the names
 
@@ -160,11 +160,12 @@ function Preset:getSpellsFromFlyout(...)
 
         for i = 1, numSlots do
             local spellId, overrideSpellId, isKnown, name, slotSpecId = GetFlyoutSlotInfo(flyoutId, i)
-            zebug.warn:print("Flyout name",name, "#",i, "name",name, "isKnown",isKnown, "alreadySeen", alreadySeen[spellId])
+            zebug.trace:print("Flyout name",name, "#",i, "name",name, "isKnown",isKnown, "alreadySeen", alreadySeen[spellId])
             if alreadySeen[spellId] then
+                --msgUser("already included ", name)
                 zebug.info:mCircle():print("skipping redundant name",name, "spellId",spellId)
-
             else
+                msgUser("adding ", name)
                 spells[#spells+1] = {
                     type = ButtonType.SPELL,
                     name = name,

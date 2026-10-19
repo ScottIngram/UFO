@@ -10,8 +10,8 @@ local id = Preset.ids.RIDE
 
 Preset.defs[id] = {
     ["name"] = "Ride",
-    --["icon"] = 236552,
-    ["Ace3icon"] = "Interface/ICONS/achievement_halloween_witch_01.blp",
+    ["icon"] = 413588,
+    ["Ace3icon"] = "Interface/ICONS/achievement_guildperk_mountup.blp",
     ["id"] = id,
     ["btns"] = {
         {
@@ -25,6 +25,7 @@ Preset.defs[id] = {
             ["type"] = "summonmount",
             ["name"] = "Summon Random Favorite Mount",
             ["id"] = "summonmount",
+            ["noRnd"] = true,
         },
         {
             ["name"] = "Zen Flight",

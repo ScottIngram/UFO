@@ -30,6 +30,7 @@ local GREEN = GREEN_FONT_COLOR -- Bliz global
 local BLUE = BRIGHTBLUE_FONT_COLOR -- Bliz global
 local ADD_BUTTON_NAME = "ADD_BUTTON_NAME"
 local LANDING_BUTTON_NAME = "LANDING_BUTTON_NAME"
+local PRESET_BUTTON_NAME = "PRESET_BUTTON_NAME"
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -183,7 +184,8 @@ function Catalog:update(event)
     event = event or NO_EVENT
     local scrollPane = UFO_CatalogScrollPane
     local flyoutsCount = FlyoutDefsDb:howMany()
-    local theAddButton = flyoutsCount + 1
+    local thePresetsButton = flyoutsCount + 1
+    local theAddButton = flyoutsCount + 2
     HybridScrollFrame_Update(scrollPane, theAddButton * EQUIPMENTSET_BUTTON_HEIGHT + 20, scrollPane:GetHeight())
     local scrollOffset = HybridScrollFrame_GetOffset(scrollPane) -- how many buttons have scrolled up out of sight
     local visibleBtnFrames = scrollPane.buttons -- how many buttons are actually onscreen (or almost onscreen)
@@ -213,15 +215,21 @@ function Catalog:update(event)
             btnFrame:Show()
             btnFrame:Enable()
 
-            if row == theAddButton then
+            if (row == theAddButton) or (row == thePresetsButton) then
                 -- insert the PLUS button at the bottom
-                btnFrame.name = ADD_BUTTON_NAME
+                btnFrame.name = (row == theAddButton) and ADD_BUTTON_NAME or PRESET_BUTTON_NAME
                 btnFrame.label = nil
                 btnFrame.flyoutIndex = row
                 btnFrame.flyoutId = nil
-                btnFrame.text:SetText(L10N.NEW_FLYOUT)
-                btnFrame.text:SetTextColor(GREEN.r, GREEN.g, GREEN.b)
-                btnFrame.icon:SetTexture("Interface\\PaperDollInfoFrame\\Character-Plus")
+                if row == theAddButton then
+                    btnFrame.text:SetText(L10N.NEW_UFO)
+                    btnFrame.text:SetTextColor(GREEN.r, GREEN.g, GREEN.b)
+                    btnFrame.icon:SetTexture("Interface\\PaperDollInfoFrame\\Character-Plus")
+                else
+                    btnFrame.text:SetText(L10N.OPEN_PRESETS)
+                    btnFrame.text:SetTextColor(BRIGHTBLUE_FONT_COLOR.r, BRIGHTBLUE_FONT_COLOR.g, BRIGHTBLUE_FONT_COLOR.b)
+                    btnFrame.icon:SetTexture(Ufo.iconTexture)
+                end
                 btnFrame.icon:SetSize(30, 30)
                 btnFrame.icon:SetPoint(Anchor.LEFT, 7, 0)
                 btnFrame.SelectedBar:Hide()
@@ -243,7 +251,7 @@ function Catalog:update(event)
                 -- if the user is moving a flyout to a new position in the catalog
                 -- then offset the other flyouts to make room for it
                 local flyoutIndex = row -- default to the actual row
-                if hoverIndex and hoverIndex ~= theAddButton and flyoutIndexOnTheMouse then
+                if hoverIndex and (hoverIndex ~= theAddButton) and (hoverIndex ~= thePresetsButton) and flyoutIndexOnTheMouse then
                     zebug.trace:event(event):print("row",row, "hoverIndex",hoverIndex, "flyoutIndexOnTheMouse",flyoutIndexOnTheMouse)
                     if row > hoverIndex and row <= flyoutIndexOnTheMouse then
                         flyoutIndex = row - 1
@@ -313,7 +321,7 @@ function Catalog:update(event)
                 btnFrame.BgMiddle:SetPoint(Anchor.TOP)
             end
 
-            if (row) == theAddButton then
+            if (row == theAddButton) or (row == thePresetsButton) then
                 btnFrame.BgBottom:Show()
                 btnFrame.BgMiddle:SetPoint(Anchor.BOTTOM, btnFrame.BgBottom, Anchor.TOP)
             else
@@ -458,7 +466,7 @@ function UFO_CatalogScrollPane_DoUpdate(scrollPane)
     for i = 1, #scrollPane.buttons do
         local button = scrollPane.buttons[i]
         if button:IsMouseOver() then
-            if button.name == ADD_BUTTON_NAME then
+            if (button.name == ADD_BUTTON_NAME) or (button.name == PRESET_BUTTON_NAME) then
                 button.deleteButton:Hide()
                 button.editButton:Hide()
             else
@@ -578,6 +586,9 @@ function CatalogEntry:OnClick(mouseClick, down)
     if ADD_BUTTON_NAME == self.name then
         Catalog:selectRow(nil, event)
         IconPicker:open()
+    elseif PRESET_BUTTON_NAME == self.name then
+        Catalog:selectRow(nil, event)
+        Config:openPresets()
     elseif LANDING_BUTTON_NAME == self.name then
         local flyoutDefOnTheCursor = UfoProxy:isFlyoutOnCursor()
         local isDragging = flyoutDefOnTheCursor and btnUnderTheMouse

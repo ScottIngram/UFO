@@ -145,7 +145,7 @@ local function initializeOptionsMenu()
                         order = 10,
                         type = 'description',
                         fontSize = "small",
-                        name = "These are pre-configured UFOs to get you started or inspire you.  Clicking any of the buttons below will create an entry in your Catalog for a UFO cram-packed with my choices for relevant spells/toys/items/etc.  Once in your Catalog, they are normal UFOs like any other: you can drag them onto your bars, customize them, rearrange their buttons, etc." .. EOL
+                        name = "These are pre-configured UFOs to get you started or inspire you.  Clicking any of the buttons below will create an entry in your Catalog for a UFO cram-packed with my choices for relevant spells/toys/items/etc. (The Mage Portal/Teleports are actually dynamic and will keep themselves up-to-date).  Once in your Catalog, they are normal UFOs like any other: you can drag them onto your bars, customize them, rearrange their buttons, etc." .. EOL
                     },
                     buttons = {
                         name = " ",
@@ -994,18 +994,27 @@ function Config:initializeOptionsMenu(eventHandlers)
 end
 
 function Config:toggle()
-    local myName = ADDON_NAME
-    local acd = LibStub("AceConfigDialog-3.0")
-    local frames = acd.OpenFrames
-    if frames[myName] == nil then
-        acd:Open(myName)
-        if frames[myName] then
-            frames[myName]:SetStatusText(Ufo.versionMsg)
-        end
+    local frames = LibStub("AceConfigDialog-3.0").OpenFrames
+    if frames[ADDON_NAME] == nil then
+        self:open()
     else
-        acd:Close(myName)
+        self:open(false)
     end
 end
+
+function Config:openPresets()
+    Config:open():SelectGroup(ADDON_NAME, "presetsMenu")
+end
+
+function Config:open(really)
+    local acd = LibStub("AceConfigDialog-3.0")
+    local openOrClose = (really == false) and acd.Close or acd.Open
+    openOrClose(acd, ADDON_NAME)
+    _ = acd.OpenFrames[ADDON_NAME] and acd.OpenFrames[ADDON_NAME]:SetStatusText(Ufo.versionMsg)
+    return acd
+end
+
+
 
 function Config:get(key)
     if not key then
