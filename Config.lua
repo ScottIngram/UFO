@@ -86,7 +86,7 @@ function Config:getOptionDefaults()
         muteLogin       = false,
         showLabels       = false,
         hideCooldownsWhen = 99999,
-        keybindBehavior = GermClickBehavior.OPEN,
+        keybindBehavior = GermClickBehavior.PRIME_BTN,
         enableBonusModifierKeys = false,
         doKeybindTheButtonsOnTheFlyout = true,
         primaryButtonIs = PrimaryButtonIs.FIRST,
@@ -95,8 +95,8 @@ function Config:getOptionDefaults()
             flyouts = {
                 default = {
                     [MouseClick.ANY]    = GermClickBehavior.OPEN,
-                    [MouseClick.LEFT]   = GermClickBehavior.OPEN,
-                    [MouseClick.RIGHT]  = GermClickBehavior.PRIME_BTN,
+                    [MouseClick.LEFT]   = GermClickBehavior.PRIME_BTN,
+                    [MouseClick.RIGHT]  = GermClickBehavior.OPEN,
                     [MouseClick.MIDDLE] = GermClickBehavior.RANDOM_BTN,
                     [MouseClick.FOUR]   = GermClickBehavior.CYCLE_ALL_BTNS,
                     [MouseClick.FIVE]   = nil, -- REVERSE_CYCLE_ALL_BTNS,
