@@ -145,7 +145,7 @@ local function initializeOptionsMenu()
                         order = 10,
                         type = 'description',
                         fontSize = "small",
-                        name = "These are pre-configured UFOs to get you started or inspire you.  Clicking any of the buttons below will create an entry in your Catalog for a UFO cram-packed with my choices for relevant spells/toys/items/etc.  Once in your Catalog, they are normal UFOs like any other: you can drag them onto your bars, customize them, rearrange their buttons, etc." .. EOLx2
+                        name = "These are pre-configured UFOs to get you started or inspire you.  Clicking any of the buttons below will create an entry in your Catalog for a UFO cram-packed with my choices for relevant spells/toys/items/etc.  Once in your Catalog, they are normal UFOs like any other: you can drag them onto your bars, customize them, rearrange their buttons, etc." .. EOL
                     },
                     buttons = {
                         name = " ",
@@ -1050,10 +1050,10 @@ function Config:makeButtonsForPresets()
             order = i,
             name = cfg.name,
             image = cfg.Ace3icon,
-            width = "half",
+            --width = "half",
             descStyle = "inline",
             func = function()
-                zebug.warn:print("you clicked:", cfg.name)
+                zebug.trace:print("you clicked:", cfg.name)
                 Preset:install(id)
             end,
         }

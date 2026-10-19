@@ -129,6 +129,7 @@ function Preset:install(id)
         local where = findElement(array, id)
         -- TODO: popup dialogue
         msgUser("The", preset.name, "UFO already exists in your catalog at position",where,"named", ufo.name, "-- Delete it if you want to create it anew.")
+        UfoProxy:pickupUfoOntoCursor(id, "PRESET-ALREADY-EXISTS")
         return
     end
 
@@ -143,6 +144,8 @@ function Preset:install(id)
     -- TODO: if locale is not en_US, replace all of the names
 
     Catalog:update("PRESET-INSTALL")
+    UfoProxy:pickupUfoOntoCursor(flyoutDef.id, "PRESET-INSTALL")
+
 end
 
 ---@return table<number,number> array of spellIds
