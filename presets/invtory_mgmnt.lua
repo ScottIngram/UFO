@@ -9,6 +9,7 @@ Ufo.Wormhole()
 local id = Preset.ids.INVTORY_MGMNT
 Preset.defs[id] = {
     ["name"] = "Invtory Mgmnt",
+    ["desc"] = "Access your vendor mount, mail, bank, transmogger, etc.",
     ["icon"] = 413587,
     ["Ace3icon"] = "Interface/ICONS/achievement_guildperk_mobilebanking.blp",
     ["id"] = id,

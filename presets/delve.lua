@@ -9,6 +9,7 @@ Ufo.Wormhole()
 local id = Preset.ids.DELVE
 Preset.defs[id] = {
     ["name"] = "Delves",
+    ["desc"] = "Stuff only useful inside or getting into delves: Delve-O-Bot, L00T RAID-R, That-THING-to-Summon the Nemis-S.",
     --["icon"] = 1064187,
     ["Ace3icon"] = "Interface/ICONS/icon_treasuremap.blp",
     ["id"] = id,

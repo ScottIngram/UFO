@@ -9,6 +9,7 @@ Ufo.Wormhole()
 local id = Preset.ids.TRADE_SKILLS
 Preset.defs[id] = {
     ["name"] = "Trade Skills",
+    ["desc"] = "Various professions, overloads, mulch, etc (UFO will show only those known by your character) and an assortment of flasks, etc. (UFO will only show those in your inventory)",
     --["icon"] = 4620681,
     ["Ace3icon"] = "Interface/ICONS/ui_profession_tailoring.blp",
     ["id"] = id,

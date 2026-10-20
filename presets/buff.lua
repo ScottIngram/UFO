@@ -9,6 +9,7 @@ Ufo.Wormhole()
 local id = Preset.ids.BUFF
 Preset.defs[id] = {
     ["name"] = "Buffs",
+    ["desc"] = "Spells from various classes (UFO will show only those usable by your character) and an assortment of flasks, oils, whetstones, etc. (UFO will only show those in your inventory)",
     --["icon"] = 135869,
     ["Ace3icon"] = "Interface/ICONS/spell_holy_arcaneintellect.blp",
     ["id"] = id,

@@ -9,6 +9,7 @@ Ufo.Wormhole()
 local id = Preset.ids.HEAL
 Preset.defs[id] = {
     ["name"] = "Heal",
+    ["desc"] = "Health potions, healthstones, and the spells that conjure them.",
     ["icon"] = 648632,
     ["Ace3icon"] = "Interface/ICONS/achievement_guild_doctorisin.blp",
     ["id"] = id,
@@ -97,11 +98,6 @@ Preset.defs[id] = {
             ["type"] = "item",
             ["name"] = "Silvermoon Health Potion",
             ["itemId"] = 241305,
-        },
-        {
-            ["type"] = "spell",
-            ["spellId"] = 20577,
-            ["name"] = "Cannibalize",
         },
     },
 }

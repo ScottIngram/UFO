@@ -10,6 +10,7 @@ local id = Preset.ids.NOMZ
 
 Preset.defs[id] = {
     ["name"] = "Nom Nom",
+    ["desc"] = "Things that restore health or mana slowly and/or out of combat.",
     ["icon"] = 6866615,
     ["Ace3icon"] = "Interface/ICONS/inv_1117_ability_recuperate.blp",
     ["id"] = id,

@@ -9,6 +9,7 @@ Ufo.Wormhole()
 local id = Preset.ids.CURE
 Preset.defs[id] = {
     ["name"] = "Cure",
+    ["desc"] = "If you're poisoned, cursed, or dead then come here.",
     ["icon"] = 648207,
     ["Ace3icon"] = "Interface/ICONS/petbattle_health.blp",
     ["id"] = id,

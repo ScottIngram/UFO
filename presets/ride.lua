@@ -11,6 +11,7 @@ local id = Preset.ids.RIDE
 Preset.defs[id] = {
     ["name"] = "Ride",
     ["icon"] = 413588,
+    ["desc"] = "Mounts and mount accessories -- the Summon Random Favorite Mount button, Path of Frost, Tuskarr Dinghy, etc.",
     ["Ace3icon"] = "Interface/ICONS/achievement_guildperk_mountup.blp",
     ["id"] = id,
     ["btns"] = {

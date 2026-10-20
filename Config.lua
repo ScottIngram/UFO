@@ -145,7 +145,7 @@ local function initializeOptionsMenu()
                         order = 10,
                         type = 'description',
                         fontSize = "small",
-                        name = "These are pre-configured UFOs to get you started or inspire you.  Clicking any of the buttons below will create an entry in your Catalog for a UFO cram-packed with my choices for relevant spells/toys/items/etc. (The Mage Portal/Teleports are actually dynamic and will keep themselves up-to-date).  Once in your Catalog, they are normal UFOs like any other: you can drag them onto your bars, customize them, rearrange their buttons, etc." .. EOL
+                        name = "These are pre-configured UFOs to get you started or inspire you.  Clicking any of the buttons below will create an entry in your Catalog for a UFO cram-packed with my choices for relevant spells/toys/items/etc. (The Mage Portal/Teleports are actually dynamic and will keep themselves up-to-date, but, none of the others will).  Once in your Catalog, they are normal UFOs like any other: you can drag them onto your bars, customize them, rearrange their buttons, etc." .. EOL
                     },
                     buttons = {
                         name = " ",
@@ -1060,7 +1060,7 @@ function Config:makeButtonsForPresets()
             name = cfg.name,
             image = cfg.Ace3icon,
             --width = "half",
-            descStyle = "inline",
+            desc = cfg.desc,
             func = function()
                 zebug.trace:print("you clicked:", cfg.name)
                 Preset:install(id)

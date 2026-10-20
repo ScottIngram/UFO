@@ -9,6 +9,7 @@ Ufo.Wormhole()
 local id = Preset.ids.VISION
 Preset.defs[id] = {
     ["name"] = "Vision",
+    ["desc"] = "Spells and toys that grant you sight at a distance or enhanced vision.",
     ["icon"] = 1100023,
     ["Ace3icon"] = "Interface/ICONS/inv_darkmoon_eye.blp",
     ["id"] = id,
