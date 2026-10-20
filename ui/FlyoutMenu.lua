@@ -18,6 +18,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@field isForCatalog boolean
 ---@field nameSuffix string part of its name used to identify it as a flyout frame
 ---@field displaceBtnsHere number used to push buttons out of the way during "OnHover"
+---@field btnKids table<number,Frame> array of bliz UI elements for the buttons on the flyout
 
 ---@type FlyoutMenu | FM_INHERITANCE
 FlyoutMenu = {
@@ -77,6 +78,12 @@ function FlyoutMenu:toString()
     end
 end
 
+function FlyoutMenu:close()
+    -- TAINT / not secure ?
+    ClearOverrideBindings(self)
+    self:Hide() -- does this trigger ON_HIDE ?
+end
+
 --[[
 function FlyoutMenu:getLabel()
     self.label = self:getDef().name
@@ -84,15 +91,29 @@ function FlyoutMenu:getLabel()
 end
 ]]
 
----@return BOFM_TYPE
-function FlyoutMenu:getButtonFrame(i)
-    return self[tostring(i)] -- the ui.xml defines parentKey="1" which evidently creates a string and not a number
+---@return number
+function FlyoutMenu:howManyButtonKids()
+    return #(self:getBtnKids())
 end
 
-function FlyoutMenu:close()
-    -- TAINT / not secure ?
-    ClearOverrideBindings(self)
-    self:Hide() -- does this trigger ON_HIDE ?
+---@return BOFM_TYPE
+function FlyoutMenu:getButtonKid(i)
+    local n = self:howManyButtonKids()
+    if i > n then
+        zebug.warn:owner(self):print("allocating new button for i",i, "becoz n",n)
+        self:allocateNewButtonKid(i)
+    end
+    return self.btnKids[i]
+end
+
+function FlyoutMenu:allocateNewButtonKid(i)
+    if i == MAX_FLYOUT_SIZE_HARD then
+        error("Oops, wut? Why u need so many buttons?! "..i)
+    end
+    --  <CheckButton parentKey="36" name="$parent_Button36" inherits="UFO_ButtonOnFlyoutMenu_Template" id="36" />
+    local btn = ButtonOnFlyoutMenu:new(self, i)
+    self.btnKids[#(self.btnKids)+1] = btn
+    return btn
 end
 
 function FlyoutMenu:getBtnKids()
@@ -352,10 +373,14 @@ function FlyoutMenu:populateButtons(event)
     local prevButton = nil
     local numButtons = 0
 
-    for i=1, math.min(rows, MAX_FLYOUT_SIZE) do
-        local btnFrame = self:getButtonFrame(i)
-        local btnDef = flyoutDef:getButtonDef(i)
+    -- iterate up to num kids, STOP at first empty kid
+    self:forEachButton(function(btnFrame)
 
+    end)
+
+    for i=1, math.min(rows, MAX_FLYOUT_SIZE) do
+        local btnFrame = self:getButtonKid(i)
+        local btnDef = flyoutDef:getButtonDef(i)
 
         if self.displaceBtnsHere then
             if i == self.displaceBtnsHere then
@@ -389,7 +414,7 @@ function FlyoutMenu:populateButtons(event)
 
     -- Hide unused buttons
     local unusedButtonIndex = numButtons+1
-    local btnFrame = self:getButtonFrame(unusedButtonIndex)
+    local btnFrame = self:getButtonKid(unusedButtonIndex)
     while btnFrame do
         --zebug.error:event(event):owner(btnFrame):print("===== unusedButtonIndex",unusedButtonIndex)
         btnFrame:setDef(nil, event)
@@ -397,7 +422,7 @@ function FlyoutMenu:populateButtons(event)
         btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE - required flag used to indicate "inUse"
         btnFrame:Hide()
         unusedButtonIndex = unusedButtonIndex+1
-        btnFrame = self:getButtonFrame(unusedButtonIndex)
+        btnFrame = self:getButtonKid(unusedButtonIndex)
     end
 
     if numButtons == 0 then

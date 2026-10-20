@@ -30,6 +30,33 @@ GLOBAL_ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
+function ButtonOnFlyoutMenu:new(flyoutMenu, i)
+    --  <CheckButton parentKey="36" name="$parent_Button36" inherits="UFO_ButtonOnFlyoutMenu_Template" id="36" />
+    local flyoutName = flyoutMenu:GetName()
+    local myName = flyoutName .. "_Button" .. i
+    zebug.info:owner(flyoutMenu):mark(Mark.HORDE):print("flyoutMenu",flyoutMenu, "flyoutName",flyoutName, "myName",myName)
+
+    ---@type ButtonOnFlyoutMenu
+    local self = CreateFrame(FrameType.CHECK_BUTTON, myName, flyoutMenu, "UFO_ButtonOnFlyoutMenu_Template")
+
+    -- BORROWED FROM FLYOUT MENU - are this also needed here too?
+    -- calling self:GetParent() in any of the methods below returns some unknown object that is NOT the germ.
+    -- but later, it will return the germ.  JFC.
+    -- WORKAROUND - set the parent a SECOND time.  This one seems to stick.  FUCK YOU BLIZ.
+    --[[
+        self:SetParent(flyoutMenu)
+        self.GetParent = function() return germ end -- fuck you again, Bliz!
+        self.getParent = self.GetParent
+    ]]
+
+    self:setId(i)
+    --self:installMyToString()
+    local id = self:getId()
+    zebug.info:owner(flyoutMenu):mark(Mark.HORDE):print("id",id, "type",type(id))
+
+    return self
+end
+
 function ButtonOnFlyoutMenu:getName()
     local btnDef = self:getDef()
     return (btnDef and btnDef:getName()) or "empty"
@@ -39,6 +66,10 @@ function ButtonOnFlyoutMenu:getId()
     -- the button ID never changes because it's never actually dragged or moved.
     -- It's the underlying btnDef that moves from one button to another.
     return self:GetID()
+end
+
+function ButtonOnFlyoutMenu:setId(id)
+    return self:SetID(id)
 end
 
 ButtonOnFlyoutMenu.getLabel = ButtonOnFlyoutMenu.getName
