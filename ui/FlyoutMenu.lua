@@ -91,28 +91,6 @@ function FlyoutMenu:getLabel()
 end
 ]]
 
----@return number
-function FlyoutMenu:howManyButtonKids()
-    return #(self:getBtnKids())
-end
-
----@return BOFM_TYPE
----@param i number index of the kid to grab
-function FlyoutMenu:getButtonKid(i)
-    return self.btnKids[i]
-end
-
-function FlyoutMenu:allocateNewButtonKid()
-    local n = #(self.btnKids)+1
-    if n == MAX_FLYOUT_SIZE_HARD_CAP then
-        error("Exceeded hard-cap on number of buttons:" .. MAX_FLYOUT_SIZE_HARD_CAP)
-    end
-    --  <CheckButton parentKey="36" name="$parent_Button36" inherits="UFO_ButtonOnFlyoutMenu_Template" id="36" />
-    local btn = ButtonOnFlyoutMenu:new(self, n)
-    self.btnKids[n] = btn
-    return btn
-end
-
 function FlyoutMenu:getBtnKids()
     if self.btnKids then
         return self.btnKids
@@ -132,6 +110,11 @@ function FlyoutMenu:getBtnKids()
     return self.btnKids
 end
 
+---@return number
+function FlyoutMenu:howManyBtnKids()
+    return #(self:getBtnKids())
+end
+
 function FlyoutMenu:forEachButton(handler, event)
     for i, button in ipairs(self:getBtnKids()) do
         if button.ufoType == ButtonOnFlyoutMenu.ufoType then
@@ -146,9 +129,24 @@ function FlyoutMenu:getBtn1()
 end
 
 ---@return BOFM_TYPE
-function FlyoutMenu:getBtn(n)
-    assert(n, "Invalid value for n: nil")
-    return self:getBtnKids()[n]
+---@param i number index of the kid to grab
+function FlyoutMenu:getBtn(i)
+    assert(i, "Invalid value for n: nil")
+    return self:getBtnKids()[i]
+end
+
+---@return BOFM_TYPE
+---@param i number index of the kid to grab
+function FlyoutMenu:getBtnOrAllocateNewOne(i)
+    assert(i, "Invalid value for n: nil")
+    local n = #(self.btnKids)+1
+    if n == MAX_FLYOUT_SIZE_HARD_CAP then
+        error("Exceeded hard-cap on number of buttons:" .. MAX_FLYOUT_SIZE_HARD_CAP)
+    end
+    --  <CheckButton parentKey="36" name="$parent_Button36" inherits="UFO_ButtonOnFlyoutMenu_Template" id="36" />
+    local btn = ButtonOnFlyoutMenu:new(self, n)
+    self.btnKids[n] = btn
+    return btn
 end
 
 -- TODO move to SecEnvDrugMule
@@ -362,6 +360,7 @@ function FlyoutMenu:updateButtonLayout(event)
     SecEnv:executeFromNonSecEnv_Layout(self, numButtons, self.direction, self.displaceBtnsHere)
 end
 
+-- currently only handles catalog.  TODO: handle germ too?  needs keyBind txt, but, preserver the "extra" blank on the end
 function FlyoutMenu:populateButtons(event)
     local flyoutDef = self:getDef()
     zebug.warn:event(event):dumpy("flyoutDef",flyoutDef)
@@ -373,10 +372,7 @@ function FlyoutMenu:populateButtons(event)
         print("i",i)
         zebug.error:event("event"):print("i",i)
         local btnDef = flyoutDef:getButtonDef(i)
-        local btnFrame = self:getButtonKid(i)
-        if not btnFrame then
-            btnFrame = self:allocateNewButtonKid()
-        end
+        local btnFrame = self:getBtnOrAllocateNewOne(i)
 
         if self.displaceBtnsHere then
             if i == self.displaceBtnsHere then
@@ -405,7 +401,7 @@ function FlyoutMenu:populateButtons(event)
 
     -- Loop through the allocated btnKids and erase their contents, if any
     local unusedButtonIndex = n+1 -- the one after the last populated one
-    local btnFrame = self:getButtonKid(unusedButtonIndex)
+    local btnFrame = self:getBtn(unusedButtonIndex)
     while btnFrame do
         -- erase any existing btnDef
         if btnFrame:hasDef() then
@@ -415,7 +411,7 @@ function FlyoutMenu:populateButtons(event)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE - required flag used to indicate "inUse"
             btnFrame:Hide()
             unusedButtonIndex = unusedButtonIndex+1
-            btnFrame = self:getButtonKid(unusedButtonIndex)
+            btnFrame = self:getBtn(unusedButtonIndex)
         else
             -- assume there are no populated buttons hiding beyond the first empty one
             -- exit the loop
@@ -441,6 +437,7 @@ end
 
 ---@param germ Germ
 function FlyoutMenu:applyConfigForGerm(germ, event)
+    event = "BOO"
     self:SetParent(germ)
     self.direction = germ:getDirection(event)
     local flyoutId = germ:getFlyoutId()
@@ -450,15 +447,15 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
     local usableFlyout = flyoutDef:filterOutUnusable()
     local btnNumber = 0
 
-    ---@param btnFrame BOFM_TYPE
-    self:forEachButton(function(btnFrame)
-        local i = btnFrame:GetID()
+    local n = flyoutDef:howManyButtons()
+    zebug.warn:event(event):owner(self):print("n",n, "flyoutId", flyoutId)
+    for i=1,n do
+        local btnFrame = self:getBtnOrAllocateNewOne(i)
         local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef, event)
-        zebug.trace:event(event):owner(self):print("i",i, "btnDef", btnDef)
 
         if btnDef then
-            zebug.trace:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
+            zebug.warn:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
             local icon = self:getIcon(btnDef)
             btnFrame:setIcon(icon, event)
             --btnFrame:setGeometry(self.direction) -- this call breaks the btns on the flyout - they all collapse into the same spot
@@ -469,11 +466,12 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
             btnNumber = btnNumber + 1
             updateHotKeyLabel(btnFrame, btnNumber)
         else
+            zebug.warn:event(event):owner(self):print("i",i, "clearing coz empty")
             btnFrame:setIcon(DEFAULT_ICON, event)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE
-            return
+            --return
         end
-    end)
+    end
 
     --zebug.error:event("IN_USE_BTN_COUNT"):owner(self):print("btnNumber",btnNumber)
     self:SetAttribute("IN_USE_BTN_COUNT", btnNumber)
@@ -486,6 +484,8 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
         self.hasOnHide = true
     end
 
+    zebug.warn:event(event):owner(self):print("executeFromNonSecEnv_Layout n",n)
+    SecEnv:executeFromNonSecEnv_Layout(self, n, self.direction, self.displaceBtnsHere)
     germ:SetAttribute("UFO_FLYOUT_MOD_TIME", flyoutDef:getModStamp())
 end
 

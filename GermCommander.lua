@@ -16,6 +16,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.TRACE)
 ---@field updatingAll boolean true when updateAllGerms() is making a LOT of noise
 GermCommander = {
     ufoType="GermCommander",
+    devMode = true,
 }
 
 ---@alias BtnSlotIndex number
