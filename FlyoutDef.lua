@@ -20,7 +20,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@field ufoType string
 ---@field icon string user chosen icon
 ---@field fallbackIcon string in absence of the icon field, this is used when the Bliz UI fails to load all the necessary icons on login (usually pets and toys)
----@field btns table
+---@field btns table<number, ButtonDef>
 ---@field lastMod number timestamp of the last significant modification
 FlyoutDef = {
     ufoType = "FlyoutDef",

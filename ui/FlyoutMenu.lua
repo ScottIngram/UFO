@@ -97,22 +97,19 @@ function FlyoutMenu:howManyButtonKids()
 end
 
 ---@return BOFM_TYPE
+---@param i number index of the kid to grab
 function FlyoutMenu:getButtonKid(i)
-    local n = self:howManyButtonKids()
-    if i > n then
-        zebug.warn:owner(self):print("allocating new button for i",i, "becoz n",n)
-        self:allocateNewButtonKid(i)
-    end
     return self.btnKids[i]
 end
 
-function FlyoutMenu:allocateNewButtonKid(i)
-    if i == MAX_FLYOUT_SIZE_HARD then
-        error("Oops, wut? Why u need so many buttons?! "..i)
+function FlyoutMenu:allocateNewButtonKid()
+    local n = #(self.btnKids)+1
+    if n == MAX_FLYOUT_SIZE_HARD_CAP then
+        error("Exceeded hard-cap on number of buttons:" .. MAX_FLYOUT_SIZE_HARD_CAP)
     end
     --  <CheckButton parentKey="36" name="$parent_Button36" inherits="UFO_ButtonOnFlyoutMenu_Template" id="36" />
-    local btn = ButtonOnFlyoutMenu:new(self, i)
-    self.btnKids[#(self.btnKids)+1] = btn
+    local btn = ButtonOnFlyoutMenu:new(self, n)
+    self.btnKids[n] = btn
     return btn
 end
 
@@ -359,28 +356,27 @@ function FlyoutMenu:updateButtonLayout(event)
     local flyoutDef = self:getDef()
     local extraButton = self.isForCatalog and 1 or 0 -- this will always be for catalog
     local numButtons = flyoutDef:howManyButtons() + extraButton
-    numButtons = math.min(numButtons, MAX_FLYOUT_SIZE)
+    -- numButtons = math.min(numButtons, MAX_FLYOUT_SIZE)
     --self:RunAttribute(SecEnv.FLYOUT_LAYOUT_ATTR_NAME, numButtons, self.direction, self)
-    --zebug.error:event(event):owner(self):print("self.displaceBtnsHere",self.displaceBtnsHere)
+    zebug.error:event("event"):owner(self):print("self.displaceBtnsHere",self.displaceBtnsHere)
     SecEnv:executeFromNonSecEnv_Layout(self, numButtons, self.direction, self.displaceBtnsHere)
 end
 
 function FlyoutMenu:populateButtons(event)
     local flyoutDef = self:getDef()
-    zebug.trace:event(event):dumpy("flyoutDef",flyoutDef)
+    zebug.warn:event(event):dumpy("flyoutDef",flyoutDef)
     local n = flyoutDef:howManyButtons()
-    local rows = n+1 -- one extra for an empty space
-    local prevButton = nil
-    local numButtons = 0
+    print("n",n)
+    n = n+1 -- one extra for an empty space
 
-    -- iterate up to num kids, STOP at first empty kid
-    self:forEachButton(function(btnFrame)
-
-    end)
-
-    for i=1, math.min(rows, MAX_FLYOUT_SIZE) do
-        local btnFrame = self:getButtonKid(i)
+    for i=1,n do
+        print("i",i)
+        zebug.error:event("event"):print("i",i)
         local btnDef = flyoutDef:getButtonDef(i)
+        local btnFrame = self:getButtonKid(i)
+        if not btnFrame then
+            btnFrame = self:allocateNewButtonKid()
+        end
 
         if self.displaceBtnsHere then
             if i == self.displaceBtnsHere then
@@ -402,35 +398,34 @@ function FlyoutMenu:populateButtons(event)
             -- the empty slot on the end
             btnFrame:setDef(nil, event)
             btnFrame:setIcon(nil, event)
-            btnFrame:SetAttribute("UFO_NAME"," ") -- NEW!!! SecEnv TEMPLATE
+            btnFrame:SetAttribute("UFO_NAME"," ") -- my code inside the SecEnv TEMPLATE recognizes " " (as opposed to nil) as the empty slot
             btnFrame:setExcluderVisibility(nil)
         end
-
-        --btnFrame:setGeometry(self.direction, prevButton)
-
-        prevButton = btnFrame
-        numButtons = i
     end
 
-    -- Hide unused buttons
-    local unusedButtonIndex = numButtons+1
+    -- Loop through the allocated btnKids and erase their contents, if any
+    local unusedButtonIndex = n+1 -- the one after the last populated one
     local btnFrame = self:getButtonKid(unusedButtonIndex)
     while btnFrame do
-        --zebug.error:event(event):owner(btnFrame):print("===== unusedButtonIndex",unusedButtonIndex)
-        btnFrame:setDef(nil, event)
-        btnFrame:setIcon(nil, event)
-        btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE - required flag used to indicate "inUse"
-        btnFrame:Hide()
-        unusedButtonIndex = unusedButtonIndex+1
-        btnFrame = self:getButtonKid(unusedButtonIndex)
+        -- erase any existing btnDef
+        if btnFrame:hasDef() then
+            --zebug.error:event(event):owner(btnFrame):print("===== unusedButtonIndex",unusedButtonIndex)
+            btnFrame:setDef(nil, event)
+            btnFrame:setIcon(nil, event)
+            btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE - required flag used to indicate "inUse"
+            btnFrame:Hide()
+            unusedButtonIndex = unusedButtonIndex+1
+            btnFrame = self:getButtonKid(unusedButtonIndex)
+        else
+            -- assume there are no populated buttons hiding beyond the first empty one
+            -- exit the loop
+            btnFrame = nil
+        end
     end
 
-    if numButtons == 0 then
+    if n == 0 then
         self:Hide()
-        --return
     end
-
-    return prevButton, numButtons
 end
 
 ---@param btnDef ButtonDef

@@ -91,6 +91,10 @@ function ButtonOnFlyoutMenu:hasDef()
     return self.btnDef and true or false
 end
 
+function ButtonOnFlyoutMenu:isEmpty()
+    return not self:hasDef()
+end
+
 ---@return ButtonDef
 function ButtonOnFlyoutMenu:getDef()
     return self.btnDef

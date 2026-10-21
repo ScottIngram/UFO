@@ -143,32 +143,7 @@
             <CheckButton parentKey="8" name="$parent_Button8" inherits="UFO_ButtonOnFlyoutMenu_Template" id="8" />
             <CheckButton parentKey="9" name="$parent_Button9" inherits="UFO_ButtonOnFlyoutMenu_Template" id="9" />
             <CheckButton parentKey="10" name="$parent_Button10" inherits="UFO_ButtonOnFlyoutMenu_Template" id="10" />
-            <CheckButton parentKey="11" name="$parent_Button11" inherits="UFO_ButtonOnFlyoutMenu_Template" id="11" />
-            <CheckButton parentKey="12" name="$parent_Button12" inherits="UFO_ButtonOnFlyoutMenu_Template" id="12" />
-            <CheckButton parentKey="13" name="$parent_Button13" inherits="UFO_ButtonOnFlyoutMenu_Template" id="13" />
-            <CheckButton parentKey="14" name="$parent_Button14" inherits="UFO_ButtonOnFlyoutMenu_Template" id="14" />
-            <CheckButton parentKey="15" name="$parent_Button15" inherits="UFO_ButtonOnFlyoutMenu_Template" id="15" />
-            <CheckButton parentKey="16" name="$parent_Button16" inherits="UFO_ButtonOnFlyoutMenu_Template" id="16" />
-            <CheckButton parentKey="17" name="$parent_Button17" inherits="UFO_ButtonOnFlyoutMenu_Template" id="17" />
-            <CheckButton parentKey="18" name="$parent_Button18" inherits="UFO_ButtonOnFlyoutMenu_Template" id="18" />
-            <CheckButton parentKey="19" name="$parent_Button19" inherits="UFO_ButtonOnFlyoutMenu_Template" id="19" />
-            <CheckButton parentKey="20" name="$parent_Button20" inherits="UFO_ButtonOnFlyoutMenu_Template" id="20" />
-            <CheckButton parentKey="21" name="$parent_Button21" inherits="UFO_ButtonOnFlyoutMenu_Template" id="21" />
-            <CheckButton parentKey="22" name="$parent_Button22" inherits="UFO_ButtonOnFlyoutMenu_Template" id="22" />
-            <CheckButton parentKey="23" name="$parent_Button23" inherits="UFO_ButtonOnFlyoutMenu_Template" id="23" />
-            <CheckButton parentKey="24" name="$parent_Button24" inherits="UFO_ButtonOnFlyoutMenu_Template" id="24" />
-            <CheckButton parentKey="25" name="$parent_Button25" inherits="UFO_ButtonOnFlyoutMenu_Template" id="25" />
-            <CheckButton parentKey="26" name="$parent_Button26" inherits="UFO_ButtonOnFlyoutMenu_Template" id="26" />
-            <CheckButton parentKey="27" name="$parent_Button27" inherits="UFO_ButtonOnFlyoutMenu_Template" id="27" />
-            <CheckButton parentKey="28" name="$parent_Button28" inherits="UFO_ButtonOnFlyoutMenu_Template" id="28" />
-            <CheckButton parentKey="29" name="$parent_Button29" inherits="UFO_ButtonOnFlyoutMenu_Template" id="29" />
-            <CheckButton parentKey="30" name="$parent_Button30" inherits="UFO_ButtonOnFlyoutMenu_Template" id="30" />
-            <CheckButton parentKey="31" name="$parent_Button31" inherits="UFO_ButtonOnFlyoutMenu_Template" id="31" />
-            <CheckButton parentKey="32" name="$parent_Button32" inherits="UFO_ButtonOnFlyoutMenu_Template" id="32" />
-            <CheckButton parentKey="33" name="$parent_Button33" inherits="UFO_ButtonOnFlyoutMenu_Template" id="33" />
-            <CheckButton parentKey="34" name="$parent_Button34" inherits="UFO_ButtonOnFlyoutMenu_Template" id="34" />
-            <CheckButton parentKey="35" name="$parent_Button35" inherits="UFO_ButtonOnFlyoutMenu_Template" id="35" />
-            <CheckButton parentKey="36" name="$parent_Button36" inherits="UFO_ButtonOnFlyoutMenu_Template" id="36" />
+
         </Frames>
     </Frame>
 
