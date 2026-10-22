@@ -146,7 +146,7 @@ function ButtonDef:new(id, type)
     local self = {}
     ButtonDef:oneOfUs(self)
     self:setIdAndType(id, type)
-    self:installMyToString()
+    self:installMyToString() -- this seems to be failing
     return self
 end
 
@@ -299,7 +299,7 @@ function ButtonDef:setIdAndType(id, type)
     elseif type == ButtonType.PSPELL then
         if id < 10 then
             self.type = ButtonType.BROKENP
-            local brokenPetCommandId, alsoCommand = PetShitShow:get(id)
+            local brokenPetCommandId, alsoCommand = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(id)
             self.brokenPetCommandId = brokenPetCommandId
             self.brokenPetCommandId2 = alsoCommand
         else
@@ -609,7 +609,7 @@ function ButtonDef:getFromCursor(event, silenceWarnings)
         if c1 < 10 then
             --zebug.error:print("BROKENP !!! ",GetCursorInfo() )
             btnDef.type = ButtonType.BROKENP
-            local brokenPetCommandId, alsoCommand = PetShitShow:get(c1)
+            local brokenPetCommandId, alsoCommand = PetShitShow:remapCursorIdIntoSomeUsefulIdOrTwo(c1)
             btnDef.brokenPetCommandId = brokenPetCommandId
             btnDef.brokenPetCommandId2 = alsoCommand
             --zebug.error:dumpy("BROKENP btnDef",btnDef)
