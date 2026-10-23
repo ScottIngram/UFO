@@ -228,7 +228,10 @@ function Catalog:update(event)
                 else
                     btnFrame.text:SetText(L10N.OPEN_PRESETS)
                     btnFrame.text:SetTextColor(BRIGHTBLUE_FONT_COLOR.r, BRIGHTBLUE_FONT_COLOR.g, BRIGHTBLUE_FONT_COLOR.b)
-                    btnFrame.icon:SetTexture(Ufo.iconTexture)
+                    btnFrame.icon:SetTexture("Interface/FriendsFrame/UI-FriendsList-Large-Up") -- bulleted list icon
+                    -- btnFrame.icon:SetTexture("Interface/Vehicles/Arrow")
+                    -- btnFrame.icon:SetTexture("Interface/ICONS/misc_arrowright")
+                    -- btnFrame.icon:SetTexture(136830) -- book
                 end
                 btnFrame.icon:SetSize(30, 30)
                 btnFrame.icon:SetPoint(Anchor.LEFT, 7, 0)
@@ -313,7 +316,9 @@ function Catalog:update(event)
                 btnFrame.icon:SetPoint(Anchor.LEFT, 4, 0)
             end
 
-            if (row) == 1 then
+            -- add bumpers
+
+            if (row == 1) or (row == thePresetsButton)  then
                 btnFrame.BgTop:Show()
                 btnFrame.BgMiddle:SetPoint(Anchor.TOP, btnFrame.BgTop, Anchor.BOTTOM)
             else
@@ -321,7 +326,7 @@ function Catalog:update(event)
                 btnFrame.BgMiddle:SetPoint(Anchor.TOP)
             end
 
-            if (row == theAddButton) or (row == thePresetsButton) then
+            if (row == theAddButton) or (row == flyoutsCount) then
                 btnFrame.BgBottom:Show()
                 btnFrame.BgMiddle:SetPoint(Anchor.BOTTOM, btnFrame.BgBottom, Anchor.TOP)
             else
@@ -329,7 +334,9 @@ function Catalog:update(event)
                 btnFrame.BgMiddle:SetPoint(Anchor.BOTTOM)
             end
 
-            if (row)%2 == 0 then
+            -- alternatingly shade the rows, except, this doesn't appear to work
+
+            if (row%2) == 0 then
                 btnFrame.Stripe:SetTexture(STRIPE_COLOR.r, STRIPE_COLOR.g, STRIPE_COLOR.b)
                 btnFrame.Stripe:SetAlpha(0.1)
                 btnFrame.Stripe:Show()
