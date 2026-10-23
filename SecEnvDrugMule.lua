@@ -192,18 +192,19 @@ local isVert = dir == "UP" or dir == "DOWN"
 --local doDebug = true
 --[[DEBUG]] if doDebug then print("sucking pipe... numButtons",numButtons, "arg2",arg2, "arg3",arg3, "dir",dir, "displaceBtnsHere",displaceBtnsHere) end
 
-    -- get the buttons, filtering out trash
-    if not GLOBAL_BTNS then
+local isForCatalog = flyoutMenu:GetAttribute("IS_FOR_CATALOG")
+
+    -- get the buttons, filtering out trash.  disable cache for Catalog's flyout
+    if isForCatalog or not GLOBAL_BTNS then
         GLOBAL_BTNS = table.new(flyoutMenu:GetChildren())
         while GLOBAL_BTNS[1] and GLOBAL_BTNS[1]:GetID() < 1 do
-            --print("discarding", GLOBAL_BTNS[1]:GetObjectType())
+            --print("discarding flyout child", GLOBAL_BTNS[1]:GetObjectType(), GLOBAL_BTNS[1]:GetID())
             table.remove(GLOBAL_BTNS, 1) -- this is the non-button UI element "Background" from ui.xml
         end
     end
 
 -- calculate if the flyout is too long, then how many rows & columns
 local configMaxLen = UFO_DUM_DUM:GetAttribute("FLYOUT_MAX_LEN") or 100
-local isForCatalog = flyoutMenu:GetAttribute("IS_FOR_CATALOG")
 local vertLineWrapDir = "RIGHT"
 local horizLineWrapDir = "UP"
 local linesCountMax = math.ceil(numButtons / configMaxLen, 1)
@@ -226,7 +227,7 @@ end
 
     for i, btn in ipairs(GLOBAL_BTNS) do
         local bumper = btn:GetFrameRef("bumper")
-        local isInUse = btn:GetAttribute("UFO_NAME")
+        local isInUse = btn:GetAttribute("UFO_NAME") -- the " " blank string is used to indicate the empty slot in catalog flyouts
 
 	    --[[DEBUG]] if doDebug then
         --[[DEBUG]] print("i:",i, "btn:",btn:GetName(), "isInUse",isInUse)
@@ -304,7 +305,11 @@ end
             --[[DEBUG]] end
 
             bumper:SetPoint(ptOnMe, anchorBuddy, ptOnAnchorBuddy, 0, 0)
-            anchorBuddy:Show()
+
+            -- avoid accidentally opening the flyout menu
+            if anchorBuddy ~= flyoutMenu then
+                anchorBuddy:Show()
+            end
 
             if btnCountForThisLine == 1 then
                 firstBumperOfPreviousLine = bumper

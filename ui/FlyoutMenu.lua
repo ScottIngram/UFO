@@ -138,14 +138,21 @@ end
 ---@return BOFM_TYPE
 ---@param i number index of the kid to grab
 function FlyoutMenu:getBtnOrAllocateNewOne(i)
-    assert(i, "Invalid value for n: nil")
-    local n = #(self.btnKids)+1
-    if n == MAX_FLYOUT_SIZE_HARD_CAP then
-        error("Exceeded hard-cap on number of buttons:" .. MAX_FLYOUT_SIZE_HARD_CAP)
+    return self:getBtnKids()[i] or self:allocateNewBtnKid(i)
+end
+
+---@return BOFM_TYPE
+---@param i number index of the kid to grab
+function FlyoutMenu:allocateNewBtnKid(i)
+    if i == MAX_FLYOUT_SIZE_HARD_CAP then
+        local btnDef = self:getDef()
+        local name, size = btnDef:getName(), btnDef:howManyButtons()
+        msgUser("UFO", (name or "unknown"), "exceeded hard-cap on number of buttons:", size)
+        error("UFO " .. (name or "unknown") .. "exceeded hard-cap on number of buttons:" .. size)
     end
-    --  <CheckButton parentKey="36" name="$parent_Button36" inherits="UFO_ButtonOnFlyoutMenu_Template" id="36" />
-    local btn = ButtonOnFlyoutMenu:new(self, n)
-    self.btnKids[n] = btn
+
+    local btn = ButtonOnFlyoutMenu:new(self, i)
+    self.btnKids[i] = btn
     return btn
 end
 
@@ -356,23 +363,22 @@ function FlyoutMenu:updateButtonLayout(event)
     local numButtons = flyoutDef:howManyButtons() + extraButton
     -- numButtons = math.min(numButtons, MAX_FLYOUT_SIZE)
     --self:RunAttribute(SecEnv.FLYOUT_LAYOUT_ATTR_NAME, numButtons, self.direction, self)
-    zebug.error:event("event"):owner(self):print("self.displaceBtnsHere",self.displaceBtnsHere)
+    zebug.info:event(event):owner(self):print("numButtons",numButtons, "self.displaceBtnsHere",self.displaceBtnsHere)
     SecEnv:executeFromNonSecEnv_Layout(self, numButtons, self.direction, self.displaceBtnsHere)
 end
 
 -- currently only handles catalog.  TODO: handle germ too?  needs keyBind txt, but, preserver the "extra" blank on the end
 function FlyoutMenu:populateButtons(event)
     local flyoutDef = self:getDef()
-    zebug.warn:event(event):dumpy("flyoutDef",flyoutDef)
-    local n = flyoutDef:howManyButtons()
-    print("n",n)
-    n = n+1 -- one extra for an empty space
+    local nVirt = flyoutDef:howManyButtons()
+    local nAlloc = self:howManyBtnKids()
+    zebug.info:event(event):owner(self):print("nVirt",nVirt, "nAlloc",nAlloc)
 
-    for i=1,n do
-        print("i",i)
-        zebug.error:event("event"):print("i",i)
+    local n = nVirt + (self.isForCatalog and 1 or 0)
+    for i=1, n do
         local btnDef = flyoutDef:getButtonDef(i)
         local btnFrame = self:getBtnOrAllocateNewOne(i)
+        zebug.info:event(event):owner(self):print(i, btnDef and btnDef:toString())
 
         if self.displaceBtnsHere then
             if i == self.displaceBtnsHere then
@@ -388,7 +394,6 @@ function FlyoutMenu:populateButtons(event)
             btnFrame:setDef(btnDef, event)
             local icon = self:getIcon(btnDef)
             btnFrame:setIcon(icon, event)
-            -- NEW!
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
         else
             -- the empty slot on the end
@@ -399,27 +404,32 @@ function FlyoutMenu:populateButtons(event)
         end
     end
 
-    -- Loop through the allocated btnKids and erase their contents, if any
-    local unusedButtonIndex = n+1 -- the one after the last populated one
-    local btnFrame = self:getBtn(unusedButtonIndex)
+    -- Loop through the remaining allocated btnKids and erase their contents, if any
+    i = n +1 -- the one after the empty slot on the end
+    local btnFrame = self:getBtn(i)
+    local name = btnFrame and btnFrame:getLabel() or ""
+    zebug.info:event(event):owner(self):print("CLEAR starting at ",i, name)
     while btnFrame do
         -- erase any existing btnDef
-        if btnFrame:hasDef() then
-            --zebug.error:event(event):owner(btnFrame):print("===== unusedButtonIndex",unusedButtonIndex)
+        if btnFrame:hasDef() or btnFrame:GetAttribute("UFO_NAME") then
+            name = btnFrame:getLabel() or ""
+            zebug.info:event(event):owner(btnFrame):print("clearing",i, name)
             btnFrame:setDef(nil, event)
             btnFrame:setIcon(nil, event)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE - required flag used to indicate "inUse"
             btnFrame:Hide()
-            unusedButtonIndex = unusedButtonIndex+1
-            btnFrame = self:getBtn(unusedButtonIndex)
+            -- move on to the next btn
+            i = i +1
+            btnFrame = self:getBtn(i)
         else
             -- assume there are no populated buttons hiding beyond the first empty one
+            zebug.info:event(event):owner(btnFrame):print("done! coz nothing at",i)
             -- exit the loop
             btnFrame = nil
         end
     end
 
-    if n == 0 then
+    if nVirt == 0 then
         self:Hide()
     end
 end
@@ -437,7 +447,6 @@ end
 
 ---@param germ Germ
 function FlyoutMenu:applyConfigForGerm(germ, event)
-    event = "BOO"
     self:SetParent(germ)
     self.direction = germ:getDirection(event)
     local flyoutId = germ:getFlyoutId()
@@ -447,26 +456,26 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
     local usableFlyout = flyoutDef:filterOutUnusable()
     local btnNumber = 0
 
-    local n = flyoutDef:howManyButtons()
-    zebug.warn:event(event):owner(self):print("n",n, "flyoutId", flyoutId)
+    local nVirt = usableFlyout:howManyButtons()
+    local nAlloc =self:howManyBtnKids()
+    local n = math.max(nVirt, nAlloc)
+    zebug.info:event(event):owner(self):print("n",n, "nVirt",nVirt, "nAlloc",nAlloc)
     for i=1,n do
         local btnFrame = self:getBtnOrAllocateNewOne(i)
         local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef, event)
 
         if btnDef then
-            zebug.warn:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
+            zebug.info:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
             local icon = self:getIcon(btnDef)
             btnFrame:setIcon(icon, event)
-            --btnFrame:setGeometry(self.direction) -- this call breaks the btns on the flyout - they all collapse into the same spot
-            --TODO: figure out why
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
 
             -- label the keybinds
             btnNumber = btnNumber + 1
             updateHotKeyLabel(btnFrame, btnNumber)
         else
-            zebug.warn:event(event):owner(self):print("i",i, "clearing coz empty")
+            zebug.info:event(event):owner(self):print("i",i, "clearing coz empty")
             btnFrame:setIcon(DEFAULT_ICON, event)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE
             --return
@@ -484,7 +493,7 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
         self.hasOnHide = true
     end
 
-    zebug.warn:event(event):owner(self):print("executeFromNonSecEnv_Layout n",n)
+    zebug.info:event(event):owner(self):print("executeFromNonSecEnv_Layout n",n)
     SecEnv:executeFromNonSecEnv_Layout(self, n, self.direction, self.displaceBtnsHere)
     germ:SetAttribute("UFO_FLYOUT_MOD_TIME", flyoutDef:getModStamp())
 end
@@ -547,7 +556,7 @@ end
 function ScriptHandlers:ON_SHOW()
     zebug.info:mark(Mark.LOOT):owner(self):newEvent(self, "ON_SHOW"):run(function(event)
         local parent = self:GetParent()
-        zebug.info:event(event):owner(self):print("parent", parent)
+        zebug.info:event("event"):owner(self):name("ON_SHOW"):print("parent", parent, "",self)
         parent:OnPopupToggled() -- call Bliz super method
         self:renderAllBtnCooldownsEtc(event)
     end)

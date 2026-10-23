@@ -280,6 +280,7 @@ function Germ:initFlyoutMenu(event)
     self.flyoutMenu:applyConfigForGerm(self, event)
     self:SetPopup(self.flyoutMenu) -- put my FO where Bliz expects it
     self.flyoutMenu.isForGerm = true
+    self:closeFlyout()
     return self.flyoutMenu
 end
 
