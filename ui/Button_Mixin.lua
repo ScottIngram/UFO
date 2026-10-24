@@ -161,12 +161,19 @@ function Button_Mixin:updateCooldown(event)
         -- use Bliz's built-in handler for the stuff it understands, ie, not items
         zebug.trace:event(event):owner(self):print("spellId",spellId)
         self.spellID = spellId --v11 -- internal Bliz code expects this field --  -- "Secret value" TAINT as of 3/26
-if isInCombatLockdownQuiet("Bliz broke this") then
-    -- Bliz released a hotfix (not a proper patch) that broke some API features this week which is unprofessional and undisciplined.
-    -- So here's an emergency fix for their secret bullshit breaking their OWN FUCKING CODE.
-    return
-end
-        ActionButton_UpdateCooldown(self);
+
+        if InCombatLockdown() then return end
+
+        -- the above can STILL fail because combat can commence in the microsecond after InCombatLockdown() says "false"
+        -- so, wrap that shit in a try/catch block and eat the exception
+        local isOk, errMsg = pcall(function()
+            ActionButton_UpdateCooldown(self); -- <== their OWN FUCKING CODE
+        end)
+
+        if not isOk then
+            zebug.warn:owner(self):event("event"):print("Hey, I asked Bliz.InCombatLockdown() which said nope, but then:", errMsg)
+        end
+
         return
     end
 
