@@ -53,10 +53,28 @@ Preset.defs[id] = {
             ["itemId"] = 198428,
         },
         {
+            ["type"] = "toy",
+            ["name"] = "Anglers Fishing Raft",
+            ["noRnd"] = true,
+            ["itemId"] = 85500,
+        },
+        {
+            ["name"] = "Bipsi's Bobbing Berg",
+            ["type"] = "item",
+            ["noRnd"] = true,
+            ["itemId"] = 37011,
+        },
+        {
             ["noRnd"] = true,
             ["type"] = "toy",
             ["name"] = "Vial of Endless Draconic Scales",
             ["itemId"] = 212518,
+        },
+        {
+            ["mountId"] = 1799,
+            ["type"] = "mount",
+            ["name"] = "Eve's Ghastly Rider",
+            ["spellId"] = 419345,
         },
         {
             ["mountId"] = 2806,
@@ -83,12 +101,6 @@ Preset.defs[id] = {
             ["spellId"] = 1234303,
         },
         {
-            ["mountId"] = 2568,
-            ["type"] = "mount",
-            ["name"] = "Lightwing Dragonhawk",
-            ["spellId"] = 1234305,
-        },
-        {
             ["mountId"] = 978,
             ["type"] = "mount",
             ["spellId"] = 253639,
@@ -105,13 +117,6 @@ Preset.defs[id] = {
             ["type"] = "mount",
             ["name"] = "Preyseeker's Wrath",
             ["spellId"] = 1261337,
-        },
-
-        {
-            ["mountId"] = 1799,
-            ["type"] = "mount",
-            ["name"] = "Eve's Ghastly Rider",
-            ["spellId"] = 419345,
         },
         {
             ["mountId"] = 1446,
@@ -180,12 +185,6 @@ Preset.defs[id] = {
             ["name"] = "Coldflame Tempest",
         },
         {
-            ["mountId"] = 2324,
-            ["type"] = "mount",
-            ["spellId"] = 471696,
-            ["name"] = "Hooktalon",
-        },
-        {
             ["mountId"] = 2189,
             ["type"] = "mount",
             ["name"] = "Underlight Corrupted Behemoth",
@@ -196,12 +195,6 @@ Preset.defs[id] = {
             ["type"] = "mount",
             ["spellId"] = 315987,
             ["name"] = "Mail Muncher",
-        },
-        {
-            ["mountId"] = 1310,
-            ["type"] = "mount",
-            ["spellId"] = 332882,
-            ["name"] = "Horrid Dredwing",
         },
         {
             ["mountId"] = 779,
@@ -250,12 +243,6 @@ Preset.defs[id] = {
             ["type"] = "mount",
             ["name"] = "Sinrunner Blanchy",
             ["spellId"] = 339588,
-        },
-        {
-            ["mountId"] = 532,
-            ["type"] = "mount",
-            ["spellId"] = 136505,
-            ["name"] = "Ghastly Charger",
         },
     },
 }
