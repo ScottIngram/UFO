@@ -996,9 +996,9 @@ end
 function Config:toggle()
     local frames = LibStub("AceConfigDialog-3.0").OpenFrames
     if frames[ADDON_NAME] == nil then
-        self:open()
+        Config:open()
     else
-        self:open(false)
+        Config:open(false)
     end
 end
 
