@@ -30,8 +30,6 @@ DB = Ufo.DB
 L10N = Ufo.L10N
 Zebug = Ufo.Zebug
 Event = Ufo.Event
-BLIZ = _G
-XML_UI = _G
 
 -------------------------------------------------------------------------------
 -- Data
