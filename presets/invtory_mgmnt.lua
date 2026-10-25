@@ -68,11 +68,6 @@ Preset.defs[id] = {
             ["itemId"] = 239693,
         },
         {
-            ["petGuid"] = "BattlePet-0-000014F4B9FB",
-            ["type"] = "battlepet",
-            ["name"] = "Argent Gruntling",
-        },
-        {
             ["type"] = "spell",
             ["spellId"] = 83958,
             ["name"] = "Mobile Banking",
