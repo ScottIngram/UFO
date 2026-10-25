@@ -322,6 +322,23 @@ function ButtonDef:setIdAndType(id, type)
     return self
 end
 
+local playerFactionId
+
+function getPlayerFactionId()
+    if playerFactionId == nil then
+        local factionEn, localized = UnitFactionGroup("player") -- returns English "Horde" or "Alliance"
+        playerFactionId = disfactionMapByNameEn[factionEn]
+        -- zebug.warn:print("factionEn", factionEn, "remapped", disfactionMapByNameEn[factionEn], "playerFactionId",playerFactionId)
+    end
+    return playerFactionId
+end
+
+---@param factionId number Horde = 0; Alliance = 1
+function isThePlayerThisFaction(factionId)
+    -- zebug.warn:print("isThePlayerThisFaction factionId",factionId, "player", getPlayerFactionId(), "result", getPlayerFactionId() == factionId)
+    return getPlayerFactionId() == factionId
+end
+
 function ButtonDef:isUsable(event)
     local t = self.type
     local id = self:getIdForBlizApi()
@@ -330,12 +347,24 @@ function ButtonDef:isUsable(event)
     zebug.trace:owner(self):print("type",t, "spellId", self.spellId, "id",id)
     if t == ButtonType.MOUNT then
         local mountId = self.mountId
-        isUsable, err = C_MountJournal.GetMountUsabilityByID(mountId, false --[[checkIndoors]])
-        local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountId)
-        --zebug.warn:owner(self):mTriangle():print("mountId",self.mountId, "isUsable",isUsable, "err", err)
-        --zebug.warn:owner(self):mCircle():print("name",name, "spellID",spellID, "isUsable",isUsable, "isFactionSpecific",isFactionSpecific, "faction",faction, "shouldHideOnChar",shouldHideOnChar, "mountID",mountID)
-        isUsable = not shouldHideOnChar
-        return isUsable, (err or "Bliz API provided no explanation why not.")
+        local usabilityIsUsable, err = C_MountJournal.GetMountUsabilityByID(mountId, false --[[checkIndoors]])
+        local name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, factionId, shouldHideOnChar, isCollected, mountID, isSteadyFlight = C_MountJournal.GetMountInfoByID(mountId)
+        local factionEn = UnitFactionGroup("player")
+        -- Bliz's "isUsable" is very affected by transient situations such as standing next to quest givers or profession tables
+        -- Bliz's "isUsable" is NOT affected by transient situations such as being indoors.  Fucking lol
+        -- making it useless for my needs.  So, we'll do it in post!  Manually calculate it.
+        local calculatedIsUsable = (
+                isCollected
+                and (not shouldHideOnChar)
+                and (
+                        not isFactionSpecific
+                        or isThePlayerThisFaction(factionId)
+                )
+        )
+        zebug.trace:owner(self):mTriangle():print("name",name, "spellID",spellID, "mountId",mountId, "isUsable",isUsable, "usabilityIsUsable",usabilityIsUsable, "err", err, "isFactionSpecific",isFactionSpecific, "factionId", factionId, "player factionId", getPlayerFactionId(), 'player factionEn', factionEn)
+        zebug.trace:owner(self):mSkull():print("isUsable",isUsable, "calculatedIsUsable",calculatedIsUsable)
+
+        return calculatedIsUsable, (err or "Bliz API provided no explanation why not.")
     elseif t == ButtonType.PET then
         -- TODO: figure out how to find a mount
         return true -- GetMountInfoByID(mountId)
