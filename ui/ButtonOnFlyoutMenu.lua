@@ -34,10 +34,11 @@ function ButtonOnFlyoutMenu:new(flyoutMenu, i)
     --  <CheckButton parentKey="36" name="$parent_Button36" inherits="UFO_ButtonOnFlyoutMenu_Template" id="36" />
     local flyoutName = flyoutMenu:GetName()
     local myName = flyoutName .. "_Button" .. i
-    zebug.info:owner(flyoutMenu):mark(Mark.HORDE):print("flyoutMenu",flyoutMenu, "flyoutName",flyoutName, "myName",myName)
 
     ---@type ButtonOnFlyoutMenu
-    local self = CreateFrame(FrameType.CHECK_BUTTON, myName, flyoutMenu, "UFO_ButtonOnFlyoutMenu_Template")
+    zebug.warn:owner(flyoutMenu):mark(Mark.HORDE):print("creating frame...")
+    local self = CreateFrame(FrameType.CHECK_BUTTON, myName, flyoutMenu, "UFO_ButtonOnFlyoutMenu_Template", i)
+    zebug.warn:owner(flyoutMenu):mark(Mark.HORDE):print("flyoutMenu",flyoutMenu, "flyoutName",flyoutName, "i",i, "myName",myName, "GetID", self:GetID(), "GetParentKey",self:GetParentKey(i))
 
     -- BORROWED FROM FLYOUT MENU - are this also needed here too?
     -- calling self:GetParent() in any of the methods below returns some unknown object that is NOT the germ.
@@ -49,10 +50,12 @@ function ButtonOnFlyoutMenu:new(flyoutMenu, i)
         self.getParent = self.GetParent
     ]]
 
-    self:setId(i)
+    --self:setId(i)
+    --self:SetParentKey(i)
     --self:installMyToString()
     local id = self:getId()
-    zebug.info:owner(flyoutMenu):mark(Mark.HORDE):print("id",id, "type",type(id))
+    local parentKey = self:GetParentKey()
+    zebug.warn:owner(flyoutMenu):mark(Mark.HORDE):print("id",id, "type",type(id), "parentKey", parentKey, "tpk",type(parentKey))
 
     return self
 end
@@ -405,7 +408,9 @@ end
 -- TODO: should this be in Button_Mixin so that Germ can enjoy it too?
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onLoad()
+    self:SetParentKey(self:GetID())
     -- leverage inheritance - invoke parent's OnLoad()
+    zebug.warn:owner(self):name("onLoad"):print("GetID()",self:GetID(),"GetParentKey",self:GetParentKey())
     self:SmallActionButtonMixin_OnLoad()
     SecureHandler_OnLoad(self)
 
@@ -449,6 +454,8 @@ function ButtonOnFlyoutMenu:onMouseUp()
         end)
     end
 end
+
+-- HERE
 
 ---@param mouseClick MouseClick
 function ButtonOnFlyoutMenu:OnMouseDown(mouseClick)

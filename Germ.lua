@@ -985,6 +985,7 @@ function Germ:promoteButtonToPrime(btn)
 
     local n = btn:getId()
     self.primeBtnIndex = n or 1
+    zebug.warn:owner(btn):print("I am the captain now",self.primeBtnIndex)
     self:setIcon(btn.iconTexture, "promoter")
 end
 
@@ -1011,6 +1012,7 @@ end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:PRIME_BTN(mouseClick, event)
+    print("PRIME_BTN")
     self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
     self:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(mouseClick, "Germ's PRIME") -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
 

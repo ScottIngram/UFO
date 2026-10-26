@@ -297,13 +297,14 @@ end
 function Button_Mixin:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(mouseClick, event)
     ---@type ButtonDef
     local btnDef = self:getDef()
+    zebug.warn:event(event):owner(self):noName():print("primeBtnIndex",self.primeBtnIndex, "btnDef", btnDef and btnDef:toString())
 
     if btnDef then
         local secEnvMouseClickId = MouseClickAsSecEnvId[mouseClick] -- "type1" or "type2" etc
         local typeOfAction, typeOfActionButDumber, actualAction = btnDef:asSecureClickHandlerAttributes(event)
         -- typeOfActionButDumber = typeOfActionButDumber or typeOfAction
         local typeOfActionButDumberAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secEnvMouseClickId, typeOfActionButDumber)
-        zebug.info:event(event):owner(self):noName():print("t",secEnvMouseClickId, "type", typeOfAction, "typeDumber", typeOfActionButDumber, "typeDumberAdjusted", typeOfActionButDumberAdjustedToMatchMouseClick, "actualAction", actualAction)
+        zebug.warn:event(event):owner(self):noName():print("t",secEnvMouseClickId, "type", typeOfAction, "typeDumber", typeOfActionButDumber, "typeDumberAdjusted", typeOfActionButDumberAdjustedToMatchMouseClick, "actualAction", actualAction)
 
         self:SetAttribute(secEnvMouseClickId, typeOfAction) -- eg "type1" -> "macro"
         self:SetAttribute(typeOfActionButDumberAdjustedToMatchMouseClick, actualAction) -- eg, "macro1" -> "/say weak sauce"
