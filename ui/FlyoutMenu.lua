@@ -59,11 +59,8 @@ function FlyoutMenu:new(germ, event)
     self:setId(germ:getFlyoutId())
     self:installMyToString()
 
-
     self:installSecEnvBullshit(event)
 
-
-    --self:installSecEnvScriptIntoBtnKidsForCloseOnClick()
     self:HookScript(Script.ON_SHOW, ScriptHandlers.ON_SHOW)
     self:HookScript(Script.ON_HIDE, ScriptHandlers.ON_HIDE)
 
@@ -117,7 +114,6 @@ end
 
 function FlyoutMenu:forEachButton(handler, event)
     for i, button in ipairs(self:getBtnKids()) do
-        zebug.warn:owner(button):print("i",i, "ID",button:GetID(), "button.ufoType",button.ufoType)
         if button.ufoType == ButtonOnFlyoutMenu.ufoType then
             handler(button,event)
         end
@@ -154,81 +150,7 @@ function FlyoutMenu:allocateNewBtnKid(i)
 
     local btn = ButtonOnFlyoutMenu:new(self, i)
     self.btnKids[i] = btn
-    --print("===== getBtnKids", #(self:getBtnKids()))
     return btn
-end
-
-local function deleteMe()
-
--- TODO move to SecEnvDrugMule
-
--- use non-local "global" variables to save values between executions
--- because GetParent() returns nil during combat lockdown
-local CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
-    -- follow convention and trigger on mouse UP / key UP, not down (and certainly not both up and down).  the "down" variable is passed in by the Bliz API
-    if down then return end
-
-    if not flyoutMenu then
-        flyoutMenu = self:GetParent() or self:GetFrameRef("flyoutMenu")
-    end
-
-    --[[DEBUG]] local id = self:GetID()
-    --[[DEBUG]] local flyoutName = flyoutMenu:GetAttribute("UFO_NAME") or flyoutMenu:GetName() or "bullshit"
-    --[[DEBUG]] local doDebug = flyoutMenu:GetAttribute("DO_DEBUG") or false
-    --[[DEBUG]] if doDebug then
-    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT <START>")
-    --[[DEBUG]] end
-
-    if not germ then
-        germ = flyoutMenu:GetParent() or self:GetFrameRef("germ")
-    end
-
-        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
-
-    local doClose = germ:GetAttribute("doCloseOnClick")
-    local doClose2 = flyoutMenu:GetAttribute("doCloseOnClick")
-    local doClose3 = UFO_DUM_DUM:GetAttribute("doCloseOnClick")
-
-    --[[DEBUG]] if doDebug then
-    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "doClose:", doClose, "doClose2",doClose2, "doClose3",doClose3)
-    --[[DEBUG]] end
-
-    if doClose or doClose2 or doClose3 then
-        --[[DEBUG]] if doDebug then
-        --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "CLOSING!  doClose:", doClose, "doClose2:",doClose2)
-        --[[DEBUG]] end
-
-        flyoutMenu:Hide()
-        flyoutMenu:SetAttribute("doCloseFlyout", false)
-		flyoutMenu:ClearBindings()
-    end
-]=]
-
-function FlyoutMenu:installSecEnvScriptIntoBtnKidsForCloseOnClick()
-    if self.isCloserInitialized or not self.isForGerm then return end
-
-    -- values used inside the secure environment code
-    -- self:SetAttribute("DO_DEBUG", not zebug.info:isMute() )
-    -- self:SetAttribute("UFO_NAME", self:getUfoLabel())
-
-    local germ = self:GetParent()
-    zebug.warn:owner(self):print("germ", germ)
-
-    ---@param btnFrame BOFM_TYPE
-    self:forEachButton(function(btnFrame)
-        -- move ALL of this into btnFrame:initializeSecEnv()
-        btnFrame:SetFrameRef("flyoutMenu", self)
-        btnFrame:SetFrameRef("germ", germ)
-        btnFrame:SetFrameRef("UFO_DUM_DUM", _G["UFO_DUM_DUM"])
-        btnFrame:WrapScript(btnFrame, "PostClick", CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- This threw: "Header frame must be explicitly protected" after combat.  I had managed to move a UFO during combat(?)
-        btnFrame:Execute(CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- initialize the scriptlet's "global" vars
-        btnFrame:initializeForGermSecEnv()
-    end)
-
-    self.isCloserInitialized = true
-end
-
-FlyoutMenu.installSecEnvScriptIntoBtnKidsForCloseOnClick = Pacifier:wrap(FlyoutMenu.installSecEnvScriptIntoBtnKidsForCloseOnClick)
 end
 
 function FlyoutMenu:installSecEnvBullshit(event)
@@ -244,7 +166,7 @@ function FlyoutMenu:installSecEnvBullshit(event)
     self:SetFrameRef("flyoutMenu", self)
     local germ = self:getParent()
     if germ then
-        self:SetFrameRef("germ", self:getParent())
+        self:SetFrameRef("germ", germ)
     end
 
     -- set global variables inside the restricted environment

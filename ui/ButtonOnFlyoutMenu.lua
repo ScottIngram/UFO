@@ -37,26 +37,10 @@ function ButtonOnFlyoutMenu:new(flyoutMenu, i)
     local myName = flyoutName .. "_Button" .. i
 
     ---@type ButtonOnFlyoutMenu
-    zebug.warn:owner(flyoutName):mark(Mark.FIRE):print("creating frame #",i)
+    zebug.info:owner(flyoutName):mark(Mark.FIRE):print("creating frame #",i)
     local self = CreateFrame(FrameType.CHECK_BUTTON, myName, flyoutMenu, "UFO_ButtonOnFlyoutMenu_Template", i)
-    zebug.warn:owner(flyoutName):mark(Mark.HORDE):print("flyoutMenu",flyoutMenu, "flyoutName",flyoutName, "i",i, "myName",myName, "GetID", self:GetID(), "GetParentKey",self:GetParentKey(i))
-
-    -- BORROWED FROM FLYOUT MENU - are this also needed here too?
-    -- calling self:GetParent() in any of the methods below returns some unknown object that is NOT the germ.
-    -- but later, it will return the germ.  JFC.
-    -- WORKAROUND - set the parent a SECOND time.  This one seems to stick.  FUCK YOU BLIZ.
-    --[[
-        self:SetParent(flyoutMenu)
-        self.GetParent = function() return germ end -- fuck you again, Bliz!
-        self.getParent = self.GetParent
-    ]]
-
-    --self:setId(i)
-    --self:SetParentKey(i)
-    --self:installMyToString()
-    local id = self:getId()
-    local parentKey = self:GetParentKey()
-    zebug.warn:owner(flyoutName):mark(Mark.NO):print("DONE new()! id",id, "type",type(id), "parentKey", parentKey, "tpk",type(parentKey))
+    -- see also ButtonOnFlyoutMenu:onLoad()
+    zebug.info:owner(flyoutName):mark(Mark.HORDE):print("DONE! flyoutMenu",flyoutMenu, "flyoutName",flyoutName, "i",i, "myName",myName, "GetID", self:GetID(), "GetParentKey",self:GetParentKey(i))
 
     return self
 end
@@ -304,7 +288,7 @@ end
 function ButtonOnFlyoutMenu:initializeForGermSecEnv()
     local flyoutMenu = self:getFlyoutMenu()
     local germ = flyoutMenu:getParent()
-    zebug.warn:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu)
+    zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu)
 
     -- set attributes used inside the secure scripts
     self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
@@ -416,7 +400,7 @@ function ButtonOnFlyoutMenu:onLoad()
     local name = flyoutMenu:GetName()
     self:SetParentKey(self:GetID())
     -- leverage inheritance - invoke parent's OnLoad()
-    zebug.warn:owner(name):name("onLoad"):mark(Mark.ALLIANCE):print("parent",self:GetParent():GetName(), "GetID()",self:GetID(),"GetParentKey",self:GetParentKey())
+    zebug.info:owner(name):name("onLoad"):mark(Mark.ALLIANCE):print("parent",self:GetParent():GetName(), "GetID()",self:GetID(),"GetParentKey",self:GetParentKey())
     self:SmallActionButtonMixin_OnLoad()
     SecureHandler_OnLoad(self)
 
@@ -429,8 +413,7 @@ function ButtonOnFlyoutMenu:onLoad()
     -- TODO - register for spell and cooldown events (?)
 
     local germMaybe = flyoutMenu:getParent()
-    zebug.warn:mCircle():owner(flyoutName):print("germMaybe",germMaybe, "germMaybe:isA", germMaybe.isA)
-    if germMaybe.isA and germMaybe:isA(Germ) then
+    if UfoMixIn.isA(germMaybe,Germ) then
         self:initializeForGermSecEnv()
     end
 
@@ -439,7 +422,7 @@ function ButtonOnFlyoutMenu:onLoad()
     self:SetPoint(Anchor.CENTER, bumper, Anchor.CENTER)
 
     self:SetFrameRef("bumper", bumper)
-    zebug.warn:owner(name):setMethodName("onLoad"):mark(Mark.ALLIANCE):print("done onLoad")
+    zebug.info:owner(name):setMethodName("onLoad"):mark(Mark.ALLIANCE):print("done onLoad")
 end
 
 ---@param self ButtonOnFlyoutMenu
@@ -467,8 +450,6 @@ function ButtonOnFlyoutMenu:onMouseUp()
         end)
     end
 end
-
--- HERE
 
 ---@param mouseClick MouseClick
 function ButtonOnFlyoutMenu:OnMouseDown(mouseClick)
