@@ -30,15 +30,16 @@ GLOBAL_ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
+---@param flyoutMenu FlyoutMenu
 function ButtonOnFlyoutMenu:new(flyoutMenu, i)
     --  <CheckButton parentKey="36" name="$parent_Button36" inherits="UFO_ButtonOnFlyoutMenu_Template" id="36" />
     local flyoutName = flyoutMenu:GetName()
     local myName = flyoutName .. "_Button" .. i
 
     ---@type ButtonOnFlyoutMenu
-    zebug.warn:owner(flyoutMenu):mark(Mark.HORDE):print("creating frame...")
+    zebug.warn:owner(flyoutName):mark(Mark.FIRE):print("creating frame #",i)
     local self = CreateFrame(FrameType.CHECK_BUTTON, myName, flyoutMenu, "UFO_ButtonOnFlyoutMenu_Template", i)
-    zebug.warn:owner(flyoutMenu):mark(Mark.HORDE):print("flyoutMenu",flyoutMenu, "flyoutName",flyoutName, "i",i, "myName",myName, "GetID", self:GetID(), "GetParentKey",self:GetParentKey(i))
+    zebug.warn:owner(flyoutName):mark(Mark.HORDE):print("flyoutMenu",flyoutMenu, "flyoutName",flyoutName, "i",i, "myName",myName, "GetID", self:GetID(), "GetParentKey",self:GetParentKey(i))
 
     -- BORROWED FROM FLYOUT MENU - are this also needed here too?
     -- calling self:GetParent() in any of the methods below returns some unknown object that is NOT the germ.
@@ -55,7 +56,7 @@ function ButtonOnFlyoutMenu:new(flyoutMenu, i)
     --self:installMyToString()
     local id = self:getId()
     local parentKey = self:GetParentKey()
-    zebug.warn:owner(flyoutMenu):mark(Mark.HORDE):print("id",id, "type",type(id), "parentKey", parentKey, "tpk",type(parentKey))
+    zebug.warn:owner(flyoutName):mark(Mark.NO):print("DONE new()! id",id, "type",type(id), "parentKey", parentKey, "tpk",type(parentKey))
 
     return self
 end
@@ -300,16 +301,19 @@ end
 --
 -------------------------------------------------------------------------------
 
-function ButtonOnFlyoutMenu:initializeSecEnv()
+function ButtonOnFlyoutMenu:initializeForGermSecEnv()
     local flyoutMenu = self:getFlyoutMenu()
     local germ = flyoutMenu:getParent()
-    zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu)
+    zebug.warn:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu)
 
     -- set attributes used inside the secure scripts
     self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:setSecEnvAttribute("UFO_NAME", self:getLabel())
     self:SetFrameRef("flyoutMenu", flyoutMenu)
     self:SetFrameRef("germ", germ)
+    self:SetFrameRef("UFO_DUM_DUM", _G["UFO_DUM_DUM"])
+    self:WrapScript(self, "PostClick", SecEnv.scripts.CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- This threw: "Header frame must be explicitly protected" after combat.  I had managed to move a UFO during combat(?)
+    self:Execute(SecEnv.scripts.CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- initialize the scriptlet's "global" vars
 
     -- set global variables inside the restricted "secure" environment
     self:Execute([=[
@@ -408,9 +412,11 @@ end
 -- TODO: should this be in Button_Mixin so that Germ can enjoy it too?
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onLoad()
+    local flyoutMenu = self:GetParent()
+    local name = flyoutMenu:GetName()
     self:SetParentKey(self:GetID())
     -- leverage inheritance - invoke parent's OnLoad()
-    zebug.warn:owner(self):name("onLoad"):print("GetID()",self:GetID(),"GetParentKey",self:GetParentKey())
+    zebug.warn:owner(name):name("onLoad"):mark(Mark.ALLIANCE):print("parent",self:GetParent():GetName(), "GetID()",self:GetID(),"GetParentKey",self:GetParentKey())
     self:SmallActionButtonMixin_OnLoad()
     SecureHandler_OnLoad(self)
 
@@ -422,11 +428,18 @@ function ButtonOnFlyoutMenu:onLoad()
     self:RegisterForClicks("AnyDown", "AnyUp")
     -- TODO - register for spell and cooldown events (?)
 
+    local germMaybe = flyoutMenu:getParent()
+    zebug.warn:mCircle():owner(flyoutName):print("germMaybe",germMaybe, "germMaybe:isA", germMaybe.isA)
+    if germMaybe.isA and germMaybe:isA(Germ) then
+        self:initializeForGermSecEnv()
+    end
+
     -- purely for easier UI layout, I include an ornamental Frame with a phat margin
     local bumper = self.bumper
     self:SetPoint(Anchor.CENTER, bumper, Anchor.CENTER)
 
     self:SetFrameRef("bumper", bumper)
+    zebug.warn:owner(name):setMethodName("onLoad"):mark(Mark.ALLIANCE):print("done onLoad")
 end
 
 ---@param self ButtonOnFlyoutMenu

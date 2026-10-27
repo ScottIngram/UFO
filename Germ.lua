@@ -985,7 +985,7 @@ function Germ:promoteButtonToPrime(btn)
 
     local n = btn:getId()
     self.primeBtnIndex = n or 1
-    zebug.warn:owner(btn):print("I am the captain now",self.primeBtnIndex)
+    zebug.warn:owner(btn):print("I am the captain now",self.primeBtnIndex, type(self.primeBtnIndex))
     self:setIcon(btn.iconTexture, "promoter")
 end
 

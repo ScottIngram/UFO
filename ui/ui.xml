@@ -133,6 +133,7 @@
                     <KeyValue key="ignoreInlayout" value="true" type="boolean"/>
                 </KeyValues>
             </Frame>
+<!--
             <CheckButton parentKey="1" name="$parent_Button1" inherits="UFO_ButtonOnFlyoutMenu_Template" id="1" />
             <CheckButton parentKey="2" name="$parent_Button2" inherits="UFO_ButtonOnFlyoutMenu_Template" id="2" />
             <CheckButton parentKey="3" name="$parent_Button3" inherits="UFO_ButtonOnFlyoutMenu_Template" id="3" />
@@ -143,6 +144,7 @@
             <CheckButton parentKey="8" name="$parent_Button8" inherits="UFO_ButtonOnFlyoutMenu_Template" id="8" />
             <CheckButton parentKey="9" name="$parent_Button9" inherits="UFO_ButtonOnFlyoutMenu_Template" id="9" />
             <CheckButton parentKey="10" name="$parent_Button10" inherits="UFO_ButtonOnFlyoutMenu_Template" id="10" />
+-->
 
         </Frames>
     </Frame>

@@ -37,6 +37,7 @@ SecEnv = {
     OPENER_SCRIPT_REF_NAME = "SEC_ENV_OPENER_SCRIPT_REF_NAME",
     LAYOUT_SCRIPT_REF_NAME = "SEC_ENV_LAYOUT_SCRIPT_REF_NAME",
     ON_CLICK_SCRIPT_NAME_PREFIX_FOR___ARBITRARY_BEHAVIOR = "SEC_ENV_ON_CLICK_SCRIPT_NAME_PREFIX_FOR___ARBITRARY_BEHAVIOR_",
+    scripts = {},
 }
 
 -------------------------------------------------------------------------------
@@ -44,6 +45,50 @@ SecEnv = {
 -- SecEnv Scripts
 --
 -------------------------------------------------------------------------------
+
+-- TODO move to SecEnvDrugMule
+
+-- use non-local "global" variables to save values between executions
+-- because GetParent() returns nil during combat lockdown
+SecEnv.scripts.CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
+    -- follow convention and trigger on mouse UP / key UP, not down (and certainly not both up and down).  the "down" variable is passed in by the Bliz API
+    if down then return end
+
+    if not flyoutMenu then
+        flyoutMenu = self:GetParent() or self:GetFrameRef("flyoutMenu")
+    end
+
+    --[[DEBUG]] local id = self:GetID()
+    --[[DEBUG]] local flyoutName = flyoutMenu:GetAttribute("UFO_NAME") or flyoutMenu:GetName() or "bullshit"
+    --[[DEBUG]] local doDebug = flyoutMenu:GetAttribute("DO_DEBUG") or false
+    --[[DEBUG]] if doDebug then
+    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT <START>")
+    --[[DEBUG]] end
+
+    if not germ then
+        germ = flyoutMenu:GetParent() or self:GetFrameRef("germ")
+    end
+
+        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
+
+    local doClose = germ:GetAttribute("doCloseOnClick")
+    local doClose2 = flyoutMenu:GetAttribute("doCloseOnClick")
+    local doClose3 = UFO_DUM_DUM:GetAttribute("doCloseOnClick")
+
+    --[[DEBUG]] if doDebug then
+    --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "doClose:", doClose, "doClose2",doClose2, "doClose3",doClose3)
+    --[[DEBUG]] end
+
+    if doClose or doClose2 or doClose3 then
+        --[[DEBUG]] if doDebug then
+        --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "CLOSING!  doClose:", doClose, "doClose2:",doClose2)
+        --[[DEBUG]] end
+
+        flyoutMenu:Hide()
+        flyoutMenu:SetAttribute("doCloseFlyout", false)
+		flyoutMenu:ClearBindings()
+    end
+]=]
 
 function SecEnv:installEnumsAndConstants(fucker)
     local DIRECTION_AS_ANCHOR = serializeAsAssignments("DIRECTION_AS_ANCHOR", DirectionAsAnchor, true) -- disable "local" keyword

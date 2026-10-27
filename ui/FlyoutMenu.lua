@@ -63,7 +63,7 @@ function FlyoutMenu:new(germ, event)
     self:installSecEnvBullshit(event)
 
 
-    self:installSecEnvScriptIntoBtnKidsForCloseOnClick()
+    --self:installSecEnvScriptIntoBtnKidsForCloseOnClick()
     self:HookScript(Script.ON_SHOW, ScriptHandlers.ON_SHOW)
     self:HookScript(Script.ON_HIDE, ScriptHandlers.ON_HIDE)
 
@@ -117,6 +117,7 @@ end
 
 function FlyoutMenu:forEachButton(handler, event)
     for i, button in ipairs(self:getBtnKids()) do
+        zebug.warn:owner(button):print("i",i, "ID",button:GetID(), "button.ufoType",button.ufoType)
         if button.ufoType == ButtonOnFlyoutMenu.ufoType then
             handler(button,event)
         end
@@ -153,8 +154,11 @@ function FlyoutMenu:allocateNewBtnKid(i)
 
     local btn = ButtonOnFlyoutMenu:new(self, i)
     self.btnKids[i] = btn
+    --print("===== getBtnKids", #(self:getBtnKids()))
     return btn
 end
+
+local function deleteMe()
 
 -- TODO move to SecEnvDrugMule
 
@@ -208,7 +212,7 @@ function FlyoutMenu:installSecEnvScriptIntoBtnKidsForCloseOnClick()
     -- self:SetAttribute("UFO_NAME", self:getUfoLabel())
 
     local germ = self:GetParent()
-    zebug.info:owner(self):print("germ", germ)
+    zebug.warn:owner(self):print("germ", germ)
 
     ---@param btnFrame BOFM_TYPE
     self:forEachButton(function(btnFrame)
@@ -218,13 +222,14 @@ function FlyoutMenu:installSecEnvScriptIntoBtnKidsForCloseOnClick()
         btnFrame:SetFrameRef("UFO_DUM_DUM", _G["UFO_DUM_DUM"])
         btnFrame:WrapScript(btnFrame, "PostClick", CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- This threw: "Header frame must be explicitly protected" after combat.  I had managed to move a UFO during combat(?)
         btnFrame:Execute(CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT) -- initialize the scriptlet's "global" vars
-        btnFrame:initializeSecEnv()
+        btnFrame:initializeForGermSecEnv()
     end)
 
     self.isCloserInitialized = true
 end
 
 FlyoutMenu.installSecEnvScriptIntoBtnKidsForCloseOnClick = Pacifier:wrap(FlyoutMenu.installSecEnvScriptIntoBtnKidsForCloseOnClick)
+end
 
 function FlyoutMenu:installSecEnvBullshit(event)
     SecureHandler_OnLoad(self) -- install self:SetFrameRef()
