@@ -374,6 +374,7 @@ end
 
 ---@param germ Germ
 function FlyoutMenu:applyConfigForGerm(germ, event)
+    event = "DBG"
     self:SetParent(germ)
     self.direction = germ:getDirection(event)
     local flyoutId = germ:getFlyoutId()
@@ -381,7 +382,8 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
     local flyoutDef = self:getDef()
     zebug.trace:event(event):owner(self):dumpy("flyoutDef",flyoutDef)
     local usableFlyout = flyoutDef:filterOutUnusable()
-    local btnNumber = 0
+    local populatedButtonCount = usableFlyout:howManyButtons()
+    local BTN_NUMBER_UNUSED = 0
 
     local nVirt = usableFlyout:howManyButtons()
     local nAlloc =self:howManyBtnKids()
@@ -393,34 +395,39 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
         btnFrame:setDef(btnDef, event)
 
         if btnDef then
-            zebug.info:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
+            zebug.warn:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
             local icon = self:getIcon(btnDef)
             btnFrame:setIcon(icon, event)
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
 
             -- label the keybinds
-            btnNumber = btnNumber + 1
-            updateHotKeyLabel(btnFrame, btnNumber)
+            BTN_NUMBER_UNUSED = BTN_NUMBER_UNUSED + 1
+            updateHotKeyLabel(btnFrame, i)
         else
-            zebug.info:event(event):owner(self):print("i",i, "clearing coz empty")
+            zebug.warn:event(event):owner(self):print("i",i, "clearing coz empty")
             btnFrame:setIcon(DEFAULT_ICON, event)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE
             --return
         end
     end
 
-    --zebug.error:event("IN_USE_BTN_COUNT"):owner(self):print("btnNumber",btnNumber)
-    self:SetAttribute("IN_USE_BTN_COUNT", btnNumber)
+    zebug.error:event(event):owner(self):print("BTN_NUMBER_UNUSED",BTN_NUMBER_UNUSED, "populatedButtonCount",populatedButtonCount)
+    self:SetAttribute("IN_USE_BTN_COUNT", BTN_NUMBER_UNUSED) -- should this be nVirt ?
+    self:SetAttribute("POPULATED_BUTTON_COUNT", populatedButtonCount)
 
     if not self.hasOnHide then
         zebug.info:event(event):owner(self):print("setting OnHide for",self:GetName())
         local btn1 = self:getBtn1()
+        if not btn1 then
+            btn1 = self:allocateNewBtnKid(1)
+        end
+
         btn1:SetFrameRef("flyout",self)
         btn1:SetAttribute("_onhide", "flyout:ClearBindings()") -- v11.1 replaces btn1:SetScript() and SecureHandlerExecute(germ, "keybindKeeper:ClearBindings()")
         self.hasOnHide = true
     end
 
-    zebug.info:event(event):owner(self):print("executeFromNonSecEnv_Layout n",n)
+    zebug.warn:event(event):owner(self):print("executeFromNonSecEnv_Layout n",n)
     SecEnv:executeFromNonSecEnv_Layout(self, n, self.direction, self.displaceBtnsHere)
     germ:SetAttribute("UFO_FLYOUT_MOD_TIME", flyoutDef:getModStamp())
 end

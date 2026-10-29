@@ -132,7 +132,7 @@ function SecEnv:getSecEnvScriptFor_Opener()
 		return
     end
 
---print("binding ESCAPE to mouseClick",mouseClick)
+print("=== ScriptFor_Opener() binding ESCAPE to mouseClick",mouseClick)
     flyoutMenu:SetBindingClick(true, "Escape", germ, mouseClick)
 
 -- TODO: move this into FlyoutMenu:updateForGerm()
@@ -154,6 +154,7 @@ function SecEnv:getSecEnvScriptFor_Opener()
     local IN_USE_BTN_COUNT = flyoutMenu:GetAttribute("IN_USE_BTN_COUNT")
     local OPTION_MAX_LEN   = UFO_DUM_DUM:GetAttribute("OPTION_MAX_LEN")
     local isNewLayoutNeeded = false
+
     if (not numButtons) or (numButtons ~= IN_USE_BTN_COUNT) then
         isNewLayoutNeeded = true
     elseif (not optionMaxLen) or (optionMaxLen ~= OPTION_MAX_LEN) then
@@ -178,25 +179,36 @@ function SecEnv:getSecEnvScriptFor_Opener()
     --
 
     if germ then
+print("=== ScriptFor_Opener()", flyoutName)
         local doKeybindTheButtonsOnTheFlyout = germ:GetAttribute("doKeybindTheButtonsOnTheFlyout")
         if doKeybindTheButtonsOnTheFlyout then
+            local LFT_BTN = "]=].. MouseClick.LEFT ..[=["
+            print("=== ScriptFor_Opener()", flyoutName, "LFT_BTN ->",LFT_BTN)
             local lastKeyNum = math.min(numButtons, 10)
             for i = 1, lastKeyNum do
                 local btn = GLOBAL_BTNS[i]
+                local btnName = btn and btn:GetName()
+                local btnNameType = type(btnName)
                 local numberKey = (i == 10) and "0" or tostring(i)
-                flyoutMenu:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
+print("=== ScriptFor_Opener() GERM's flyout's btns -",numberKey, "DEBUG - btn",btn, "btnName",btnName, "btnNameType",btnNameType)
+print("=== ScriptFor_Opener() GERM's flyout's btns -",numberKey,"binding btnName:", btnName, btnNameType, "to mouseClick ", LFT_BTN, " try")
+                flyoutMenu:SetBindingClick(true, numberKey, btn, LFT_BTN)
+print("=== ScriptFor_Opener() GERM's flyout's btns -",numberKey,"binding btnName:", btnName, btnNameType, "to mouseClick ", LFT_BTN, " success")
                 if numberKey == "1" then
                     -- make the UFO's first button's keybind be the same as the UFO itself
                     local germKeyBind = germ:GetAttribute("UFO_KEYBIND_1")
                     if germKeyBind then
-                        flyoutMenu:SetBindingClick(true, germKeyBind, btn, "]=].. MouseClick.LEFT ..[=[")
+print("=== ScriptFor_Opener() GERM first btn -",numberKey,"binding btnName:", btnName, btnNameType, "to mouseClick ", LFT_BTN )
+                        flyoutMenu:SetBindingClick(true, btnName, btnName, LFT_BTN)
                     end
                 end
             end
         end
+print("=== ScriptFor_Opener() GERM - end!")
     end
 
     flyoutMenu:Show()
+print("=== ScriptFor_Opener() END !!!")
 ]=]
     end
 
@@ -240,13 +252,20 @@ local isVert = dir == "UP" or dir == "DOWN"
 local isForCatalog = flyoutMenu:GetAttribute("IS_FOR_CATALOG")
 
     -- get the buttons, filtering out trash.  disable cache for Catalog's flyout
-    if isForCatalog or not GLOBAL_BTNS then
+    if true or (isForCatalog or not GLOBAL_BTNS) then
+
         GLOBAL_BTNS = table.new(flyoutMenu:GetChildren())
         while GLOBAL_BTNS[1] and GLOBAL_BTNS[1]:GetID() < 1 do
             --print("discarding flyout child", GLOBAL_BTNS[1]:GetObjectType(), GLOBAL_BTNS[1]:GetID())
             table.remove(GLOBAL_BTNS, 1) -- this is the non-button UI element "Background" from ui.xml
         end
     end
+
+print("===== ScriptFor_Layout()",flyoutName, "GLOBAL_BTNS size", #GLOBAL_BTNS)
+for i, btn in ipairs(GLOBAL_BTNS) do
+print("===== ScriptFor_Layout() GLOBAL_BTNS ",i, GLOBAL_BTNS[i])
+end
+
 
 -- calculate if the flyout is too long, then how many rows & columns
 local configMaxLen = UFO_DUM_DUM:GetAttribute("FLYOUT_MAX_LEN") or 100
@@ -396,11 +415,13 @@ function SecEnv:getSecEnvScriptFor_KeyBinding()
         if i > 10 then return end
 
         local numberKey = (i == 10) and "0" or tostring(i)
+print("=== ScriptFor_KeyBinding()",flyoutName, " binding numberKey:", numberKey, "to mouseClick MouseClick.LEFT")
         flyoutMenu:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
         if numberKey == "1" then
             -- make the UFO's first button's keybind be the same as the UFO itself
             local germKeyBind = germ:GetAttribute("UFO_KEYBIND_1")
             if germKeyBind then
+print("=== ScriptFor_Opener() prime? binding germKeyBind:", germKeyBind, "to mouseClick MouseClick.LEFT")
                 flyoutMenu:SetBindingClick(true, germKeyBind, btn, "]=].. MouseClick.LEFT ..[=[")
             end
         end
