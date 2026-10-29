@@ -412,8 +412,7 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
 
             -- label the keybinds
-            BTN_NUMBER_UNUSED = BTN_NUMBER_UNUSED + 1
-            updateHotKeyLabel(btnFrame, i)
+            btnFrame:setHotKeyLabel(btnFrame, i)
         else
             zebug.warn:event(event):owner(self):print("i",i, "clearing coz empty")
             btnFrame:setIcon(DEFAULT_ICON, event)
@@ -441,16 +440,6 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
     zebug.warn:event(event):owner(self):print("executeFromNonSecEnv_Layout n",n)
     SecEnv:executeFromNonSecEnv_Layout(self, n, self.direction, self.displaceBtnsHere)
     germ:SetAttribute("UFO_FLYOUT_MOD_TIME", flyoutDef:getModStamp())
-end
-
-function updateHotKeyLabel(btnFrame, btnNumber)
-    local hotKeyLabel
-    if Config:get("doKeybindTheButtonsOnTheFlyout") then
-        if btnNumber < 11 then
-            hotKeyLabel = (btnNumber == 10) and "0" or tostring(btnNumber)
-        end
-    end
-    btnFrame.HotKey:SetText(hotKeyLabel)
 end
 
 function FlyoutMenu:displaceButtonsOnHover(index)

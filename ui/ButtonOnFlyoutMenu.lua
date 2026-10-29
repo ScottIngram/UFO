@@ -155,6 +155,16 @@ function ButtonOnFlyoutMenu:setExcluderVisibility()
     end
 end
 
+function ButtonOnFlyoutMenu:setHotKeyLabel(btnFrame, btnNumber)
+    local hotKeyLabel
+    if Config:get("doKeybindTheButtonsOnTheFlyout") then
+        if btnNumber < 11 then
+            hotKeyLabel = (btnNumber == 10) and "0" or tostring(btnNumber)
+        end
+    end
+    btnFrame.HotKey:SetText(hotKeyLabel)
+end
+
 ---@param btnDef ButtonDef
 function ButtonOnFlyoutMenu:abortIfUnusable(btnDef)
     if (not btnDef) or btnDef:isUsable() then
