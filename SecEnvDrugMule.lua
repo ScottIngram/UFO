@@ -100,25 +100,25 @@ function SecEnv:installEnumsAndConstants(fucker)
     ]=])
 end
 
-
 function SecEnv:getSecEnvScriptFor_Opener()
     if not SecEnv.OPENER_SCRIPT then
-        --local DIRECTION_AS_ANCHOR = serializeAsAssignments("DIRECTION_AS_ANCHOR", DirectionAsAnchor, true) -- disable "local" keyword
-        --local ANCHOR_OPPOSITE = serializeAsAssignments("ANCHOR_OPPOSITE", AnchorOpposite, true) -- disable "local" keyword
+        SecEnv.OPENER_SCRIPT = SecEnv:initSecEnvScriptFor_Opener()
+    end
 
-        SecEnv.OPENER_SCRIPT =
-        [=[
---print("<<<START>>>")
-        local arg1, arg2 = ...;
+    return SecEnv.OPENER_SCRIPT
+end
 
---print("SecEnv:getSecEnvScriptFor_Opener ... clicked clicked !!! self",self, "button",button, "down",down, "a,b,c,d",a,b,c,d)
-        --local doDebug = true
+function SecEnv:initSecEnvScriptFor_Opener()
+    SecEnv.OPENER_SCRIPT = [=[
+    local arg1, arg2 = ...;
 
-            local mouseClick = button or arg1 --"button" is auto-assigned by Bliz for an ON_CLICK handler.  But for generic scripts, we must use ...
-            local isClicked = down or arg2
-            local dir = germ:GetAttribute( "]=].. SecEnvAttribute.flyoutDirection ..[=[" )
+    local mouseClick = button or arg1 --"button" is auto-assigned by Bliz for an ON_CLICK handler.  But for generic scripts, we must use ...
+    local isClicked = down or arg2
+    local dir = germ:GetAttribute( "]=].. SecEnvAttribute.flyoutDirection ..[=[" )
     local isOpen = flyoutMenu:IsShown()
+    flyoutName = flyoutMenu:GetAttribute("UFO_NAME")
 
+    --local doDebug = true
     --[[DEBUG]] if doDebug then
     --[[DEBUG]]     print("<DEBUG>", myName, "OPENER_SCRIPT <START> germ =", germ, "flyoutMenu =",flyoutMenu, "mouseClick",mouseClick, "isClicked",isClicked, "dir",dir, "isOpen",isOpen)
     --[[DEBUG]] end
@@ -132,7 +132,6 @@ function SecEnv:getSecEnvScriptFor_Opener()
 		return
     end
 
-print("=== ScriptFor_Opener() binding ESCAPE to mouseClick",mouseClick)
     flyoutMenu:SetBindingClick(true, "Escape", germ, mouseClick)
 
 -- TODO: move this into FlyoutMenu:updateForGerm()
@@ -151,20 +150,19 @@ print("=== ScriptFor_Opener() binding ESCAPE to mouseClick",mouseClick)
     -- OR BECAUSE
     -- the max length config option has changed
 
-    local IN_USE_BTN_COUNT = flyoutMenu:GetAttribute("IN_USE_BTN_COUNT")
     local populatedButtonCount = flyoutMenu:GetAttribute("POPULATED_BUTTON_COUNT")
-    local OPTION_MAX_LEN   = UFO_DUM_DUM:GetAttribute("OPTION_MAX_LEN")
-    local isNewLayoutNeeded = false
+    local OPTION_MAX_LEN       = UFO_DUM_DUM:GetAttribute("OPTION_MAX_LEN")
+    local isNewLayoutNeeded    = false
 
-    if (not numButtons) or (numButtons ~= IN_USE_BTN_COUNT) then
+    if (not numButtons) or (numButtons ~= populatedButtonCount) then
         isNewLayoutNeeded = true
     elseif (not optionMaxLen) or (optionMaxLen ~= OPTION_MAX_LEN) then
         isNewLayoutNeeded = true
     end
 
-    --[[DEBUG]] if doDebug then print("numButtons",numButtons, "IN_USE_BTN_COUNT",IN_USE_BTN_COUNT, "populatedButtonCount",populatedButtonCount, "optionMaxLen",optionMaxLen,  "OPTION_MAX_LEN",OPTION_MAX_LEN,  "isNewLayoutNeeded",isNewLayoutNeeded ) end
+    --[[DEBUG]] if doDebug then print("numButtons",numButtons, "populatedButtonCount",populatedButtonCount, "optionMaxLen",optionMaxLen,  "OPTION_MAX_LEN",OPTION_MAX_LEN,  "isNewLayoutNeeded",isNewLayoutNeeded ) end
 
-    numButtons = IN_USE_BTN_COUNT
+    numButtons = populatedButtonCount
     optionMaxLen = OPTION_MAX_LEN
 
     if isNewLayoutNeeded then
@@ -180,7 +178,7 @@ print("=== ScriptFor_Opener() binding ESCAPE to mouseClick",mouseClick)
     --
 
     if germ then
-print("=== ScriptFor_Opener()", flyoutName)
+        print("=== ScriptFor_Opener()", flyoutName)
         local doKeybindTheButtonsOnTheFlyout = germ:GetAttribute("doKeybindTheButtonsOnTheFlyout")
         if doKeybindTheButtonsOnTheFlyout then
             local LFT_BTN = "]=].. MouseClick.LEFT ..[=["
@@ -211,7 +209,6 @@ print("=== ScriptFor_Opener() GERM - end!")
     flyoutMenu:Show()
 print("=== ScriptFor_Opener() END !!!")
 ]=]
-    end
 
     return SecEnv.OPENER_SCRIPT
 end
@@ -235,24 +232,30 @@ end
 
 function SecEnv:getSecEnvScriptFor_Layout()
     if not SecEnv.LAYOUT_SCRIPT then
-        SecEnv.LAYOUT_SCRIPT =
-        [=[
-local initialSpacing = ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[; -- evidently, lua strips this line break hence the ;
-local defaultSpacing = ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[;
+        SecEnv.LAYOUT_SCRIPT = SecEnv:initSecEnvScriptFor_Layout()
+    end
+    return SecEnv.LAYOUT_SCRIPT
+end
 
-local arg1, arg2, arg3 = ...;
-local numButtons = arg1
-local dir = arg2
-local displaceBtnsHere = arg3
-local isVert = dir == "UP" or dir == "DOWN"
+function SecEnv:initSecEnvScriptFor_Layout()
+    SecEnv.LAYOUT_SCRIPT = [=[
+    local initialSpacing = ]=].. SPELLFLYOUT_INITIAL_SPACING ..[=[; -- evidently, lua strips this line break hence the ;
+    local defaultSpacing = ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[;
 
+    local arg1, arg2, arg3 = ...;
+    local numButtons = arg1
+    local dir = arg2
+    local displaceBtnsHere = arg3
+    local isVert = dir == "UP" or dir == "DOWN"
 
---local doDebug = true
---[[DEBUG]] if doDebug then print("sucking pipe... numButtons",numButtons, "arg2",arg2, "arg3",arg3, "dir",dir, "displaceBtnsHere",displaceBtnsHere) end
+    local flyoutName = flyoutMenu:GetAttribute("UFO_NAME")
 
-local isForCatalog = flyoutMenu:GetAttribute("IS_FOR_CATALOG")
+    --local doDebug = true
+    --[[DEBUG]] if doDebug then print("sucking pipe... numButtons",numButtons, "arg2",arg2, "arg3",arg3, "dir",dir, "displaceBtnsHere",displaceBtnsHere) end
 
--- rethink GLOBAL_BTNS - maybe use SetFrameRef for every button instead of caching flyoutMenu:GetChildren() ?
+    local isForCatalog = flyoutMenu:GetAttribute("IS_FOR_CATALOG")
+
+    -- rethink GLOBAL_BTNS - maybe use SetFrameRef for every button instead of caching flyoutMenu:GetChildren() ?
     -- get the buttons, filtering out trash.  disable cache for Catalog's flyout
     if true or (isForCatalog or not GLOBAL_BTNS) then
 
@@ -263,25 +266,25 @@ local isForCatalog = flyoutMenu:GetAttribute("IS_FOR_CATALOG")
         end
     end
 
-print("===== ScriptFor_Layout()",flyoutName, "GLOBAL_BTNS size", #GLOBAL_BTNS)
-for i, btn in ipairs(GLOBAL_BTNS) do
-print("===== ScriptFor_Layout() GLOBAL_BTNS ",i, GLOBAL_BTNS[i])
-end
+    print("===== ScriptFor_Layout()",flyoutName, "GLOBAL_BTNS size", #GLOBAL_BTNS)
+    for i, btn in ipairs(GLOBAL_BTNS) do
+        print("===== ScriptFor_Layout() GLOBAL_BTNS ",i, GLOBAL_BTNS[i])
+    end
 
 
--- calculate if the flyout is too long, then how many rows & columns
-local configMaxLen = UFO_DUM_DUM:GetAttribute("FLYOUT_MAX_LEN") or 100
-local vertLineWrapDir = "RIGHT"
-local horizLineWrapDir = "UP"
-local linesCountMax = math.ceil(numButtons / configMaxLen, 1)
-local maxBtnsPerLine = isForCatalog and 15 or math.ceil(numButtons / linesCountMax)
---[[DEBUG]] -- print("isForCatalog",isForCatalog, "configMaxLen",configMaxLen, "numButtons =",numButtons, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax)
-if linesCountMax > configMaxLen then
-    linesCountMax = math.floor( math.sqrt(numButtons) )
-	    --[[DEBUG]] if doDebug then
-        --[[DEBUG]] print("TOO WIDE! sqrt =",linesCountMax)
-        --[[DEBUG]] end
-end
+    -- calculate if the flyout is too long, then how many rows & columns
+    local configMaxLen = UFO_DUM_DUM:GetAttribute("FLYOUT_MAX_LEN") or 100
+    local vertLineWrapDir = "RIGHT"
+    local horizLineWrapDir = "UP"
+    local linesCountMax = math.ceil(numButtons / configMaxLen, 1)
+    local maxBtnsPerLine = isForCatalog and 15 or math.ceil(numButtons / linesCountMax)
+    --[[DEBUG]] -- print("isForCatalog",isForCatalog, "configMaxLen",configMaxLen, "numButtons =",numButtons, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax)
+    if linesCountMax > configMaxLen then
+        linesCountMax = math.floor( math.sqrt(numButtons) )
+            --[[DEBUG]] if doDebug then
+            --[[DEBUG]] print("TOO WIDE! sqrt =",linesCountMax)
+            --[[DEBUG]] end
+    end
 
     local x,y,linesCount,btnCountForThisLine = 1,1,1,0
     local lineGirth, lineOff
@@ -308,22 +311,22 @@ end
 
             btnCountForThisLine = btnCountForThisLine + 1
 
---local doDebug = true
+            --local doDebug = true
 
-local isFirstBtnOfLine
-if btnCountForThisLine > maxBtnsPerLine then
-    isFirstBtnOfLine = true
-    anchorBuddy = firstBumperOfPreviousLine or flyoutMenu
-    linesCount = linesCount + 1
-    local btnSize = isVert and bumper:GetHeight() or bumper:GetWidth()
-    lineGirth = (btnSize + defaultSpacing)
-    lineOff = lineGirth * (linesCount-1)
+            local isFirstBtnOfLine
+            if btnCountForThisLine > maxBtnsPerLine then
+                isFirstBtnOfLine = true
+                anchorBuddy = firstBumperOfPreviousLine or flyoutMenu
+                linesCount = linesCount + 1
+                local btnSize = isVert and bumper:GetHeight() or bumper:GetWidth()
+                lineGirth = (btnSize + defaultSpacing)
+                lineOff = lineGirth * (linesCount-1)
 
-    --[[DEBUG]] if doDebug then
-    --[[DEBUG]] print("=== BREAK === i",i, "btn",btn:GetName(), "anchorBuddy",anchorBuddy:GetName(), "maxBtnsPerLine",maxBtnsPerLine, "linesCount",linesCount, "btnCountForThisLine",btnCountForThisLine, "btnSize",btnSize, "lineGirth",lineGirth)
-    --[[DEBUG]] end
-    btnCountForThisLine = 1
-end
+                --[[DEBUG]] if doDebug then
+                --[[DEBUG]] print("=== BREAK === i",i, "btn",btn:GetName(), "anchorBuddy",anchorBuddy:GetName(), "maxBtnsPerLine",maxBtnsPerLine, "linesCount",linesCount, "btnCountForThisLine",btnCountForThisLine, "btnSize",btnSize, "lineGirth",lineGirth)
+                --[[DEBUG]] end
+                btnCountForThisLine = 1
+            end
 
             local isFirstBtn     = anchorBuddy == flyoutMenu
             local spacing        = isFirstBtn and initialSpacing or defaultSpacing
@@ -401,7 +404,6 @@ end
         flyoutMenu:SetHeight(btnH * linesCount)
     end
 ]=]
-    end
 
     return SecEnv.LAYOUT_SCRIPT
 end

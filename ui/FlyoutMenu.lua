@@ -159,6 +159,7 @@ function FlyoutMenu:allocateNewBtnKid(i)
     self.btnKids[nextN] = btn
 
     self:SetFrameRef(toStr(nextN), btn)
+    self:SetAttribute("ALLOCATED_BUTTON_COUNT", nextN)
 
     return btn
 end
@@ -267,7 +268,6 @@ function FlyoutMenu:applyConfigForCatalog(flyoutId, event)
 
     local flyoutDef = self:getDef()
     local numButtons = flyoutDef:howManyButtons() + 1
-    self:SetAttribute("IN_USE_BTN_COUNT", numButtons)
     self:SetAttribute("POPULATED_BUTTON_COUNT", numButtons) -- TODO: don't pad this number
     self:redraw(event)
 end
@@ -390,17 +390,14 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
     self.direction = germ:getDirection(event)
     local flyoutId = germ:getFlyoutId()
     self:setId(flyoutId)
-    local flyoutDef = self:getDef()
-    zebug.trace:event(event):owner(self):dumpy("flyoutDef",flyoutDef)
-    local usableFlyout = flyoutDef:filterOutUnusable()
-    local populatedButtonCount = usableFlyout:howManyButtons()
-    local BTN_NUMBER_UNUSED = 0
 
-    local nVirt = usableFlyout:howManyButtons()
-    local nAlloc =self:howManyBtnKids()
-    local n = math.max(nVirt, nAlloc)
-    zebug.info:event(event):owner(self):print("n",n, "nVirt",nVirt, "nAlloc",nAlloc)
-    for i=1,n do
+    local flyoutDef = self:getDef()
+    local usableFlyout = flyoutDef:filterOutUnusable()
+    local numPopulated = usableFlyout:howManyButtons()
+    local numAllocated = self:howManyBtnKids()
+    local numButtonsOrSoonToBe = math.max(numPopulated, numAllocated)
+    zebug.info:event(event):owner(self):print("numButtonsOrSoonToBe", numButtonsOrSoonToBe, "numPopulated", numPopulated, "numAllocated", numAllocated)
+    for i = 1, numButtonsOrSoonToBe do
         local btnFrame = self:getBtnOrAllocateNewOne(i)
         local btnDef = usableFlyout:getButtonDef(i)
         btnFrame:setDef(btnDef, event)
@@ -417,13 +414,11 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
             zebug.warn:event(event):owner(self):print("i",i, "clearing coz empty")
             btnFrame:setIcon(DEFAULT_ICON, event)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE
-            --return
         end
     end
 
-    zebug.error:event(event):owner(self):print("BTN_NUMBER_UNUSED",BTN_NUMBER_UNUSED, "populatedButtonCount",populatedButtonCount)
-    self:SetAttribute("IN_USE_BTN_COUNT", BTN_NUMBER_UNUSED) -- should this be nVirt ?
-    self:SetAttribute("POPULATED_BUTTON_COUNT", populatedButtonCount)
+    zebug.error:event(event):owner(self):print("numPopulated", numPopulated)
+    self:SetAttribute("POPULATED_BUTTON_COUNT", numPopulated)
 
     if not self.hasOnHide then
         zebug.info:event(event):owner(self):print("setting OnHide for",self:GetName())
@@ -437,8 +432,9 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
         self.hasOnHide = true
     end
 
-    zebug.warn:event(event):owner(self):print("executeFromNonSecEnv_Layout n",n)
-    SecEnv:executeFromNonSecEnv_Layout(self, n, self.direction, self.displaceBtnsHere)
+    zebug.warn:event(event):owner(self):print("executeFromNonSecEnv_Layout n", numButtonsOrSoonToBe)
+    self:SetAttribute("UFO_NAME", flyoutDef:getName()) -- SecEnv TEMPLATE
+    SecEnv:executeFromNonSecEnv_Layout(self, numButtonsOrSoonToBe, self.direction, self.displaceBtnsHere)
     germ:SetAttribute("UFO_FLYOUT_MOD_TIME", flyoutDef:getModStamp())
 end
 
