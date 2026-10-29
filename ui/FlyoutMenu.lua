@@ -141,15 +141,25 @@ end
 ---@return BOFM_TYPE
 ---@param i number index of the kid to grab
 function FlyoutMenu:allocateNewBtnKid(i)
-    if i == MAX_FLYOUT_SIZE_HARD_CAP then
+    local size = #(self.btnKids)
+    local nextN = size + 1
+
+    if (i ~= nextN) then
+        error("requested index "..i.." wasn't expected "..nextN)
+    end
+
+    if size == MAX_FLYOUT_SIZE_HARD_CAP then
         local btnDef = self:getDef()
-        local name, size = btnDef:getName(), btnDef:howManyButtons()
+        local name = btnDef:getName()
         msgUser("UFO", (name or "unknown"), "exceeded hard-cap on number of buttons:", size)
         error("UFO " .. (name or "unknown") .. "exceeded hard-cap on number of buttons:" .. size)
     end
 
-    local btn = ButtonOnFlyoutMenu:new(self, i)
-    self.btnKids[i] = btn
+    local btn = ButtonOnFlyoutMenu:new(self, nextN)
+    self.btnKids[nextN] = btn
+
+    self:SetFrameRef(toStr(nextN), btn)
+
     return btn
 end
 
@@ -258,6 +268,7 @@ function FlyoutMenu:applyConfigForCatalog(flyoutId, event)
     local flyoutDef = self:getDef()
     local numButtons = flyoutDef:howManyButtons() + 1
     self:SetAttribute("IN_USE_BTN_COUNT", numButtons)
+    self:SetAttribute("POPULATED_BUTTON_COUNT", numButtons) -- TODO: don't pad this number
     self:redraw(event)
 end
 

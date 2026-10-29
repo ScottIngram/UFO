@@ -152,6 +152,7 @@ print("=== ScriptFor_Opener() binding ESCAPE to mouseClick",mouseClick)
     -- the max length config option has changed
 
     local IN_USE_BTN_COUNT = flyoutMenu:GetAttribute("IN_USE_BTN_COUNT")
+    local populatedButtonCount = flyoutMenu:GetAttribute("POPULATED_BUTTON_COUNT")
     local OPTION_MAX_LEN   = UFO_DUM_DUM:GetAttribute("OPTION_MAX_LEN")
     local isNewLayoutNeeded = false
 
@@ -161,7 +162,7 @@ print("=== ScriptFor_Opener() binding ESCAPE to mouseClick",mouseClick)
         isNewLayoutNeeded = true
     end
 
-    --[[DEBUG]] if doDebug then print("numButtons",numButtons, "IN_USE_BTN_COUNT",IN_USE_BTN_COUNT, "optionMaxLen",optionMaxLen,  "OPTION_MAX_LEN",OPTION_MAX_LEN,  "isNewLayoutNeeded",isNewLayoutNeeded ) end
+    --[[DEBUG]] if doDebug then print("numButtons",numButtons, "IN_USE_BTN_COUNT",IN_USE_BTN_COUNT, "populatedButtonCount",populatedButtonCount, "optionMaxLen",optionMaxLen,  "OPTION_MAX_LEN",OPTION_MAX_LEN,  "isNewLayoutNeeded",isNewLayoutNeeded ) end
 
     numButtons = IN_USE_BTN_COUNT
     optionMaxLen = OPTION_MAX_LEN
@@ -251,6 +252,7 @@ local isVert = dir == "UP" or dir == "DOWN"
 
 local isForCatalog = flyoutMenu:GetAttribute("IS_FOR_CATALOG")
 
+-- rethink GLOBAL_BTNS - maybe use SetFrameRef for every button instead of caching flyoutMenu:GetChildren() ?
     -- get the buttons, filtering out trash.  disable cache for Catalog's flyout
     if true or (isForCatalog or not GLOBAL_BTNS) then
 
