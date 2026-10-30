@@ -240,7 +240,7 @@ function SecEnv:initSecEnvScriptFor_Layout()
     local defaultSpacing = ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[;
 
     local arg1, arg2, arg3 = ...;
-    local populatedButtonCount = arg1
+    local populatedButtonCount = math.max(1, arg1)
     local dir = arg2
     local displaceBtnsHere = arg3
     local isVert = dir == "UP" or dir == "DOWN"
@@ -256,9 +256,9 @@ function SecEnv:initSecEnvScriptFor_Layout()
     local configMaxLen = UFO_DUM_DUM:GetAttribute("FLYOUT_MAX_LEN") or 100
     local vertLineWrapDir = "RIGHT"
     local horizLineWrapDir = "UP"
-    local linesCountMax = math.ceil(populatedButtonCount / configMaxLen, 1)
-    local maxBtnsPerLine = isForCatalog and 15 or math.ceil(populatedButtonCount / linesCountMax)
-    --[[DEBUG]] -- print("isForCatalog",isForCatalog, "configMaxLen",configMaxLen, "populatedButtonCount =",populatedButtonCount, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax)
+    local linesCountMax = math.ceil(populatedButtonCount / configMaxLen)
+    local maxBtnsPerLine = (isForCatalog and 15) or math.ceil(populatedButtonCount / linesCountMax)
+    --[[DEBUG]] if doDebug then print("isForCatalog",isForCatalog, "configMaxLen",configMaxLen, "populatedButtonCount =",populatedButtonCount, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax) end
     if linesCountMax > configMaxLen then
         linesCountMax = math.floor( math.sqrt(populatedButtonCount) )
             --[[DEBUG]] if doDebug then
