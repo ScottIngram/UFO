@@ -128,7 +128,8 @@ function Preset:install(id)
         local array = DB:getOrderedFlyoutIds()
         local where = findElement(array, id)
         -- TODO: popup dialogue
-        msgUser("The", preset.name, "UFO already exists in your catalog at position",where,"named", ufo.name, "-- Delete it if you want to create it anew.")
+        local msg = sprintf(L10N.cfg.PRESET_UFO_ALREADY_EXISTS, preset.name, where, ufo.name)
+        msgUser(msg)
         UfoProxy:pickupUfoOntoCursor(id, "PRESET-ALREADY-EXISTS")
         return
     end
@@ -165,7 +166,7 @@ function Preset:getSpellsFromFlyout(...)
                 --msgUser("already included ", name)
                 zebug.info:mCircle():print("skipping redundant name",name, "spellId",spellId)
             else
-                msgUser("adding ", name)
+                msgUser(L10N.cfg.ADDING, name)
                 spells[#spells+1] = {
                     type = ButtonType.SPELL,
                     name = name,

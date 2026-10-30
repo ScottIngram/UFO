@@ -137,7 +137,7 @@ local function initializeOptionsMenu()
 
             presetsMenu = {
                 order = 2,
-                name = "Presets",
+                name = L10N.cfg.PRESETS,
                 type = "group",
                 args = {
 
@@ -145,7 +145,7 @@ local function initializeOptionsMenu()
                         order = 10,
                         type = 'description',
                         fontSize = "small",
-                        name = "These are pre-configured UFOs to get you started or inspire you.  Clicking any of the buttons below will create an entry in your Catalog for a UFO cram-packed with my choices for relevant spells/toys/items/etc. (The Mage Portal/Teleports are actually dynamic and will keep themselves up-to-date, but, none of the others will).  Once in your Catalog, they are normal UFOs like any other: you can drag them onto your bars, customize them, rearrange their buttons, etc." .. EOL
+                        name = L10N.cfg.THESE_ARE_PRE_CONFIGURED_UFOS,
                     },
                     buttons = {
                         name = " ",
@@ -165,6 +165,7 @@ local function initializeOptionsMenu()
             configOptions = {
                 order = 1,
                 name = "Configuration",
+                name = L10N.cfg.CONFIGURATION,
                 type = "group",
                 childGroups = "tree",
                 --inline = false,

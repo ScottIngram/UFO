@@ -8,8 +8,8 @@ Ufo.Wormhole()
 
 local id = Preset.ids.INVTORY_MGMNT
 Preset.defs[id] = {
-    ["name"] = "Invtory Mgmnt",
-    ["desc"] = "Access your vendor mount, mail, bank, transmogger, etc.",
+    ["name"] = L10N.cfg.INVTORY_MGMNT,
+    ["desc"] = L10N.cfg.ACCESS_YOUR_VENDOR_MOUNT__MAIL_ETC,
     ["icon"] = 413587,
     ["Ace3icon"] = "Interface/ICONS/achievement_guildperk_mobilebanking.blp",
     ["id"] = id,
@@ -18,59 +18,59 @@ Preset.defs[id] = {
             ["mountId"] = 1563,
             ["type"] = "mount",
             ["spellId"] = 122708,
-            ["name"] = "Grand Expedition Yak",
+            --["name"] = "Grand Expedition Yak",
         },
         {
             ["mountId"] = 280,
             ["type"] = "mount",
-            ["name"] = "Traveler's Tundra Mammoth",
+            --["name"] = "Traveler's Tundra Mammoth",
             ["spellId"] = 61425,
         },
         {
             ["mountId"] = 284,
             ["type"] = "mount",
             ["spellId"] = 61447,
-            ["name"] = "Traveler's Tundra Mammoth",
+            --["name"] = "Traveler's Tundra Mammoth",
         },
         {
             ["type"] = "toy",
-            ["name"] = "Ethereal Transmogrifier",
+            --["name"] = "Ethereal Transmogrifier",
             ["itemId"] = 206268,
         },
         {
             ["type"] = "spell",
             ["spellId"] = 460905,
-            ["name"] = "Warband Bank Distance Inhibitor",
+            --["name"] = "Warband Bank Distance Inhibitor",
         },
         {
             ["type"] = "spell",
             ["spellId"] = 69046,
-            ["name"] = "Pack Hobgoblin",
+            --["name"] = "Pack Hobgoblin",
         },
         {
             ["type"] = "toy",
-            ["name"] = "Interdimensional Parcel Signal",
+            --["name"] = "Interdimensional Parcel Signal",
             ["itemId"] = 264695,
         },
         {
             ["type"] = "toy",
-            ["name"] = "Katy's Stampwhistle",
+            --["name"] = "Katy's Stampwhistle",
             ["itemId"] = 156833,
         },
         {
             ["type"] = "toy",
-            ["name"] = "Ohuna Perch",
+            --["name"] = "Ohuna Perch",
             ["itemId"] = 194885,
         },
         {
             ["type"] = "toy",
-            ["name"] = "Radiant Lynx Whistle",
+            --["name"] = "Radiant Lynx Whistle",
             ["itemId"] = 239693,
         },
         {
             ["type"] = "spell",
             ["spellId"] = 83958,
-            ["name"] = "Mobile Banking",
+            --["name"] = "Mobile Banking",
         },
     },
 }

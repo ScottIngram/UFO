@@ -9,8 +9,8 @@ Ufo.Wormhole()
 local id = Preset.ids.NOMZ
 
 Preset.defs[id] = {
-    ["name"] = "Nom Nom",
-    ["desc"] = "Things that restore health or mana slowly and/or out of combat.",
+    ["name"] = L10N.cfg.NOM_NOM,
+    ["desc"] = L10N.cfg.THINGS_THAT_RESTORE_HEALTH_OR_MANA,
     ["icon"] = 6866615,
     ["Ace3icon"] = "Interface/ICONS/inv_1117_ability_recuperate.blp",
     ["id"] = id,
@@ -18,46 +18,46 @@ Preset.defs[id] = {
         {
             ["type"] = "spell",
             ["spellId"] = 1231411,
-            ["name"] = "Recuperate",
+            --["name"] = "Recuperate",
         },
         {
             ["type"] = "item",
-            ["name"] = "Conjured Mana Bun",
+            --["name"] = "Conjured Mana Bun",
             ["itemId"] = 113509,
         },
         {
             ["type"] = "spell",
             ["spellId"] = 190336,
-            ["name"] = "Conjure Refreshment",
+            --["name"] = "Conjure Refreshment",
         },
         {
             ["type"] = "spell",
             ["spellId"] = 20577,
-            ["name"] = "Cannibalize",
+            --["name"] = "Cannibalize",
         },
         {
             ["type"] = "item",
-            ["name"] = "Weavercloth Bandage",
+            --["name"] = "Weavercloth Bandage",
             ["itemId"] = 224441,
         },
         {
             ["type"] = "item",
-            ["name"] = "Everlasting Nosh",
+            --["name"] = "Everlasting Nosh",
             ["itemId"] = 250316,
         },
         {
             ["type"] = "toy",
-            ["name"] = "Dragon Tea Set",
+            --["name"] = "Dragon Tea Set",
             ["itemId"] = 199649,
         },
         {
             ["type"] = "toy",
-            ["name"] = "Sinvyr Tea Set",
+            --["name"] = "Sinvyr Tea Set",
             ["itemId"] = 183900,
         },
         {
             ["type"] = "toy",
-            ["name"] = "Whale Bone Tea Set",
+            --["name"] = "Whale Bone Tea Set",
             ["itemId"] = 199650,
         },
     },
