@@ -595,7 +595,7 @@ function CatalogEntry:OnClick(mouseClick, down)
         IconPicker:open()
     elseif PRESET_BUTTON_NAME == self.name then
         Catalog:selectRow(nil, event)
-        Config:openPresets()
+        Config:openTabForPresets()
     elseif LANDING_BUTTON_NAME == self.name then
         local flyoutDefOnTheCursor = UfoProxy:isFlyoutOnCursor()
         local isDragging = flyoutDefOnTheCursor and btnUnderTheMouse

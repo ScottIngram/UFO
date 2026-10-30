@@ -333,6 +333,8 @@ function dumpIfUnderMousePointer()
             zebug.warn:event(event):print("Point at a UFO first then issue this command.  Dev Mode now disabled.")
             Ufo.devMode = false
         end
+
+        Config:redrawIfOpen()
     end)
 end
 

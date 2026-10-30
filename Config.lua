@@ -153,30 +153,6 @@ local function initializeOptionsMenu()
                         type = "group",
                         inline = true,
                         args = Config:makeButtonsForPresets()
---[[
-                            Preset.Ids.HEARTHSTONE
-                            , Preset.Ids.BUFF
-                            , Preset.Ids.MAGE_TELEPORT
-                            , Preset.Ids.MAGE_PORTAL
-                            , Preset.Ids.RIDE
-                            , Preset.Ids.INVTORY_MGMNT
-                            , Preset.Ids.HEAL
-                            , Preset.Ids.CURE
-                            , Preset.Ids.DELVE
-                            , Preset.Ids.PARACHUTE
-]]
---[[
-                              Preset.Ufo.HEARTHSTONE
-                            , Preset.Ufo.BUFF
-                            , Preset.Ufo.MAGE_TELEPORT
-                            , Preset.Ufo.MAGE_PORTAL
-                            , Preset.Ufo.RIDE
-                            , Preset.Ufo.INVTORY_MGMNT
-                            , Preset.Ufo.HEAL
-                            , Preset.Ufo.CURE
-                            , Preset.Ufo.DELVE
-                            , Preset.Ufo.PARACHUTE
-]]
                     },
                 }
             },
@@ -228,7 +204,7 @@ local function initializeOptionsMenu()
                                 order = 30,
                                 name = " ",
                                 type = "group",
-                                --inline = true,
+                                inline = true,
                                 args = generateMenusForEventHandlers(),
                             },
 
@@ -993,16 +969,24 @@ function Config:initializeOptionsMenu(eventHandlers)
     Config.AceConfigDialog = LibStub("AceConfigDialog-3.0");
 end
 
-function Config:toggle()
+function Config:isOpen()
     local frames = LibStub("AceConfigDialog-3.0").OpenFrames
-    if frames[ADDON_NAME] == nil then
-        Config:open()
+    return frames[ADDON_NAME] ~= nil
+end
+
+function Config:toggle()
+    if Config:isOpen() then
+        Config:close()
     else
-        Config:open(false)
+        Config:openTabForGeneralOpts()
     end
 end
 
-function Config:openPresets()
+function Config:openTabForGeneralOpts()
+    Config:open():SelectGroup(ADDON_NAME, "configOptions")
+end
+
+function Config:openTabForPresets()
     Config:open():SelectGroup(ADDON_NAME, "presetsMenu")
 end
 
@@ -1014,7 +998,13 @@ function Config:open(really)
     return acd
 end
 
+function Config:close()
+    Config:open(false)
+end
 
+function Config:redrawIfOpen()
+    LibStub("AceConfigRegistry-3.0"):NotifyChange(ADDON_NAME);
+end
 
 function Config:get(key)
     if not key then
