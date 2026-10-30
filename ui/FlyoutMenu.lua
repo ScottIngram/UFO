@@ -299,8 +299,7 @@ function FlyoutMenu:updateButtonLayout(event)
     local flyoutDef = self:getDef()
     local extraButton = self.isForCatalog and 1 or 0 -- this will always be for catalog
     local populatedButtonCount = flyoutDef:howManyButtons() + extraButton
-    -- numButtons = math.min(numButtons, MAX_FLYOUT_SIZE)
-    --self:RunAttribute(SecEnv.FLYOUT_LAYOUT_ATTR_NAME, numButtons, self.direction, self)
+
     zebug.info:event(event):owner(self):print("numButtons", populatedButtonCount, "self.displaceBtnsHere",self.displaceBtnsHere)
     SecEnv:executeFromNonSecEnv_Layout(self, populatedButtonCount, self.direction, self.displaceBtnsHere)
 end
@@ -365,10 +364,6 @@ function FlyoutMenu:populateButtons(event)
             -- exit the loop
             btnFrame = nil
         end
-    end
-
-    if nVirt == 0 then
-        self:Hide()
     end
 end
 
