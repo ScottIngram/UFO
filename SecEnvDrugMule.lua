@@ -150,26 +150,26 @@ function SecEnv:initSecEnvScriptFor_Opener()
     -- OR BECAUSE
     -- the max length config option has changed
 
-    local populatedButtonCount = flyoutMenu:GetAttribute("POPULATED_BUTTON_COUNT")
-    local OPTION_MAX_LEN       = UFO_DUM_DUM:GetAttribute("OPTION_MAX_LEN")
-    local isNewLayoutNeeded    = false
+    local POPULATED_BUTTON_COUNT = flyoutMenu:GetAttribute("POPULATED_BUTTON_COUNT")
+    local OPTION_MAX_LEN         = UFO_DUM_DUM:GetAttribute("OPTION_MAX_LEN")
+    local isNewLayoutNeeded      = false
 
-    if (not numButtons) or (numButtons ~= populatedButtonCount) then
+    if (not renderedButtonCount) or (renderedButtonCount ~= POPULATED_BUTTON_COUNT) then
         isNewLayoutNeeded = true
     elseif (not optionMaxLen) or (optionMaxLen ~= OPTION_MAX_LEN) then
         isNewLayoutNeeded = true
     end
 
-    --[[DEBUG]] if doDebug then print("numButtons",numButtons, "populatedButtonCount",populatedButtonCount, "optionMaxLen",optionMaxLen,  "OPTION_MAX_LEN",OPTION_MAX_LEN,  "isNewLayoutNeeded",isNewLayoutNeeded ) end
+    --[[DEBUG]] if doDebug then print("renderedButtonCount",renderedButtonCount, "POPULATED_BUTTON_COUNT",POPULATED_BUTTON_COUNT, "optionMaxLen",optionMaxLen,  "OPTION_MAX_LEN",OPTION_MAX_LEN,  "isNewLayoutNeeded",isNewLayoutNeeded ) end
 
-    numButtons = populatedButtonCount
+    renderedButtonCount = POPULATED_BUTTON_COUNT
     optionMaxLen = OPTION_MAX_LEN
 
     if isNewLayoutNeeded then
         --[[DEBUG]] if doDebug then
         --[[DEBUG]]     print("<DEBUG>", myName, "RUNNING layout")
         --[[DEBUG]] end
-        flyoutMenu:RunAttribute("_]=] .. SecEnv.FLYOUT_LAYOUT_SCRIPT_NAME .. [=[", numButtons, dir, flyoutMenu, "suckit")
+        flyoutMenu:RunAttribute("_]=] .. SecEnv.FLYOUT_LAYOUT_SCRIPT_NAME .. [=[", renderedButtonCount, dir, flyoutMenu, "suckit")
     end
 
     --
@@ -178,56 +178,53 @@ function SecEnv:initSecEnvScriptFor_Opener()
     --
 
     if germ then
-        print("=== ScriptFor_Opener()", flyoutName)
         local doKeybindTheButtonsOnTheFlyout = germ:GetAttribute("doKeybindTheButtonsOnTheFlyout")
         if doKeybindTheButtonsOnTheFlyout then
             local LFT_BTN = "]=].. MouseClick.LEFT ..[=["
-            print("=== ScriptFor_Opener()", flyoutName, "LFT_BTN ->",LFT_BTN)
-            local lastKeyNum = math.min(numButtons, 10)
+            local lastKeyNum = math.min(renderedButtonCount, 10)
             for i = 1, lastKeyNum do
-                local btn = GLOBAL_BTNS[i]
+                local btn = flyoutMenu:GetFrameRef(tostring(i))
                 local btnName = btn and btn:GetName()
                 local btnNameType = type(btnName)
                 local numberKey = (i == 10) and "0" or tostring(i)
-print("=== ScriptFor_Opener() GERM's flyout's btns -",numberKey, "DEBUG - btn",btn, "btnName",btnName, "btnNameType",btnNameType)
-print("=== ScriptFor_Opener() GERM's flyout's btns -",numberKey,"binding btnName:", btnName, btnNameType, "to mouseClick ", LFT_BTN, " try")
+                --[[DEBUG]] if doDebug then print("=== ScriptFor_Opener()",flyoutName,"- GERM's flyout's btns -",numberKey, "DEBUG - btn",btn, "btnName",btnName, "btnNameType",btnNameType) end
                 flyoutMenu:SetBindingClick(true, numberKey, btn, LFT_BTN)
-print("=== ScriptFor_Opener() GERM's flyout's btns -",numberKey,"binding btnName:", btnName, btnNameType, "to mouseClick ", LFT_BTN, " success")
                 if numberKey == "1" then
                     -- make the UFO's first button's keybind be the same as the UFO itself
                     local germKeyBind = germ:GetAttribute("UFO_KEYBIND_1")
                     if germKeyBind then
-print("=== ScriptFor_Opener() GERM first btn -",numberKey,"binding btnName:", btnName, btnNameType, "to mouseClick ", LFT_BTN )
+                        --[[DEBUG]] if doDebug then print("=== ScriptFor_Opener()",flyoutName,"- GERM first btn -",numberKey,"binding btnName:", btnName, btnNameType, "to mouseClick ", LFT_BTN ) end
                         flyoutMenu:SetBindingClick(true, btnName, btnName, LFT_BTN)
                     end
                 end
             end
         end
-print("=== ScriptFor_Opener() GERM - end!")
+
+        --[[DEBUG]] if doDebug then print("=== ScriptFor_Opener()",flyoutName,"- GERM end!" ) end
     end
 
     flyoutMenu:Show()
-print("=== ScriptFor_Opener() END !!!")
+    --[[DEBUG]] if doDebug then print("=== ScriptFor_Opener()",flyoutName,"- END !!!" ) end
 ]=]
 
     return SecEnv.OPENER_SCRIPT
 end
 
 ---@param flyoutMenuFrame FlyoutMenu
-function SecEnv:executeFromNonSecEnv_Layout(flyoutMenuFrame, numButtons, dir, displaceBtnsHere)
-    zebug.info:event("EXE"):owner(flyoutMenuFrame):print("numButtons",numButtons, "dir",dir, "displaceBtnsHere",displaceBtnsHere)
+function SecEnv:executeFromNonSecEnv_Layout(flyoutMenuFrame, populatedButtonCount, dir, displaceBtnsHere)
+    zebug.info:event("EXE"):owner(flyoutMenuFrame):print("populatedButtonCount", populatedButtonCount, "dir",dir, "displaceBtnsHere",displaceBtnsHere)
 
     -- replace the safely - pacify the whole func
-    flyoutMenuFrame:safelySetSecEnvAttribute("FU_NUMBUTTONS", numButtons)
-    flyoutMenuFrame:safelySetSecEnvAttribute("FU_DIR", dir)
-    flyoutMenuFrame:safelySetSecEnvAttribute("FU_TARGET_INDEX", displaceBtnsHere)
+    flyoutMenuFrame:safelySetSecEnvAttribute("ARG_POPULATED_BUTTON_COUNT", populatedButtonCount)
+    flyoutMenuFrame:safelySetSecEnvAttribute("ARG_DIR", dir)
+    flyoutMenuFrame:safelySetSecEnvAttribute("ARG_TARGET_INDEX", displaceBtnsHere)
     flyoutMenuFrame:Execute([=[
-        local numButtons = flyoutMenu:GetAttribute("FU_NUMBUTTONS")
-        local dir = flyoutMenu:GetAttribute("FU_DIR")
-        local displaceBtnsHere = flyoutMenu:GetAttribute("FU_TARGET_INDEX")
-        --print("EXE bridge - numButtons",numButtons, "dir",dir, "displaceBtnsHere",displaceBtnsHere)
-        flyoutMenu:RunAttribute("_]=] .. SecEnv.FLYOUT_LAYOUT_SCRIPT_NAME .. [=[", numButtons, dir, displaceBtnsHere)
-     ]=])
+        local populatedButtonCount = flyoutMenu:GetAttribute("ARG_POPULATED_BUTTON_COUNT")
+        local displaceBtnsHere     = flyoutMenu:GetAttribute("ARG_TARGET_INDEX")
+        local dir                  = flyoutMenu:GetAttribute("ARG_DIR")
+        --print("EXE bridge - populatedButtonCount",populatedButtonCount, "dir",dir, "displaceBtnsHere",displaceBtnsHere)
+
+        flyoutMenu:RunAttribute("_]=] .. SecEnv.FLYOUT_LAYOUT_SCRIPT_NAME .. [=[", populatedButtonCount, dir, displaceBtnsHere) ]=])
 end
 
 function SecEnv:getSecEnvScriptFor_Layout()
@@ -243,7 +240,7 @@ function SecEnv:initSecEnvScriptFor_Layout()
     local defaultSpacing = ]=].. SPELLFLYOUT_DEFAULT_SPACING ..[=[;
 
     local arg1, arg2, arg3 = ...;
-    local numButtons = arg1
+    local populatedButtonCount = arg1
     local dir = arg2
     local displaceBtnsHere = arg3
     local isVert = dir == "UP" or dir == "DOWN"
@@ -251,36 +248,19 @@ function SecEnv:initSecEnvScriptFor_Layout()
     local flyoutName = flyoutMenu:GetAttribute("UFO_NAME")
 
     --local doDebug = true
-    --[[DEBUG]] if doDebug then print("sucking pipe... numButtons",numButtons, "arg2",arg2, "arg3",arg3, "dir",dir, "displaceBtnsHere",displaceBtnsHere) end
+    --[[DEBUG]] if doDebug then print("sucking pipe... populatedButtonCount",populatedButtonCount, "arg2",arg2, "arg3",arg3, "dir",dir, "displaceBtnsHere",displaceBtnsHere) end
 
     local isForCatalog = flyoutMenu:GetAttribute("IS_FOR_CATALOG")
-
-    -- rethink GLOBAL_BTNS - maybe use SetFrameRef for every button instead of caching flyoutMenu:GetChildren() ?
-    -- get the buttons, filtering out trash.  disable cache for Catalog's flyout
-    if true or (isForCatalog or not GLOBAL_BTNS) then
-
-        GLOBAL_BTNS = table.new(flyoutMenu:GetChildren())
-        while GLOBAL_BTNS[1] and GLOBAL_BTNS[1]:GetID() < 1 do
-            --print("discarding flyout child", GLOBAL_BTNS[1]:GetObjectType(), GLOBAL_BTNS[1]:GetID())
-            table.remove(GLOBAL_BTNS, 1) -- this is the non-button UI element "Background" from ui.xml
-        end
-    end
-
-    print("===== ScriptFor_Layout()",flyoutName, "GLOBAL_BTNS size", #GLOBAL_BTNS)
-    for i, btn in ipairs(GLOBAL_BTNS) do
-        print("===== ScriptFor_Layout() GLOBAL_BTNS ",i, GLOBAL_BTNS[i])
-    end
-
 
     -- calculate if the flyout is too long, then how many rows & columns
     local configMaxLen = UFO_DUM_DUM:GetAttribute("FLYOUT_MAX_LEN") or 100
     local vertLineWrapDir = "RIGHT"
     local horizLineWrapDir = "UP"
-    local linesCountMax = math.ceil(numButtons / configMaxLen, 1)
-    local maxBtnsPerLine = isForCatalog and 15 or math.ceil(numButtons / linesCountMax)
-    --[[DEBUG]] -- print("isForCatalog",isForCatalog, "configMaxLen",configMaxLen, "numButtons =",numButtons, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax)
+    local linesCountMax = math.ceil(populatedButtonCount / configMaxLen, 1)
+    local maxBtnsPerLine = isForCatalog and 15 or math.ceil(populatedButtonCount / linesCountMax)
+    --[[DEBUG]] -- print("isForCatalog",isForCatalog, "configMaxLen",configMaxLen, "populatedButtonCount =",populatedButtonCount, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax)
     if linesCountMax > configMaxLen then
-        linesCountMax = math.floor( math.sqrt(numButtons) )
+        linesCountMax = math.floor( math.sqrt(populatedButtonCount) )
             --[[DEBUG]] if doDebug then
             --[[DEBUG]] print("TOO WIDE! sqrt =",linesCountMax)
             --[[DEBUG]] end
@@ -294,7 +274,11 @@ function SecEnv:initSecEnvScriptFor_Layout()
 
     -- arrange and anchor all the buttons
 
-    for i, btn in ipairs(GLOBAL_BTNS) do
+    ALLOCATED_BUTTON_COUNT = flyoutMenu:GetAttribute("ALLOCATED_BUTTON_COUNT")
+    POPULATED_BUTTON_COUNT = flyoutMenu:GetAttribute("POPULATED_BUTTON_COUNT")
+
+    for i = 1, ALLOCATED_BUTTON_COUNT do
+        local btn = flyoutMenu:GetFrameRef(tostring(i))
         local bumper = btn:GetFrameRef("bumper")
         local isInUse = btn:GetAttribute("UFO_NAME") -- the " " blank string is used to indicate the empty slot in catalog flyouts
 
@@ -394,7 +378,7 @@ function SecEnv:initSecEnvScriptFor_Layout()
 
     local btnW = anyBumper and anyBumper:GetWidth() or 10
     local btnH = anyBumper and anyBumper:GetHeight() or 10
-    local btnsPerLine = (numButtons == 0) and 2 or maxBtnsPerLine
+    local btnsPerLine = (populatedButtonCount == 0) and 2 or maxBtnsPerLine
 
     if isVert then
         flyoutMenu:SetWidth(btnW * linesCount)

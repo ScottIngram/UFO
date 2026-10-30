@@ -298,11 +298,11 @@ function FlyoutMenu:updateButtonLayout(event)
     zebug.info:event(event):owner(self):print("self.isForCatalog",self.isForCatalog)
     local flyoutDef = self:getDef()
     local extraButton = self.isForCatalog and 1 or 0 -- this will always be for catalog
-    local numButtons = flyoutDef:howManyButtons() + extraButton
+    local populatedButtonCount = flyoutDef:howManyButtons() + extraButton
     -- numButtons = math.min(numButtons, MAX_FLYOUT_SIZE)
     --self:RunAttribute(SecEnv.FLYOUT_LAYOUT_ATTR_NAME, numButtons, self.direction, self)
-    zebug.info:event(event):owner(self):print("numButtons",numButtons, "self.displaceBtnsHere",self.displaceBtnsHere)
-    SecEnv:executeFromNonSecEnv_Layout(self, numButtons, self.direction, self.displaceBtnsHere)
+    zebug.info:event(event):owner(self):print("numButtons", populatedButtonCount, "self.displaceBtnsHere",self.displaceBtnsHere)
+    SecEnv:executeFromNonSecEnv_Layout(self, populatedButtonCount, self.direction, self.displaceBtnsHere)
 end
 
 -- currently only handles catalog.  TODO: handle germ too?  needs keyBind txt, but, preserver the "extra" blank on the end
@@ -385,7 +385,6 @@ end
 
 ---@param germ Germ
 function FlyoutMenu:applyConfigForGerm(germ, event)
-    event = "DBG"
     self:SetParent(germ)
     self.direction = germ:getDirection(event)
     local flyoutId = germ:getFlyoutId()
@@ -403,7 +402,7 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
         btnFrame:setDef(btnDef, event)
 
         if btnDef then
-            zebug.warn:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
+            zebug.info:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
             local icon = self:getIcon(btnDef)
             btnFrame:setIcon(icon, event)
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
@@ -411,13 +410,13 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
             -- label the keybinds
             btnFrame:setHotKeyLabel(btnFrame, i)
         else
-            zebug.warn:event(event):owner(self):print("i",i, "clearing coz empty")
+            zebug.info:event(event):owner(self):print("i",i, "clearing coz empty")
             btnFrame:setIcon(DEFAULT_ICON, event)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE
         end
     end
 
-    zebug.error:event(event):owner(self):print("numPopulated", numPopulated)
+    zebug.info:event(event):owner(self):print("numPopulated", numPopulated)
     self:SetAttribute("POPULATED_BUTTON_COUNT", numPopulated)
 
     if not self.hasOnHide then
@@ -432,7 +431,7 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
         self.hasOnHide = true
     end
 
-    zebug.warn:event(event):owner(self):print("executeFromNonSecEnv_Layout n", numButtonsOrSoonToBe)
+    zebug.info:event(event):owner(self):print("executeFromNonSecEnv_Layout n", numButtonsOrSoonToBe)
     self:SetAttribute("UFO_NAME", flyoutDef:getName()) -- SecEnv TEMPLATE
     SecEnv:executeFromNonSecEnv_Layout(self, numButtonsOrSoonToBe, self.direction, self.displaceBtnsHere)
     germ:SetAttribute("UFO_FLYOUT_MOD_TIME", flyoutDef:getModStamp())
