@@ -36,10 +36,16 @@ function ButtonOnFlyoutMenu:new(flyoutMenu, i)
     local flyoutName = flyoutMenu:GetName()
     local myName = flyoutName .. "_Button" .. i
 
-    ---@type ButtonOnFlyoutMenu
     zebug.info:owner(flyoutName):mark(Mark.FIRE):print("creating frame #",i)
+    ---@type ButtonOnFlyoutMenu
     local self = CreateFrame(FrameType.CHECK_BUTTON, myName, flyoutMenu, "UFO_ButtonOnFlyoutMenu_Template", i)
     -- see also ButtonOnFlyoutMenu:onLoad()
+
+    if flyoutMenu.isForCatalog then
+        -- add the little (X) button that lets the user include/exclude this one from the randomizer feature
+        self:installExcluder()
+    end
+
     zebug.info:owner(flyoutName):mark(Mark.HORDE):print("DONE! flyoutMenu",flyoutMenu, "flyoutName",flyoutName, "i",i, "myName",myName, "GetID", self:GetID(), "GetParentKey",self:GetParentKey(i))
 
     return self
@@ -224,7 +230,7 @@ end
 
 function ButtonOnFlyoutMenu:installExcluder(event)
     local i = self:GetID()
-    zebug.trace:event(event):owner(self):print("i",i)
+    zebug.trace:event(event):owner(self):print("button #",i)
 
     local nopeIcon = self:CreateTexture("nope") -- name , layer , inherits , subLayer
     nopeIcon:SetPoint("TOPLEFT",-3,3)

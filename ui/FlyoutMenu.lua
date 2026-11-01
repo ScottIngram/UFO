@@ -507,10 +507,6 @@ function FlyoutMenu:onLoadForCatalog()
     self.isForGerm = false
     self:SetParent(nil)
 
-    zebug.trace:name("ForCatalog_OnLoad"):newEvent("FlyoutMenu", "on-load-for-catalog"):run(function(event)
-        self:forEachButton(ButtonOnFlyoutMenu.installExcluder, event)
-    end)
-
     self:installSecEnvBullshit("FlyoutMenu:onLoadForCatalog")
 end
 
