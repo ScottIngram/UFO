@@ -8,7 +8,6 @@
 ---@class Ufo -- IntelliJ-EmmyLua annotation
 ---@field myTitle string Ufo.toc Title
 ---@field iconTexture string Ufo.toc IconTexture
----@field devMode boolean unlocks developer switches and levers for debugging
 ---@field thatWasMeThatDidThatMacro boolean flag used to stop event handler responses to UFO actions related to macros
 ---@field droppedPlaceholderOntoActionBar boolean flag used to stop event handler responses to UFO actions related to drag and drop
 ---@field pickedUpBtn ButtonDef data for the UFO button on the mouse cursor
@@ -19,6 +18,8 @@
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
 ufoType = "UFO_BASE"
+
+Zebug.devMode = false
 
 zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO) -- will be used by everyone in the Wormhole unless they override
 local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.TRACE)
@@ -55,6 +56,16 @@ function calmTheFuckDown()
     C_Timer.After(1, function() Ufo.hasShitCalmedTheFuckDown = true end)
 end
 
+function forEveryButtonOnEveryFlyout(callback)
+    ---@param flyoutDef FlyoutDef
+    FlyoutDefsDb:forEachFlyoutDef(
+            function(flyoutDef)
+                zebug.trace:setMethodName("forEveryButtonOnEveryFlyout"):line(20, "flyout ID",flyoutDef.id)
+                flyoutDef:forEachBtn(callback)
+            end
+    )
+end
+
 -------------------------------------------------------------------------------
 -- Event Handlers
 -------------------------------------------------------------------------------
@@ -64,7 +75,6 @@ local EventHandlers = { }
 function EventHandlers:PLAYER_ENTERING_WORLD(eName, n, isInitialLogin, isReloadingUi)
     zebug.info:mSkull():name("handler"):newEvent("Ufo", eName, n):run(function(event)
         initalizeAddonStuff(event)
-        GermCommander:initializeAllSlots(event)
     end)
 end
 
@@ -101,7 +111,10 @@ EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttleAndNoQueue(0.125, "Ufo:
 
 function EventHandlers:ACTIVE_TALENT_GROUP_CHANGED(eName, n, unreliableSpecId)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+
+    local myVolume = Ufo:getEventVolume(eName)
+
+    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n, myVolume):run(function(event)
         local hasChanged = not Spec:hasCurrentSpecBeenApplied()
         zebug.info:name("handler"):event(event):print("An event reports a spec change.  Provided specId", unreliableSpecId, "previously applied spec was",Spec:getAppliedSpec(), "spec is now", Spec:getSpecId(), "hasChanged",hasChanged)
         if hasChanged then
@@ -117,7 +130,8 @@ end
 
 function EventHandlers:SPELLS_CHANGED(eventName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    zebug.info:mCircle():name("handler"):newEvent("Ufo", eventName, n):run(function(event)
+    local myVolume = Ufo:getEventVolume(eventName)
+    zebug.info:mCircle():name("handler"):newEvent("Ufo", eventName, n, myVolume):run(function(event)
         GermCommander:notifyAllGermsWithSpells(event)
     end)
 end
@@ -147,7 +161,8 @@ end, "UFO")
 function EventHandlers:UPDATE_MACROS(eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+    local myVolume = Ufo:getEventVolume(eName)
+    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n, myVolume):run(function(event)
         UfoProxy:syncMyId()
 
         if Ufo.thatWasMeThatDidThatMacro then
@@ -164,7 +179,8 @@ end
 function EventHandlers:UNIT_INVENTORY_CHANGED(eName, n, id)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     -- only care about events that affect the player
-    zebug.info:mDiamond():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+    local myVolume = Ufo:getEventVolume(eName)
+    zebug.info:mDiamond():name("handler"):newEvent("Ufo", eName, n, myVolume):run(function(event)
         if id == "player" then
             GermCommander:notifyAllGermsWithItems(event)
         else
@@ -189,7 +205,8 @@ end
 
 function EventHandlers:UPDATE_BINDINGS(eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    zebug.trace:newEvent("Ufo", eName, n):print("bound!")
+    local myVolume = Ufo:getEventVolume(eName)
+    zebug.trace:newEvent("Ufo", eName, n, myVolume):print("bound!")
     --if isInCombatLockdownQuiet("Ignoring event UPDATE_BINDINGS because it") then return end
     --GermCommander:updateAll()
 end
@@ -226,23 +243,48 @@ function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorTyp
         end)
 end
 
-function EventHandlers:SPELL_UPDATE_COOLDOWN(eName, n, spellID, baseSpellID, category, startRecoveryCategory)
-    if not Ufo.hasShitCalmedTheFuckDown then return end
-    zebug.info:mark(Mark.DPS):name("SPELL_UPDATE_COOLDOWN"):newEvent("Ufo", eName, n):run(function(event)
-        local spellInfo = spellID and C_Spell.GetSpellInfo(spellID)
-        local name = spellInfo and spellInfo.name or "UnKnOwN"
-        zebug.info:name("SPELL_UPDATE_COOLDOWN"):event(event):print("spellID",spellID, "spell name", name --[[, "baseSpellID",baseSpellID, "eName",eName, "n",n]])
-        GermCommander:forEachActiveGerm(Germ.render, event)
-    end)
+
+-- NEVERMIND, I moved this into SpellCd.lua - TODO: remove
+-- because Bliz APIs are a whiny bitch and won't let me trigger cooldown displays using the normal sEcReT riddled way
+-- I must manually track spell casts, their start times, and calculate their current cooldowns my damn self.
+-- For SPELL_UPDATE_COOLDOWN, I need two functions (one throttled, the other full-tilt), something my lib doesn't do.
+-- So jump through some hoops splitting the functions apart and joining them back into one handler
+
+local function spellRender(eName, n, spellId)
+    local myVolume = Ufo:getEventVolume(eName)
+    local spellInfo = spellId and C_Spell.GetSpellInfo(spellId)
+    local name = spellInfo and spellInfo.name or "UnKnOwN"
+    zebug.info:mark(Mark.DPS):name("SPELL_UPDATE_COOLDOWN"):newEvent("Ufo", eName, n, myVolume):run(function(event)
+        zebug.info:name("SPELL_UPDATE_COOLDOWN"):event(event):print("spellID", spellId, "spell name", name)
+        GermCommander:forEachActiveGermWithSpells(Germ.render, event)
+    end, name)
+end
+local spellRenderThrottled = Throttler:throttleAndNoQueue(0.14, "Ufo:SPELL_UPDATE_COOLDOWN", spellRender)
+
+local function spellTrackerFullTilt(eName, n, spellId)
+    if not spellId then return end
+    if SpellCd:isRegistered(spellId) then
+        SpellCd:calculateStatus(spellId, eName, self)
+    end
 end
 
-EventHandlers.SPELL_UPDATE_COOLDOWN = Throttler:throttleAndNoQueue(0.1, "Ufo:SPELL_UPDATE_COOLDOWN", EventHandlers.SPELL_UPDATE_COOLDOWN)
+function EventHandlers:SPELL_UPDATE_COOLDOWN(eName, n, spellId, baseSpellID, category, startRecoveryCategory)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
+    spellRenderThrottled(eName, n, spellId)
+    --spellTrackerFullTilt(eName, n, spellId)
+end
 
+-- two other events do essentially the same crap as the above, so just reuse that code.
+EventHandlers.SPELL_UPDATE_USABLE = EventHandlers.SPELL_UPDATE_COOLDOWN
+EventHandlers.SPELL_UPDATE_CHARGES = EventHandlers.SPELL_UPDATE_COOLDOWN
+
+--[[
+-- not sure why I was explcitly passing nil.  the event has no payload
 function EventHandlers:SPELL_UPDATE_USABLE(eName, n)
     EventHandlers:SPELL_UPDATE_COOLDOWN(eName, n, nil)
 end
+]]
 
-EventHandlers.SPELL_UPDATE_CHARGES = EventHandlers.SPELL_UPDATE_USABLE
 
 -------------------------------------------------------------------------------
 -- Event related methods - TODO: use these?
@@ -250,7 +292,7 @@ EventHandlers.SPELL_UPDATE_CHARGES = EventHandlers.SPELL_UPDATE_USABLE
 
 -- support dynamically (de)activating DEBUG output in real time for individual events
 function Ufo:getEventVolume(eventName)
-    return Ufo.devMode and Config.opts.devTool.eventVolume[eventName] or nil
+    return Zebug.devMode and Config.opts.devTool.eventVolume[eventName] or nil
 end
 
 function Ufo:setEventVolume(eventName, volume)
@@ -316,7 +358,7 @@ end
 -------------------------------------------------------------------------------
 
 function dumpIfUnderMousePointer()
-    Ufo.devMode = true
+    Zebug.devMode = true
     local didOutput
     zebug.warn:mark(Mark.QUEST):newEvent("Ufo","debug"):run(function(event)
         local foci  = GetMouseFoci()
@@ -331,7 +373,7 @@ function dumpIfUnderMousePointer()
 
         if not didOutput then
             zebug.warn:event(event):print("Point at a UFO first then issue this command.  Dev Mode now disabled.")
-            Ufo.devMode = false
+            Zebug.devMode = false
         end
 
         Config:redrawIfOpen()
@@ -401,6 +443,11 @@ function initalizeAddonStuff(event)
     Catalog:createToggleButtonIfWeCan(ProfessionsBookFrame)
 
     IconPicker:init()
+
+    GermCommander:initializeAllSlots(event)
+
+    forEveryButtonOnEveryFlyout(SpellCd.registerBtnDefIfSpell)
+    SpellCd:startListeningForEvents()
 
     msgUserOrNot(L10N.LOADED, Ufo.versionMsg)
 

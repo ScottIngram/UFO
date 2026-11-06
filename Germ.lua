@@ -172,6 +172,17 @@ function Germ:render(event)
     self.flyoutMenu:renderAllBtnCooldownsEtc(event)
 end
 
+-- because Bliz APIs are a whiny bitch and won't let me trigger cooldown displays using the normal sEcReT riddled way
+-- I must manually track spell casts, their start times, and calculate their current cooldowns my damn self.
+
+function Germ:trackSpellCooldown(event, spellId)
+    if self:isInactive(event) or (not spellId) then return end
+    if SpellCd:isRegistered(spellId) then
+        SpellCd:calculateStatus(spellId, event, self)
+    end
+end
+
+
 function Germ:notifyOfChangeToFlyoutDef(event)
     self:closeFlyout() -- in case the number of buttons changed?
     self:applyConfigFromFlyoutDef(event)

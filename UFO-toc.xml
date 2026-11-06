@@ -1,0 +1,51 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd"
+>
+
+    # external 3rd-party libs
+    <Include file="libs\index.xml"/>
+
+    # libs common to my various projects
+    <Include file="ScottFreeWowLibs\index.xml"/>
+
+    <Script file="constantsUfo.lua"/>
+
+    <Include file="locales\index.xml"/>
+
+    <Script file="SecEnvDrugMule.lua"/>
+    <Script file="UfoMixin.lua"/>
+    <Script file="DB.lua"/>
+
+    <Include file="presets\index.xml"/>
+
+    <Script file="Config.lua"/>
+    <Script file="Placeholder.lua"/>
+    <Script file="SpecHelper.lua"/>
+    <Script file="SpellCd.lua"/>
+    <Script file="Cursor.lua"/>
+    <Script file="ThirdPartyAddonSupport.lua"/>
+    <Script file="PetShitShow.lua"/>
+    <Script file="ProfessionShitShow.lua"/>
+    <Script file="FlyoutDefsDb.lua"/>
+    <Script file="FlyoutDef.lua"/>
+    <Script file="ButtonDef.lua"/>
+    <Script file="ui\Button_Mixin.lua"/>
+    <Script file="BlizActionBarButton.lua"/>
+    <Script file="UfoProxy.lua"/>
+    <Script file="Germ.lua"/>
+    <Script file="GermCommander.lua"/>
+    <Script file="MacroShitShow.lua"/>
+    <Script file="ui\FlyoutMenu.lua"/>
+    <Script file="ui\ButtonOnFlyoutMenu.lua"/>
+    <Script file="ui\Catalog.lua"/>
+    <Script file="ui\IconPicker.lua"/>
+    <Script file="UFO.lua"/>
+
+    # export Ufo functions defined by the above into the Global _G namespace so they are visible for XML callbacks
+    <Script file="ScottFreeWowLibs\ExportToGlobal.lua"/>
+
+    # must come after ExportToGlobal.lua
+    <Include file="ui\ui.xml"/>
+
+</Ui>

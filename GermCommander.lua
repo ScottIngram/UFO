@@ -54,8 +54,13 @@ end
 
 ---@param funcFor fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
-function GermCommander:forEachActiveGerm(funcFor, event)
-    self:forEachGermIf(funcFor, Germ.isActive, event)
+function GermCommander:forEachActiveGerm(funcFor, event, ...)
+    self:forEachGermIf(funcFor, Germ.isActive, event, ...)
+end
+
+function GermCommander:forEachActiveGermWithSpells(func, event, ...)
+    ---@param germ GERM_TYPE
+    self:forEachGermIf(func, Germ.hasSpellsAndIsActive, event, ...)
 end
 
 ---@param func fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
@@ -72,14 +77,14 @@ local oopsEvent = Event:new("oops!","last arg needs to be an event")
 ---@param opFunction fun(germ:Germ, optional:Event) will be invoked for every germ and passed args: germ,event
 ---@param fitnessFunc fun(germ:Germ) a function that will return true if the germ in question should be included in the operation
 ---@param event string|Event custom UFO metadata describing the instigating event - good for debugging
-function GermCommander:forEachGermIf(opFunction, fitnessFunc, event)
+function GermCommander:forEachGermIf(opFunction, fitnessFunc, event, ...)
     assert(isFunction(opFunction), 'must provide a "opFunction(Germ)" ')
     assert(isFunction(fitnessFunc), 'must provide a "fitnessFunc(Germ)" ')
     event = event or oopsEvent
     for _, germ in pairs(germs) do
-        if fitnessFunc(germ, event) then
+        if fitnessFunc(germ, event, ...) then
             zebug.trace:event(event):owner(germ):line(8,"MATCH!")
-            opFunction(germ, event)
+            opFunction(germ, event, ...)
         else
             zebug.trace:event(event):owner(germ):print("skipping because it failed the fitnessFunc()")
         end

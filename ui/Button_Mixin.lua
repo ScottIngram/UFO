@@ -146,72 +146,107 @@ function Button_Mixin:updateUsable(event)
     end
 end
 
+--local startTime = {}
+
 function Button_Mixin:updateCooldown(event)
     local btnDef = self:getDef()
-    local type = btnDef and btnDef.type
-    local itemId = btnDef and btnDef.itemId
-    local spellId = btnDef and btnDef.spellId
+
+    if not btnDef then
+        -- without an id, this must be the empty placeholder slot.
+        return
+    end
+
+    local type    = btnDef.type
+    local itemId  = btnDef.itemId
+    local spellId = btnDef.spellId
     zebug.trace:event(event):owner(self):print("type",type, "itemId",itemId, "spellId",spellId)
 
     if type == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT then
         return
     end
 
-    if exists(spellId) then
-        -- use Bliz's built-in handler for the stuff it understands, ie, not items
-        zebug.trace:event(event):owner(self):print("spellId",spellId)
-        self.spellID = spellId --v11 -- internal Bliz code expects this field --  -- "Secret value" TAINT as of 3/26
+    -- don't touch Bliz's radioactive secret shit during combat
+    -- instead, fallback to the code further below
+    if not InCombatLockdown() then
+        if exists(spellId) then
+            --zebug.trace:event(event):owner(self):print("spellId",spellId)
 
-        if InCombatLockdown() then return end
+            -- use Bliz's built-in handler
+            self.spellID = spellId --v11 -- internal Bliz code expects this field -- "Secret value" TAINT as of 3/26
 
-        -- the above can STILL fail because combat can commence in the microsecond after InCombatLockdown() says "false"
-        -- so, wrap that shit in a try/catch block and eat the exception
-        local isOk, errMsg = pcall(function()
-            ActionButton_UpdateCooldown(self); -- <== their OWN FUCKING CODE
-        end)
+            -- the above InCombatLockdown() can STILL fail because combat can commence in the microsecond after it says "false"
+            -- so, wrap that shit in a try/catch block and eat the exception
+            local isOk, errMsg = pcall(function()
+                Bliz_API.ActionButton_UpdateCooldown(self) -- <== uses sEcReT shit that barfs in combat
+                zebug.info:owner(self):event(event):print("non-combat-call A-OK")
+            end)
 
-        if not isOk then
-            zebug.warn:owner(self):event("event"):print("Hey, I asked Bliz.InCombatLockdown() which said nope, but then:", errMsg)
+            if isOk then
+                -- miracle of miracles, Bliz's code didn't shit the bed!  So, we're done.
+                return
+            else
+                zebug.info:owner(self):event(event):print("non-combat-call DED !!!")
+                -- unsurprisingly, Bliz's code SHIT the bed!  Can't exit.  More work to do to clean up Bliz's fucking mess.
+                zebug.info:owner(self):event(event):print("Hey, I asked Bliz.InCombatLockdown() which said nope, but then:", errMsg)
+            end
         end
-
-        return
     end
 
-    -- for items, I copied and hacked Bliz's ActionButton_UpdateCooldown
+    -- I copied and hacked Bliz's ActionButton_UpdateCooldown
 
-    if self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_NORMAL then
-        self.cooldown:SetEdgeTexture("Interface\\Cooldown\\edge");
-        self.cooldown:SetSwipeColor(0, 0, 0);
-        self.cooldown:SetHideCountdownNumbers(false);
-        self.cooldown:SetSwipeColor(0,0,0, .5);
-        self.cooldown.currentCooldownType = COOLDOWN_TYPE_NORMAL;
-    end
+    local modRate = 0.6;
+    local id = btnDef:getIdForBlizApi()
+    local cdFrame = self:getCooldownFrame()
+    zebug.info:owner(self):event(event):print("ZZZ type",type, "id", id, "spellId",spellId)
+    --print(self:toString(), event, "type",type, "id", id, "spellId",spellId)
 
-    local modRate = 1.0;
-    local start, duration, enable = 0, 0.75, true;
-    local id = btnDef and btnDef:getIdForBlizApi()
     if id then
-        if type == ButtonType.PET or type == ButtonType.BROKENP then
-            id = AUTO_ATTACK_SPELL_ID --v11 has stricter param checks in some of its API calls
-        end
-        -- debugging to unsilence Bliz's err silencing so I can find out what's going wrong.
-        --local isOk, err = pcall( function() start, duration, enable = C_Container.GetItemCooldown(btnDef.cooldownProxy or id) end  )
-        --if err then zebug.error:print("DIED on C_Container.GetItemCooldown() where id",id) end
-        start, duration, enable = C_Container.GetItemCooldown(btnDef.cooldownProxy or id)
-        if (duration or 0) > (Config.opts.hideCooldownsWhen or 99999) then return end
-        CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
-    else
-        -- without an id, this must be the empty placeholder slot.  Make it sparkle.  Once.
-        local p = self:GetParent()
-        if p.enableTwinkle then
-            p.enableTwinkle = false
-            start = GetTime()
-            CooldownFrame_Set(self.cooldown, start, duration, enable, false, modRate);
+        if ButtonType.SPELL == type then
+            local timeSpellWasCast, cooldownFullDuration, cooldownRemainder = SpellCd:getStatus(id, event, self)
+            if timeSpellWasCast then
+                zebug.warn:owner(spellId):event(event):print("triggerering cooldown display NOW! remainder", cooldownRemainder)
+                cdFrame:SetDrawEdge(true);
+                cdFrame:SetCooldown(timeSpellWasCast, cooldownFullDuration)
+            else
+                zebug.warn:owner(spellId):event(event):print("CLEARING cooldown display remainder", cooldownRemainder)
+                cdFrame:Clear()
+            end
+--[[
+-- I moved this into SpellCd.lua
+
+            -- avoid secret values
+            -- avoid the Bliz ActionButton_UpdateCooldown
+            local cooldownFullDurationMilliseconds = GetSpellBaseCooldown(spellId) or 0
+            local cooldownFullDuration = cooldownFullDurationMilliseconds /1000
+            local cdState = C_Spell.GetSpellCooldown(spellId)
+            local isEnabled, isActive = cdState.isEnabled, cdState.isActive
+            local passage = time() - (startTime[spellId] or 0)
+            if isEnabled and isActive then
+                if passage > cooldownFullDuration then
+                    startTime[spellId] = time()
+                    passage = 0
+                end
+                zebug.warn:owner(self):event(event):print("IN-COMBAT-HACK... isEnabled", isEnabled, "isActive",isActive, "cooldownDuration", cooldownFullDuration, "delta", passage)
+                cd:SetDrawEdge(true);
+                cd:SetCooldown(startTime[spellId], cooldownFullDuration)
+            else
+                zebug.warn:owner(self):event(event):print("IN-COMBAT-HACK... CLEAR! - isEnabled", isEnabled, "isActive",isActive, "cooldownDuration", cooldownFullDuration, "delta", passage)
+                cd:Clear()
+                startTime[spellId] = nil
+            end
+]]
+        else
+            if (ButtonType.PET == type) or (ButtonType.BROKENP == type) then
+                id = AUTO_ATTACK_SPELL_ID --v11 has stricter param checks in some of its API calls
+            end
+
+            local startTime, duration, isEnabled = C_Container.GetItemCooldown(btnDef.cooldownProxy or id)
+            zebug.warn:event(event):owner(self):print("ITEMS - cd:SetCooldown() start", startTime, "duration",duration, "isEnabled", isEnabled)
+            if startTime and duration then
+                cdFrame:SetCooldown(startTime, duration, isEnabled, false, modRate);
+            end
         end
     end
-
-    zebug.trace:event("event"):owner(self):print("id",id, "type",type, "start",start, "duration",duration, "enable",enable )
-
 end
 
 function OLD_CATA_SpellFlyoutButton_UpdateCount (self)

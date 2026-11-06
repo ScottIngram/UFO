@@ -212,6 +212,9 @@ function ButtonOnFlyoutMenu:onReceiveDragAddIt(event)
     local btnIndex = self:getId()
 
     flyoutDef:insertButton(btnIndex, crsDef)
+
+    SpellCd:registerBtnDefIfSpell(crsDef)
+
     if crsDef.brokenPetCommandId2 then
         local twin = ButtonDef:getFromCursor(event)
         twin.brokenPetCommandId = twin.brokenPetCommandId2
@@ -242,6 +245,12 @@ function ButtonOnFlyoutMenu:installExcluder(event)
     self.nopeIcon = nopeIcon
     self:SetScript(Script.ON_CLICK, self.handleExcluderClick)
 end
+
+--[[
+function ButtonOnFlyoutMenu:trackSpellCooldowns(event)
+    self:renderCooldownsAndCountsAndStatesEtc(event)
+end
+]]
 
 function ButtonOnFlyoutMenu:renderCooldownsAndCountsAndStatesEtcEtc(event)
     self:renderCooldownsAndCountsAndStatesEtc(event)
@@ -554,7 +563,8 @@ end
 function ButtonOnFlyoutMenu:toString()
     local btnDef = self:getDef()
     if btnDef then
-        return string.format("<BOFM: %s:%s>", nilStr(btnDef.type), nilStr(btnDef.name))
+        local icon = btnDef:getIcon() or 1
+        return string.format("<BOFM:|T%d:0|t %s:%s>", icon, nilStr(btnDef.type), nilStr(btnDef.name))
     else
         return "<BOFM: EMPTY>"
     end

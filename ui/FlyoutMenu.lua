@@ -480,7 +480,7 @@ end
 function ScriptHandlers:ON_SHOW()
     zebug.info:mark(Mark.LOOT):owner(self):newEvent(self, "ON_SHOW"):run(function(event)
         local parent = self:GetParent()
-        zebug.info:event("event"):owner(self):name("ON_SHOW"):print("parent", parent, "",self)
+        zebug.info:event("event"):owner(self):name("ON_SHOW"):print("parent", parent)
         parent:OnPopupToggled() -- call Bliz super method
         self:renderAllBtnCooldownsEtc(event)
     end)
@@ -506,6 +506,7 @@ function FlyoutMenu:onLoadForCatalog()
     self.isForCatalog = true
     self.isForGerm = false
     self:SetParent(nil)
+    self:installMyToString()
 
     self:installSecEnvBullshit("FlyoutMenu:onLoadForCatalog")
 end
@@ -514,6 +515,18 @@ function FlyoutMenu:renderAllBtnCooldownsEtc(event)
     if not self:IsShown() then return end
     self:forEachButton(ButtonOnFlyoutMenu.renderCooldownsAndCountsAndStatesEtcEtc, event)
 end
+
+function FlyoutMenu:renderOrTrackAllBtnCooldownsForSpells(event)
+    if not self:IsShown() then
+        -- because Bliz APIs are a whiny bitch and won't let me trigger cooldown displays the normal sEcReT riddled away
+        -- track if a spell is currently on cooldown, even when it's hidden inside a closed UFO
+-- no longer needed now that I moved this into SpellCd.lua
+--        self:forEachButton(ButtonOnFlyoutMenu.trackSpellCooldowns, event)
+    else
+        self:forEachButton(ButtonOnFlyoutMenu.renderCooldownsAndCountsAndStatesEtcEtc, event)
+    end
+end
+
 
 function FlyoutMenu:FOR_DEMO_PURPOSES_ONLY()
     -- methods that get called by the Bliz built-ins

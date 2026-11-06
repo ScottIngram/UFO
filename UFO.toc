@@ -14,43 +14,4 @@
 ## X-License: Mozilla Public License Version 2.0
 ## X-Curse-Project-ID: 904467
 
-# external 3rd-party libs
-libs\index.xml
-
-# libs common to my various projects
-ScottFreeWowLibs\index.xml
-
-# UFO specific code
-constantsUfo.lua
-locales\index.xml
-SecEnvDrugMule.lua
-UfoMixin.lua
-DB.lua
-presets\index.xml
-Config.lua
-Placeholder.lua
-SpecHelper.lua
-Cursor.lua
-ThirdPartyAddonSupport.lua
-PetShitShow.lua
-ProfessionShitShow.lua
-FlyoutDefsDb.lua
-FlyoutDef.lua
-ButtonDef.lua
-ui\Button_Mixin.lua
-BlizActionBarButton.lua
-UfoProxy.lua
-Germ.lua
-GermCommander.lua
-MacroShitShow.lua
-ui\FlyoutMenu.lua
-ui\ButtonOnFlyoutMenu.lua
-ui\Catalog.lua
-ui\IconPicker.lua
-UFO.lua
-
-# export Ufo functions defined by the above into the Global _G namespace so they are visible for XML callbacks
-ScottFreeWowLibs\ExportToGlobal.lua
-
-# must come after ExportToGlobal.lua
-ui\ui.xml
+UFO-toc.xml

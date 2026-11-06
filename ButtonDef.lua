@@ -270,6 +270,10 @@ function ButtonDef:initOutfit()
     end
 end
 
+function ButtonDef:isSpell()
+    return (self.type == ButtonType.SPELL)
+end
+
 -------------------------------------------------------------------------------
 -- Methods - must customize for each type
 -------------------------------------------------------------------------------
