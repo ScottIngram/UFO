@@ -243,48 +243,31 @@ function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorTyp
         end)
 end
 
+local spellNames = {}
 
--- NEVERMIND, I moved this into SpellCd.lua - TODO: remove
--- because Bliz APIs are a whiny bitch and won't let me trigger cooldown displays using the normal sEcReT riddled way
--- I must manually track spell casts, their start times, and calculate their current cooldowns my damn self.
--- For SPELL_UPDATE_COOLDOWN, I need two functions (one throttled, the other full-tilt), something my lib doesn't do.
--- So jump through some hoops splitting the functions apart and joining them back into one handler
-
-local function spellRender(eName, n, spellId)
+function EventHandlers:SPELL_UPDATE_COOLDOWN(eName, n, spellId, baseSpellID, category, startRecoveryCategory)
+    if not Ufo.hasShitCalmedTheFuckDown then return end
     local myVolume = Ufo:getEventVolume(eName)
-    local spellInfo = spellId and C_Spell.GetSpellInfo(spellId)
-    local name = spellInfo and spellInfo.name or "UnKnOwN"
+    local name = "UnKnOwN"
+    if spellId then
+        if not spellNames[spellId] then
+            local spellInfo = C_Spell.GetSpellInfo(spellId)
+            if spellInfo and spellInfo.name then
+                spellNames[spellId] = spellInfo.name
+            end
+        end
+        name = spellNames[spellId]
+    end
+
     zebug.info:mark(Mark.DPS):name("SPELL_UPDATE_COOLDOWN"):newEvent("Ufo", eName, n, myVolume):run(function(event)
         zebug.info:name("SPELL_UPDATE_COOLDOWN"):event(event):print("spellID", spellId, "spell name", name)
         GermCommander:forEachActiveGermWithSpells(Germ.render, event)
     end, name)
 end
-local spellRenderThrottled = Throttler:throttleAndNoQueue(0.14, "Ufo:SPELL_UPDATE_COOLDOWN", spellRender)
 
-local function spellTrackerFullTilt(eName, n, spellId)
-    if not spellId then return end
-    if SpellCd:isRegistered(spellId) then
-        SpellCd:calculateStatus(spellId, eName, self)
-    end
-end
-
-function EventHandlers:SPELL_UPDATE_COOLDOWN(eName, n, spellId, baseSpellID, category, startRecoveryCategory)
-    if not Ufo.hasShitCalmedTheFuckDown then return end
-    spellRenderThrottled(eName, n, spellId)
-    --spellTrackerFullTilt(eName, n, spellId)
-end
-
--- two other events do essentially the same crap as the above, so just reuse that code.
+EventHandlers.SPELL_UPDATE_COOLDOWN = Throttler:throttleAndNoQueue(0.1, "Ufo:SPELL_UPDATE_COOLDOWN", EventHandlers.SPELL_UPDATE_COOLDOWN)
 EventHandlers.SPELL_UPDATE_USABLE = EventHandlers.SPELL_UPDATE_COOLDOWN
 EventHandlers.SPELL_UPDATE_CHARGES = EventHandlers.SPELL_UPDATE_COOLDOWN
-
---[[
--- not sure why I was explcitly passing nil.  the event has no payload
-function EventHandlers:SPELL_UPDATE_USABLE(eName, n)
-    EventHandlers:SPELL_UPDATE_COOLDOWN(eName, n, nil)
-end
-]]
-
 
 -------------------------------------------------------------------------------
 -- Event related methods - TODO: use these?
@@ -436,16 +419,17 @@ function initalizeAddonStuff(event)
     ButtonDef:registerToolTipRecorder()
 
     -- check to see if the usually on-demand Bliz windows have already been loaded (by some other addon)
-    Catalog:createToggleButtonIfWeCan(SpellBookFrame) -- support WoW v10
-    Catalog:createToggleButtonIfWeCan(PlayerSpellsFrame)
-    Catalog:createToggleButtonIfWeCan(CollectionsJournal)
-    Catalog:createToggleButtonIfWeCan(MacroFrame)
-    Catalog:createToggleButtonIfWeCan(ProfessionsBookFrame)
+    Catalog:createToggleButtonIfWeCan(Bliz.SpellBookFrame) -- support WoW v10
+    Catalog:createToggleButtonIfWeCan(Bliz.PlayerSpellsFrame)
+    Catalog:createToggleButtonIfWeCan(Bliz.CollectionsJournal)
+    Catalog:createToggleButtonIfWeCan(Bliz.MacroFrame)
+    Catalog:createToggleButtonIfWeCan(Bliz.ProfessionsBookFrame)
 
     IconPicker:init()
 
     GermCommander:initializeAllSlots(event)
 
+    -- manually track spell casts and calculate their cooldowns to avoid relying on Bliz's bitchy sEcReT bullshit during combat
     forEveryButtonOnEveryFlyout(SpellCd.registerBtnDefIfSpell)
     SpellCd:startListeningForEvents()
 
