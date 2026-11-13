@@ -308,23 +308,35 @@ local HandlersForAddonLoadedEvents = {}
 function HandlersForAddonLoadedEvents:Blizzard_PlayerSpells(name)
     --v11 Bliz moved the spell book into its own internal, load-on-demand addon
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_PlayerSpells")
-    Catalog:createToggleButton(PlayerSpellsFrame)
+    Catalog:createToggleButton(Bliz.PlayerSpellsFrame)
 end
 
 function HandlersForAddonLoadedEvents:Blizzard_Collections(name)
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_Collections")
-    Catalog:createToggleButton(CollectionsJournal)
+    Catalog:createToggleButton(Bliz.CollectionsJournal)
 end
 
 function HandlersForAddonLoadedEvents:Blizzard_MacroUI(name)
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_MacroUI")
-    Catalog:createToggleButton(MacroFrame)
+    Catalog:createToggleButton(Bliz.MacroFrame)
     MacroShitShow:init()
 end
 
-function HandlersForAddonLoadedEvents:Blizzard_ProfessionsBook(name)
+local n = 0
+
+function HandlersForAddonLoadedEvents:Blizzard_ProfessionsBook()
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_ProfessionsBook")
-    Catalog:createToggleButton(ProfessionsBookFrame)
+    if Bliz.ProfessionsFrame then
+        Catalog:createToggleButton(Bliz.ProfessionsBookFrame or Bliz.ProfessionsFrame)
+        if n > 0 then
+            zebug.warn:name("listener"):print("That's better.  Now I can put a [UFO] button on it.  KTHXBAI!")
+        end
+    else
+        n = (n or 0) + 1
+        zebug.warn:name("listener"):print("Heard addon load: Blizzard_ProfessionsBook... but they haven't actually initialized ProfessionsFrame yet.  Let's try that again, shall we? (SMFH)", n)
+        C_Timer.After(1, HandlersForAddonLoadedEvents.Blizzard_ProfessionsBook)
+    end
+
 end
 
 function HandlersForAddonLoadedEvents:LargerMacroIconSelection(name)
