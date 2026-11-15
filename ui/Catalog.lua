@@ -200,7 +200,7 @@ function Catalog:update(event)
 
     ---@type FlyoutMenu
     local flyoutMenu = UFO_FlyoutMenuForCatalog
-    flyoutMenu:Hide()
+    flyoutMenu:close()
     flyoutMenu:SetParent(UFO_Catalog) -- seemingly, I can't attach it to the btnFrame becoz then it's invisible despite visible==true
     flyoutMenu:SetFrameStrata(FrameStrata.HIGH) -- altho set in the XML, this value gets clobbered somehow somewhere.
 
@@ -292,13 +292,13 @@ function Catalog:update(event)
                 if selectedIdx and (row == selectedIdx) then
                     btnFrame.SelectedBar:Show()
                     --flyoutMenu.parent = btnFrame
-                    if self.renderedFlyoutId ~= flyoutId then
+                    if self.renderedFlyoutId == flyoutId then
+                        flyoutMenu:attach(btnFrame)
+                        flyoutMenu:redrawIfConfigChanged(event)
+                    else
                         flyoutMenu:attach(btnFrame)
                         flyoutMenu:applyConfigForCatalog(flyoutId, event)
                         self.renderedFlyoutId = flyoutId
-                    else
-                        flyoutMenu:attach(btnFrame)
-                        flyoutMenu:redrawIfConfigChanged(event)
                     end
                     if IconPicker:IsShown() then
                         flyoutMenu:Hide()

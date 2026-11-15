@@ -22,6 +22,7 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@field fallbackIcon string in absence of the icon field, this is used when the Bliz UI fails to load all the necessary icons on login (usually pets and toys)
 ---@field btns table<number, ButtonDef>
 ---@field lastMod number timestamp of the last significant modification
+---@field btnIndex table<string, table<number,number>> index of every button by type then ID pointing to its position in the flyout
 FlyoutDef = {
     ufoType = "FlyoutDef",
 }
@@ -54,6 +55,7 @@ function FlyoutDef:oneOfUs(self)
     function privateCache:cacheHasItem(hasIt) privateCache._hasItem = hasIt end
     function privateCache:cacheHasMacro(hasIt) privateCache._hasMacro = hasIt end
     function privateCache:cacheHasSpell(hasIt) privateCache._hasSpell = hasIt end
+    function privateCache:cacheBtnIndex(btnIndex) privateCache.btnIndex = btnIndex end
 
     -- tie the privateData table to the FlyoutDef class definition
     setmetatable(privateCache, { __index = FlyoutDef })
@@ -107,7 +109,8 @@ end
 ---@param time number a time ( as returned by a call to the time() function )
 ---@return boolean true if self has been modified more recently than the given time
 function FlyoutDef:isModNewerThan(time)
-    return (time or 0) >= self:getModStamp()
+    assert(isNumber(time), "Usage: FlyoutDef:isModNewerThan(time<number>)")
+    return time >= self:getModStamp()
 end
 
 function FlyoutDef:invalidateCache()
@@ -116,12 +119,12 @@ function FlyoutDef:invalidateCache()
     self:cacheHasItem(nil)
     self:cacheHasMacro(nil)
     self:cacheHasSpell(nil)
+    self:cacheBtnIndex(nil)
 end
 
 function FlyoutDef:invalidateCacheOfUsableFlyoutDefOnly()
     self:cacheUsableFlyoutDef(nil)
 end
-
 
 function FlyoutDef:newId()
     return DB:nextN() ..":".. getIdForCurrentToon() ..":".. (time()-1687736964)
@@ -308,4 +311,35 @@ function FlyoutDef:hasFoo(key, cacher, type, event)
     end
 
     return self[key]
+end
+
+function FlyoutDef:hasBtn(btnDef, event)
+    assert(UfoMixIn:isA(btnDef, ButtonDef), "usage: FlyoutDef:hasBtn(someButtonDef)")
+    zebug.info:mark(Mark.FIRE):event(event):owner(self):print("btnDef",btnDef)
+
+    if not self.btnIndex then
+        -- build an index that lists every button on the flyout by type and ID
+        self:cacheBtnIndex({})
+
+        ---@param btnDef ButtonDef
+        self:forEachBtn(function(btnDef)
+            local type = btnDef.type
+            if not self.btnIndex[type] then
+                self.btnIndex[type] = {}
+            end
+            local id = btnDef:getIdForBlizApi()
+            self.btnIndex[type][id] = true
+        end)
+    end
+
+    local hasIt = false
+    local outer = self.btnIndex[btnDef.type]
+    if outer then
+        local id = btnDef:getIdForBlizApi()
+        if outer[id] then
+            hasIt = true
+        end
+    end
+
+    return hasIt
 end

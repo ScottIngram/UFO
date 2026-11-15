@@ -121,28 +121,49 @@ end
 function Preset:install(id)
     local preset = self:getDef(id)
 
-    -- check if it already exists in catalog, if so, warn & abort.
-    local all = FlyoutDefsDb:getAll()
-    local ufo = all[id]
-    if ufo then
-        local array = DB:getOrderedFlyoutIds()
-        local where = findElement(array, id)
-        -- TODO: popup dialogue
-        local msg = sprintf(L10N.cfg.PRESET_UFO_ALREADY_EXISTS, preset.name, where, ufo.name)
-        msgUser(msg)
-        UfoProxy:pickupUfoOntoCursor(id, "PRESET-ALREADY-EXISTS")
-        return
-    end
-
     preset = deepcopy(preset)
-    --zebug.warn:dumpy("Preset", preset)
     if isFunction(preset.btns) then
         preset.btns = preset.btns()
+        if not preset.btns then
+            return
+        end
     end
-    local flyoutDef = FlyoutDefsDb:appendNewOne(preset)
-    --zebug.warn:dumpy("flyoutDef", flyoutDef)
 
-    -- TODO: if locale is not en_US, replace all of the names
+    local flyoutDef = FlyoutDef:oneOfUs(preset)
+    Preset:discardIfForWrongGameVersion(flyoutDef)
+
+    -- check if it already exists in catalog
+    local all = FlyoutDefsDb:getAll()
+    ---@type FlyoutDef
+    local theUfo = all[id]
+    if theUfo then
+        local allUfoIds = DB:getOrderedFlyoutIds()
+        local where = findElement(allUfoIds, id)
+
+        Preset:stripRedundantButtons(flyoutDef, theUfo)
+
+        if flyoutDef:howManyButtons() == 0 then
+            -- all the preset buttons are already on the existing UFO
+            local msg = sprintf(L10N.cfg.PRESET_UFO_ALREADY_EXISTS_DELETE, flyoutDef.name, where, theUfo.name)
+            msgUser(msg)
+            zebug.trace:owner(self):dumpy("EMPTY!", flyoutDef)
+        else
+            -- some of the preset buttons are missing from the existing UFO
+            local msg = sprintf(L10N.cfg.PRESET_UFO_ALREADY_EXISTS_MERGE, flyoutDef.name, where, theUfo.name)
+            msgUser(msg)
+            zebug.trace:owner(self):dumpy("remaining", flyoutDef)
+            -- merge the missing buttons into the existing UFO
+            flyoutDef:forEachBtn(function(btnDef)
+                msgUser("Adding:",btnDef:toString())
+                theUfo:addButton(btnDef)
+            end)
+        end
+
+    else
+        newDef = FlyoutDefsDb:appendNewOne(flyoutDef)
+    end
+
+    --zebug.warn:dumpy("flyoutDef", flyoutDef)
 
     Catalog:update("PRESET-INSTALL")
     UfoProxy:pickupUfoOntoCursor(flyoutDef.id, "PRESET-INSTALL")
@@ -157,7 +178,13 @@ function Preset:getSpellsFromFlyout(...)
     for i = 1, select("#", ...) do
         local flyoutId = select(i, ...)
         local name, description, numSlots, isKnown = _G.GetFlyoutInfo(flyoutId)
-        zebug.trace:print("Flyout name",name, "numSlots",numSlots)
+
+        if not isKnown then
+            msgUser("Sorry!  This flyout is unknown to this toon.")
+            return
+        end
+
+        zebug.info:print("Flyout name",name, "description",description, "numSlots",numSlots)
 
         for i = 1, numSlots do
             local spellId, overrideSpellId, isKnown, name, slotSpecId = GetFlyoutSlotInfo(flyoutId, i)
@@ -180,3 +207,43 @@ function Preset:getSpellsFromFlyout(...)
 
     return spells
 end
+
+-- use the the Bliz APIs to pre-load  all the names and icons for every button and discard those invalid for this version of WoW
+---@param flyoutDef FlyoutDef
+function Preset:discardIfForWrongGameVersion(flyoutDef)
+    assert(UfoMixIn:isA(flyoutDef, FlyoutDef), "usage: Preset:cleanse(flyoutDef)")
+
+    ---@param btnDef ButtonDef
+    flyoutDef:batchDeleteBtns(function(btnDef)
+        if btnDef:getIcon() == nil then
+            return true
+        else
+            local name = btnDef:getName()
+            if (name == nil) or (name == "UnKnOwN!") then
+                return true
+            end
+        end
+        zebug.info:owner(btnDef):print("adding!")
+    end)
+
+    return flyoutDef
+end
+
+---@param presetFlyoutDef FlyoutDef
+---@param oldFlyoutDef FlyoutDef
+function Preset:stripRedundantButtons(presetFlyoutDef, oldFlyoutDef)
+    assert(UfoMixIn:isA(presetFlyoutDef, FlyoutDef), "usage: Preset:disjoint(presetFlyoutDef, oldFlyoutDef)")
+
+    -- if the old, existing UFO already contains a button on the new preset, then delete it from the preset.
+    ---@param newBtnDef ButtonDef
+    presetFlyoutDef:batchDeleteBtns(function(newBtnDef)
+        if oldFlyoutDef:hasBtn(newBtnDef) then
+            zebug.info:owner(presetFlyoutDef):print("discarding",newBtnDef:toString())
+            return true
+        end
+        zebug.info:owner(presetFlyoutDef):print("preserving",newBtnDef:toString())
+    end)
+
+    return presetFlyoutDef
+end
+

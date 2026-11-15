@@ -19,13 +19,15 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.INFO)
 ---@field nameSuffix string part of its name used to identify it as a flyout frame
 ---@field displaceBtnsHere number used to push buttons out of the way during "OnHover"
 ---@field btnKids table<number,Frame> array of bliz UI elements for the buttons on the flyout
+---@field timeWhenPreviouslyDrawn number
 
 ---@type FlyoutMenu | FM_INHERITANCE
 FlyoutMenu = {
     ufoType = "FlyoutMenu",
     isForGerm = false,
     isForCatalog = false,
-    nameSuffix = "_FlyoutMenu"
+    nameSuffix = "_FlyoutMenu",
+    timeWhenPreviouslyDrawn = 0,
 }
 UfoMixIn:mixInto(FlyoutMenu)
 GLOBAL_FlyoutMenu = FlyoutMenu
@@ -279,12 +281,12 @@ function FlyoutMenu:offsetAndUpdateButtonLayout(displaceBtnsHere, event)
     self.displaceBtnsHere = nil
 end
 
-local maxyFly
-
 function FlyoutMenu:redrawIfConfigChanged(event)
-    local flyoutMaxSize = Config:get(Config.field.name.flyoutMaxSize)
-    if not maxyFly or maxyFly ~= flyoutMaxSize then
-        maxyFly = flyoutMaxSize
+    local flyoutDef = self:getDef()
+    local currentSize = flyoutDef:howManyButtons()
+    local oldSize = self.sizeWhenPreviouslyDrawn or 0
+    if oldSize ~= currentSize or flyoutDef:isModNewerThan(self.timeWhenPreviouslyDrawn) then
+        zebug.info:owner(self):print("redrawing :-)")
         self:redraw(event)
     end
 end
@@ -292,6 +294,8 @@ end
 function FlyoutMenu:redraw(event)
     self:populateButtons(event)
     self:updateButtonLayout(event)
+    self.sizeWhenPreviouslyDrawn = self:getDef():howManyButtons()
+    self.timeWhenPreviouslyDrawn = time()
 end
 
 function FlyoutMenu:updateButtonLayout(event)
