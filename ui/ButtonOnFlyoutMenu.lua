@@ -39,6 +39,7 @@ function ButtonOnFlyoutMenu:new(flyoutMenu, i)
     zebug.info:owner(flyoutName):mark(Mark.FIRE):print("creating frame #",i)
     ---@type ButtonOnFlyoutMenu
     local self = CreateFrame(FrameType.CHECK_BUTTON, myName, flyoutMenu, "UFO_ButtonOnFlyoutMenu_Template", i)
+    self:SetFrameLevel(flyoutMenu.bg:GetFrameLevel()+10) -- becoz sometimes it arbitrarily is drawn behind its background :-/
     -- see also ButtonOnFlyoutMenu:onLoad()
 
     if flyoutMenu.isForCatalog then

@@ -120,8 +120,8 @@
         <Frames>
             <Frame parentKey="bg" setAllPoints="true">
                 <Layers>
-                    <Layer level="BACKGROUND">
-                        <Texture parentKey="snotwad" atlas="common-dropdown-bg" useAtlasSize="true" alpha="0.75">
+                    <Layer level="BACKGROUND" textureSubLevel="0">
+                        <Texture parentKey="bgTexture" atlas="common-dropdown-bg" useAtlasSize="true" alpha="0.75">
                             <Anchors>
                                 <Anchor point="TOPLEFT" x="-11" y="8"/>
                                 <Anchor point="BOTTOMRIGHT" x="11" y="-13"/>
