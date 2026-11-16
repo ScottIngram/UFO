@@ -171,3 +171,7 @@ function UfoMixIn:getUfoLabel()
     return self.label
 end
 
+function UfoMixIn:makeLabelForMethod(methodName)
+    return strjoin(":", self.ufoType, methodName)
+end
+

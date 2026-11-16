@@ -336,7 +336,6 @@ function HandlersForAddonLoadedEvents:Blizzard_ProfessionsBook()
         zebug.warn:name("listener"):print("Heard addon load: Blizzard_ProfessionsBook... but they haven't actually initialized ProfessionsFrame yet.  Let's try that again, shall we? (SMFH)", n)
         C_Timer.After(1, HandlersForAddonLoadedEvents.Blizzard_ProfessionsBook)
     end
-
 end
 
 function HandlersForAddonLoadedEvents:LargerMacroIconSelection(name)
@@ -419,7 +418,6 @@ function initalizeAddonStuff(event)
     DB:initializePlacements()
     DB:initializeOptsMemory()
     Config:migrateToCurrentVersion()
-    Config:initializeOptionsMenu(EventHandlers)
 
     SecEnv:loadConfigOptions()
 
@@ -444,6 +442,10 @@ function initalizeAddonStuff(event)
     -- manually track spell casts and calculate their cooldowns to avoid relying on Bliz's bitchy sEcReT bullshit during combat
     forEveryButtonOnEveryFlyout(SpellCd.registerBtnDefIfSpell)
     SpellCd:startListeningForEvents()
+
+    Config:bulkRegisterEventHandlersForDebugger(EventHandlers)
+    ButtonOnFlyoutMenu:registerMyEventsForDebugger()
+    Config:initializeOptionsMenu()
 
     msgUserOrNot(L10N.LOADED, Ufo.versionMsg)
 

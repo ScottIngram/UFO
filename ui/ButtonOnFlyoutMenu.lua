@@ -418,6 +418,15 @@ end
 -- XML Callbacks - see ui/ui.xml
 -------------------------------------------------------------------------------
 
+local BoFM = ButtonOnFlyoutMenu
+
+local LABELS = {
+    onMouseUp                = BoFM:makeLabelForMethod("onMouseUp"),
+    onReceiveDrag            = BoFM:makeLabelForMethod("onReceiveDrag"),
+    onDragStartWhileDragging = BoFM:makeLabelForMethod("onDragStartWhileDragging"),
+    onDragStartDoPickup      = BoFM:makeLabelForMethod("onDragStartDoPickup"),
+}
+
 -- TODO: should this be in Button_Mixin so that Germ can enjoy it too?
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onLoad()
@@ -470,7 +479,8 @@ function ButtonOnFlyoutMenu:onMouseUp()
     -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
     local isDragging = GetCursorInfo()
     if isDragging then
-        zebug.info:mTriangle():owner(self):newEvent(self, "bofm-mouse-up"):run(function(event)
+        local myVolume = Ufo:getEventVolume(LABELS.onMouseUp)
+        zebug.info:mTriangle():owner(self):newEvent(self, "bofm-mouse-up", nil, myVolume):run(function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
     end
@@ -494,7 +504,8 @@ end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onReceiveDrag()
-    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me"):run(function(event)
+    local myVolume = Ufo:getEventVolume(LABELS.onReceiveDrag)
+    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me", nil, myVolume):run(function(event)
         self:onReceiveDragAddItTryCatch(event)
     end)
 end
@@ -511,7 +522,8 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
 
     local isDragging = GetCursorInfo()
     if isDragging then
-        zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me-SWAP"):run(function(event)
+        local myVolume = Ufo:getEventVolume(LABELS.onDragStartWhileDragging)
+        zebug.info:mTriangle():owner(self):newEvent(self, "bofm-drag-hit-me-SWAP",nil, myVolume):run(function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
         return
@@ -525,7 +537,8 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     end
 ]]
 
-    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-dragged-away"):run(function(event)
+    local myVolume = Ufo:getEventVolume(LABELS.onDragStartDoPickup)
+    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-dragged-away",nil, myVolume):run(function(event)
         local isOk, err = btnDef:pickupToCursor(event)
         if not isOk then
             zebug.error:event(event):owner(self):print("FAILED to drag! err",err)
@@ -544,6 +557,13 @@ end
 -------------------------------------------------------------------------------
 -- Debugger tools
 -------------------------------------------------------------------------------
+
+function ButtonOnFlyoutMenu:registerMyEventsForDebugger()
+    Config:registerEventHandlerForDebugger(LABELS.onMouseUp)
+    Config:registerEventHandlerForDebugger(LABELS.onReceiveDrag)
+    Config:registerEventHandlerForDebugger(LABELS.onDragStartWhileDragging)
+    Config:registerEventHandlerForDebugger(LABELS.onDragStartDoPickup)
+end
 
 function ButtonOnFlyoutMenu:printDebugDetails(event)
     local t = self:GetAttribute("type")

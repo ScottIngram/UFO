@@ -206,7 +206,7 @@ local function initializeOptionsMenu()
                                 name = " ",
                                 type = "group",
                                 inline = true,
-                                args = generateMenusForEventHandlers(),
+                                args = makeMenusForEventHandlers(),
                             },
 
                         },
@@ -708,23 +708,19 @@ end
 -------------------------------------------------------------------------------
 
 local eventMenusArgs = {}
-local debuggerOpts = {}
-local debuggerEventOptsOrder = 0
+local registeredEvents = {}
 
-function generateMenusForEventHandlers()
-    if not (debuggerOpts and debuggerOpts.eventHandlers) then return eventMenusArgs end
-
-    for eventName, _ in pairs(debuggerOpts.eventHandlers) do
-        eventMenusArgs[eventName] = includeDebuggerEventOpts(eventName)
+function makeMenusForEventHandlers()
+    for i, eventName in ipairs(registeredEvents) do
+        eventMenusArgs[eventName] = makeMenuForEventHandler(i, eventName)
     end
 
     return eventMenusArgs
 end
 
-function includeDebuggerEventOpts(eventName)
-    debuggerEventOptsOrder = debuggerEventOptsOrder + 1
+function makeMenuForEventHandler(i, eventName)
     return {
-        order = debuggerEventOptsOrder,
+        order = i,
         name = eventName,
         desc = "enable debugging output associated with this event",
         --width = "double",
@@ -961,13 +957,27 @@ function Config:getPrimeClickers(flyoutId)
     return primeClickers
 end
 
-function Config:initializeOptionsMenu(eventHandlers)
-    debuggerOpts.eventHandlers = eventHandlers
+function Config:initializeOptionsMenu()
     initializeOptionsMenu()
     LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable(ADDON_NAME, optionsMenus)
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions(ADDON_NAME, Ufo.myTitle)
 
     Config.AceConfigDialog = LibStub("AceConfigDialog-3.0");
+end
+
+function Config:registerEventHandlerForDebugger(label)
+    registeredEvents[ #registeredEvents + 1 ] = label
+end
+
+function Config:bulkRegisterEventHandlersForDebugger(handlersMap)
+    assert(isTable(handlersMap), "Usage: Config:bulkRegisterEventHandlersForDebugger(handlersMap<table>)")
+    for k, v in pairs(handlersMap) do
+        Config:registerEventHandlerForDebugger(k)
+    end
+end
+
+function Config:makeLabelForDebugger(...)
+    return strjoin(":", ...)
 end
 
 function Config:isOpen()
