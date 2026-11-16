@@ -326,8 +326,9 @@ local n = 0
 
 function HandlersForAddonLoadedEvents:Blizzard_ProfessionsBook()
     zebug.trace:name("listener"):print("Heard addon load: Blizzard_ProfessionsBook")
-    if Bliz.ProfessionsFrame then
-        Catalog:createToggleButton(Bliz.ProfessionsBookFrame or Bliz.ProfessionsFrame)
+    local frame = Bliz.ProfessionsBookFrame or Bliz.ProfessionsFrame
+    if frame then
+        Catalog:createToggleButton(frame)
         if n > 0 then
             zebug.warn:name("listener"):print("That's better.  Now I can put a [UFO] button on it.  KTHXBAI!")
         end
