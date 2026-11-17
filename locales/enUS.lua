@@ -187,6 +187,7 @@ SNAPSHOT_UNDO_BTN = "Undo Load"
 
 PRESETS = "Presets"
 THESE_ARE_PRE_CONFIGURED_UFOS = "These are pre-configured UFOs to get you started or inspire you.  Clicking any of the buttons below will create an entry in your Catalog for a UFO cram-packed with my choices for relevant spells/toys/items/etc. (The Mage Portal/Teleports are actually dynamic and will keep themselves up-to-date, but, none of the others will).  Once in your Catalog, they are normal UFOs like any other: you can drag them onto your bars, customize them, rearrange their buttons, etc." .. EOL
+PRESETS_FOREVER = EOL.."Presets works better in Retail because Forever hides undiscovered toys, mounts, etc.  So, many of these may be empty or nearly so. " .. EOL
 CONFIGURATION = "Configuration"
 PRESET_UFO_ALREADY_EXISTS_DELETE = "The %s UFO already exists in your catalog at position %s named %s. Delete it if you want to create it anew."
 PRESET_UFO_ALREADY_EXISTS_MERGE = "The %s UFO already exists in your catalog at position %s named %s. Updating it with missing buttons."

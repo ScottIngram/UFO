@@ -145,7 +145,7 @@ local function initializeOptionsMenu()
                         order = 10,
                         type = 'description',
                         fontSize = "small",
-                        name = L10N.cfg.THESE_ARE_PRE_CONFIGURED_UFOS,
+                        name = (isForever() and L10N.cfg.PRESETS_FOREVER) or L10N.cfg.THESE_ARE_PRE_CONFIGURED_UFOS,
                     },
                     buttons = {
                         name = " ",

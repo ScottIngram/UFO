@@ -36,7 +36,7 @@ Preset = {
     },
 }
 
-Preset.Order = {
+local RETAIL_ORDER = {
     Preset.ids.HEARTHSTONE,
     Preset.ids.MAGE_TELEPORT,
     Preset.ids.MAGE_PORTAL,
@@ -51,6 +51,19 @@ Preset.Order = {
     Preset.ids.PARACHUTE,
     Preset.ids.VISION,
 }
+
+local FOREVER_ORDER = {
+    Preset.ids.HEARTHSTONE,
+    Preset.ids.TRADE_SKILLS,
+    Preset.ids.BUFF,
+    Preset.ids.RIDE,
+    Preset.ids.HEAL,
+    Preset.ids.CURE,
+    Preset.ids.PARACHUTE,
+    Preset.ids.VISION,
+}
+
+Preset.Order = isForever() and FOREVER_ORDER or RETAIL_ORDER
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -83,7 +96,7 @@ function validate()
         missingIds[v] = nil
     end
 
-    if isTableNotEmpty(missingIds) then
+    if (not isForever()) and isTableNotEmpty(missingIds) then
         zebug.error:dumpy("Preset.Order is missing members of Preset.Ids", missingIds)
         error("Preset.Order is missing members of Preset.Ids")
     end
@@ -153,8 +166,9 @@ function Preset:install(id)
             msgUser(msg)
             zebug.trace:owner(self):dumpy("remaining", flyoutDef)
             -- merge the missing buttons into the existing UFO
+            ---@param btnDef ButtonDef
             flyoutDef:forEachBtn(function(btnDef)
-                msgUser("Adding:",btnDef:toString())
+                msgUser(L10N.cfg.ADDING, btnDef:getName())
                 theUfo:addButton(btnDef)
             end)
         end
@@ -179,11 +193,6 @@ function Preset:getSpellsFromFlyout(...)
         local flyoutId = select(i, ...)
         local name, description, numSlots, isKnown = _G.GetFlyoutInfo(flyoutId)
 
-        if not isKnown then
-            msgUser("Sorry!  This flyout is unknown to this toon.")
-            return
-        end
-
         zebug.info:print("Flyout name",name, "description",description, "numSlots",numSlots)
 
         for i = 1, numSlots do
@@ -193,7 +202,6 @@ function Preset:getSpellsFromFlyout(...)
                 --msgUser("already included ", name)
                 zebug.info:mCircle():print("skipping redundant name",name, "spellId",spellId)
             else
-                msgUser(L10N.cfg.ADDING, name)
                 spells[#spells+1] = {
                     type = ButtonType.SPELL,
                     name = name,

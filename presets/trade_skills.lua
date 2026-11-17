@@ -184,5 +184,32 @@ Preset.defs[id] = {
             --["name"] = "Darkmoon Firewater",
             ["itemId"] = 124671,
         },
+
+        -- Forever stuff
+        {
+            ["type"] = "spell",
+            ["spellId"] = 2383,
+            --["name"] = "Find Herbs",
+        },
+        {
+            ["type"] = "spell",
+            ["spellId"] = 2259,
+            --["name"] = "Alchemy",
+        },
+        {
+            ["type"] = "spell",
+            ["spellId"] = 1278062,
+            --["name"] = "Gardening",
+        },
+        {
+            ["type"] = "spell",
+            ["spellId"] = 1278068,
+            --["name"] = "Tanning",
+        },
+        {
+            ["type"] = "spell",
+            ["spellId"] = 2550,
+            --["name"] = "Cooking",
+        },
     },
 }
