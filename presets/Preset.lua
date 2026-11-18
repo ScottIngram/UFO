@@ -57,6 +57,7 @@ local FOREVER_ORDER = {
     Preset.ids.TRADE_SKILLS,
     Preset.ids.BUFF,
     Preset.ids.RIDE,
+    Preset.ids.NOMZ,
     Preset.ids.HEAL,
     Preset.ids.CURE,
     Preset.ids.PARACHUTE,
