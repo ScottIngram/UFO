@@ -42,6 +42,8 @@ function ButtonOnFlyoutMenu:new(flyoutMenu, i)
     self:SetFrameLevel(flyoutMenu.bg:GetFrameLevel()+10) -- becoz sometimes it arbitrarily is drawn behind its background :-/
     -- see also ButtonOnFlyoutMenu:onLoad()
 
+    self:enableBlizBehaviorSecEnvSettings()
+
     if flyoutMenu.isForCatalog then
         -- add the little (X) button that lets the user include/exclude this one from the randomizer feature
         self:installExcluder()

@@ -365,3 +365,23 @@ end
 Button_Mixin.setSecEnvAttribute = UfoMixIn.setSecEnvAttribute
 Button_Mixin.safelySetSecEnvAttribute = UfoMixIn.safelySetSecEnvAttribute
 
+-- copied from ActionBarActionButtonMixin:OnLoad()
+function Button_Mixin:enableBlizBehaviorSecEnvSettings()
+    local doMouseover = GetCVarBool("enableMouseoverCast")
+    if doMouseover then
+        -- Do I want to
+        -- if self:GetAttribute("type") == "spell" then
+        --    spellName = self:SetAttribute("spell", spell)pull out the spell name & run it through C_Spell.IsSpellHarmful(spellName) and/or C_Spell.IsSpellHelpful(spellName)
+        RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [exists] target; player")
+        -- TODO: register event listener for CVAR_UPDATE
+    end
+
+--[[
+    -- none of this make any difference.
+    self:SetAttribute("typerelease", "actionrelease");
+    self:SetAttribute("checkselfcast", true);
+    self:SetAttribute("checkfocuscast", true);
+    self:SetAttribute("checkmouseovercast", true); -- big fat LIE.  no effect whatsoever.
+    self:SetAttribute("useparent-actionpage", true);
+]]
+end

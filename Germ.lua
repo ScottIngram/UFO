@@ -738,7 +738,7 @@ function Germ:registerForBlizUiActions(event)
 
     self:EnableMouseMotion(true)
     self:RegisterForDrag(MouseClick.LEFT)
-    --self:RegisterEvent("CURSOR_CHANGED") -- now handled by Ufo.lua
+    self:enableBlizBehaviorSecEnvSettings()
 
     self.isEventStuffRegistered = true
 end
