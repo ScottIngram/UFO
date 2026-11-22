@@ -13,7 +13,8 @@ local zebug = Zebug:new(Z_VOLUME_GLOBAL_OVERRIDE or Zebug.TRACE)
 ---@alias UfoType string
 
 ---@class UfoMixIn
----@field UfoType string The classname
+---@field ufoType string The classname
+---@field nickname string a shorter name for the class to be used in debug messages
 UfoMixIn = { }
 GLOBAL_UFO_MIXIN_FOR_UfoMixin = UfoMixIn
 
@@ -172,6 +173,6 @@ function UfoMixIn:getUfoLabel()
 end
 
 function UfoMixIn:makeLabelForMethod(methodName)
-    return strjoin(":", self.ufoType, methodName)
+    return strjoin(":", self.nickname or self.ufoType, methodName)
 end
 
