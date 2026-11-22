@@ -456,6 +456,7 @@ function ButtonOnFlyoutMenu:onLoad()
 
     -- purely for easier UI layout, I include an ornamental Frame with a phat margin
     local bumper = self.bumper
+    bumper:EnableMouse(false) -- ensure it doesn't intercept any mouse clicks. see bug #92 - bumper pops to top and blocks all mouse interaction
     self:SetPoint(Anchor.CENTER, bumper, Anchor.CENTER)
 
     self:SetFrameRef("bumper", bumper)
@@ -490,7 +491,7 @@ function ButtonOnFlyoutMenu:onMouseUp()
 end
 
 ---@param mouseClick MouseClick
-function ButtonOnFlyoutMenu:OnMouseDown(mouseClick)
+function ButtonOnFlyoutMenu:onMouseDown(mouseClick)
     local flyoutMenu = self:getFlyoutMenu()
     if not flyoutMenu.isForGerm then return end
 

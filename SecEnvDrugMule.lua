@@ -358,6 +358,7 @@ function SecEnv:initSecEnvScriptFor_Layout()
             --[[DEBUG]] end
 
             bumper:SetPoint(ptOnMe, anchorBuddy, ptOnAnchorBuddy, 0, 0)
+            bumper:SetFrameLevel(1) -- fixes(?) intermittent bug #92 where the bumper pops to top and blocks all mouse interaction with the actual button
 
             -- avoid accidentally opening the flyout menu
             if anchorBuddy ~= flyoutMenu then

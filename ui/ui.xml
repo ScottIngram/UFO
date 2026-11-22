@@ -39,7 +39,8 @@
     <!--
     ============================================================================
     ===== PADDED bumper around the SecEnv action BUTTON on the FlyoutMenu
-    ===== It must be "secure" otherwise SetFrameRef() won't accept it and thus the SecEnv code can't access it in order to anchor to it
+    ===== It must be "secure" otherwise SetFrameRef() won't accept it and thus the SecEnv code can't access it in order to anchor to it.
+    ===== Also, somehow somewhere, its frameStrata and frameLevel are getting set to SUPERDUPER TOP HIGHEST when opened from the SpellBook.
     ============================================================================
     -->
 
@@ -48,7 +49,8 @@
        inherits="SecureActionButtonTemplate"
        frameStrata="LOW"
        frameLevel="1"
-       toplevel="true"
+       enableMouse="false"
+       hidden="true"
     >
         <Size x="38" y="38"/> <!-- size of the wrapped button (30) plus 4 on each side -->
     </CheckButton>
@@ -91,7 +93,7 @@
             <OnEnter method="onEnter" />
             <OnLeave method="onLeave" />
             <OnMouseUp method="onMouseUp" />
-            <OnMouseDown method="OnMouseDown" />
+            <OnMouseDown method="onMouseDown" />
             <OnDragStart method="onDragStartDoPickup" />
             <OnReceiveDrag method="onReceiveDrag" />
             <PreClick>
