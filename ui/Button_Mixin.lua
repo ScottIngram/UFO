@@ -58,6 +58,27 @@ function Button_Mixin:setHotKeyOverlay(keybindText)
     end
 end
 
+---@param btnDef ButtonDef
+function Button_Mixin:setIconViaBtnDef(btnDef, event)
+    if btnDef == nil then
+        self:setIcon(nil, event)
+        self:getIconFrame():SetAtlas(nil)
+        return
+    end
+
+    if not isTable(btnDef) then
+        zebug.error:event("event"):owner(self):dumpy("btnDef",btnDef)
+        error("Usage: setIconViaBtnDef(buttonDef) - got:" .. btnDef)
+    end
+
+    if btnDef.atlas then
+        zebug.info:event(event):owner(self):print("atlas",btnDef.atlas)
+        self:getIconFrame():SetAtlas(btnDef.atlas)
+    else
+        self:setIcon(btnDef:getIcon(), event)
+    end
+end
+
 local ICON_PREFIX = "INTERFACE\\ICONS\\"
 
 function Button_Mixin:setIcon(icon, event)
@@ -66,10 +87,6 @@ function Button_Mixin:setIcon(icon, event)
     end
 
     local iconFrame = self:getIconFrame()
-
-    --self:getIconFrame():SetTexture(icon)
-    -- IS THIS BROKEN?
-
 
     -- block the Bliz mixins from erroneously setting the icon to look like the contents of the action bar button (ie, the ZUFO macro)
     if not self.originalIconSetTextureFunc then
@@ -80,7 +97,6 @@ function Button_Mixin:setIcon(icon, event)
     end
     zebug.info:event(event):owner(self):print("setting icon",icon)
     self.originalIconSetTextureFunc(iconFrame, icon) -- the iconFrame is the self for the original SetTexture
-    --self:safelySetSecEnvAttribute("UFO_ICON", icon) -- for use by the promoter
     self.iconTexture = icon
 end
 

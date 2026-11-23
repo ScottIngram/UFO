@@ -333,13 +333,12 @@ function FlyoutMenu:populateButtons(event)
 
         if btnDef then
             btnFrame:setDef(btnDef, event)
-            local icon = self:getIcon(btnDef)
-            btnFrame:setIcon(icon, event)
+            btnFrame:setIconViaBtnDef(btnDef, event)
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
         else
             -- the empty slot on the end
             btnFrame:setDef(nil, event)
-            btnFrame:setIcon(nil, event)
+            btnFrame:setIconViaBtnDef(nil, event)
             btnFrame:SetAttribute("UFO_NAME"," ") -- my code inside the SecEnv TEMPLATE recognizes " " (as opposed to nil) as the empty slot
             btnFrame:setExcluderVisibility(nil)
         end
@@ -356,7 +355,7 @@ function FlyoutMenu:populateButtons(event)
             name = btnFrame:getLabel() or ""
             zebug.info:event(event):owner(btnFrame):print("clearing",i, name)
             btnFrame:setDef(nil, event)
-            btnFrame:setIcon(nil, event)
+            btnFrame:setIconViaBtnDef(nil, event)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE - required flag used to indicate "inUse"
             btnFrame:Hide()
             -- move on to the next btn
@@ -402,8 +401,7 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
 
         if btnDef then
             zebug.info:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
-            local icon = self:getIcon(btnDef)
-            btnFrame:setIcon(icon, event)
+            btnFrame:setIconViaBtnDef(btnDef, event)
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
 
             -- label the keybinds

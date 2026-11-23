@@ -273,8 +273,8 @@ function Germ:getIcon()
 end
 
 function Germ:doIcon(event)
-    local icon = self:getIcon()
-    self:setIcon(icon, event)
+    local btnDef = self:getPrimeBtn():getDef()
+    self:setIconViaBtnDef(btnDef, event)
 end
 
 function Germ:glowStart()
@@ -982,14 +982,6 @@ function Germ:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, clickBehavi
     self:setSecEnvAttribute(name, clickBehavior)
 end
 
-function Germ:setRecentIcon(icon)
-    if not self:isActive() then return end
-    if not Config:isAnyClickerUsingRecent(self.flyoutId) then return end
-    -- icon = icon or self.promoter:GetAttribute("UFO_ICON")
-    zebug.info:owner(self):print("sneaky! icon", icon)
-    self:setIcon(icon,"promoter")
-end
-
 ---@param btn ButtonOnFlyoutMenu
 function Germ:promoteButtonToPrime(btn)
     if not self:isActive() then return end
@@ -997,7 +989,7 @@ function Germ:promoteButtonToPrime(btn)
     local n = btn:getId()
     self.primeBtnIndex = n or 1
     zebug.info:owner(btn):print("I am the captain now",self.primeBtnIndex)
-    self:setIcon(btn.iconTexture, "promoter")
+    self:setIconViaBtnDef(btn:getDef(), "promoter")
 end
 
 
