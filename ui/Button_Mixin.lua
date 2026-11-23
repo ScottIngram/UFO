@@ -161,7 +161,7 @@ function Button_Mixin:updateCooldown(event)
     local spellId = btnDef.spellId
     zebug.trace:event(event):owner(self):print("type",type, "itemId",itemId, "spellId",spellId)
 
-    if type == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT then
+    if type == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT or type == ButtonType.MACRO_TEXT then
         return
     end
 

@@ -30,6 +30,8 @@ Preset = {
         DELVE = "DELVE",
         PARACHUTE = "PARACHUTE",
         VISION = "VISION",
+        MARKERS_RAID = "MARKERS_RAID",
+        MARKERS_WORLD = "MARKERS_WORLD",
 
         -- remember to add new entries to index.xml
         -- remember to also add them below :-/
@@ -50,6 +52,8 @@ local RETAIL_ORDER = {
     Preset.ids.DELVE,
     Preset.ids.PARACHUTE,
     Preset.ids.VISION,
+    Preset.ids.MARKERS_RAID,
+    Preset.ids.MARKERS_WORLD,
 }
 
 local FOREVER_ORDER = {
@@ -62,6 +66,8 @@ local FOREVER_ORDER = {
     Preset.ids.CURE,
     Preset.ids.PARACHUTE,
     Preset.ids.VISION,
+    Preset.ids.MARKERS_RAID,
+    Preset.ids.MARKERS_WORLD,
 }
 
 Preset.Order = isForever() and FOREVER_ORDER or RETAIL_ORDER

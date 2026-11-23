@@ -16,5 +16,7 @@
     <Script file="parachute.lua"/>
     <Script file="vision.lua"/>
     <Script file="nomz.lua"/>
+    <Script file="markers_raid.lua"/>
+    <Script file="markers_world.lua"/>
 
 </Ui>
