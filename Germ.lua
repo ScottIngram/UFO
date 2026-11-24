@@ -273,8 +273,13 @@ function Germ:getIcon()
 end
 
 function Germ:doIcon(event)
-    local btnDef = self:getPrimeBtn():getDef()
-    self:setIconViaBtnDef(btnDef, event)
+    local flyoutDef = self:getFlyoutDef()
+    if flyoutDef.icon then
+        self:setIcon(flyoutDef.icon, event)
+    else
+        local btnDef = self:getPrimeBtn():getDef()
+        self:setIconViaBtnDef(btnDef, event)
+    end
 end
 
 function Germ:glowStart()
