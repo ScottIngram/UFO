@@ -9,8 +9,8 @@ Ufo.Wormhole()
 local id = Preset.ids.RIDE
 
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.RIDE,
-    ["desc"] = L10N.cfg.MOUNTS_AND_MOUNT_ACCESSORIES,
+    ["name"] = L10N.RIDE,
+    ["desc"] = L10N.MOUNTS_AND_MOUNT_ACCESSORIES,
     ["icon"] = 413588,
     ["Ace3icon"] = "Interface/ICONS/achievement_guildperk_mountup.blp",
     ["id"] = id,

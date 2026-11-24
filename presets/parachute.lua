@@ -8,8 +8,8 @@ Ufo.Wormhole()
 
 local id = Preset.ids.PARACHUTE
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.PARACHUTE,
-    ["desc"] = L10N.cfg.IF_YOU_RE_FALLIN,
+    ["name"] = L10N.PARACHUTE,
+    ["desc"] = L10N.IF_YOU_RE_FALLIN,
     --["icon"] = 644385,
     ["Ace3icon"] = "Interface/ICONS/archaeology_5_0_umbrellaofchiji.blp",
     ["id"] = id,

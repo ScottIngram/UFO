@@ -11,7 +11,7 @@ local id = Preset.ids.MARKERS_WORLD
 local errMsgMacro = [=[
 /stopmacro [group]
 /stopmacro [combat]
-/run RaidWarningUtil.AddMessage("]=] .. L10N.cfg.MARKERS_WORLD_WARNING .. [=[", WARNING_FONT_COLOR, 5)
+/run RaidWarningUtil.AddMessage("]=] .. L10N.MARKERS_WORLD_WARNING .. [=[", WARNING_FONT_COLOR, 5)
 ]=]
 
 local function makeMacroText(n)
@@ -35,14 +35,14 @@ local getButtons = function()
     btns[9].name = "Clear All World Markers"
     btns[9].macroText = "/cwm all" -- Clear All
     for i = 1, 8 do
-        btns[i].name = btns[i].name .. " " .. L10N.cfg.WORLD_MARKER
+        btns[i].name = btns[i].name .. " " .. L10N.WORLD_MARKER
     end
     return btns
 end
 
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.MARKERS_WORLD,
-    ["desc"] = L10N.cfg.MARKERS_WORLD_DESC,
+    ["name"] = L10N.MARKERS_WORLD,
+    ["desc"] = L10N.MARKERS_WORLD_DESC,
     ["icon"] = 413590,
     ["Ace3icon"] = "Interface/ICONS/achievement_guildperk_mrpopularity_rank2.blp",
     ["id"] = id,

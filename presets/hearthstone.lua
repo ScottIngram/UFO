@@ -8,8 +8,8 @@ Ufo.Wormhole()
 
 local id = Preset.ids.HEARTHSTONE
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.HEARTHSTONES,
-    ["desc"] = L10N.cfg.A_SELECTION_OF_TOYS,
+    ["name"] = L10N.HEARTHSTONES,
+    ["desc"] = L10N.A_SELECTION_OF_TOYS,
     ["icon"] = 413582,
     ["Ace3icon"] = "Interface/ICONS/achievement_guildperk_hastyhearth.blp",
     ["id"] = id,

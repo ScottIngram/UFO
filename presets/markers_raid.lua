@@ -25,8 +25,8 @@ local getButtons = function()
 end
 
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.MARKERS_RAID,
-    ["desc"] = L10N.cfg.MARKERS_RAID_DESC,
+    ["name"] = L10N.MARKERS_RAID,
+    ["desc"] = L10N.MARKERS_RAID_DESC,
     ["icon"] = 413589,
     ["Ace3icon"] = "Interface/ICONS/achievement_guildperk_mrpopularity.blp",
     ["id"] = id,

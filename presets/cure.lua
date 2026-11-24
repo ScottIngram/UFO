@@ -8,8 +8,8 @@ Ufo.Wormhole()
 
 local id = Preset.ids.CURE
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.CURE,
-    ["desc"] = L10N.cfg.IF_YOU_RE_POISONED,
+    ["name"] = L10N.CURE,
+    ["desc"] = L10N.IF_YOU_RE_POISONED,
     ["icon"] = 648207,
     ["Ace3icon"] = "Interface/ICONS/petbattle_health.blp",
     ["id"] = id,

@@ -9,8 +9,8 @@ Ufo.Wormhole()
 local id = Preset.ids.NOMZ
 
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.NOM_NOM,
-    ["desc"] = L10N.cfg.THINGS_THAT_RESTORE_HEALTH_OR_MANA,
+    ["name"] = L10N.NOM_NOM,
+    ["desc"] = L10N.THINGS_THAT_RESTORE_HEALTH_OR_MANA,
     ["icon"] =  isForever() and 2203786 or 6866615,
     ["Ace3icon"] = isForever() and  "Interface/ICONS/Inv_misc_popcorntoy.blp" or "Interface/ICONS/inv_1117_ability_recuperate.blp",
     ["id"] = id,
