@@ -388,7 +388,24 @@ function Button_Mixin:enableBlizBehaviorSecEnvSettings()
         -- Do I want to
         -- if self:GetAttribute("type") == "spell" then
         --    spellName = self:SetAttribute("spell", spell)pull out the spell name & run it through C_Spell.IsSpellHarmful(spellName) and/or C_Spell.IsSpellHelpful(spellName)
-        RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [exists] target; player")
+
+        -- original solution to support mouseover - turns out it fucks up the germ if the player is looking at a mouseover target
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [exists] target; player")
+        -- dammit, I fucked up the syntax above... here's the corrected one
+        RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [@target,exists] target; player")
+
+        -- THIS ONE WORKS - at least, it solves the bug where a focus target shuts down the germ
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [@softinteract,exists] softinteract; [@target,exists] target; player")
+
+        -- EXPERIMENTING
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [@target,exists] target; [@softinteract,exists] none; [@anyinteract,exists] none; player")
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [@target,exists] target; [@softinteract,exists] player; [@anyinteract,exists] player; player")
+
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [exists] target; [@softinteract,exists] ; [@anyinteract,exists] ; player")
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [exists] target; [@softinteract,exists] nil; [@anyinteract,exists] nil; player")
+
+        -- I'm checking in all of the above as a testiment to madness and shitty Bliz not throwing a syntax error on the original missing @target
+
         -- TODO: register event listener for CVAR_UPDATE
     end
 
