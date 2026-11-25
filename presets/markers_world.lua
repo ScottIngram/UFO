@@ -15,7 +15,7 @@ local errMsgMacro = [=[
 ]=]
 
 local function makeMacroText(n)
-    return "/wm [@cursor] " .. n .. EOL .. errMsgMacro
+    return "/wm [@mouseover,noexists] " .. n .. "; [@cursor] " .. n .. EOL .. errMsgMacro
 end
 
 -- Blizz, why why WHY are you so consistently inconsistent?
@@ -32,7 +32,7 @@ local getButtons = function()
     btns[6].macroText = makeMacroText(1) -- Square
     btns[7].macroText = makeMacroText(4) -- Cross
     btns[8].macroText = makeMacroText(8) -- Skull
-    btns[9].name = "Clear All World Markers"
+    btns[9].name = L10N.CLEAR_ALL_WORLD_MARKERS
     btns[9].macroText = "/cwm all" -- Clear All
     for i = 1, 8 do
         btns[i].name = btns[i].name .. " " .. L10N.WORLD_MARKER

@@ -16,6 +16,15 @@ Ufo.L10N = {
 Ufo.Wormhole(Ufo.L10N) -- Lua voodoo magic that replaces the current Global namespace with the Ufo.L10N object
 -- Now, FOO = "bar" is equivilent to Ufo.L10N.FOO = "bar" - Even though they all look like globals, they are not.
 
+Ufo.L10N[RaidMarker.STAR]     = "Star"
+Ufo.L10N[RaidMarker.CIRCLE]   = "Circle"
+Ufo.L10N[RaidMarker.DIAMOND]  = "Diamond"
+Ufo.L10N[RaidMarker.TRIANGLE] = "Triangle"
+Ufo.L10N[RaidMarker.MOON]     = "Moon"
+Ufo.L10N[RaidMarker.SQUARE]   = "Square"
+Ufo.L10N[RaidMarker.CROSS]    = "Cross"
+Ufo.L10N[RaidMarker.SKULL]    = "Skull"
+
 CONFIRM_DELETE = "Are you sure you want to delete the flyout set %s?"
 NEW_FLYOUT = "New\nFlyout"
 NEW_UFO = "New\nUFO"
@@ -102,12 +111,12 @@ VARIOUS_PROFESSIONS_OVERLOADS_ETC = "Various professions, overloads, mulch, etc 
 VISION = "Vision"
 SPELLS_AND_TOYS_THAT_GRANT_YOU_SIGHT = "Spells and toys that grant you sight at a distance or enhanced vision."
 MARKERS_RAID = "Raid Markers"
-MARKERS_RAID_DESC = "Put a skull, diamond, etc on mobs or players."
+MARKERS_RAID_DESC = "Put a skull, diamond, etc on mobs or players.  Applies to mouseover then target then defaults to the player."
 MARKERS_WORLD = "World Markers"
-MARKERS_WORLD_DESC = "Place a glowing, bobbing, skull, diamond, etc on the ground."
+MARKERS_WORLD_DESC = "Place a glowing, bobbing, skull, diamond, etc on the ground.  If the mouse is over a unit then the marker will land @cursor (but not @target because Blizzard's /wm macro doesn't support it)"
 MARKERS_WORLD_WARNING = "UFO Warning: World markers only work in a party, raid, etc."
 WORLD_MARKER = "World Marker"
-
+CLEAR_ALL_WORLD_MARKERS = "Clear All World Markers"
 -------------------------------------------------------------------------------
 -- Configuration Screen
 -------------------------------------------------------------------------------
