@@ -46,11 +46,12 @@ SecEnv = {
 --
 -------------------------------------------------------------------------------
 
--- TODO move to SecEnvDrugMule
-
 -- use non-local "global" variables to save values between executions
 -- because GetParent() returns nil during combat lockdown
 SecEnv.scripts.CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
+    UFO_DUM_DUM = self:GetFrameRef("UFO_DUM_DUM")
+    doDebug     = UFO_DUM_DUM:GetAttribute("DO_DEBUG") or false
+
     -- follow convention and trigger on mouse UP / key UP, not down (and certainly not both up and down).  the "down" variable is passed in by the Bliz API
     if down then return end
 
@@ -60,7 +61,6 @@ SecEnv.scripts.CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
 
     --[[DEBUG]] local id = self:GetID()
     --[[DEBUG]] local flyoutName = flyoutMenu:GetAttribute("UFO_NAME") or flyoutMenu:GetName() or "bullshit"
-    --[[DEBUG]] local doDebug = flyoutMenu:GetAttribute("DO_DEBUG") or false
     --[[DEBUG]] if doDebug then
     --[[DEBUG]]     print("<DEBUG>", flyoutName, id, "CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT <START>")
     --[[DEBUG]] end
@@ -68,8 +68,6 @@ SecEnv.scripts.CLOSE_FLYOUT_WHEN_BTN_IS_CLICKED_SEC_ENV_SCRIPT = [=[
     if not germ then
         germ = flyoutMenu:GetParent() or self:GetFrameRef("germ")
     end
-
-        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
 
     local doClose = germ:GetAttribute("doCloseOnClick")
     local doClose2 = flyoutMenu:GetAttribute("doCloseOnClick")
@@ -160,7 +158,7 @@ function SecEnv:initSecEnvScriptFor_Opener()
         isNewLayoutNeeded = true
     end
 
-    --[[DEBUG]] if doDebug then print("renderedButtonCount",renderedButtonCount, "POPULATED_BUTTON_COUNT",POPULATED_BUTTON_COUNT, "optionMaxLen",optionMaxLen,  "OPTION_MAX_LEN",OPTION_MAX_LEN,  "isNewLayoutNeeded",isNewLayoutNeeded ) end
+    --[[DEBUG]] if doDebug then print("<DEBUG>","renderedButtonCount",renderedButtonCount, "POPULATED_BUTTON_COUNT",POPULATED_BUTTON_COUNT, "optionMaxLen",optionMaxLen,  "OPTION_MAX_LEN",OPTION_MAX_LEN,  "isNewLayoutNeeded",isNewLayoutNeeded ) end
 
     renderedButtonCount = POPULATED_BUTTON_COUNT
     optionMaxLen = OPTION_MAX_LEN
@@ -187,24 +185,24 @@ function SecEnv:initSecEnvScriptFor_Opener()
                 local btnName = btn and btn:GetName()
                 local btnNameType = type(btnName)
                 local numberKey = (i == 10) and "0" or tostring(i)
-                --[[DEBUG]] if doDebug then print("=== ScriptFor_Opener()",flyoutName,"- GERM's flyout's btns -",numberKey, "DEBUG - btn",btn, "btnName",btnName, "btnNameType",btnNameType) end
+                --[[DEBUG]] if doDebug then print("<DEBUG>", "=== ScriptFor_Opener()",flyoutName,"- GERM's flyout's btns -",numberKey, "DEBUG - btn",btn, "btnName",btnName, "btnNameType",btnNameType) end
                 flyoutMenu:SetBindingClick(true, numberKey, btn, LFT_BTN)
                 if numberKey == "1" then
                     -- make the UFO's first button's keybind be the same as the UFO itself
                     local germKeyBind = germ:GetAttribute("UFO_KEYBIND_1")
                     if germKeyBind then
-                        --[[DEBUG]] if doDebug then print("=== ScriptFor_Opener()",flyoutName,"- GERM first btn -",numberKey,"binding btnName:", btnName, btnNameType, "to mouseClick ", LFT_BTN ) end
+                        --[[DEBUG]] if doDebug then print("<DEBUG>", "=== ScriptFor_Opener()",flyoutName,"- GERM first btn -",numberKey,"binding btnName:", btnName, btnNameType, "to mouseClick ", LFT_BTN ) end
                         flyoutMenu:SetBindingClick(true, btnName, btnName, LFT_BTN)
                     end
                 end
             end
         end
 
-        --[[DEBUG]] if doDebug then print("=== ScriptFor_Opener()",flyoutName,"- GERM end!" ) end
+        --[[DEBUG]] if doDebug then print("<DEBUG>", "=== ScriptFor_Opener()",flyoutName,"- GERM end!" ) end
     end
 
     flyoutMenu:Show()
-    --[[DEBUG]] if doDebug then print("=== ScriptFor_Opener()",flyoutName,"- END !!!" ) end
+    --[[DEBUG]] if doDebug then print("<DEBUG>", "=== ScriptFor_Opener()",flyoutName,"- END !!!" ) end
 ]=]
 
     return SecEnv.OPENER_SCRIPT
@@ -222,7 +220,8 @@ function SecEnv:executeFromNonSecEnv_Layout(flyoutMenuFrame, populatedButtonCoun
         local populatedButtonCount = flyoutMenu:GetAttribute("ARG_POPULATED_BUTTON_COUNT")
         local displaceBtnsHere     = flyoutMenu:GetAttribute("ARG_TARGET_INDEX")
         local dir                  = flyoutMenu:GetAttribute("ARG_DIR")
-        --print("EXE bridge - populatedButtonCount",populatedButtonCount, "dir",dir, "displaceBtnsHere",displaceBtnsHere)
+        --[[DEBUG]] local doDebug = UFO_DUM_DUM:GetAttribute("DO_DEBUG") or false
+        --[[DEBUG]] if doDebug then print("<DEBUG>", "EXE bridge - populatedButtonCount",populatedButtonCount, "dir",dir, "displaceBtnsHere",displaceBtnsHere) end
 
         flyoutMenu:RunAttribute("_]=] .. SecEnv.FLYOUT_LAYOUT_SCRIPT_NAME .. [=[", populatedButtonCount, dir, displaceBtnsHere) ]=])
 end
@@ -248,7 +247,7 @@ function SecEnv:initSecEnvScriptFor_Layout()
     local flyoutName = flyoutMenu:GetAttribute("UFO_NAME")
 
     --local doDebug = true
-    --[[DEBUG]] if doDebug then print("sucking pipe... populatedButtonCount",populatedButtonCount, "arg2",arg2, "arg3",arg3, "dir",dir, "displaceBtnsHere",displaceBtnsHere) end
+    --[[DEBUG]] if doDebug then print("<DEBUG>", "sucking pipe... populatedButtonCount",populatedButtonCount, "arg2",arg2, "arg3",arg3, "dir",dir, "displaceBtnsHere",displaceBtnsHere) end
 
     local isForCatalog = flyoutMenu:GetAttribute("IS_FOR_CATALOG")
 
@@ -258,11 +257,11 @@ function SecEnv:initSecEnvScriptFor_Layout()
     local horizLineWrapDir = "UP"
     local linesCountMax = math.ceil(populatedButtonCount / configMaxLen)
     local maxBtnsPerLine = (isForCatalog and 15) or math.ceil(populatedButtonCount / linesCountMax)
-    --[[DEBUG]] if doDebug then print("isForCatalog",isForCatalog, "configMaxLen",configMaxLen, "populatedButtonCount =",populatedButtonCount, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax) end
+    --[[DEBUG]] if doDebug then print("<DEBUG>", "isForCatalog",isForCatalog, "configMaxLen",configMaxLen, "populatedButtonCount =",populatedButtonCount, "maxBtnsPerLine",maxBtnsPerLine, "linesCountMax",linesCountMax) end
     if linesCountMax > configMaxLen then
         linesCountMax = math.floor( math.sqrt(populatedButtonCount) )
             --[[DEBUG]] if doDebug then
-            --[[DEBUG]] print("TOO WIDE! sqrt =",linesCountMax)
+            --[[DEBUG]] print("<DEBUG>", "TOO WIDE! sqrt =",linesCountMax)
             --[[DEBUG]] end
     end
 
@@ -283,13 +282,13 @@ function SecEnv:initSecEnvScriptFor_Layout()
         local isInUse = btn:GetAttribute("UFO_NAME") -- the " " blank string is used to indicate the empty slot in catalog flyouts
 
 	    --[[DEBUG]] if doDebug then
-        --[[DEBUG]] print("i:",i, "btn:",btn:GetName(), "isInUse",isInUse)
+        --[[DEBUG]]     print("<DEBUG>", "i:",i, "btn:",btn:GetName(), "isInUse",isInUse)
         --[[DEBUG]] end
 
         if isInUse then
 
             --[[DEBUG]] if doDebug then
-            --[[DEBUG]] print("SNIPPET... i:",i, "bumper:",bumper:GetName())
+            --[[DEBUG]]     print("<DEBUG>", "SNIPPET... i:",i, "bumper:",bumper:GetName())
             --[[DEBUG]] end
             bumper:ClearAllPoints()
 
@@ -307,7 +306,7 @@ function SecEnv:initSecEnvScriptFor_Layout()
                 lineOff = lineGirth * (linesCount-1)
 
                 --[[DEBUG]] if doDebug then
-                --[[DEBUG]] print("=== BREAK === i",i, "btn",btn:GetName(), "anchorBuddy",anchorBuddy:GetName(), "maxBtnsPerLine",maxBtnsPerLine, "linesCount",linesCount, "btnCountForThisLine",btnCountForThisLine, "btnSize",btnSize, "lineGirth",lineGirth)
+                --[[DEBUG]]     print("<DEBUG>", "=== BREAK === i",i, "btn",btn:GetName(), "anchorBuddy",anchorBuddy:GetName(), "maxBtnsPerLine",maxBtnsPerLine, "linesCount",linesCount, "btnCountForThisLine",btnCountForThisLine, "btnSize",btnSize, "lineGirth",lineGirth)
                 --[[DEBUG]] end
                 btnCountForThisLine = 1
             end
@@ -328,14 +327,14 @@ function SecEnv:initSecEnvScriptFor_Layout()
                     anchPrefix = anchorOpposite
                     tmp = DIRECTION_AS_ANCHOR[vertLineWrapDir]
                     anchPost = ANCHOR_OPPOSITE[tmp]
-                    --[[DEBUG]] if doDebug then print("===1=== isVert",isVert) end
+                    --[[DEBUG]] if doDebug then print("<DEBUG>", "===1=== isVert",isVert) end
                 else
                     tmp = DIRECTION_AS_ANCHOR[horizLineWrapDir]
                     anchPrefix = ANCHOR_OPPOSITE[tmp]
                     anchPost = anchorOpposite
-                    --[[DEBUG]] if doDebug then print("===2=== isVert",isVert) end
+                    --[[DEBUG]] if doDebug then print("<DEBUG>", "===2=== isVert",isVert) end
                 end
-                --[[DEBUG]] if doDebug then print("anchorForDir",anchorForDir, "anchorOpposite",anchorOpposite, "tmp",tmp, "anchPost",anchPost) end
+                --[[DEBUG]] if doDebug then print("<DEBUG>", "anchorForDir",anchorForDir, "anchorOpposite",anchorOpposite, "tmp",tmp, "anchPost",anchPost) end
                 ptOnAnchorBuddy = anchPrefix..anchPost
                 ptOnMe = ptOnAnchorBuddy
             elseif isFirstBtnOfLine then
@@ -354,7 +353,7 @@ function SecEnv:initSecEnvScriptFor_Layout()
             local aH = btn:GetHeight()
 
             --[[DEBUG]] if doDebug then
-            --[[DEBUG]] print("ptOnMe",ptOnMe, "ptOnAnchorBuddy",ptOnAnchorBuddy, "anchorBuddy", anchorBuddy:GetName(), "wW",math.floor(wW), "wH",math.floor(wH),  "aW",math.floor(aW), "aH",math.floor(aH))
+            --[[DEBUG]]     print("<DEBUG>", "ptOnMe",ptOnMe, "ptOnAnchorBuddy",ptOnAnchorBuddy, "anchorBuddy", anchorBuddy:GetName(), "wW",math.floor(wW), "wH",math.floor(wH),  "aW",math.floor(aW), "aH",math.floor(aH))
             --[[DEBUG]] end
 
             bumper:SetPoint(ptOnMe, anchorBuddy, ptOnAnchorBuddy, 0, 0)
@@ -404,13 +403,13 @@ function SecEnv:getSecEnvScriptFor_KeyBinding()
         if i > 10 then return end
 
         local numberKey = (i == 10) and "0" or tostring(i)
-print("=== ScriptFor_KeyBinding()",flyoutName, " binding numberKey:", numberKey, "to mouseClick MouseClick.LEFT")
+--[[DEBUG]] print("<DEBUG>", "=== ScriptFor_KeyBinding()",flyoutName, " binding numberKey:", numberKey, "to mouseClick MouseClick.LEFT")
         flyoutMenu:SetBindingClick(true, numberKey, btn, "]=].. MouseClick.LEFT ..[=[")
         if numberKey == "1" then
             -- make the UFO's first button's keybind be the same as the UFO itself
             local germKeyBind = germ:GetAttribute("UFO_KEYBIND_1")
             if germKeyBind then
-print("=== ScriptFor_Opener() prime? binding germKeyBind:", germKeyBind, "to mouseClick MouseClick.LEFT")
+--[[DEBUG]] print("<DEBUG>", "=== ScriptFor_Opener() prime? binding germKeyBind:", germKeyBind, "to mouseClick MouseClick.LEFT")
                 flyoutMenu:SetBindingClick(true, germKeyBind, btn, "]=].. MouseClick.LEFT ..[=[")
             end
         end
@@ -437,7 +436,10 @@ function SecEnv:installSecEnvScriptFor_OpenMyFlyout(secFrame)
     secFrame.isOpenerScriptInitialized = true
     secFrame:setSecEnvAttribute("_".. SecEnv.OPENER_SCRIPT_REF_NAME,
     [=[
-        --print("Germ:installSecEnvScriptFor_Opener ... CLICKY CLICK !!! button",button, "down",down)
+        --[[DEBUG]] if doDebug then
+        --[[DEBUG]]     print("<DEBUG>", "Germ:installSecEnvScriptFor_Opener ... CLICKY CLICK !!! button",button, "down",down)
+        --[[DEBUG]] end
+
         flyoutMenu:RunAttribute("_]=]..SecEnv.FLYOUT_OPENER_AND_LAYOUT_SCRIPT_NAME ..[=[", button, down)
 ]=]
     )
