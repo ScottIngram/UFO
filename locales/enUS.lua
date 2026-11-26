@@ -117,6 +117,8 @@ MARKERS_WORLD_DESC = "Place a glowing, bobbing, skull, diamond, etc on the groun
 MARKERS_WORLD_WARNING = "UFO Warning: World markers only work in a party, raid, etc."
 WORLD_MARKER = "World Marker"
 CLEAR_ALL_WORLD_MARKERS = "Clear All World Markers"
+REMOVE_TARGETS_MARK = "Remove Target's Mark"
+
 -------------------------------------------------------------------------------
 -- Configuration Screen
 -------------------------------------------------------------------------------

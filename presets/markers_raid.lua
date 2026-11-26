@@ -88,8 +88,8 @@ Preset.defs[id] = {
             ["macroText"] = makeMacroText(8), -- White Skull
         },
         {
-            ["type"] = "macroText",
-            ["name"] = "Remove Target's Mark",
+            ["id"] = 0,
+            ["name"] = 	L10N.REMOVE_TARGETS_MARK,
             ["icon"] = 135768,
             ["atlas"] = "GM-raidMarker-reset",
             ["macroText"] = makeMacroText(0), -- Clears the marker
