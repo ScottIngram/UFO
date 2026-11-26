@@ -220,11 +220,11 @@ function Button_Mixin:updateCooldown(event)
         if ButtonType.SPELL == type then
             local timeSpellWasCast, cooldownFullDuration, cooldownRemainder = SpellCd:getStatus(id, event, self)
             if timeSpellWasCast then
-                zebug.warn:owner(spellId):event(event):print("triggerering cooldown display NOW! remainder", cooldownRemainder)
+                zebug.info:owner(spellId):event(event):print("triggerering cooldown display NOW! remainder", cooldownRemainder)
                 cdFrame:SetDrawEdge(true);
                 cdFrame:SetCooldown(timeSpellWasCast, cooldownFullDuration)
             else
-                zebug.warn:owner(spellId):event(event):print("CLEARING cooldown display remainder", cooldownRemainder)
+                zebug.info:owner(spellId):event(event):print("CLEARING cooldown display remainder", cooldownRemainder)
                 cdFrame:Clear()
             end
 --[[
@@ -257,7 +257,7 @@ function Button_Mixin:updateCooldown(event)
             end
 
             local startTime, duration, isEnabled = C_Container.GetItemCooldown(btnDef.cooldownProxy or id)
-            zebug.warn:event(event):owner(self):print("ITEMS - cd:SetCooldown() start", startTime, "duration",duration, "isEnabled", isEnabled)
+            zebug.info:event(event):owner(self):print("ITEMS - cd:SetCooldown() start", startTime, "duration",duration, "isEnabled", isEnabled)
             if startTime and duration then
                 cdFrame:SetCooldown(startTime, duration, isEnabled, false, modRate);
             end
