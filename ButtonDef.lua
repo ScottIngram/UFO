@@ -408,7 +408,8 @@ function ButtonDef:isUsable(event)
         end
         return isUsable, err
     elseif t == ButtonType.OUTFIT then
-        return true -- self.owner == getIdForCurrentToon()
+        local outfit = C_TransmogOutfitInfo.GetOutfitInfo(id)
+        return outfit and outfit.icon ~= 134400 -- the question mark
     elseif t == ButtonType.BROKENP then
         return PetShitShow:canHazPet()
     elseif t == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT then
