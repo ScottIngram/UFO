@@ -400,6 +400,7 @@ function ButtonDef:isUsable(event)
     elseif t == ButtonType.MACRO_TEXT then
         return true
     elseif t == ButtonType.MACRO then
+        --this week, WoW Forever changed GetRealmName() which changed the results from my getIdForCurrentToon which BROKE existing UFOs with personal macros
         zebug.trace:owner(self):print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
         isUsable = isMacroGlobal(self.macroId) or getIdForCurrentToon() == self.macroOwner
         err = isUsable or (L10N.NOT_MACRO_OWNER .. " " .. (self.macroOwner or L10N.UNKNOWN))
@@ -645,6 +646,7 @@ function ButtonDef:getFromCursor(event, silenceWarnings)
     elseif type == ButtonType.MACRO then
         btnDef.macroId = c1
         if not isMacroGlobal(c1) then
+            zebug.info:print("Ufo.pickedUpBtn.macroOwner", Ufo.pickedUpBtn and Ufo.pickedUpBtn.macroOwner, "getIdForCurrentToon()",getIdForCurrentToon())
             btnDef.macroOwner = (Ufo.pickedUpBtn and Ufo.pickedUpBtn.macroOwner) or getIdForCurrentToon()
             btnDef.fallbackIcon = btnDef:getIcon()
         end
