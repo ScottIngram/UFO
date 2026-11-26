@@ -171,11 +171,10 @@ function FlyoutMenu:installSecEnvBullshit(event)
 
     -- set attributes used inside the secure scripts
     -- set attributes used inside the secure scripts
-    self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:setSecEnvAttribute("UFO_NAME", self:getUfoLabel())
     self:setSecEnvAttribute(SecEnvAttribute.flyoutDirection, self:getDirection(event))
     self:setSecEnvAttribute("IS_FOR_CATALOG", self.isForCatalog)
-    self:SetFrameRef("UFO_DUM_DUM", _G["UFO_DUM_DUM"])
+    self:SetFrameRef("UFO_DUM_DUM", XML_UI.UFO_DUM_DUM)
     self:SetFrameRef("flyoutMenu", self)
     local germ = self:getParent()
     if germ then
@@ -186,10 +185,10 @@ function FlyoutMenu:installSecEnvBullshit(event)
     self:Execute([=[
         flyoutMenu = self
         germ       = self:GetFrameRef("germ")
-        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
         -- catalogEntry = self:GetFrameRef("catalogEntry") -- to be set on-demand by CatalogEntry
         myName     = self:GetAttribute("UFO_NAME")
-        doDebug    = self:GetAttribute("DO_DEBUG") or false
+        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
+        doDebug    = UFO_DUM_DUM:GetAttribute("DO_DEBUG") or false
         MAX_FLYOUT_SIZE = ]=] .. MAX_FLYOUT_SIZE .. [=[
     ]=])
 

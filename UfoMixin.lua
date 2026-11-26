@@ -176,3 +176,17 @@ function UfoMixIn:makeLabelForMethod(methodName)
     return strjoin(":", self.nickname or self.ufoType, methodName)
 end
 
+function UfoMixIn:getDebugVolumeForEventName(eventName)
+    return Zebug.devMode and Config and Config.opts and Config.opts.devTool and Config.opts.devTool.eventVolume and Config.opts.devTool.eventVolume[eventName] or nil
+end
+
+function UfoMixIn:registerMyEventsForDebugger()
+    if not self.handlerNames then
+        zebug.info:owner(self):print("No work to do: nothing defined in self.handlerNames")
+        return
+    end
+
+    for k, v in pairs(self.handlerNames) do
+        Config:registerEventHandlerForDebugger(v)
+    end
+end
