@@ -763,9 +763,9 @@ end
 function Germ:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
     local type, id = GetCursorInfo()
     local enable = not type
-    local wut = enable and "cursor is empty so clicks are Enabled" or "cursor is occupied so clicks are IGNORED"
-    --zebug.info:mStar():mMoon():mCross():event(event):owner(self):print("enable",enable, "GetCursorInfo->",GetCursorInfo, "GetCursorInfo->type",type, "GetCursorInfo->id",id,  "Cursor:getFresh()",Cursor:getFresh(event), wut)
-    zebug.trace:event(event):owner(self):print(wut)
+    local wut = enable and "cursor is empty so clicks are enabled" or "cursor is occupied so clicks are IGNORED"
+    --zebug.info:mStar():event(event):owner(self):print("enable",enable, "GCI->type",type, "GCI->id",id,  "Cursor:getFresh()",Cursor:getFresh(event), wut)
+    zebug.info:event(event):owner(self):print(wut)
     if enable then
         self:RegisterForClicks("AnyDown", "AnyUp") -- protected.  Pacify.
     else
@@ -893,7 +893,7 @@ function ScriptHandlers:ON_ENTER()
     if self:isInactive() then return end
     self:OnEnter() -- Call Bliz super()
 
-    zebug.info:mDiamond():owner(self):newEvent(self, "ON_ENTER"):run(function(event)
+    zebug.info:mDiamond():owner(self):newEvent(self, HK.ON_ENTER):run(function(event)
         self:setToolTip()
     end)
 end
@@ -948,6 +948,7 @@ end
 ---@param mouseClick MouseClick
 ---@param behaviorName GermClickBehavior
 function Germ:assignTheMouseClicker(mouseClick, behaviorName, event)
+    zebug.info:mCircle():event(event):owner(self):print("mouseClick",mouseClick, "behaviorName",behaviorName)
     if not behaviorName then
         GermClickBehaviorAssignmentFunction.NONE(self, mouseClick, event)
         return
@@ -989,13 +990,14 @@ function Germ:applyConfigForMainKeybind(event)
     self:assignTheMouseClicker(MouseClick.RESERVED_FOR_KEYBIND, keybindBehavior, event)
 end
 
-function Germ:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil)
+function Germ:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, event)
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil, event)
 end
 
 ---@param mouseClick MouseClick
 ---@param clickBehavior GermClickBehavior
-function Germ:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, clickBehavior)
+function Germ:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, clickBehavior, event)
+    zebug.info:mStar():event(event):owner(self):print("mouseClick",mouseClick, "clickBehavior",clickBehavior)
     local name = SecEnv.ON_CLICK_SCRIPT_NAME_PREFIX_FOR___ARBITRARY_BEHAVIOR .. mouseClick
     self:setSecEnvAttribute(name, clickBehavior)
 end
@@ -1020,20 +1022,20 @@ end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:NONE(mouseClick, event)
-    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
-    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick)
+    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, event)
+    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, event)
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:OPEN(mouseClick, event)
     zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick)
-    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, SecEnv.OPENER_SCRIPT_REF_NAME)
+    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, event)
+    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, SecEnv.OPENER_SCRIPT_REF_NAME, event)
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:PRIME_BTN(mouseClick, event)
-    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
+    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, event)
     self:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(mouseClick, "Germ's PRIME") -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
 
     -- temp fix - this ignores the config
@@ -1042,14 +1044,14 @@ end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:RANDOM_BTN(mouseClick, event)
-    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.RANDOM_BTN)
+    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, event)
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.RANDOM_BTN, event)
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:CYCLE_ALL_BTNS(mouseClick, event)
-    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.CYCLE_ALL_BTNS)
+    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, event)
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.CYCLE_ALL_BTNS, event)
 end
 
 -------------------------------------------------------------------------------

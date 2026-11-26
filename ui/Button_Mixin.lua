@@ -354,7 +354,7 @@ function Button_Mixin:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(mous
         local typeOfAction, typeOfActionButDumber, actualAction = btnDef:asSecureClickHandlerAttributes(event)
         -- typeOfActionButDumber = typeOfActionButDumber or typeOfAction
         local typeOfActionButDumberAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secEnvMouseClickId, typeOfActionButDumber)
-        zebug.info:event(event):owner(self):noName():print("t",secEnvMouseClickId, "type", typeOfAction, "typeDumber", typeOfActionButDumber, "typeDumberAdjusted", typeOfActionButDumberAdjustedToMatchMouseClick, "actualAction", actualAction)
+        zebug.info:mMoon():event(event):owner(self):noName():print("t",secEnvMouseClickId, "type", typeOfAction, "typeDumber", typeOfActionButDumber, "typeDumberAdjusted", typeOfActionButDumberAdjustedToMatchMouseClick, "actualAction", actualAction)
 
         self:SetAttribute(secEnvMouseClickId, typeOfAction) -- eg "type1" -> "macro"
         self:SetAttribute(typeOfActionButDumberAdjustedToMatchMouseClick, actualAction) -- eg, "macro1" -> "/say weak sauce"

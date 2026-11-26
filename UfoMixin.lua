@@ -134,11 +134,12 @@ function UfoMixIn:getSecEnvAttribute(key)
     self:GetAttribute(key)
 end
 
-function UfoMixIn:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, value)
-    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, nil)
+function UfoMixIn:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, event)
+    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, nil, event)
 end
 
-function UfoMixIn:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, scriptName)
+function UfoMixIn:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, scriptName, event)
+    zebug.info:mTriangle():event(event):owner(self):print("mouseClick",mouseClick, "scriptName",scriptName)
     local type1or2or3etc = MouseClickAsSecEnvId[mouseClick]
     self:setSecEnvAttribute(type1or2or3etc, scriptName)
 end
