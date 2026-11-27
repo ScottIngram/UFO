@@ -506,7 +506,7 @@ function ButtonOnFlyoutMenu:onMouseDown(mouseClick)
     end)
 
     local flyoutMenu = self:getFlyoutMenu()
-    local label = LABELS.onMouseDown
+    local label = HK.onMouseDown
     if flyoutMenu.isForCatalog then
         local myVolume = Ufo:getEventVolume(label)
         zebug.info:mStar():owner(self):newEvent(self, label, nil, myVolume):run(function(event)
@@ -543,7 +543,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     local flyoutMenu = self:getFlyoutMenu()
     if not flyoutMenu.isForCatalog then return end
 
-    local label = LABELS.onDragStartWhileDragging
+    local label = HK.onDragStartWhileDragging
     local isDragging = GetCursorInfo()
     if isDragging then
         zebug.info:mTriangle():owner(self):newEvent(self, HK.onDragStartWhileDragging):run(function(event)
@@ -619,4 +619,3 @@ function ButtonOnFlyoutMenu:UpdateButtonArt()
     self.NormalTexture:Show() -- show the square
     self.NormalTexture:SetSize(32,31)
 end
-
