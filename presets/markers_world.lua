@@ -62,8 +62,8 @@ end
 Preset.defs[id] = {
     ["name"] = L10N.MARKERS_WORLD,
     ["desc"] = L10N.MARKERS_WORLD_DESC,
-    ["icon"] = 413590,
-    ["Ace3icon"] = "Interface/ICONS/achievement_guildperk_mrpopularity_rank2.blp",
+    ["icon"] = 4644002,
+    ["Ace3icon"] = "Interface/ICONS/Inv_10_jewelcrafting3_rainbowprism_color2.blp",
     ["id"] = id,
     ["btns"] = getButtons,
 }
