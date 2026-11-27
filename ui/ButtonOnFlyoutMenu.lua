@@ -508,8 +508,7 @@ function ButtonOnFlyoutMenu:onMouseDown(mouseClick)
     local flyoutMenu = self:getFlyoutMenu()
     local label = HK.onMouseDown
     if flyoutMenu.isForCatalog then
-        local myVolume = Ufo:getEventVolume(label)
-        zebug.info:mStar():owner(self):newEvent(self, label, nil, myVolume):run(function(event)
+        zebug.info:mStar():owner(self):newEvent(self, label):run(function(event)
         end)
     end
 
