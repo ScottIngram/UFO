@@ -309,7 +309,7 @@ local function initializeOptionsMenu()
                                         desc = "Button count", -- L10N.cfg.WHICH_BUTTON_OF_THE_FLYOUT, --'Which button of the flyout should be considered its "Primary" button?',
                                         width = "double",
                                         type = "range",
-                                        min = 10,
+                                        min = 3,
                                         max = MAX_FLYOUT_SIZE,
                                         step = 1,
                                         set = function(optionsMenu, val)

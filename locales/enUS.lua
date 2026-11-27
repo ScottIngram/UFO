@@ -143,7 +143,13 @@ else
 end
 
 SHORTCUT = "(Shortcut: Right-click the [UFO] button to open this config menu.)"
-UFO_LETS_YOU = "lets you create custom flyout menus which you can place on your action bars and include any arbitrary buttons of your choosing (spells, macros, items, pets, mounts, etc.) all with standard drag and drop."
+UFO_LETS_YOU = [=[
+lets you create custom flyout menus which you can place on your action bars and include any arbitrary buttons of your choosing (spells, macros, items, pets, mounts, etc.) by using standard drag and drop.
+
+Your flyouts are kept in a catalog which can be opened via the [UFO] button in the upper right of WoW's spellbook, macros panel, collection journals, etc.
+
+Create new flyouts via the "+" button in the catalog and/or choose from a handful of presets.
+]=]
 AUTO_CLOSE_UFO = "Auto-Close UFO"
 CLOSES_THE_UFO = "Closes the UFO after clicking any of its buttons"
 MUTE_LOGIN_MESSAGES = "Mute Login Messages"
