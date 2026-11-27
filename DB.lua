@@ -22,11 +22,26 @@ local L10N = Ufo.L10N
 ---@alias Placements table<BtnSlotIndex,FlyoutId>
 ---@alias PlacementsForAllSpecs table<SpecId,Placements>
 
+local isInitialized
+
+-------------------------------------------------------------------------------
+-- Methods
+-------------------------------------------------------------------------------
+
+function DB:initialize()
+    if not isInitialized then
+        DB:initializeAccount()
+        DB:initializeToon()
+        DB:initializeOptsMemory()
+        isInitialized = true
+    end
+end
+
 -------------------------------------------------------------------------------
 -- Flyouts
 -------------------------------------------------------------------------------
 
-function DB:initializeFlyouts()
+function DB:initializeAccount()
     if not UFO_SV_ACCOUNT then
         UFO_SV_ACCOUNT = { flyouts={}, n=0, orderedFlyoutIds={} }
     end
@@ -50,7 +65,7 @@ end
 -- Placements
 -------------------------------------------------------------------------------
 
-function DB:initializePlacements()
+function DB:initializeToon()
     if not UFO_SV_TOON then
         UFO_SV_TOON = { placementsForAllSpecs = {} }
     end

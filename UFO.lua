@@ -73,7 +73,7 @@ end
 local EventHandlers = { }
 
 function EventHandlers:PLAYER_ENTERING_WORLD(eName, n, isInitialLogin, isReloadingUi)
-    DB:initializeOptsMemory() -- wire up config options immediately
+    DB:initialize() -- wire up the DB immediately before Zebug starts asking
 
     zebug.info:mSkull():name("handler"):newEvent(Ufo, eName, n):run(function(event)
         initalizeAddonStuff(event)
@@ -408,9 +408,6 @@ function initalizeAddonStuff(event)
     Ufo.version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
     Ufo.versionMsg = L10N.VERSION .. ": " .. Ufo.version
 
-    DB:initializeFlyouts()
-    DB:initializePlacements()
-    -- DB:initializeOptsMemory() -- moved into PLAYER_ENTERING_WORLD handler itself so it's available to Zebug
     Config:migrateToCurrentVersion()
 
     SecEnv:loadConfigOptions()
