@@ -506,6 +506,13 @@ function ButtonOnFlyoutMenu:onMouseDown(mouseClick)
     end)
 
     local flyoutMenu = self:getFlyoutMenu()
+    local label = LABELS.onMouseDown
+    if flyoutMenu.isForCatalog then
+        local myVolume = Ufo:getEventVolume(label)
+        zebug.info:mStar():owner(self):newEvent(self, label, nil, myVolume):run(function(event)
+        end)
+    end
+
     if not flyoutMenu.isForGerm then return end
 
     -- is any mouse button configured for PrimaryButtonIs.RECENT ?
@@ -536,6 +543,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     local flyoutMenu = self:getFlyoutMenu()
     if not flyoutMenu.isForCatalog then return end
 
+    local label = LABELS.onDragStartWhileDragging
     local isDragging = GetCursorInfo()
     if isDragging then
         zebug.info:mTriangle():owner(self):newEvent(self, HK.onDragStartWhileDragging):run(function(event)
