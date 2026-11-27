@@ -517,7 +517,7 @@ if true then return end -- temp disable
 
     -- Secure Shenanigans required before initFlyoutMenu() -- here
     SecureHandler_OnLoad(self) -- install self:SetFrameRef()
-    self:assignSecEnvMouseClickBehaviorVia_Attribute(MouseClick.ANY, SecEnv.FLYOUT_OPENER_AND_LAYOUT_SCRIPT_NAME)
+    self:assignSecEnvMouseClickBehaviorVia_Attribute(MouseClick.ANY, SecEnv.FLYOUT_OPENER_AND_LAYOUT_SCRIPT_NAME, event)
 
     -- FlyoutMenu
     self:initializeSecEnv(event)       -- depends on initFlyoutMenu() above

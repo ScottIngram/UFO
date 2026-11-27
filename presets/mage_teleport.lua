@@ -16,8 +16,8 @@ local getButtons = function()
 end
 
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.MAGE_TELEPORT,
-    ["desc"] = L10N.cfg.A_COPY_OF_THE_BUILT_IN_MAGE_TELEPORT,
+    ["name"] = L10N.MAGE_TELEPORT,
+    ["desc"] = L10N.A_COPY_OF_THE_BUILT_IN_MAGE_TELEPORT,
     --["icon"] = 237509,
     ["Ace3icon"] = "Interface/ICONS/spell_arcane_teleportdalaran.blp",
     ["id"] = id,

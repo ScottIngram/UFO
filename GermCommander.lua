@@ -83,7 +83,7 @@ function GermCommander:forEachGermIf(opFunction, fitnessFunc, event, ...)
     event = event or oopsEvent
     for _, germ in pairs(germs) do
         if fitnessFunc(germ, event, ...) then
-            zebug.trace:event(event):owner(germ):line(8,"MATCH!")
+            zebug.trace:event(event):owner(germ):print("MATCH!")
             opFunction(germ, event, ...)
         else
             zebug.trace:event(event):owner(germ):print("skipping because it failed the fitnessFunc()")

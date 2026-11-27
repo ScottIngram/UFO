@@ -38,6 +38,8 @@ Germ = {
     clickers = {},
     mainKeyBindingsKeyNames = {},
     primeBtnIndex = 1,
+    handlerNames = nil,
+
 }
 UfoMixIn:mixInto(Germ)
 GLOBAL_Germ = Germ
@@ -68,7 +70,6 @@ local GermClickBehaviorAssignmentFunction = { }
 
 ---@type GERM_TYPE for the benefit of my IDE's autocomplete
 local ScriptHandlers = {}
-local SEC_ENV_SCRIPT_FOR_ON_CLICK
 
 ---@type table<string,Germ> all keybindings currently in use by any Germs
 local mainKeyBindingsForAllGerms = {}
@@ -85,6 +86,17 @@ local MOUSE_BUTTONS = {
     MouseClick.FOUR,
     MouseClick.FIVE,
 }
+
+local HK = {
+    ON_MOUSE_UP     = Germ:makeLabelForMethod("ON_MOUSE_UP"),
+    ON_MOUSE_DOWN   = Germ:makeLabelForMethod("ON_MOUSE_DOWN"),
+    ON_ENTER        = Germ:makeLabelForMethod("ON_ENTER"),
+    ON_LEAVE        = Germ:makeLabelForMethod("ON_LEAVE"),
+    ON_RECEIVE_DRAG = Germ:makeLabelForMethod("ON_RECEIVE_DRAG"),
+    ON_DRAG_START   = Germ:makeLabelForMethod("ON_DRAG_START"),
+}
+
+Germ.handlerNames = HK
 
 -------------------------------------------------------------------------------
 -- Functions / Methods
@@ -273,8 +285,13 @@ function Germ:getIcon()
 end
 
 function Germ:doIcon(event)
-    local icon = self:getIcon()
-    self:setIcon(icon, event)
+    local flyoutDef = self:getFlyoutDef()
+    if flyoutDef.icon then
+        self:setIcon(flyoutDef.icon, event)
+    else
+        local btnDef = self:getPrimeBtn():getDef()
+        self:setIconViaBtnDef(btnDef, event)
+    end
 end
 
 function Germ:glowStart()
@@ -746,9 +763,9 @@ end
 function Germ:maybeRegisterForClicksDependingOnCursorIsEmpty(event)
     local type, id = GetCursorInfo()
     local enable = not type
-    local wut = enable and "cursor is empty so clicks are Enabled" or "cursor is occupied so clicks are IGNORED"
-    --zebug.info:mStar():mMoon():mCross():event(event):owner(self):print("enable",enable, "GetCursorInfo->",GetCursorInfo, "GetCursorInfo->type",type, "GetCursorInfo->id",id,  "Cursor:getFresh()",Cursor:getFresh(event), wut)
-    zebug.trace:event(event):owner(self):print(wut)
+    local wut = enable and "cursor is empty so clicks are enabled" or "cursor is occupied so clicks are IGNORED"
+    --zebug.info:mStar():event(event):owner(self):print("enable",enable, "GCI->type",type, "GCI->id",id,  "Cursor:getFresh()",Cursor:getFresh(event), wut)
+    zebug.info:event(event):owner(self):print(wut)
     if enable then
         self:RegisterForClicks("AnyDown", "AnyUp") -- protected.  Pacify.
     else
@@ -817,19 +834,19 @@ end
 
 function ScriptHandlers:ON_MOUSE_DOWN(mouseClick)
     local cursor = Cursor:get()
-    zebug.info:mDiamond():owner(self):newEvent(self, "ScriptHandlers.ON_MOUSE_DOWN"):run(function(event)
+    zebug.info:mDiamond():owner(self):newEvent(self, HK.ON_MOUSE_DOWN):run(function(event)
         self:OnMouseDown() -- Call Bliz super()
 
         if cursor then
             -- self:handleReceiveDrag(event)
         else
-            zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_DOWN"):print("not dragging, so, exiting. proxy",UfoProxy)
+            zebug.info:owner(self):event(event):name(HK.ON_MOUSE_DOWN):print("not dragging, so, exiting. proxy",UfoProxy)
         end
     end, cursor)
 end
 
 function ScriptHandlers:ON_MOUSE_UP()
-    zebug.info:mCross():owner(self):newEvent(self, "ScriptHandlers.ON_MOUSE_UP"):run(function(event)
+    zebug.info:mCross():owner(self):newEvent(self, HK.ON_MOUSE_UP):run(function(event)
         self:OnMouseUp() -- Call Bliz super()
 
         local isDragging = GetCursorInfo()
@@ -837,7 +854,7 @@ function ScriptHandlers:ON_MOUSE_UP()
         if isDragging then
             self:handleReceiveDrag(event)
         else
-            zebug.info:owner(self):event(event):name("ScriptHandlers:ON_MOUSE_UP"):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
+            zebug.info:owner(self):event(event):name(HK.ON_MOUSE_UP):print("not dragging, so, exiting. proxy",UfoProxy, "mySlotBtn",mySlotBtn)
         end
     end)
 end
@@ -848,7 +865,7 @@ end
 ---@param self GERM_TYPE
 function ScriptHandlers:ON_RECEIVE_DRAG()
     if isInCombatLockdown("Drag and drop") then return end
-    zebug.info:mCircle():owner(self):newEvent(self, "ON_RECEIVE_DRAG"):run(function(event)
+    zebug.info:mCircle():owner(self):newEvent(self, HK.ON_RECEIVE_DRAG):run(function(event)
         self:handleReceiveDrag(event)
     end)
 end
@@ -867,7 +884,7 @@ function ScriptHandlers:ON_DRAG_START()
     if isInCombatLockdown("Drag and drop") then return end
     self:OnDragStart() -- Call Bliz super()
 
-    zebug.info:mCircle():owner(self):newEvent(self, "ON_DRAG_START"):run(function(event)
+    zebug.info:mCircle():owner(self):newEvent(self, HK.ON_DRAG_START):run(function(event)
         self:pickupFromSlotAndClear(event)
     end)
 end
@@ -876,21 +893,22 @@ function ScriptHandlers:ON_ENTER()
     if self:isInactive() then return end
     self:OnEnter() -- Call Bliz super()
 
-    zebug.info:mDiamond():owner(self):newEvent(self, "ON_ENTER"):run(function(event)
+    zebug.info:mDiamond():owner(self):newEvent(self, HK.ON_ENTER):run(function(event)
         self:setToolTip()
     end)
 end
 
 function ScriptHandlers:ON_LEAVE()
-    self:OnLeave() -- Call Bliz super()
-    GameTooltip:Hide()
+    zebug.info:mDiamond():owner(self):newEvent(self, HK.ON_LEAVE):run(function(event)
+        self:OnLeave() -- Call Bliz super()
+        GameTooltip:Hide()
+    end)
 end
 
 function Germ:initializeSecEnv(event)
     assert(self.flyoutMenu, "do initFlyoutMenu() first")
 
     -- set attributes used inside the secure scripts
-    self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:setSecEnvAttribute("UFO_NAME", self:getUfoLabel())
     self:setSecEnvAttribute(SecEnvAttribute.flyoutDirection, self:getDirection(event))
     self:setSecEnvAttribute("doKeybindTheButtonsOnTheFlyout", Config:get("doKeybindTheButtonsOnTheFlyout"))
@@ -901,9 +919,9 @@ function Germ:initializeSecEnv(event)
     self:Execute([=[
         germ       = self
         flyoutMenu = self:GetFrameRef("flyoutMenu")
-        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
         myName     = self:GetAttribute("UFO_NAME")
-        doDebug    = self:GetAttribute("DO_DEBUG") or false
+        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
+        doDebug    = UFO_DUM_DUM:GetAttribute("DO_DEBUG") or false
     ]=])
 
     SecEnv:installSecEnvScriptFor_OpenMyFlyout(self)
@@ -930,6 +948,7 @@ end
 ---@param mouseClick MouseClick
 ---@param behaviorName GermClickBehavior
 function Germ:assignTheMouseClicker(mouseClick, behaviorName, event)
+    zebug.info:mCircle():event(event):owner(self):print("mouseClick",mouseClick, "behaviorName",behaviorName)
     if not behaviorName then
         GermClickBehaviorAssignmentFunction.NONE(self, mouseClick, event)
         return
@@ -971,23 +990,16 @@ function Germ:applyConfigForMainKeybind(event)
     self:assignTheMouseClicker(MouseClick.RESERVED_FOR_KEYBIND, keybindBehavior, event)
 end
 
-function Germ:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil)
+function Germ:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, event)
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, nil, event)
 end
 
 ---@param mouseClick MouseClick
 ---@param clickBehavior GermClickBehavior
-function Germ:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, clickBehavior)
+function Germ:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, clickBehavior, event)
+    zebug.info:mStar():event(event):owner(self):print("mouseClick",mouseClick, "clickBehavior",clickBehavior)
     local name = SecEnv.ON_CLICK_SCRIPT_NAME_PREFIX_FOR___ARBITRARY_BEHAVIOR .. mouseClick
     self:setSecEnvAttribute(name, clickBehavior)
-end
-
-function Germ:setRecentIcon(icon)
-    if not self:isActive() then return end
-    if not Config:isAnyClickerUsingRecent(self.flyoutId) then return end
-    -- icon = icon or self.promoter:GetAttribute("UFO_ICON")
-    zebug.info:owner(self):print("sneaky! icon", icon)
-    self:setIcon(icon,"promoter")
 end
 
 ---@param btn ButtonOnFlyoutMenu
@@ -997,7 +1009,7 @@ function Germ:promoteButtonToPrime(btn)
     local n = btn:getId()
     self.primeBtnIndex = n or 1
     zebug.info:owner(btn):print("I am the captain now",self.primeBtnIndex)
-    self:setIcon(btn.iconTexture, "promoter")
+    self:setIconViaBtnDef(btn:getDef(), "promoter")
 end
 
 
@@ -1010,20 +1022,20 @@ end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:NONE(mouseClick, event)
-    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
-    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick)
+    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, event)
+    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, event)
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:OPEN(mouseClick, event)
     zebug.info:event(event):owner(self):name("HandlerMakers:OpenFlyout"):print("mouseClick",mouseClick)
-    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, SecEnv.OPENER_SCRIPT_REF_NAME)
+    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, event)
+    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, SecEnv.OPENER_SCRIPT_REF_NAME, event)
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:PRIME_BTN(mouseClick, event)
-    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick)
+    self:removeSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, event)
     self:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(mouseClick, "Germ's PRIME") -- assign attributes, eg: "type1" -> "macro" -> "macro1" -> macroId
 
     -- temp fix - this ignores the config
@@ -1032,14 +1044,14 @@ end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:RANDOM_BTN(mouseClick, event)
-    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.RANDOM_BTN)
+    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, event)
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.RANDOM_BTN, event)
 end
 
 ---@param mouseClick MouseClick
 function GermClickBehaviorAssignmentFunction:CYCLE_ALL_BTNS(mouseClick, event)
-    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick)
-    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.CYCLE_ALL_BTNS)
+    self:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, event)
+    self:assignSecEnvMouseClickBehaviorVia_ON_CLICK(mouseClick, GermClickBehavior.CYCLE_ALL_BTNS, event)
 end
 
 -------------------------------------------------------------------------------

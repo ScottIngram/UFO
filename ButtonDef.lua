@@ -26,7 +26,8 @@ ButtonType = {
     PSPELL = "petaction",
     BROKENP = "brokenPetCommand",
     SNAFU = "companion",
-    SUMMON_RANDOM_FAVORITE_MOUNT = "summonmount"
+    SUMMON_RANDOM_FAVORITE_MOUNT = "summonmount",
+    MACRO_TEXT = "macroText",
 }
 
 -------------------------------------------------------------------------------
@@ -51,6 +52,8 @@ BlizApiFieldDef = {
     [ButtonType.BROKENP]= { pickerUpper = function(id) print("pickerupper not defined for pet action", id)  end, typeForBliz=ButtonType.MACRO, key="name" }, -- for attack, assist, stopattack, etc.
 
     -- special cases
+
+    [ButtonType.MACRO_TEXT] = { pickerUpper = PickupMacro, typeForBliz = ButtonType.MACRO , key = "name" },
 
     [ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT] = {
         pickerUpper = function() C_MountJournal.Pickup(0)  end,
@@ -296,6 +299,8 @@ function ButtonDef:setIdAndType(id, type)
         self.itemId = id
     elseif type == ButtonType.MACRO then
         self.macroId = id
+    elseif type == ButtonType.MACRO_TEXT then
+        self.macroId = id
     elseif type == ButtonType.OUTFIT then
         self.outfitId = id
     elseif type == ButtonType.PET then
@@ -392,7 +397,10 @@ function ButtonDef:isUsable(event)
         isUsable = n > 0
         err = isUsable and "" or L10N.THIS_TOON_HAS_NONE
         return isUsable, err
+    elseif t == ButtonType.MACRO_TEXT then
+        return true
     elseif t == ButtonType.MACRO then
+        --this week, WoW Forever changed GetRealmName() which changed the results from my getIdForCurrentToon which BROKE existing UFOs with personal macros
         zebug.trace:owner(self):print("macroId",self.macroId, "isMacroGlobal",isMacroGlobal(self.macroId), "owner",self.macroOwner, "me",getIdForCurrentToon())
         isUsable = isMacroGlobal(self.macroId) or getIdForCurrentToon() == self.macroOwner
         err = isUsable or (L10N.NOT_MACRO_OWNER .. " " .. (self.macroOwner or L10N.UNKNOWN))
@@ -401,7 +409,8 @@ function ButtonDef:isUsable(event)
         end
         return isUsable, err
     elseif t == ButtonType.OUTFIT then
-        return true -- self.owner == getIdForCurrentToon()
+        local outfit = C_TransmogOutfitInfo.GetOutfitInfo(id)
+        return outfit and outfit.icon ~= 134400 -- the question mark
     elseif t == ButtonType.BROKENP then
         return PetShitShow:canHazPet()
     elseif t == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT then
@@ -437,6 +446,8 @@ function ButtonDef:getIcon()
         icon = C_Spell.GetSpellTexture(id)
     elseif t == ButtonType.ITEM or t == ButtonType.TOY then
         icon = C_Item.GetItemIconByID(id)
+    elseif t == ButtonType.MACRO_TEXT then
+        icon = self.icon or self.fallbackIcon or DEFAULT_ICON_FULL
     elseif t == ButtonType.MACRO then
         if self:isUsable() then
             local _, texture, _ = GetMacroInfo(id)
@@ -523,6 +534,10 @@ function ButtonDef:getToolTipSetter()
         tooltipSetter = GameTooltip.SetToyByItemID
     elseif type == ButtonType.PET then
         tooltipSetter = GameTooltip.SetCompanionPet
+    elseif type == ButtonType.MACRO_TEXT then
+        tooltipSetter = function(zelf, Cache1macroId)
+            return zelf:SetText(self.name or self.macroText or "Unknown custom macro")
+        end
     elseif type == ButtonType.MACRO then
         -- START FUNC
         tooltipSetter = function(zelf, Cache1macroId)
@@ -631,6 +646,7 @@ function ButtonDef:getFromCursor(event, silenceWarnings)
     elseif type == ButtonType.MACRO then
         btnDef.macroId = c1
         if not isMacroGlobal(c1) then
+            zebug.info:print("Ufo.pickedUpBtn.macroOwner", Ufo.pickedUpBtn and Ufo.pickedUpBtn.macroOwner, "getIdForCurrentToon()",getIdForCurrentToon())
             btnDef.macroOwner = (Ufo.pickedUpBtn and Ufo.pickedUpBtn.macroOwner) or getIdForCurrentToon()
             btnDef.fallbackIcon = btnDef:getIcon()
         end
@@ -681,7 +697,7 @@ function ButtonDef:pickupToCursor(event)
 
     zebug.trace:event(event):owner(self):print("actionType", self.type, "name", self.name, "spellId", self.spellId, "itemId", self.itemId, "mountId", self.mountId)
 
-    if self:canThisToonPickup() then
+    if self:canThisToonPickup() and (type ~= ButtonType.MACRO_TEXT)  then
         local pickup = BlizApiFieldDef[type].pickerUpper
         isOk, err = pcall(function() pickup(id) end)
     else
@@ -766,6 +782,8 @@ function ButtonDef:asSecureClickHandlerAttributes(event)
     elseif ButtonType.ITEM == self.type then
         -- because using items by name implies rank 1 and never rank 2 or 3 we must use by the item's ID
         return ButtonType.ITEM, ButtonType.ITEM, "item:".. self.itemId -- but not just itemId, it must be item:itemId - I hate you Bliz
+    elseif ButtonType.MACRO_TEXT == self.type then
+        return ButtonType.MACRO, "macrotext", self.macroText
     elseif ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT == self.type then
         local macroText = BlizApiFieldDef[self.type].macroText
         return ButtonType.MACRO, "macrotext", macroText

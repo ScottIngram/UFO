@@ -58,6 +58,27 @@ function Button_Mixin:setHotKeyOverlay(keybindText)
     end
 end
 
+---@param btnDef ButtonDef
+function Button_Mixin:setIconViaBtnDef(btnDef, event)
+    if btnDef == nil then
+        self:setIcon(nil, event)
+        self:getIconFrame():SetAtlas(nil)
+        return
+    end
+
+    if not isTable(btnDef) then
+        zebug.error:event("event"):owner(self):dumpy("btnDef",btnDef)
+        error("Usage: setIconViaBtnDef(buttonDef) - got:" .. btnDef)
+    end
+
+    if btnDef.atlas then
+        zebug.info:event(event):owner(self):print("atlas",btnDef.atlas)
+        self:getIconFrame():SetAtlas(btnDef.atlas)
+    else
+        self:setIcon(btnDef:getIcon(), event)
+    end
+end
+
 local ICON_PREFIX = "INTERFACE\\ICONS\\"
 
 function Button_Mixin:setIcon(icon, event)
@@ -66,10 +87,6 @@ function Button_Mixin:setIcon(icon, event)
     end
 
     local iconFrame = self:getIconFrame()
-
-    --self:getIconFrame():SetTexture(icon)
-    -- IS THIS BROKEN?
-
 
     -- block the Bliz mixins from erroneously setting the icon to look like the contents of the action bar button (ie, the ZUFO macro)
     if not self.originalIconSetTextureFunc then
@@ -80,7 +97,6 @@ function Button_Mixin:setIcon(icon, event)
     end
     zebug.info:event(event):owner(self):print("setting icon",icon)
     self.originalIconSetTextureFunc(iconFrame, icon) -- the iconFrame is the self for the original SetTexture
-    --self:safelySetSecEnvAttribute("UFO_ICON", icon) -- for use by the promoter
     self.iconTexture = icon
 end
 
@@ -161,7 +177,7 @@ function Button_Mixin:updateCooldown(event)
     local spellId = btnDef.spellId
     zebug.trace:event(event):owner(self):print("type",type, "itemId",itemId, "spellId",spellId)
 
-    if type == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT then
+    if type == ButtonType.SUMMON_RANDOM_FAVORITE_MOUNT or type == ButtonType.MACRO_TEXT then
         return
     end
 
@@ -204,11 +220,11 @@ function Button_Mixin:updateCooldown(event)
         if ButtonType.SPELL == type then
             local timeSpellWasCast, cooldownFullDuration, cooldownRemainder = SpellCd:getStatus(id, event, self)
             if timeSpellWasCast then
-                zebug.warn:owner(spellId):event(event):print("triggerering cooldown display NOW! remainder", cooldownRemainder)
+                zebug.info:owner(spellId):event(event):print("triggerering cooldown display NOW! remainder", cooldownRemainder)
                 cdFrame:SetDrawEdge(true);
                 cdFrame:SetCooldown(timeSpellWasCast, cooldownFullDuration)
             else
-                zebug.warn:owner(spellId):event(event):print("CLEARING cooldown display remainder", cooldownRemainder)
+                zebug.info:owner(spellId):event(event):print("CLEARING cooldown display remainder", cooldownRemainder)
                 cdFrame:Clear()
             end
 --[[
@@ -241,7 +257,7 @@ function Button_Mixin:updateCooldown(event)
             end
 
             local startTime, duration, isEnabled = C_Container.GetItemCooldown(btnDef.cooldownProxy or id)
-            zebug.warn:event(event):owner(self):print("ITEMS - cd:SetCooldown() start", startTime, "duration",duration, "isEnabled", isEnabled)
+            zebug.info:event(event):owner(self):print("ITEMS - cd:SetCooldown() start", startTime, "duration",duration, "isEnabled", isEnabled)
             if startTime and duration then
                 cdFrame:SetCooldown(startTime, duration, isEnabled, false, modRate);
             end
@@ -338,7 +354,7 @@ function Button_Mixin:assignSecEnvMouseClickBehaviorVia_AttributeFromBtnDef(mous
         local typeOfAction, typeOfActionButDumber, actualAction = btnDef:asSecureClickHandlerAttributes(event)
         -- typeOfActionButDumber = typeOfActionButDumber or typeOfAction
         local typeOfActionButDumberAdjustedToMatchMouseClick = self:adjustSecureKeyToMatchTheMouseClick(secEnvMouseClickId, typeOfActionButDumber)
-        zebug.info:event(event):owner(self):noName():print("t",secEnvMouseClickId, "type", typeOfAction, "typeDumber", typeOfActionButDumber, "typeDumberAdjusted", typeOfActionButDumberAdjustedToMatchMouseClick, "actualAction", actualAction)
+        zebug.info:mMoon():event(event):owner(self):noName():print("t",secEnvMouseClickId, "type", typeOfAction, "typeDumber", typeOfActionButDumber, "typeDumberAdjusted", typeOfActionButDumberAdjustedToMatchMouseClick, "actualAction", actualAction)
 
         self:SetAttribute(secEnvMouseClickId, typeOfAction) -- eg "type1" -> "macro"
         self:SetAttribute(typeOfActionButDumberAdjustedToMatchMouseClick, actualAction) -- eg, "macro1" -> "/say weak sauce"
@@ -372,7 +388,24 @@ function Button_Mixin:enableBlizBehaviorSecEnvSettings()
         -- Do I want to
         -- if self:GetAttribute("type") == "spell" then
         --    spellName = self:SetAttribute("spell", spell)pull out the spell name & run it through C_Spell.IsSpellHarmful(spellName) and/or C_Spell.IsSpellHelpful(spellName)
-        RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [exists] target; player")
+
+        -- original solution to support mouseover - turns out it fucks up the germ if the player is looking at a mouseover target
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [exists] target; player")
+        -- dammit, I fucked up the syntax above... here's the corrected one
+        RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [@target,exists] target; player")
+
+        -- THIS ONE WORKS - at least, it solves the bug where a focus target shuts down the germ
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [@softinteract,exists] softinteract; [@target,exists] target; player")
+
+        -- EXPERIMENTING
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [@target,exists] target; [@softinteract,exists] none; [@anyinteract,exists] none; player")
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [@target,exists] target; [@softinteract,exists] player; [@anyinteract,exists] player; player")
+
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [exists] target; [@softinteract,exists] ; [@anyinteract,exists] ; player")
+        --RegisterAttributeDriver(self, "unit", "[@mouseover,exists] mouseover; [exists] target; [@softinteract,exists] nil; [@anyinteract,exists] nil; player")
+
+        -- I'm checking in all of the above as a testiment to madness and shitty Bliz not throwing a syntax error on the original missing @target
+
         -- TODO: register event listener for CVAR_UPDATE
     end
 

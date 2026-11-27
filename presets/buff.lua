@@ -8,8 +8,8 @@ Ufo.Wormhole()
 
 local id = Preset.ids.BUFF
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.BUFFS,
-    ["desc"] = L10N.cfg.SPELLS_FROM_VARIOUS_CLASSES,
+    ["name"] = L10N.BUFFS,
+    ["desc"] = L10N.SPELLS_FROM_VARIOUS_CLASSES,
     --["icon"] = 135869,
     ["Ace3icon"] = "Interface/ICONS/spell_holy_arcaneintellect.blp",
     ["id"] = id,

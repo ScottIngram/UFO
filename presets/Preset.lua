@@ -30,6 +30,8 @@ Preset = {
         DELVE = "DELVE",
         PARACHUTE = "PARACHUTE",
         VISION = "VISION",
+        MARKERS_RAID = "MARKERS_RAID",
+        MARKERS_WORLD = "MARKERS_WORLD",
 
         -- remember to add new entries to index.xml
         -- remember to also add them below :-/
@@ -50,6 +52,8 @@ local RETAIL_ORDER = {
     Preset.ids.DELVE,
     Preset.ids.PARACHUTE,
     Preset.ids.VISION,
+    Preset.ids.MARKERS_RAID,
+    Preset.ids.MARKERS_WORLD,
 }
 
 local FOREVER_ORDER = {
@@ -62,6 +66,8 @@ local FOREVER_ORDER = {
     Preset.ids.CURE,
     Preset.ids.PARACHUTE,
     Preset.ids.VISION,
+    Preset.ids.MARKERS_RAID,
+    Preset.ids.MARKERS_WORLD,
 }
 
 Preset.Order = isForever() and FOREVER_ORDER or RETAIL_ORDER
@@ -158,18 +164,18 @@ function Preset:install(id)
 
         if flyoutDef:howManyButtons() == 0 then
             -- all the preset buttons are already on the existing UFO
-            local msg = sprintf(L10N.cfg.PRESET_UFO_ALREADY_EXISTS_DELETE, flyoutDef.name, where, theUfo.name)
+            local msg = sprintf(L10N.PRESET_UFO_ALREADY_EXISTS_DELETE, flyoutDef.name, where, theUfo.name)
             msgUser(msg)
             zebug.trace:owner(self):dumpy("EMPTY!", flyoutDef)
         else
             -- some of the preset buttons are missing from the existing UFO
-            local msg = sprintf(L10N.cfg.PRESET_UFO_ALREADY_EXISTS_MERGE, flyoutDef.name, where, theUfo.name)
+            local msg = sprintf(L10N.PRESET_UFO_ALREADY_EXISTS_MERGE, flyoutDef.name, where, theUfo.name)
             msgUser(msg)
             zebug.trace:owner(self):dumpy("remaining", flyoutDef)
             -- merge the missing buttons into the existing UFO
             ---@param btnDef ButtonDef
             flyoutDef:forEachBtn(function(btnDef)
-                msgUser(L10N.cfg.ADDING, btnDef:getName())
+                msgUser(L10N.ADDING, btnDef:getName())
                 theUfo:addButton(btnDef)
             end)
         end

@@ -747,7 +747,7 @@ function makeMenuForEventHandler(i, eventName)
         end,
         ---@param ZebugSpeakingVolume
         get = function()
-            local volume = Ufo:getEventVolume(eventName)
+            local volume = Ufo:getDebugVolumeForEventName(eventName)
             msgUser(eventName, "has volume", volume)
             return volume
         end,

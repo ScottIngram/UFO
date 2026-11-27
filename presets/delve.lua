@@ -8,8 +8,8 @@ Ufo.Wormhole()
 
 local id = Preset.ids.DELVE
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.DELVES,
-    ["desc"] = L10N.cfg.STUFF_ONLY_USEFUL_IN_DELVES,
+    ["name"] = L10N.DELVES,
+    ["desc"] = L10N.STUFF_ONLY_USEFUL_IN_DELVES,
     --["icon"] = 1064187,
     ["Ace3icon"] = "Interface/ICONS/icon_treasuremap.blp",
     ["id"] = id,

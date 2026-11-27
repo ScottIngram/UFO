@@ -8,8 +8,8 @@ Ufo.Wormhole()
 
 local id = Preset.ids.VISION
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.VISION,
-    ["desc"] = L10N.cfg.SPELLS_AND_TOYS_THAT_GRANT_YOU_SIGHT,
+    ["name"] = L10N.VISION,
+    ["desc"] = L10N.SPELLS_AND_TOYS_THAT_GRANT_YOU_SIGHT,
     ["icon"] = 1100023,
     ["Ace3icon"] = "Interface/ICONS/inv_darkmoon_eye.blp",
     ["id"] = id,

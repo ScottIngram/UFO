@@ -8,8 +8,8 @@ Ufo.Wormhole()
 
 local id = Preset.ids.TRADE_SKILLS
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.TRADE_SKILLS,
-    ["desc"] = L10N.cfg.VARIOUS_PROFESSIONS_OVERLOADS_ETC,
+    ["name"] = L10N.TRADE_SKILLS,
+    ["desc"] = L10N.VARIOUS_PROFESSIONS_OVERLOADS_ETC,
     --["icon"] = 4620681,
     ["Ace3icon"] = "Interface/ICONS/ui_profession_tailoring.blp",
     ["id"] = id,

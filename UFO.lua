@@ -17,7 +17,7 @@
 ---@type Ufo
 local ADDON_NAME, Ufo = ...
 Ufo.Wormhole() -- Lua voodoo magic that replaces the current Global namespace with the Ufo object
-ufoType = "UFO_BASE"
+ufoType = "UFO_CORE"
 
 Zebug.devMode = false
 
@@ -73,7 +73,9 @@ end
 local EventHandlers = { }
 
 function EventHandlers:PLAYER_ENTERING_WORLD(eName, n, isInitialLogin, isReloadingUi)
-    zebug.info:mSkull():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+    DB:initializeOptsMemory() -- wire up config options immediately
+
+    zebug.info:mSkull():name("handler"):newEvent(Ufo, eName, n):run(function(event)
         initalizeAddonStuff(event)
     end)
 end
@@ -98,9 +100,7 @@ function EventHandlers:ACTIONBAR_SLOT_CHANGED(eName, n, btnSlotIndex)
         return
     end
 
-    local myVolume = Ufo:getEventVolume(eName)
-
-    zebug.info:mSquare():name("handler"):newEvent("Ufo", eName, n, myVolume):run(function(event)
+    zebug.info:mSquare():name("handler"):newEvent(Ufo, eName, n):run(function(event)
         Ufo.germLock = event
         GermCommander:addOrRemoveSomeUfoDueToAnActionBarSlotChangedEvent(btnSlotIndex, event)
         Ufo.germLock = nil
@@ -112,9 +112,7 @@ EventHandlers.ACTIONBAR_SLOT_CHANGED = Throttler:throttleAndNoQueue(0.125, "Ufo:
 function EventHandlers:ACTIVE_TALENT_GROUP_CHANGED(eName, n, unreliableSpecId)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    local myVolume = Ufo:getEventVolume(eName)
-
-    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n, myVolume):run(function(event)
+    zebug.info:mCircle():name("handler"):newEvent(Ufo, eName, n):run(function(event)
         local hasChanged = not Spec:hasCurrentSpecBeenApplied()
         zebug.info:name("handler"):event(event):print("An event reports a spec change.  Provided specId", unreliableSpecId, "previously applied spec was",Spec:getAppliedSpec(), "spec is now", Spec:getSpecId(), "hasChanged",hasChanged)
         if hasChanged then
@@ -130,8 +128,7 @@ end
 
 function EventHandlers:SPELLS_CHANGED(eventName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    local myVolume = Ufo:getEventVolume(eventName)
-    zebug.info:mCircle():name("handler"):newEvent("Ufo", eventName, n, myVolume):run(function(event)
+    zebug.info:mCircle():name("handler"):newEvent(Ufo, eventName, n):run(function(event)
         GermCommander:notifyAllGermsWithSpells(event)
     end)
 end
@@ -144,7 +141,7 @@ EventHandlers.SPELLS_CHANGED = Throttler:throttle(1.5, "Ufo:SPELLS_CHANGED", Eve
 
 --[[
 function EventHandlers:EDIT_MODE_LAYOUTS_UPDATED(eName, n, layoutInfo, reconcileLayouts)
-    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n):run(function(event)
+    zebug.info:mCircle():name("handler"):newEvent(Ufo, eName, n):run(function(event)
         --GermCommander:changeSpec(event)
         zebug:dumpy("layoutInfo",layoutInfo)
     end)
@@ -153,7 +150,7 @@ end
 
 -- TODO when action bars change direction update their UFOs to match.
 EventRegistry:RegisterCallback("EditMode.Exit", function()
-    zebug.info:mark(Mark.INFO):name("handler"):newEvent("Ufo", "EditMode.Exit"):run(function(event)
+    zebug.info:mark(Mark.INFO):name("handler"):newEvent(Ufo, "EditMode.Exit"):run(function(event)
     end)
 end, "UFO")
 
@@ -161,13 +158,12 @@ end, "UFO")
 function EventHandlers:UPDATE_MACROS(eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
 
-    local myVolume = Ufo:getEventVolume(eName)
-    zebug.info:mCircle():name("handler"):newEvent("Ufo", eName, n, myVolume):run(function(event)
+    zebug.info:mCircle():name("handler"):newEvent(Ufo, eName, n):run(function(event)
         UfoProxy:syncMyId()
 
         if Ufo.thatWasMeThatDidThatMacro then
             -- the event was caused by an action of this addon and as such we shall ignore it
-            zebug.trace:newEvent("Ufo", eName, n):name("handler"):print("ignoring internally triggered event that was caused by", Ufo.thatWasMeThatDidThatMacro)
+            zebug.trace:newEvent(Ufo, eName, n):name("handler"):print("ignoring internally triggered event that was caused by", Ufo.thatWasMeThatDidThatMacro)
             Ufo.thatWasMeThatDidThatMacro = nil
             return
         else
@@ -179,8 +175,7 @@ end
 function EventHandlers:UNIT_INVENTORY_CHANGED(eName, n, id)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     -- only care about events that affect the player
-    local myVolume = Ufo:getEventVolume(eName)
-    zebug.info:mDiamond():name("handler"):newEvent("Ufo", eName, n, myVolume):run(function(event)
+    zebug.info:mDiamond():name("handler"):newEvent(Ufo, eName, n):run(function(event)
         if id == "player" then
             GermCommander:notifyAllGermsWithItems(event)
         else
@@ -197,7 +192,7 @@ function EventHandlers:UPDATE_VEHICLE_ACTIONBAR(eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
     --if isInCombatLockdownQuiet("Ignoring event UPDATE_VEHICLE_ACTIONBAR because it") then return end
     local event = Event:new("Ufo", eName, n)
-    zebug.info:mSquare():name(eName):newEvent("Ufo", eName, n):run(function(event)
+    zebug.info:mSquare():name(eName):newEvent(Ufo, eName, n):run(function(event)
         GermCommander:handleEventPetChanged(event)
     end)
 end
@@ -205,14 +200,13 @@ end
 
 function EventHandlers:UPDATE_BINDINGS(eName, n)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    local myVolume = Ufo:getEventVolume(eName)
-    zebug.trace:newEvent("Ufo", eName, n, myVolume):print("bound!")
+    zebug.trace:newEvent(Ufo, eName, n):print("bound!")
     --if isInCombatLockdownQuiet("Ignoring event UPDATE_BINDINGS because it") then return end
     --GermCommander:updateAll()
 end
 
 function EventHandlers:PLAYER_LOGIN(eName, n)
-    zebug.trace:mMoon():newEvent("Ufo", eName, n):print("Welcome!")
+    zebug.trace:mMoon():newEvent(Ufo, eName, n):print("Welcome!")
 end
 
 ---@param eName string "CURSOR_CHANGED"
@@ -234,7 +228,7 @@ function EventHandlers:CURSOR_CHANGED(eName, eCount, isCursorEmpty, newCursorTyp
 
     zebug.trace
         :name("handler")
-        :newEvent("Ufo", Cursor:nameMakerForCursorChanged(isCursorEmpty), eCount, Zebug.trace)
+        :newEvent(Ufo, eName, eCount)
         :run(function(event)
             GermCommander:forEachActiveGerm(Germ.maybeRegisterForClicksDependingOnCursorIsEmpty, event)
             Cursor:clearCache(event)
@@ -247,7 +241,6 @@ local spellNames = {}
 
 function EventHandlers:SPELL_UPDATE_COOLDOWN(eName, n, spellId, baseSpellID, category, startRecoveryCategory)
     if not Ufo.hasShitCalmedTheFuckDown then return end
-    local myVolume = Ufo:getEventVolume(eName)
     local name = "UnKnOwN"
     if spellId then
         if not spellNames[spellId] then
@@ -259,7 +252,7 @@ function EventHandlers:SPELL_UPDATE_COOLDOWN(eName, n, spellId, baseSpellID, cat
         name = spellNames[spellId]
     end
 
-    zebug.info:mark(Mark.DPS):name("SPELL_UPDATE_COOLDOWN"):newEvent("Ufo", eName, n, myVolume):run(function(event)
+    zebug.info:mark(Mark.DPS):name("SPELL_UPDATE_COOLDOWN"):newEvent(Ufo, eName, n):run(function(event)
         zebug.info:name("SPELL_UPDATE_COOLDOWN"):event(event):print("spellID", spellId, "spell name", name)
         GermCommander:forEachActiveGermWithSpells(Germ.render, event)
     end, name)
@@ -274,9 +267,7 @@ EventHandlers.SPELL_UPDATE_CHARGES = EventHandlers.SPELL_UPDATE_COOLDOWN
 -------------------------------------------------------------------------------
 
 -- support dynamically (de)activating DEBUG output in real time for individual events
-function Ufo:getEventVolume(eventName)
-    return Zebug.devMode and Config.opts.devTool.eventVolume[eventName] or nil
-end
+Ufo.getDebugVolumeForEventName = UfoMixIn.getDebugVolumeForEventName
 
 function Ufo:setEventVolume(eventName, volume)
     Config.opts.devTool.eventVolume[eventName] = volume or nil
@@ -354,8 +345,9 @@ end
 
 function dumpIfUnderMousePointer()
     Zebug.devMode = true
+    XML_UI.UFO_DUM_DUM:safelySetSecEnvAttribute("DO_DEBUG", Zebug.devMode)
     local didOutput
-    zebug.warn:mark(Mark.QUEST):newEvent("Ufo","debug"):run(function(event)
+    zebug.warn:mark(Mark.QUEST):newEvent(Ufo,"debug"):run(function(event)
         local foci  = GetMouseFoci()
         for i, frame in ipairs(foci) do
             if UfoMixIn:isA(frame) then
@@ -369,6 +361,7 @@ function dumpIfUnderMousePointer()
         if not didOutput then
             zebug.warn:event(event):print("Point at a UFO first then issue this command.  Dev Mode now disabled.")
             Zebug.devMode = false
+            XML_UI.UFO_DUM_DUM:safelySetSecEnvAttribute("DO_DEBUG", Zebug.devMode)
         end
 
         Config:redrawIfOpen()
@@ -417,10 +410,11 @@ function initalizeAddonStuff(event)
 
     DB:initializeFlyouts()
     DB:initializePlacements()
-    DB:initializeOptsMemory()
+    -- DB:initializeOptsMemory() -- moved into PLAYER_ENTERING_WORLD handler itself so it's available to Zebug
     Config:migrateToCurrentVersion()
 
     SecEnv:loadConfigOptions()
+    XML_UI.UFO_DUM_DUM:safelySetSecEnvAttribute("DO_DEBUG", Zebug.devMode)
 
     MacroShitShow:init()
     UfoProxy:init()
@@ -446,6 +440,7 @@ function initalizeAddonStuff(event)
 
     Config:bulkRegisterEventHandlersForDebugger(EventHandlers)
     ButtonOnFlyoutMenu:registerMyEventsForDebugger()
+    Germ:registerMyEventsForDebugger()
     Config:initializeOptionsMenu()
 
     msgUserOrNot(L10N.LOADED, Ufo.versionMsg)

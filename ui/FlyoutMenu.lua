@@ -171,11 +171,10 @@ function FlyoutMenu:installSecEnvBullshit(event)
 
     -- set attributes used inside the secure scripts
     -- set attributes used inside the secure scripts
-    self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:setSecEnvAttribute("UFO_NAME", self:getUfoLabel())
     self:setSecEnvAttribute(SecEnvAttribute.flyoutDirection, self:getDirection(event))
     self:setSecEnvAttribute("IS_FOR_CATALOG", self.isForCatalog)
-    self:SetFrameRef("UFO_DUM_DUM", _G["UFO_DUM_DUM"])
+    self:SetFrameRef("UFO_DUM_DUM", XML_UI.UFO_DUM_DUM)
     self:SetFrameRef("flyoutMenu", self)
     local germ = self:getParent()
     if germ then
@@ -186,10 +185,10 @@ function FlyoutMenu:installSecEnvBullshit(event)
     self:Execute([=[
         flyoutMenu = self
         germ       = self:GetFrameRef("germ")
-        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
         -- catalogEntry = self:GetFrameRef("catalogEntry") -- to be set on-demand by CatalogEntry
         myName     = self:GetAttribute("UFO_NAME")
-        doDebug    = self:GetAttribute("DO_DEBUG") or false
+        UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
+        doDebug    = UFO_DUM_DUM:GetAttribute("DO_DEBUG") or false
         MAX_FLYOUT_SIZE = ]=] .. MAX_FLYOUT_SIZE .. [=[
     ]=])
 
@@ -333,13 +332,12 @@ function FlyoutMenu:populateButtons(event)
 
         if btnDef then
             btnFrame:setDef(btnDef, event)
-            local icon = self:getIcon(btnDef)
-            btnFrame:setIcon(icon, event)
+            btnFrame:setIconViaBtnDef(btnDef, event)
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
         else
             -- the empty slot on the end
             btnFrame:setDef(nil, event)
-            btnFrame:setIcon(nil, event)
+            btnFrame:setIconViaBtnDef(nil, event)
             btnFrame:SetAttribute("UFO_NAME"," ") -- my code inside the SecEnv TEMPLATE recognizes " " (as opposed to nil) as the empty slot
             btnFrame:setExcluderVisibility(nil)
         end
@@ -356,7 +354,7 @@ function FlyoutMenu:populateButtons(event)
             name = btnFrame:getLabel() or ""
             zebug.info:event(event):owner(btnFrame):print("clearing",i, name)
             btnFrame:setDef(nil, event)
-            btnFrame:setIcon(nil, event)
+            btnFrame:setIconViaBtnDef(nil, event)
             btnFrame:SetAttribute("UFO_NAME",nil) -- SecEnv TEMPLATE - required flag used to indicate "inUse"
             btnFrame:Hide()
             -- move on to the next btn
@@ -402,8 +400,7 @@ function FlyoutMenu:applyConfigForGerm(germ, event)
 
         if btnDef then
             zebug.info:event(event):owner(self):print("i",i, "type", btnDef.type, "ID",btnDef:getIdForBlizApi(), "name",btnDef.name)
-            local icon = self:getIcon(btnDef)
-            btnFrame:setIcon(icon, event)
+            btnFrame:setIconViaBtnDef(btnDef, event)
             btnFrame:SetAttribute("UFO_NAME",btnDef.name) -- SecEnv TEMPLATE
 
             -- label the keybinds

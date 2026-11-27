@@ -134,11 +134,12 @@ function UfoMixIn:getSecEnvAttribute(key)
     self:GetAttribute(key)
 end
 
-function UfoMixIn:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, value)
-    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, nil)
+function UfoMixIn:removeSecEnvMouseClickBehaviorVia_Attribute(mouseClick, event)
+    self:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, nil, event)
 end
 
-function UfoMixIn:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, scriptName)
+function UfoMixIn:assignSecEnvMouseClickBehaviorVia_Attribute(mouseClick, scriptName, event)
+    zebug.info:mTriangle():event(event):owner(self):print("mouseClick",mouseClick, "scriptName",scriptName)
     local type1or2or3etc = MouseClickAsSecEnvId[mouseClick]
     self:setSecEnvAttribute(type1or2or3etc, scriptName)
 end
@@ -176,3 +177,17 @@ function UfoMixIn:makeLabelForMethod(methodName)
     return strjoin(":", self.nickname or self.ufoType, methodName)
 end
 
+function UfoMixIn:getDebugVolumeForEventName(eventName)
+    return Zebug.devMode and Config and Config.opts and Config.opts.devTool and Config.opts.devTool.eventVolume and Config.opts.devTool.eventVolume[eventName] or nil
+end
+
+function UfoMixIn:registerMyEventsForDebugger()
+    if not self.handlerNames then
+        zebug.info:owner(self):print("No work to do: nothing defined in self.handlerNames")
+        return
+    end
+
+    for k, v in pairs(self.handlerNames) do
+        Config:registerEventHandlerForDebugger(v)
+    end
+end

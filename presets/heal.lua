@@ -8,8 +8,8 @@ Ufo.Wormhole()
 
 local id = Preset.ids.HEAL
 Preset.defs[id] = {
-    ["name"] = L10N.cfg.HEAL,
-    ["desc"] = L10N.cfg.HEALTH_POTIONS_HEALTHSTONES_ETC,
+    ["name"] = L10N.HEAL,
+    ["desc"] = L10N.HEALTH_POTIONS_HEALTHSTONES_ETC,
     ["icon"] = 648632,
     ["Ace3icon"] = "Interface/ICONS/achievement_guild_doctorisin.blp",
     ["id"] = id,

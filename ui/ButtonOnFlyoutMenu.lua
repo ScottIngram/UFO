@@ -28,6 +28,22 @@ GLOBAL_ButtonOnFlyoutMenu = ButtonOnFlyoutMenu
 ---@alias BOFM_TYPE ButtonOnFlyoutMenu | BOFM_INHERITANCE
 
 -------------------------------------------------------------------------------
+-- CONSTANTS
+-------------------------------------------------------------------------------
+
+local HK = {
+    onMouseUp                = ButtonOnFlyoutMenu:makeLabelForMethod("onMouseUp"),
+    onMouseDown              = ButtonOnFlyoutMenu:makeLabelForMethod("onMouseDown"),
+    onEnter                  = ButtonOnFlyoutMenu:makeLabelForMethod("onEnter"),
+    onLeave                  = ButtonOnFlyoutMenu:makeLabelForMethod("onLeave"),
+    onReceiveDrag            = ButtonOnFlyoutMenu:makeLabelForMethod("onReceiveDrag"),
+    onDragStartWhileDragging = ButtonOnFlyoutMenu:makeLabelForMethod("onDragStartWhileDragging"),
+    onDragStartDoPickup      = ButtonOnFlyoutMenu:makeLabelForMethod("onDragStartDoPickup"),
+}
+
+ButtonOnFlyoutMenu.handlerNames = HK
+
+-------------------------------------------------------------------------------
 -- Functions / Methods
 -------------------------------------------------------------------------------
 
@@ -321,7 +337,6 @@ function ButtonOnFlyoutMenu:initializeForGermSecEnv()
     zebug.info:owner(self):print("germ",germ, "flyoutMenu",flyoutMenu)
 
     -- set attributes used inside the secure scripts
-    self:setSecEnvAttribute("DO_DEBUG", not zebug.info:isMute() )
     self:setSecEnvAttribute("UFO_NAME", self:getLabel())
     self:SetFrameRef("flyoutMenu", flyoutMenu)
     self:SetFrameRef("germ", germ)
@@ -334,7 +349,7 @@ function ButtonOnFlyoutMenu:initializeForGermSecEnv()
         germ       = self:GetFrameRef("germ")
         flyoutMenu = self:GetFrameRef("flyoutMenu")
         UFO_DUM_DUM= self:GetFrameRef("UFO_DUM_DUM")
-        doDebug    = self:GetAttribute("DO_DEBUG") or false
+        doDebug    = UFO_DUM_DUM:GetAttribute("DO_DEBUG") or false
      ]=])
 
     self:installSecEnvScriptFor_ON_CLICK()
@@ -423,18 +438,6 @@ end
 -- XML Callbacks - see ui/ui.xml
 -------------------------------------------------------------------------------
 
-local BoFM = ButtonOnFlyoutMenu
-
-local LABELS = {
-    onMouseUp                = BoFM:makeLabelForMethod("onMouseUp"),
-    onMouseDown              = BoFM:makeLabelForMethod("onMouseDown"),
-    onEnter                  = BoFM:makeLabelForMethod("onEnter"),
-    onLeave                  = BoFM:makeLabelForMethod("onLeave"),
-    onReceiveDrag            = BoFM:makeLabelForMethod("onReceiveDrag"),
-    onDragStartWhileDragging = BoFM:makeLabelForMethod("onDragStartWhileDragging"),
-    onDragStartDoPickup      = BoFM:makeLabelForMethod("onDragStartDoPickup"),
-}
-
 -- TODO: should this be in Button_Mixin so that Germ can enjoy it too?
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onLoad()
@@ -470,7 +473,7 @@ end
 
 ---@param self ButtonOnFlyoutMenu
 function ButtonOnFlyoutMenu:onEnter()
-    zebug.info:event(LABELS.onEnter):owner(self):print("self:getId()",self:getId())
+    zebug.info:event(HK.onEnter):owner(self):print("self:getId()",self:getId())
     self:setTooltip()
     self:warnIfUnusable()
 
@@ -479,19 +482,18 @@ function ButtonOnFlyoutMenu:onEnter()
 end
 
 function ButtonOnFlyoutMenu:onLeave()
-    zebug.info:event(LABELS.onLeave):owner(self):print("self:getId()",self:getId())
+    zebug.info:event(HK.onLeave):owner(self):print("self:getId()",self:getId())
     GameTooltip:Hide()
     self:getFlyoutMenu():stopHover(self)
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
-function ButtonOnFlyoutMenu:onMouseUp()
+function ButtonOnFlyoutMenu:onMouseUp(mouseClick)
     -- used during drag & drop in the catalog. but also is called by buttons on germ flyouts
     local isDragging = GetCursorInfo()
     if isDragging then
-        local label = LABELS.onMouseUp
-        local myVolume = Ufo:getEventVolume(label)
-        zebug.info:mTriangle():owner(self):newEvent(self, label, nil, myVolume):run(function(event)
+        zebug.info:mTriangle():owner(self):newEvent(self, HK.onMouseUp):run(function(event)
+            zebug.trace:owner(self):event(event):print(mouseClick)
             self:onReceiveDragAddItTryCatch(event)
         end)
     end
@@ -499,6 +501,10 @@ end
 
 ---@param mouseClick MouseClick
 function ButtonOnFlyoutMenu:onMouseDown(mouseClick)
+    zebug.trace:mStar():owner(self):newEvent(self, HK.onMouseDown):run(function(event)
+        zebug.trace:owner(self):event(event):print(mouseClick)
+    end)
+
     local flyoutMenu = self:getFlyoutMenu()
     local label = LABELS.onMouseDown
     if flyoutMenu.isForCatalog then
@@ -516,14 +522,13 @@ function ButtonOnFlyoutMenu:onMouseDown(mouseClick)
 
     ---@type GERM_TYPE
     local germ = flyoutMenu and flyoutMenu:getParent()
-    zebug.info:owner(self):event(label):print("flyoutMenu",flyoutMenu, "germ",germ)
+    zebug.info:owner(self):event(HK.onMouseDown):print("flyoutMenu",flyoutMenu, "germ",germ)
     germ:promoteButtonToPrime(self)
 end
 
 ---@param self ButtonOnFlyoutMenu -- IntelliJ-EmmyLua annotation
 function ButtonOnFlyoutMenu:onReceiveDrag()
-    local myVolume = Ufo:getEventVolume(LABELS.onReceiveDrag)
-    zebug.info:mTriangle():owner(self):newEvent(self, LABELS.onReceiveDrag, nil, myVolume):run(function(event)
+    zebug.info:mTriangle():owner(self):newEvent(self, HK.onReceiveDrag):run(function(event)
         self:onReceiveDragAddItTryCatch(event)
     end)
 end
@@ -541,8 +546,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     local label = LABELS.onDragStartWhileDragging
     local isDragging = GetCursorInfo()
     if isDragging then
-        local myVolume = Ufo:getEventVolume(label)
-        zebug.info:mTriangle():owner(self):newEvent(self, label, nil, myVolume):run(function(event)
+        zebug.info:mTriangle():owner(self):newEvent(self, HK.onDragStartWhileDragging):run(function(event)
             self:onReceiveDragAddItTryCatch(event)
         end)
         return
@@ -556,8 +560,7 @@ function ButtonOnFlyoutMenu:onDragStartDoPickup()
     end
 ]]
 
-    local myVolume = Ufo:getEventVolume(LABELS.onDragStartDoPickup)
-    zebug.info:mTriangle():owner(self):newEvent(self, "bofm-dragged-away",nil, myVolume):run(function(event)
+    zebug.info:mTriangle():owner(self):newEvent(self, HK.onDragStartDoPickup):run(function(event)
         local isOk, err = btnDef:pickupToCursor(event)
         if not isOk then
             zebug.error:event(event):owner(self):print("FAILED to drag! err",err)
@@ -576,16 +579,6 @@ end
 -------------------------------------------------------------------------------
 -- Debugger tools
 -------------------------------------------------------------------------------
-
-function ButtonOnFlyoutMenu:registerMyEventsForDebugger()
-    Config:registerEventHandlerForDebugger(LABELS.onMouseUp)
-    Config:registerEventHandlerForDebugger(LABELS.onMouseDown)
-    Config:registerEventHandlerForDebugger(LABELS.onEnter)
-    Config:registerEventHandlerForDebugger(LABELS.onLeave)
-    Config:registerEventHandlerForDebugger(LABELS.onReceiveDrag)
-    Config:registerEventHandlerForDebugger(LABELS.onDragStartWhileDragging)
-    Config:registerEventHandlerForDebugger(LABELS.onDragStartDoPickup)
-end
 
 function ButtonOnFlyoutMenu:printDebugDetails(event)
     local t = self:GetAttribute("type")
