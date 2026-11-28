@@ -70,6 +70,7 @@ BLIZ_BAR_METADATA = {
     [14] = {name="MultiBar6",           yafName="MultiActionBar6"}, -- config UI -> Action Bars -> checkbox #7
     [15] = {name="MultiBar7",           yafName="MultiActionBar7"}, -- config UI -> Action Bars -> checkbox #8
     [16] = {name="WhoKnows",            }, -- another vehicle ?
+    [17] = {name="Idunno",              }, -- I see this a lot from Forever but no idea wtf it is
     [18] = {name="OverrideActionBar",   }, -- vehicle
     [19] = {name="ExtraAction",         }, -- center screen popup spell
 }
@@ -231,7 +232,12 @@ function getBarAndBtnEtc(btnSlotIndex, event)
     if barNum == 0 then return end -- during UI reloads, sometimes Bliz's shitty API reports that we're using the non-existent action bar #0.  Fuck you Bliz.
 
     local actionBarDef = BLIZ_BAR_METADATA[barNum]
-    assert(actionBarDef, "No ".. ADDON_NAME ..": config defined for button bar #"..barNum.." resulting from event: ".. tostring(event)) -- in case Blizzard adds more bars, complain here clearly.
+    if not actionBarDef then
+        -- in case Blizzard adds more bars
+        zebug.info:event(event):print("No config defined for button bar",barNum)
+        --print("No config defined for button bar",barNum)
+        actionBarDef = {name="UnDeFiNeD"}
+    end
 
     -- zebug.error:event(event):mark(Mark.FIRE):print("wtf-1 btnSlotIndex",btnSlotIndex, "actionBarDef", actionBarDef)
     local btnNum = (btnSlotIndex % NUM_ACTIONBAR_BUTTONS)  -- defined in bliz internals ActionButtonUtil.lua
